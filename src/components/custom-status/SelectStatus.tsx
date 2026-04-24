@@ -13,7 +13,7 @@ export interface StatusOption {
 
 const STATUS_PRESETS: Record<string, StatusOption[]> = {
 	user: [
-		{ value: 'active', label: 'Hoạt động', color: '#059669', bgColor: '#d1fae5' },
+		{ value: 'active', label: 'Hoạt động2', color: '#059669', bgColor: '#d1fae5' },
 		{ value: 'inactive', label: 'Không hoạt động', color: '#dc2626', bgColor: '#fee2e2' },
 	],
 	article: [
