@@ -77,7 +77,7 @@ export default function DomainPage() {
 					</Typography>
 					{error && (
 						<Alert severity="error" sx={{ mt: 2 }}>
-							{error}
+							{typeof error === 'string' ? error : JSON.stringify(error)}
 						</Alert>
 					)}
 				</Box>

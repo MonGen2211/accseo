@@ -36,7 +36,7 @@ export default function DomainForm({ onSubmit, onCancel, loading, apiError }: Do
 		<form onSubmit={handleSubmit} className="flex flex-col gap-4 pt-2" noValidate>
 			{apiError && (
 				<Alert severity="error" sx={{ mb: 1 }}>
-					{apiError}
+					{typeof apiError === 'string' ? apiError : JSON.stringify(apiError)}
 				</Alert>
 			)}
 

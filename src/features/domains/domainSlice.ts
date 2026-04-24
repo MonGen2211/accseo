@@ -40,8 +40,10 @@ export const createDomain = createAsyncThunk(
   async (domain: string, { rejectWithValue }) => {
     try {
       return await domainService.create({ domain });
-    } catch (err) {
-      return rejectWithValue((err as Error).message);
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      const message = axiosErr.response?.data?.message || (err as Error).message || 'Lỗi khi tạo tên miền';
+      return rejectWithValue(message);
     }
   }
 );
@@ -52,8 +54,10 @@ export const deleteDomain = createAsyncThunk(
     try {
       await domainService.delete(id);
       return id;
-    } catch (err) {
-      return rejectWithValue((err as Error).message);
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      const message = axiosErr.response?.data?.message || (err as Error).message || 'Lỗi khi xóa tên miền';
+      return rejectWithValue(message);
     }
   }
 );
