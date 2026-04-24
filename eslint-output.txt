@@ -1,0 +1,13 @@
+
+D:\acc-cms-mkt\src\features\keywords\components\KeywordGroupForm.tsx
+  39:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\acc-cms-mkt\src\features\keywords\components\KeywordGroupTable.tsx
+  56:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\acc-cms-mkt\src\features\keywords\keywordGroupSlice.ts
+  33:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  44:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 4 problems (4 errors, 0 warnings)
+
