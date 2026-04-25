@@ -9,9 +9,10 @@ interface DomainFormProps {
 	onCancel: () => void;
 	loading?: boolean;
 	apiError?: string | null;
+	onClearError?: () => void;
 }
 
-export default function DomainForm({ onSubmit, onCancel, loading, apiError }: DomainFormProps) {
+export default function DomainForm({ onSubmit, onCancel, loading, apiError, onClearError }: DomainFormProps) {
 	const [domain, setDomain] = useState('');
 	const [error, setError] = useState('');
 
@@ -46,6 +47,7 @@ export default function DomainForm({ onSubmit, onCancel, loading, apiError }: Do
 				onChange={(e) => {
 					setDomain(e.target.value);
 					if (error) setError('');
+					if (apiError) onClearError?.();
 				}}
 				placeholder="https://example.com/"
 				error={Boolean(error)}

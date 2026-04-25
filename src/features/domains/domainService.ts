@@ -39,10 +39,10 @@ export const domainService = {
     };
   },
 
-  async create(data: { domain: string }): Promise<Domain> {
-    const response = await api.post<ApiResponse<Domain>>('/domains', data);
-    return response.data.data;
-  },
+async create(payload: { domain: string }): Promise<Domain> {
+    const response = await api.post('/domains', payload);
+    return response.data.data.domain as Domain;
+},
 
   async checkMeta(id: string): Promise<Domain> {
     const response = await api.patch<ApiResponse<Domain>>(`/domains/${id}/check`);

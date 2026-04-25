@@ -96,7 +96,10 @@ export default function DomainPage() {
 						onDelete={handleDelete}
 						headerActions={
 							<>
-								<Button variant="contained" startIcon={<AddOutlinedIcon />} onClick={() => setShowForm(true)}>
+								<Button variant="contained" startIcon={<AddOutlinedIcon />} onClick={() => {
+									dispatch(clearDomainError());
+									setShowForm(true);
+								}}>
 									Thêm Tên Miền
 								</Button>
 							</>
@@ -118,6 +121,7 @@ export default function DomainPage() {
 						onCancel={() => setShowForm(false)}
 						loading={createLoading}
 						apiError={error}
+						onClearError={() => dispatch(clearDomainError())}
 					/>
 				</DialogContent>
 			</Dialog>

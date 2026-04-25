@@ -170,7 +170,7 @@ const keywordGroupSlice = createSlice({
         state.statusLoadingId = null;
         const index = state.items.findIndex((item) => (item as { _id?: string })._id === action.payload.id || item.id === action.payload.id);
         if (index !== -1) {
-          (state.items[index] as any).status = action.payload.status;
+          (state.items[index] as KeywordGroup & { status: string }).status = action.payload.status;
         }
       })
       .addCase(updateKeywordGroupStatus.rejected, (state, action) => {
