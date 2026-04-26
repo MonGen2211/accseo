@@ -145,11 +145,11 @@ export default function UserForm({
 					fullWidth
 					sx={{ mb: 3 }}
 				>
-					<MenuItem value="ADMIN">Admin</MenuItem>
-					<MenuItem value="MAR_SPECIALIST">Marketing Specialist</MenuItem>
-					<MenuItem value="CONTENT_SPECIALIST">Content Specialist</MenuItem>
-					<MenuItem value="SEO_COLLABORATOR">SEO Collaborator</MenuItem>
-					<MenuItem value="REVIEWER">Reviewer</MenuItem>
+					{/* <MenuItem value="ADMIN">Quản trị viên</MenuItem> */}
+					<MenuItem value="MAR_SPECIALIST">Chuyên viên Marketing</MenuItem>
+					<MenuItem value="CONTENT_SPECIALIST">Chuyên viên Content</MenuItem>
+					<MenuItem value="SEO_COLLABORATOR">Cộng tác viên SEO</MenuItem>
+					<MenuItem value="REVIEWER">Người kiểm duyệt</MenuItem>
 				</TextField>
 
 			</div>

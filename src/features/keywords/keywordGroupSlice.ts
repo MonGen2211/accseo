@@ -3,6 +3,8 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import { keywordGroupService } from './keywordGroupService';
 import type { KeywordGroup, KeywordGroupDataResponse, CreateKeywordGroupPayload } from './types';
 
+export type KeywordGroupSortField = 'name' | 'status' | 'createdAt' | '';
+
 interface KeywordGroupState {
   items: KeywordGroup[];
   loading: boolean;
@@ -15,6 +17,8 @@ interface KeywordGroupState {
   page: number;
   limit: number;
   totalPages: number;
+  sortField: KeywordGroupSortField;
+  sortOrder: 'asc' | 'desc';
 }
 
 const initialState: KeywordGroupState = {
@@ -29,13 +33,15 @@ const initialState: KeywordGroupState = {
   totalPages: 0,
   deleteLoadingId: null,
   statusLoadingId: null,
+  sortField: '',
+  sortOrder: 'desc',
 };
 
 export const fetchKeywordGroups = createAsyncThunk(
   'keywordGroups/fetchGroups',
-  async ({ domainId, page, limit }: { domainId: string; page?: number; limit?: number }, { rejectWithValue }) => {
+  async ({ domainId, page, limit, sort = '', order = 'desc' as const }: { domainId: string; page?: number; limit?: number; sort?: string; order?: 'asc' | 'desc' }, { rejectWithValue }) => {
     try {
-      return await keywordGroupService.getGroups(domainId, page, limit);
+      return await keywordGroupService.getGroups(domainId, page, limit, sort, order);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(err.response?.data?.message || 'Lỗi khi tải danh sách bộ keywords');
@@ -99,6 +105,12 @@ const keywordGroupSlice = createSlice({
   reducers: {
     clearError: (state) => {
       state.error = null;
+    },
+    setKeywordSortField: (state, action: { payload: KeywordGroupSortField }) => {
+      state.sortField = action.payload;
+    },
+    setKeywordSortOrder: (state, action: { payload: 'asc' | 'desc' }) => {
+      state.sortOrder = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -180,5 +192,5 @@ const keywordGroupSlice = createSlice({
   },
 });
 
-export const { clearError } = keywordGroupSlice.actions;
+export const { clearError, setKeywordSortField, setKeywordSortOrder } = keywordGroupSlice.actions;
 export default keywordGroupSlice.reducer;

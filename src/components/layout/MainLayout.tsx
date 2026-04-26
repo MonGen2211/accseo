@@ -2,8 +2,11 @@ import { Outlet } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import NotificationToast from '../NotificationToast';
+import { useNotifications } from '../../hooks/useNotifications';
 
 export default function MainLayout() {
+	useNotifications();
 	return (
 		<Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: '#f0f2f5' }}>
 			<Header onMenuToggle={() => { }} />
@@ -14,6 +17,7 @@ export default function MainLayout() {
 				<Outlet />
 			</Box>
 			<Sidebar />
+			<NotificationToast />
 		</Box>
 	);
 }

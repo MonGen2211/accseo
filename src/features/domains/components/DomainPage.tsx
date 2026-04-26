@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../../../app/store';
-import { fetchDomains, deleteDomain, createDomain, checkDomainMeta, clearDomainError } from '../domainSlice';
+import { fetchDomains, deleteDomain, createDomain, checkDomainMeta, clearDomainError, setDomainSortField, setDomainSortOrder, updateDomainOwners } from '../domainSlice';
 import DomainTable from './DomainTable';
 import DomainForm from './DomainForm';
+import DomainEditForm from './DomainEditForm';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
@@ -15,18 +16,24 @@ import IconButton from '@mui/material/IconButton';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import CloseIcon from '@mui/icons-material/Close';
 import { useToastify } from '../../../components/Toastify';
+import { userService } from '../../users/userService';
+import type { Domain } from '../../../types/domain.types';
+import type { UserProfile } from '../../../types/user.types';
 
 export default function DomainPage() {
 	const dispatch = useAppDispatch();
-	const { domains, loading, createLoading, actionLoadingId, error, pagination } = useAppSelector((state) => state.domains);
+	const { domains, loading, createLoading, ownersLoading, actionLoadingId, error, pagination, sortField, sortOrder } = useAppSelector((state) => state.domains);
 	const [showForm, setShowForm] = useState(false);
+	const [editDomain, setEditDomain] = useState<Domain | null>(null);
+	const [usersList, setUsersList] = useState<UserProfile[]>([]);
+	const [usersLoading, setUsersLoading] = useState(false);
 
 	const { showToast } = useToastify();
 
 
 	useEffect(() => {
-		dispatch(fetchDomains({ page: pagination.page, limit: pagination.limit }));
-	}, [dispatch, pagination.page, pagination.limit]);
+		dispatch(fetchDomains({ page: pagination.page, limit: pagination.limit, sort: sortField, order: sortOrder }));
+	}, [dispatch, pagination.page, pagination.limit, sortField, sortOrder]);
 
 	// Listen for unmount to clear errors
 	useEffect(() => {
@@ -36,11 +43,20 @@ export default function DomainPage() {
 	}, [dispatch]);
 
 	const handlePageChange = (newPage: number) => {
-		dispatch(fetchDomains({ page: newPage + 1, limit: pagination.limit }));
+		dispatch(fetchDomains({ page: newPage + 1, limit: pagination.limit, sort: sortField, order: sortOrder }));
 	};
 
 	const handleRowsPerPageChange = (newLimit: number) => {
-		dispatch(fetchDomains({ page: 1, limit: newLimit }));
+		dispatch(fetchDomains({ page: 1, limit: newLimit, sort: sortField, order: sortOrder }));
+	};
+
+	const handleSort = (field: string) => {
+		if (field === sortField) {
+			dispatch(setDomainSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'));
+		} else {
+			dispatch(setDomainSortField(field as typeof sortField));
+			dispatch(setDomainSortOrder('desc'));
+		}
 	};
 
 	const handleDelete = async (id: string) => {
@@ -65,6 +81,29 @@ export default function DomainPage() {
 		const action = await dispatch(createDomain(domainString));
 		if (!action.type.endsWith('/rejected')) {
 			setShowForm(false);
+		}
+	};
+
+	const handleEdit = async (domain: Domain) => {
+		setEditDomain(domain);
+		setUsersLoading(true);
+		try {
+			const result = await userService.getAll(1, 1000);
+			setUsersList(result.items);
+		} catch {
+			showToast('Lỗi khi tải danh sách người dùng', 'danger');
+		} finally {
+			setUsersLoading(false);
+		}
+	};
+
+	const handleUpdateOwners = async (domainId: string, ownerIds: string[]) => {
+		const action = await dispatch(updateDomainOwners({ id: domainId, ownerIds }));
+		if (!action.type.endsWith('/rejected')) {
+			showToast('Cập nhật người quản lý thành công', 'success');
+			setEditDomain(null);
+		} else {
+			showToast(action.payload as string || 'Có lỗi xảy ra', 'danger');
 		}
 	};
 
@@ -93,7 +132,11 @@ export default function DomainPage() {
 						onPageChange={handlePageChange}
 						onRowsPerPageChange={handleRowsPerPageChange}
 						onCheck={handleCheckMeta}
+						onEdit={handleEdit}
 						onDelete={handleDelete}
+						sortBy={sortField}
+						sortOrder={sortOrder}
+						onSort={handleSort}
 						headerActions={
 							<>
 								<Button variant="contained" startIcon={<AddOutlinedIcon />} onClick={() => {
@@ -125,6 +168,16 @@ export default function DomainPage() {
 					/>
 				</DialogContent>
 			</Dialog>
+
+			<DomainEditForm
+				open={!!editDomain}
+				domain={editDomain}
+				users={usersList}
+				loading={ownersLoading}
+				usersLoading={usersLoading}
+				onSubmit={handleUpdateOwners}
+				onClose={() => setEditDomain(null)}
+			/>
 		</Box>
 	);
 }

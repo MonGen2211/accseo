@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Popover from '@mui/material/Popover';
@@ -8,40 +7,33 @@ import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
+import CircularProgress from '@mui/material/CircularProgress';
 import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
 import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
 import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
 import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
+import SyncOutlinedIcon from '@mui/icons-material/SyncOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
+import { useState } from 'react';
+import { useAppSelector, useAppDispatch } from '../../app/store';
+import { markAsRead, markAllAsRead } from '../../features/notifications/notificationSlice';
+import { formatDistanceToNow } from 'date-fns';
+import { vi } from 'date-fns/locale';
+import type { NotificationType } from '../../types/notification.types';
 
-interface Notification {
-	id: string;
-	type: 'article' | 'schedule' | 'system';
-	title: string;
-	description: string;
-	time: string;
-	read: boolean;
-}
+const TAB_LABELS = ['Tất cả', 'Bài viết', 'Thay đổi', 'Đồng bộ'];
+const TAB_TYPES: (NotificationType | null)[] = [null, 'article', 'change', 'sync'];
 
-const MOCK_NOTIFICATIONS: Notification[] = [
-	{ id: '1', type: 'article', title: 'Bài viết mới', description: 'Nguyễn Văn A đã tạo bài viết mới "Hướng dẫn...', time: '15:18, 22/04/2026', read: false },
-	{ id: '2', type: 'article', title: 'Bài viết đã xuất bản', description: 'Bài viết "Top 10 xu hướng..." đã được xét duyệt', time: '15:16, 22/04/2026', read: false },
-	{ id: '3', type: 'schedule', title: 'Lịch trình', description: 'Bạn vừa được thêm vào lịch "Họp nhóm nội dung"', time: '14:12, 22/04/2026', read: false },
-	{ id: '4', type: 'article', title: 'Bình luận mới', description: 'Có bình luận mới trên bài viết "SEO cơ bản..."', time: '13:05, 22/04/2026', read: true },
-	{ id: '5', type: 'system', title: 'Hệ thống', description: 'Đã sao lưu dữ liệu thành công lúc 12:00', time: '12:00, 22/04/2026', read: true },
-	{ id: '6', type: 'article', title: 'Bài viết bị từ chối', description: 'Bài viết "Draft tháng 4" cần chỉnh sửa lại', time: '09:30, 22/04/2026', read: true },
-];
-
-const TAB_LABELS = ['Tất cả', 'Bài viết', 'Lịch trình'];
-const TAB_TYPES: (string | null)[] = [null, 'article', 'schedule'];
-
-function NotifIcon({ type }: { type: Notification['type'] }) {
-	const map = {
+function NotifIcon({ type }: { type: NotificationType }) {
+	const map: Record<NotificationType, { icon: React.ReactElement; color: string }> = {
 		article: { icon: <ArticleOutlinedIcon sx={{ fontSize: 20 }} />, color: '#00b894' },
 		schedule: { icon: <CalendarTodayOutlinedIcon sx={{ fontSize: 20 }} />, color: '#0984e3' },
-		system: { icon: <CheckCircleOutlinedIcon sx={{ fontSize: 20 }} />, color: '#6c5ce7' },
+		system: { icon: <CheckCircleOutlinedIcon sx={{ fontSize: 20 }} />, color: '#636e72' },
+		sync: { icon: <SyncOutlinedIcon sx={{ fontSize: 20 }} />, color: '#fdcb6e' },
+		change: { icon: <EditOutlinedIcon sx={{ fontSize: 20 }} />, color: '#e17055' },
 	};
-	const { icon, color } = map[type];
+	const { icon, color } = map[type] || map.system;
 	return (
 		<Box sx={{
 			width: 40, height: 40, borderRadius: '50%',
@@ -54,22 +46,30 @@ function NotifIcon({ type }: { type: Notification['type'] }) {
 	);
 }
 
+function formatTime(dateStr: string): string {
+	try {
+		return formatDistanceToNow(new Date(dateStr), { addSuffix: true, locale: vi });
+	} catch {
+		return dateStr;
+	}
+}
+
 export default function NotificationPanel() {
+	const dispatch = useAppDispatch();
+	const { items, unreadCount, loading } = useAppSelector((state) => state.notifications);
 	const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 	const [tab, setTab] = useState(0);
-	const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
 
-	const unreadCount = notifications.filter((n) => !n.read).length;
 	const filtered = tab === 0
-		? notifications
-		: notifications.filter((n) => n.type === TAB_TYPES[tab]);
+		? items
+		: items.filter((n) => n.type === TAB_TYPES[tab]);
 
-	const markAllRead = () => {
-		setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+	const handleMarkAllRead = () => {
+		dispatch(markAllAsRead());
 	};
 
-	const markRead = (id: string) => {
-		setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
+	const handleMarkRead = (_id: string) => {
+		dispatch(markAsRead(_id));
 	};
 
 	return (
@@ -115,7 +115,7 @@ export default function NotificationPanel() {
 					<Button
 						startIcon={<DoneAllIcon sx={{ fontSize: 16 }} />}
 						size="small"
-						onClick={markAllRead}
+						onClick={handleMarkAllRead}
 						disabled={unreadCount === 0}
 						sx={{ fontSize: '0.75rem', textTransform: 'none', color: '#00b894', fontWeight: 600, gap: 0.5 }}
 					>
@@ -145,7 +145,11 @@ export default function NotificationPanel() {
 
 				{/* List */}
 				<Box sx={{ overflowY: 'auto', flex: 1 }}>
-					{filtered.length === 0 ? (
+					{loading ? (
+						<Box sx={{ py: 6, textAlign: 'center' }}>
+							<CircularProgress size={28} sx={{ color: '#00b894' }} />
+						</Box>
+					) : filtered.length === 0 ? (
 						<Box sx={{ py: 6, textAlign: 'center', color: 'text.disabled' }}>
 							<NotificationsNoneOutlinedIcon sx={{ fontSize: 40, mb: 1, opacity: 0.4 }} />
 							<Typography sx={{ fontSize: '0.85rem' }}>Không có thông báo</Typography>
@@ -153,13 +157,13 @@ export default function NotificationPanel() {
 					) : (
 						filtered.map((notif) => (
 							<Box
-								key={notif.id}
-								onClick={() => markRead(notif.id)}
+								key={notif._id}
+								onClick={() => handleMarkRead(notif._id)}
 								sx={{
 									display: 'flex', alignItems: 'flex-start', gap: 1.5,
 									px: 2.5, py: 1.5, cursor: 'pointer',
-									bgcolor: notif.read ? 'transparent' : 'rgba(0, 184, 148, 0.05)',
-									borderLeft: notif.read ? '3px solid transparent' : '3px solid #00b894',
+									bgcolor: notif.isRead ? 'transparent' : 'rgba(0, 184, 148, 0.05)',
+									borderLeft: notif.isRead ? '3px solid transparent' : '3px solid #00b894',
 									'&:hover': { bgcolor: 'action.hover' },
 									transition: 'background 0.15s',
 								}}
@@ -167,18 +171,18 @@ export default function NotificationPanel() {
 								<NotifIcon type={notif.type} />
 								<Box sx={{ flex: 1, minWidth: 0 }}>
 									<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
-										<Typography sx={{ fontSize: '0.82rem', fontWeight: notif.read ? 500 : 700, color: 'text.primary' }}>
+										<Typography sx={{ fontSize: '0.82rem', fontWeight: notif.isRead ? 500 : 700, color: 'text.primary' }}>
 											{notif.title}
 										</Typography>
-										{!notif.read && (
+										{!notif.isRead && (
 											<Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: '#00b894', flexShrink: 0 }} />
 										)}
 									</Box>
 									<Typography sx={{ fontSize: '0.75rem', color: 'text.secondary', mt: 0.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-										{notif.description}
+										{notif.body}
 									</Typography>
 									<Typography sx={{ fontSize: '0.7rem', color: 'text.disabled', mt: 0.5 }}>
-										🕐 {notif.time}
+										🕐 {formatTime(notif.createdAt)}
 									</Typography>
 								</Box>
 							</Box>

@@ -9,9 +9,10 @@ interface ApiResponse<T> {
 }
 
 export const keywordGroupService = {
-  async getGroups(domainId: string, page = 1, limit = 20): Promise<KeywordGroupDataResponse> {
+  async getGroups(domainId: string, page = 1, limit = 20, sort = '', order: 'asc' | 'desc' = 'desc'): Promise<KeywordGroupDataResponse> {
+    const sortParam = sort ? `&sort=${sort}&order=${order}` : '';
     const response = await api.get<ApiResponse<KeywordGroupDataResponse>>(
-      `/keywords/groups?domainId=${domainId}&page=${page}&limit=${limit}`
+      `/keywords/groups?domainId=${domainId}&page=${page}&limit=${limit}${sortParam}`
     );
     return response.data.data;
   },

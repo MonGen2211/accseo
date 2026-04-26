@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import type { UserState, UserFormData } from '../../types/user.types';
+import type { UserState, UserFormData, UserSortField } from '../../types/user.types';
 import { userService } from './userService';
 
 const initialState: UserState = {
@@ -8,13 +8,15 @@ const initialState: UserState = {
   loading: false,
   error: null,
   pagination: { page: 1, limit: 10, total: 0 },
+  sortField: '',
+  sortOrder: 'desc',
 };
 
 export const fetchUsers = createAsyncThunk(
   'users/fetchAll',
-  async ({ page = 1, limit = 10, search = '' }: { page?: number; limit?: number; search?: string } = {}, { rejectWithValue }) => {
+  async ({ page = 1, limit = 10, search = '', sort = '', order = 'desc' as const }: { page?: number; limit?: number; search?: string; sort?: string; order?: 'asc' | 'desc' } = {}, { rejectWithValue }) => {
     try {
-      return await userService.getAll(page, limit, search);
+      return await userService.getAll(page, limit, search, sort, order);
     } catch (err) {
       return rejectWithValue((err as Error).message);
     }
@@ -70,6 +72,12 @@ const userSlice = createSlice({
     clearUserError(state) {
       state.error = null;
     },
+    setSortField(state, action: { payload: UserSortField }) {
+      state.sortField = action.payload;
+    },
+    setSortOrder(state, action: { payload: 'asc' | 'desc' }) {
+      state.sortOrder = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -93,8 +101,8 @@ const userSlice = createSlice({
         state.pagination.total += 1;
       })
       .addCase(updateUser.fulfilled, (state, action) => {
-        const idx = state.users.findIndex((u) => u.id === action.payload.id);
-        if (idx !== -1) state.users[idx] = action.payload;
+        const idx = state.users.findIndex((u) => u.id === action.meta.arg.id);
+        if (idx !== -1) state.users[idx] = { ...state.users[idx], ...action.payload };
       })
       .addCase(deleteUser.fulfilled, (state, action) => {
         state.users = state.users.filter((u) => u.id !== action.payload);
@@ -103,5 +111,5 @@ const userSlice = createSlice({
   },
 });
 
-export const { setSelectedUser, clearSelectedUser, clearUserError } = userSlice.actions;
+export const { setSelectedUser, clearSelectedUser, clearUserError, setSortField, setSortOrder } = userSlice.actions;
 export default userSlice.reducer;

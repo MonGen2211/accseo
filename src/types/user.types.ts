@@ -1,5 +1,7 @@
 import type { UserRole } from './auth.types';
 
+export type UserSortField = 'name' | 'email' | 'role' | 'isActive' | 'createdAt' | '';
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -29,4 +31,6 @@ export interface UserState {
     limit: number;
     total: number;
   };
+  sortField: UserSortField;
+  sortOrder: 'asc' | 'desc';
 }

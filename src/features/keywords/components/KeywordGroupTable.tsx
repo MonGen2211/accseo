@@ -19,6 +19,9 @@ interface KeywordGroupTableProps {
 	onAiGenerate?: () => void;
 	onDelete?: (row: import('../../../types/tableRows.types').TableRowData) => void;
 	onStatusChange?: (row: import('../../../types/tableRows.types').TableRowData, newStatus: string) => void;
+	sortBy?: string;
+	sortOrder?: 'asc' | 'desc';
+	onSort?: (field: string) => void;
 }
 
 export function KeywordGroupTable({
@@ -36,10 +39,13 @@ export function KeywordGroupTable({
 	statusLoadingId = null,
 	onDelete,
 	onStatusChange,
+	sortBy,
+	sortOrder,
+	onSort,
 }: KeywordGroupTableProps) {
 	const fields: TableField[] = [
 		{ id: 'stt', name: 'stt', label: 'STT', type: 'text', width: 80, align: 'center' },
-		{ id: 'name', name: 'name', label: 'Tên Bộ Keywords', type: 'text', width: 350 },
+		{ id: 'name', name: 'name', label: 'Tên Bộ Keywords', type: 'text', width: 350, sortable: true },
 		{
 			id: 'status',
 			name: 'status',
@@ -47,6 +53,7 @@ export function KeywordGroupTable({
 			type: 'status',
 			width: 150,
 			statusType: 'keyword',
+			sortable: true,
 		},
 		{
 			id: 'createdAt',
@@ -54,6 +61,7 @@ export function KeywordGroupTable({
 			label: 'Ngày tạo',
 			type: 'date',
 			width: 200,
+			sortable: true,
 		},
 		{
 			id: 'actions',
@@ -111,6 +119,9 @@ export function KeywordGroupTable({
 				onRowsPerPageChange={onRowsPerPageChange}
 				enablePagination
 				headerActions={headerActions}
+				sortBy={sortBy}
+				sortOrder={sortOrder}
+				onSort={onSort}
 			/>
 		</Box>
 	);

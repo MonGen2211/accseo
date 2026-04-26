@@ -1,12 +1,9 @@
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
-import { useParams, useNavigate } from 'react-router-dom';
-import IconButton from '@mui/material/IconButton';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../../../app/store';
-import { fetchKeywordGroups, suggestAiKeywords, deleteKeywordGroup, updateKeywordGroupStatus } from '../keywordGroupSlice';
+import { fetchKeywordGroups, suggestAiKeywords, deleteKeywordGroup, updateKeywordGroupStatus, setKeywordSortField, setKeywordSortOrder } from '../keywordGroupSlice';
 import { KeywordGroupTable } from './KeywordGroupTable';
 import { KeywordGroupForm } from './KeywordGroupForm';
 import { KeywordAiDialog } from './KeywordAiDialog';
@@ -15,12 +12,12 @@ import { Ga4Panel } from './Ga4Panel';
 
 import { useToastify } from '../../../components/Toastify';
 import type { TableRowData } from '../../../types/tableRows.types';
+import { useParams } from 'react-router-dom';
 
 export default function KeywordPage() {
 	const { domainId } = useParams<{ domainId: string }>();
-	const navigate = useNavigate();
 	const dispatch = useAppDispatch();
-	const { items, loading, total, page, limit, generateAiLoading, deleteLoadingId, statusLoadingId } = useAppSelector((state) => state.keywordGroups);
+	const { items, loading, total, page, limit, generateAiLoading, deleteLoadingId, statusLoadingId, sortField, sortOrder } = useAppSelector((state) => state.keywordGroups);
 	const { showToast } = useToastify();
 
 	const [isFormOpen, setIsFormOpen] = useState(false);
@@ -28,14 +25,14 @@ export default function KeywordPage() {
 
 	const loadData = (p: number, l: number) => {
 		if (domainId) {
-			dispatch(fetchKeywordGroups({ domainId, page: p + 1, limit: l }));
+			dispatch(fetchKeywordGroups({ domainId, page: p + 1, limit: l, sort: sortField, order: sortOrder }));
 		}
 	};
 
 	useEffect(() => {
 		loadData(0, limit);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [domainId]);
+	}, [domainId, sortField, sortOrder]);
 
 	const handlePageChange = (newPage: number) => {
 		loadData(newPage, limit);
@@ -43,6 +40,15 @@ export default function KeywordPage() {
 
 	const handleRowsPerPageChange = (newLimit: number) => {
 		loadData(0, newLimit);
+	};
+
+	const handleSort = (field: string) => {
+		if (field === sortField) {
+			dispatch(setKeywordSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'));
+		} else {
+			dispatch(setKeywordSortField(field as typeof sortField));
+			dispatch(setKeywordSortOrder('desc'));
+		}
 	};
 
 	const handleFormSuccess = () => {
@@ -90,16 +96,6 @@ export default function KeywordPage() {
 
 	return (
 		<Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-			{/* Page Header */}
-			<Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-				<IconButton onClick={() => navigate(-1)} size="small">
-					<ArrowBackIcon />
-				</IconButton>
-				<Typography sx={{ fontSize: '20px', fontWeight: 700, color: 'text.primary' }}>
-					Chi tiết trang web
-				</Typography>
-			</Box>
-
 			{/* Top Row: GSC (left) + GA4 (right) — 50/50 */}
 			<Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 3, alignItems: 'start' }}>
 				{/* LEFT: GSC Panel */}
@@ -132,6 +128,9 @@ export default function KeywordPage() {
 					onAiGenerate={() => setIsAiDialogOpen(true)}
 					onDelete={handleDelete}
 					onStatusChange={handleStatusChange}
+					sortBy={sortField}
+					sortOrder={sortOrder}
+					onSort={handleSort}
 				/>
 			</Paper>
 

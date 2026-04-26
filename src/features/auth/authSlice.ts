@@ -1,6 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { AuthState, LoginCredentials } from '../../types/auth.types';
 import { authService } from './authService';
+import { notificationService } from '../notifications/notificationService';
+import { resetNotifications } from '../notifications/notificationSlice';
 
 const initialState: AuthState = {
   user: authService.getCurrentUser(),
@@ -27,9 +29,15 @@ export const loginUser = createAsyncThunk(
   }
 );
 
-export const logoutUser = createAsyncThunk('auth/logout', async () => {
-  await authService.logout();
-});
+export const logoutUser = createAsyncThunk(
+  'auth/logout',
+  async (_, { dispatch }) => {
+    await notificationService.deleteFcmToken();
+    notificationService.disconnectSSE();
+    dispatch(resetNotifications());
+    await authService.logout();
+  }
+);
 
 const authSlice = createSlice({
   name: 'auth',

@@ -2,10 +2,13 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { domainService } from './domainService';
 import type { Domain } from '../../types/domain.types';
 
+export type DomainSortField = 'domain' | 'metaDescription' | 'lastCheckedAt' | '';
+
 interface DomainState {
   domains: Domain[];
   loading: boolean;
   createLoading: boolean;
+  ownersLoading: boolean;
   actionLoadingId: string | null;
   error: string | null;
   pagination: {
@@ -13,22 +16,27 @@ interface DomainState {
     limit: number;
     total: number;
   };
+  sortField: DomainSortField;
+  sortOrder: 'asc' | 'desc';
 }
 
 const initialState: DomainState = {
   domains: [],
   loading: false,
   createLoading: false,
+  ownersLoading: false,
   actionLoadingId: null,
   error: null,
   pagination: { page: 1, limit: 10, total: 0 },
+  sortField: '',
+  sortOrder: 'desc',
 };
 
 export const fetchDomains = createAsyncThunk(
   'domains/fetchAll',
-  async ({ page = 1, limit = 10 }: { page?: number; limit?: number } = {}, { rejectWithValue }) => {
+  async ({ page = 1, limit = 10, sort = '', order = 'desc' as const }: { page?: number; limit?: number; sort?: string; order?: 'asc' | 'desc' } = {}, { rejectWithValue }) => {
     try {
-      return await domainService.getAll(page, limit);
+      return await domainService.getAll(page, limit, sort, order);
     } catch (err) {
       return rejectWithValue((err as Error).message);
     }
@@ -74,12 +82,30 @@ export const checkDomainMeta = createAsyncThunk(
   }
 );
 
+export const updateDomainOwners = createAsyncThunk(
+  'domains/updateOwners',
+  async ({ id, ownerIds }: { id: string; ownerIds: string[] }, { rejectWithValue }) => {
+    try {
+      return await domainService.updateOwners(id, ownerIds);
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      return rejectWithValue(err.response?.data?.message || 'Lỗi khi cập nhật người quản lý');
+    }
+  }
+);
+
 const domainSlice = createSlice({
   name: 'domains',
   initialState,
   reducers: {
     clearDomainError: (state) => {
       state.error = null;
+    },
+    setDomainSortField: (state, action: { payload: DomainSortField }) => {
+      state.sortField = action.payload;
+    },
+    setDomainSortOrder: (state, action: { payload: 'asc' | 'desc' }) => {
+      state.sortOrder = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -121,9 +147,9 @@ const domainSlice = createSlice({
       })
       .addCase(checkDomainMeta.fulfilled, (state, action) => {
         state.actionLoadingId = null;
-        const index = state.domains.findIndex((d) => d._id === action.payload._id);
+        const index = state.domains.findIndex((d) => d._id === action.meta.arg);
         if (index !== -1) {
-          state.domains[index] = action.payload;
+          state.domains[index] = { ...state.domains[index], ...action.payload };
         }
       })
       .addCase(checkDomainMeta.rejected, (state, action) => {
@@ -143,10 +169,26 @@ const domainSlice = createSlice({
       .addCase(deleteDomain.rejected, (state, action) => {
         state.actionLoadingId = null;
         state.error = action.payload as string;
+      })
+      // Update Owners
+      .addCase(updateDomainOwners.pending, (state) => {
+        state.ownersLoading = true;
+        state.error = null;
+      })
+      .addCase(updateDomainOwners.fulfilled, (state, action) => {
+        state.ownersLoading = false;
+        const index = state.domains.findIndex((d) => d._id === action.meta.arg.id);
+        if (index !== -1) {
+          state.domains[index] = { ...state.domains[index], ...action.payload };
+        }
+      })
+      .addCase(updateDomainOwners.rejected, (state, action) => {
+        state.ownersLoading = false;
+        state.error = action.payload as string;
       });
   },
 });
 
-export const { clearDomainError } = domainSlice.actions;
+export const { clearDomainError, setDomainSortField, setDomainSortOrder } = domainSlice.actions;
 
 export default domainSlice.reducer;

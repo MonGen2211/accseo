@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../app/store';
 import { logoutUser } from '../../features/auth/authSlice';
 import { ROUTES } from '../../utils/constants';
@@ -21,10 +21,18 @@ interface HeaderProps {
 
 const PAGE_META: Record<string, { title: string; breadcrumb: string[] }> = {
 	'/': { title: 'Tổng quan', breadcrumb: ['Trang chủ', 'Tổng quan'] },
-	'/articles': { title: 'Quản lý Bài viết', breadcrumb: ['Trang chủ', 'Nội dung', 'Bài viết'] },
-	'/users': { title: 'Quản lý Người dùng', breadcrumb: ['Trang chủ', 'Quản trị', 'Người dùng'] },
+	'/articles': { title: 'Quản lý Bài viết', breadcrumb: ['Trang chủ', 'Bài viết'] },
+	'/users': { title: 'Quản lý Người dùng', breadcrumb: ['Trang chủ', 'Người dùng'] },
 	'/settings': { title: 'Cài đặt hệ thống', breadcrumb: ['Trang chủ', 'Cài đặt hệ thống'] },
-	'/domains': { title: 'Quản lý Tên miền', breadcrumb: ['Trang chủ', 'SEO', 'Tên miền'] },
+	'/domains': { title: 'Quản lý Tên miền', breadcrumb: ['Trang chủ', 'Tên miền'] },
+};
+
+const BREADCRUMB_LINKS: Record<string, string> = {
+	'Trang chủ': '/',
+	'Tên miền': '/domains',
+	'Người dùng': '/users',
+	'Bài viết': '/articles',
+	'Cài đặt hệ thống': '/settings',
 };
 
 export default function Header({ onMenuToggle }: HeaderProps) {
@@ -36,7 +44,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 	const getPageMeta = (pathname: string) => {
 		if (PAGE_META[pathname]) return PAGE_META[pathname];
 		if (pathname.startsWith('/domains/') && pathname.endsWith('/keywords')) {
-			return { title: 'Chi tiết trang web', breadcrumb: ['Trang chủ', 'SEO', 'Tên miền', 'Chi tiết trang web'] };
+			return { title: 'Chi tiết trang web', breadcrumb: ['Trang chủ', 'Tên miền', 'Chi tiết trang web'] };
 		}
 		return { title: 'Hệ thống', breadcrumb: ['Trang chủ'] };
 	};
@@ -200,18 +208,39 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 			{/* Breadcrumb bar (separate) */}
 			<Box sx={{ px: 1, pt: 1.5, pb: 0.5 }}>
 				<Breadcrumbs sx={{ fontSize: '0.82rem' }}>
-					{meta.breadcrumb.map((crumb, i) => (
-						<Typography
-							key={crumb}
-							sx={{
-								fontSize: '0.82rem',
-								color: i === meta.breadcrumb.length - 1 ? 'text.primary' : 'text.disabled',
-								fontWeight: i === meta.breadcrumb.length - 1 ? 600 : 400,
-							}}
-						>
-							{crumb}
-						</Typography>
-					))}
+					{meta.breadcrumb.map((crumb, i) => {
+						const isLast = i === meta.breadcrumb.length - 1;
+						const linkPath = BREADCRUMB_LINKS[crumb];
+
+						if (!isLast && linkPath) {
+							return (
+								<Link
+									key={crumb}
+									to={linkPath}
+									style={{
+										fontSize: '0.82rem',
+										color: '#94a3b8',
+										textDecoration: 'none',
+									}}
+								>
+									{crumb}
+								</Link>
+							);
+						}
+
+						return (
+							<Typography
+								key={crumb}
+								sx={{
+									fontSize: '0.82rem',
+									color: isLast ? 'text.primary' : 'text.disabled',
+									fontWeight: isLast ? 600 : 400,
+								}}
+							>
+								{crumb}
+							</Typography>
+						);
+					})}
 				</Breadcrumbs>
 			</Box>
 		</Box>

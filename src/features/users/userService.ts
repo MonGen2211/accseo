@@ -36,9 +36,10 @@ const mapApiUserToProfile = (user: ApiUser): UserProfile => ({
 });
 
 export const userService = {
-  async getAll(page = 1, limit = 10, search = ''): Promise<{ items: UserProfile[]; total: number; page: number; limit: number; totalPages: number }> {
+  async getAll(page = 1, limit = 10, search = '', sort = '', order: 'asc' | 'desc' = 'desc'): Promise<{ items: UserProfile[]; total: number; page: number; limit: number; totalPages: number }> {
     const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
-    const response = await api.get<ApiResponse<PaginatedData<ApiUser>>>(`/users?page=${page}&limit=${limit}${searchParam}`);
+    const sortParam = sort ? `&sort=${sort}&order=${order}` : '';
+    const response = await api.get<ApiResponse<PaginatedData<ApiUser>>>(`/users?page=${page}&limit=${limit}${searchParam}${sortParam}`);
     const data = response.data.data;
     return {
       items: data.items.map(mapApiUserToProfile),
@@ -80,8 +81,8 @@ export const userService = {
     if (data.role !== undefined) payload.role = data.role;
     if (data.status !== undefined) payload.isActive = data.status === 'active';
 
-    const response = await api.patch<ApiResponse<ApiUser>>(`/users/${id}`, payload);
-    return mapApiUserToProfile(response.data.data);
+    const response = await api.patch<ApiResponse<{ user: ApiUser }>>(`/users/${id}`, payload);
+    return mapApiUserToProfile(response.data.data.user);
   },
 
   async remove(id: string): Promise<void> {

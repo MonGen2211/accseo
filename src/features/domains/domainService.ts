@@ -15,8 +15,9 @@ interface ApiResponse<T> {
   data: T;
 }
 export const domainService = {
-  async getAll(page = 1, limit = 10): Promise<{ items: Domain[]; total: number; page: number; limit: number; totalPages: number }> {
-    const response = await api.get<ApiResponse<PaginatedData<Domain> | Domain[]>>(`/domains?page=${page}&limit=${limit}`);
+  async getAll(page = 1, limit = 10, sort = '', order: 'asc' | 'desc' = 'desc'): Promise<{ items: Domain[]; total: number; page: number; limit: number; totalPages: number }> {
+    const sortParam = sort ? `&sort=${sort}&order=${order}` : '';
+    const response = await api.get<ApiResponse<PaginatedData<Domain> | Domain[]>>(`/domains?page=${page}&limit=${limit}${sortParam}`);
     const data = response.data.data;
     
     // Xử lý linh hoạt: backend trả về Array (không có wrapper phân trang) hoặc bọc trong { items, total }
@@ -51,5 +52,10 @@ async create(payload: { domain: string }): Promise<Domain> {
 
   async delete(id: string): Promise<void> {
     await api.delete(`/domains/${id}`);
-  }
+  },
+
+  async updateOwners(id: string, ownerIds: string[]): Promise<Domain> {
+    const response = await api.put<ApiResponse<{ domain: Domain }>>(`/domains/${id}/owners`, { owners: ownerIds });
+    return response.data.data.domain;
+  },
 };
