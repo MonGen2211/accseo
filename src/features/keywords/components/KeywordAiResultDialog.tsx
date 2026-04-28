@@ -97,6 +97,7 @@ export function KeywordAiResultDialog({ open, loading, suggestions, onClose, onC
 			name: 'reason',
 			label: 'LÝ DO (REASON)',
 			width: 400,
+			wrapText: true,
 		},
 	], [selected, handleToggle]);
 

@@ -35,4 +35,5 @@ export type TableField = {
   statusReadonly?: boolean;
   statusType?: string;
   inherit?: boolean;
+  wrapText?: boolean;
 };

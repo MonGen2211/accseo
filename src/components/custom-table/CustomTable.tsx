@@ -336,9 +336,10 @@ export function CustomTable({
 												width: field.width,
 												minWidth: field.width,
 												maxWidth: field.width,
-												whiteSpace: field.type === 'actions' || field.type === 'status' ? 'normal' : 'nowrap',
+												whiteSpace: field.type === 'actions' || field.type === 'status' || field.wrapText ? 'normal' : 'nowrap',
+												wordBreak: field.wrapText ? 'break-word' : 'normal',
 												overflow: 'hidden',
-												textOverflow: 'ellipsis',
+												textOverflow: field.wrapText ? 'clip' : 'ellipsis',
 												verticalAlign: 'middle',
 											}}
 											title={field.type === 'text' && typeof row[field.id] === 'string' ? row[field.id] : undefined}
