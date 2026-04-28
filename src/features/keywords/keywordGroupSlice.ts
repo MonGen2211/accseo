@@ -19,6 +19,7 @@ interface KeywordGroupState {
   totalPages: number;
   sortField: KeywordGroupSortField;
   sortOrder: 'asc' | 'desc';
+  statusFilter: string;
 }
 
 const initialState: KeywordGroupState = {
@@ -35,13 +36,14 @@ const initialState: KeywordGroupState = {
   statusLoadingId: null,
   sortField: '',
   sortOrder: 'desc',
+  statusFilter: '',
 };
 
 export const fetchKeywordGroups = createAsyncThunk(
   'keywordGroups/fetchGroups',
-  async ({ domainId, page, limit, sort = '', order = 'desc' as const }: { domainId: string; page?: number; limit?: number; sort?: string; order?: 'asc' | 'desc' }, { rejectWithValue }) => {
+  async ({ domainId, page, limit, sort = '', order = 'desc' as const, status = '' }: { domainId: string; page?: number; limit?: number; sort?: string; order?: 'asc' | 'desc'; status?: string }, { rejectWithValue }) => {
     try {
-      return await keywordGroupService.getGroups(domainId, page, limit, sort, order);
+      return await keywordGroupService.getGroups(domainId, page, limit, sort, order, status);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(err.response?.data?.message || 'Lỗi khi tải danh sách bộ keywords');
@@ -112,6 +114,9 @@ const keywordGroupSlice = createSlice({
     setKeywordSortOrder: (state, action: { payload: 'asc' | 'desc' }) => {
       state.sortOrder = action.payload;
     },
+    setKeywordStatusFilter: (state, action: { payload: string }) => {
+      state.statusFilter = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -137,11 +142,12 @@ const keywordGroupSlice = createSlice({
         state.actionLoading = true;
         state.error = null;
       })
-      .addCase(createKeywordGroup.fulfilled, (state, action: PayloadAction<KeywordGroup>) => {
+      .addCase(createKeywordGroup.fulfilled, (state, action: PayloadAction<KeywordGroup | KeywordGroup[]>) => {
         state.actionLoading = false;
         // Optionally prepend the new item
-        state.items.unshift(action.payload);
-        state.total += 1;
+        const payloadArray = Array.isArray(action.payload) ? action.payload : [action.payload];
+        state.items.unshift(...payloadArray);
+        state.total += payloadArray.length;
       })
       .addCase(createKeywordGroup.rejected, (state, action) => {
         state.actionLoading = false;
@@ -192,5 +198,5 @@ const keywordGroupSlice = createSlice({
   },
 });
 
-export const { clearError, setKeywordSortField, setKeywordSortOrder } = keywordGroupSlice.actions;
+export const { clearError, setKeywordSortField, setKeywordSortOrder, setKeywordStatusFilter } = keywordGroupSlice.actions;
 export default keywordGroupSlice.reducer;

@@ -428,7 +428,12 @@ export function CustomTable({
 					Bạn có chắc chắn muốn xóa dữ liệu này? Hành động này không thể hoàn tác.
 				</Typography>
 				<Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-					<Button onClick={handleDeleteCancel} variant="outlined" color="inherit">
+					<Button
+						onClick={handleDeleteCancel}
+						variant="outlined"
+						color="inherit"
+						sx={{ border: 'none' }}
+					>
 						Hủy
 					</Button>
 					<Button onClick={handleDeleteConfirm} variant="contained" color="error">

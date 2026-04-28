@@ -1,4 +1,4 @@
-import { Box, Button } from '@mui/material';
+import { Box, Button, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CustomTable from '../../../components/custom-table/CustomTable';
 import type { TableField } from '../../../types/tableFields.types';
@@ -22,6 +22,8 @@ interface KeywordGroupTableProps {
 	sortBy?: string;
 	sortOrder?: 'asc' | 'desc';
 	onSort?: (field: string) => void;
+	statusFilter?: string;
+	onStatusFilterChange?: (status: string) => void;
 }
 
 export function KeywordGroupTable({
@@ -42,6 +44,8 @@ export function KeywordGroupTable({
 	sortBy,
 	sortOrder,
 	onSort,
+	statusFilter,
+	onStatusFilterChange,
 }: KeywordGroupTableProps) {
 	const fields: TableField[] = [
 		{ id: 'stt', name: 'stt', label: 'STT', type: 'text', width: 80, align: 'center' },
@@ -77,6 +81,38 @@ export function KeywordGroupTable({
 		...item,
 		stt: page * limit + index + 1
 	}));
+
+	const statusOptions = [
+		{ value: '', label: 'Tất cả trạng thái' },
+		{ value: 'pending_approval', label: 'Chờ phê duyệt' },
+		{ value: 'not_started', label: 'Chưa triển khai' },
+		{ value: 'in_progress', label: 'Đang triển khai' },
+		{ value: 'deployed', label: 'Đã triển khai' },
+	];
+
+	const extraFilters = onStatusFilterChange ? (
+		<FormControl size="small" sx={{ minWidth: 200 }}>
+			<InputLabel id="status-filter-label" sx={{ fontSize: '14px', top: '-1px' }}>Trạng thái</InputLabel>
+			<Select
+				labelId="status-filter-label"
+				label="Trạng thái"
+				value={statusFilter || ''}
+				onChange={(e) => onStatusFilterChange(e.target.value)}
+				sx={{
+					bgcolor: '#fff',
+					borderRadius: 2,
+					height: 40,
+					'& .MuiSelect-select': { py: 1, fontSize: '14px' }
+				}}
+			>
+				{statusOptions.map((opt) => (
+					<MenuItem key={opt.value} value={opt.value} sx={{ fontSize: '14px' }}>
+						{opt.label}
+					</MenuItem>
+				))}
+			</Select>
+		</FormControl>
+	) : undefined;
 
 	const headerActions = (
 		<Box sx={{ display: 'flex', gap: 2 }}>
@@ -118,6 +154,7 @@ export function KeywordGroupTable({
 				onPageChange={onPageChange}
 				onRowsPerPageChange={onRowsPerPageChange}
 				enablePagination
+				extraFilters={extraFilters}
 				headerActions={headerActions}
 				sortBy={sortBy}
 				sortOrder={sortOrder}

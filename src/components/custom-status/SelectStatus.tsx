@@ -22,8 +22,10 @@ const STATUS_PRESETS: Record<string, StatusOption[]> = {
 		{ value: 'archived', label: 'Lưu trữ', color: '#dc2626', bgColor: '#fee2e2' },
 	],
 	keyword: [
-		{ value: 'active', label: 'Hoạt động', color: '#059669', bgColor: '#d1fae5' },
-		{ value: 'archived', label: 'Lưu trữ', color: '#dc2626', bgColor: '#fee2e2' },
+		{ value: 'pending_approval', label: 'Chờ phê duyệt', color: '#d97706', bgColor: '#fef3c7' },
+		{ value: 'not_started', label: 'Chưa triển khai', color: '#475569', bgColor: '#f1f5f9' },
+		{ value: 'in_progress', label: 'Đang triển khai', color: '#2563eb', bgColor: '#dbeafe' },
+		{ value: 'deployed', label: 'Đã triển khai', color: '#059669', bgColor: '#d1fae5' },
 	]
 };
 

@@ -16,14 +16,21 @@ export interface KeywordGroupDataResponse {
 }
 
 export interface CreateKeywordGroupPayload {
-  name: string;
+  names: string[];
   domainId: string;
+  aiGen?: boolean;
 }
 
 export interface SuggestAiKeywordsPayload {
   days: number;
   top: number;
-  keywords?: string[];
+  count: number;
+  names?: string[];
+}
+
+export interface AiSuggestedKeyword {
+  name: string;
+  reason?: string;
 }
 
 export interface UpdateKeywordGroupPayload {

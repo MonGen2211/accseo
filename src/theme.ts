@@ -98,10 +98,23 @@ const theme = createTheme({
       },
     },
     MuiDialog: {
+      defaultProps: {
+        disableScrollLock: true,
+      },
       styleOverrides: {
         paper: {
           borderRadius: 12,
         },
+      },
+    },
+    MuiPopover: {
+      defaultProps: {
+        disableScrollLock: true,
+      },
+    },
+    MuiMenu: {
+      defaultProps: {
+        disableScrollLock: true,
       },
     },
     MuiChip: {

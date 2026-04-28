@@ -14,24 +14,25 @@ interface KeywordAiDialogProps {
 	open: boolean;
 	loading: boolean;
 	onClose: () => void;
-	onConfirm: (days: number, top: number, keywords: string[]) => void;
+	onConfirm: (days: number, top: number, count: number, names: string[]) => void;
 }
 
 export function KeywordAiDialog({ open, loading, onClose, onConfirm }: KeywordAiDialogProps) {
 	const [days, setDays] = useState(30);
 	const [top, setTop] = useState(100);
-	const [keywordsText, setKeywordsText] = useState('');
+	const [count, setCount] = useState(5);
+	const [namesText, setNamesText] = useState('');
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		if (days <= 0 || top <= 0) return;
+		if (days <= 0 || top <= 0 || count <= 0) return;
 
-		const keywords = keywordsText
+		const names = namesText
 			.split('\n')
 			.map((line) => line.trim())
 			.filter((line) => line.length > 0);
 
-		onConfirm(days, top, keywords);
+		onConfirm(days, top, count, names);
 	};
 
 	return (
@@ -66,6 +67,17 @@ export function KeywordAiDialog({ open, loading, onClose, onConfirm }: KeywordAi
 							slotProps={{ htmlInput: { min: 1 } }}
 						/>
 						<TextField
+							label="Số lượng kết quả cần (Count)"
+							type="number"
+							variant="outlined"
+							fullWidth
+							size="small"
+							value={count}
+							onChange={(e) => setCount(Number(e.target.value))}
+							required
+							slotProps={{ htmlInput: { min: 1, max: 8 } }}
+						/>
+						<TextField
 							label="Danh sách keywords (mỗi dòng 1 keyword)"
 							placeholder={"keyword 1\nkeyword 2\nkeyword 3"}
 							multiline
@@ -73,9 +85,9 @@ export function KeywordAiDialog({ open, loading, onClose, onConfirm }: KeywordAi
 							maxRows={10}
 							variant="outlined"
 							fullWidth
-							value={keywordsText}
-							onChange={(e) => setKeywordsText(e.target.value)}
-						// helperText="Nhập mỗi keyword trên một dòng. Để trống nếu muốn AI tự gợi ý."
+							value={namesText}
+							onChange={(e) => setNamesText(e.target.value)}
+						// helperText="Nhập mỗi name trên một dòng. Để trống nếu muốn AI tự gợi ý."
 						/>
 					</Box>
 				</DialogContent>
@@ -83,7 +95,7 @@ export function KeywordAiDialog({ open, loading, onClose, onConfirm }: KeywordAi
 					<Button onClick={onClose} disabled={loading} color="inherit">
 						Hủy
 					</Button>
-					<Button type="submit" variant="contained" disabled={loading || days <= 0 || top <= 0}>
+					<Button type="submit" variant="contained" disabled={loading || days <= 0 || top <= 0 || count <= 0}>
 						{loading ? 'Đang tạo...' : 'Xác nhận tạo'}
 					</Button>
 				</DialogActions>

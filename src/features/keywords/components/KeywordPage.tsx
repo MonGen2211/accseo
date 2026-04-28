@@ -3,10 +3,13 @@ import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../../../app/store';
-import { fetchKeywordGroups, suggestAiKeywords, deleteKeywordGroup, updateKeywordGroupStatus, setKeywordSortField, setKeywordSortOrder } from '../keywordGroupSlice';
+import { fetchKeywordGroups, suggestAiKeywords, deleteKeywordGroup, updateKeywordGroupStatus, setKeywordSortField, setKeywordSortOrder, setKeywordStatusFilter } from '../keywordGroupSlice';
 import { KeywordGroupTable } from './KeywordGroupTable';
 import { KeywordGroupForm } from './KeywordGroupForm';
 import { KeywordAiDialog } from './KeywordAiDialog';
+import { KeywordAiResultDialog } from './KeywordAiResultDialog';
+import type { AiSuggestedKeyword } from '../types';
+import { createKeywordGroup } from '../keywordGroupSlice';
 import { GscPanel } from './GscPanel';
 import { Ga4Panel } from './Ga4Panel';
 
@@ -17,22 +20,25 @@ import { useParams } from 'react-router-dom';
 export default function KeywordPage() {
 	const { domainId } = useParams<{ domainId: string }>();
 	const dispatch = useAppDispatch();
-	const { items, loading, total, page, limit, generateAiLoading, deleteLoadingId, statusLoadingId, sortField, sortOrder } = useAppSelector((state) => state.keywordGroups);
+	const { items, loading, total, page, limit, generateAiLoading, deleteLoadingId, statusLoadingId, sortField, sortOrder, statusFilter } = useAppSelector((state) => state.keywordGroups);
 	const { showToast } = useToastify();
 
 	const [isFormOpen, setIsFormOpen] = useState(false);
 	const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
+	const [isAiResultOpen, setIsAiResultOpen] = useState(false);
+	const [aiSuggestions, setAiSuggestions] = useState<AiSuggestedKeyword[]>([]);
+	const [aiSubmitLoading, setAiSubmitLoading] = useState(false);
 
 	const loadData = (p: number, l: number) => {
 		if (domainId) {
-			dispatch(fetchKeywordGroups({ domainId, page: p + 1, limit: l, sort: sortField, order: sortOrder }));
+			dispatch(fetchKeywordGroups({ domainId, page: p + 1, limit: l, sort: sortField, order: sortOrder, status: statusFilter }));
 		}
 	};
 
 	useEffect(() => {
 		loadData(0, limit);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [domainId, sortField, sortOrder]);
+	}, [domainId, sortField, sortOrder, statusFilter]);
 
 	const handlePageChange = (newPage: number) => {
 		loadData(newPage, limit);
@@ -55,16 +61,37 @@ export default function KeywordPage() {
 		loadData(0, limit);
 	};
 
-	const handleAiGenerate = async (days: number, top: number, keywords: string[]) => {
+	const handleAiGenerate = async (days: number, top: number, count: number, names: string[]) => {
 		if (!domainId) return;
 		try {
-			await dispatch(suggestAiKeywords({ domainId, payload: { days, top, ...(keywords.length > 0 && { keywords }) } })).unwrap();
-			showToast('Tạo keywords bằng AI thành công!', 'success');
-			loadData(0, limit);
+			const result = await dispatch(suggestAiKeywords({ domainId, payload: { days, top, count, ...(names.length > 0 && { names }) } })).unwrap();
 			setIsAiDialogOpen(false);
+
+			if (Array.isArray(result)) {
+				setAiSuggestions(result as AiSuggestedKeyword[]);
+			} else {
+				setAiSuggestions([]);
+			}
+			setIsAiResultOpen(true);
 		} catch (err: unknown) {
 			const errorMsg = typeof err === 'string' ? err : 'Đã có lỗi xảy ra';
 			showToast(errorMsg, 'danger');
+		}
+	};
+
+	const handleAiConfirmSelected = async (selectedNames: string[]) => {
+		if (!domainId || selectedNames.length === 0) return;
+		try {
+			setAiSubmitLoading(true);
+			await dispatch(createKeywordGroup({ names: selectedNames, domainId, aiGen: true })).unwrap();
+			showToast('Tạo keywords từ gợi ý thành công!', 'success');
+			loadData(0, limit);
+			setIsAiResultOpen(false);
+		} catch (err: unknown) {
+			const errorMsg = typeof err === 'string' ? err : 'Đã có lỗi xảy ra';
+			showToast(errorMsg, 'danger');
+		} finally {
+			setAiSubmitLoading(false);
 		}
 	};
 
@@ -131,6 +158,8 @@ export default function KeywordPage() {
 					sortBy={sortField}
 					sortOrder={sortOrder}
 					onSort={handleSort}
+					statusFilter={statusFilter}
+					onStatusFilterChange={(st) => dispatch(setKeywordStatusFilter(st))}
 				/>
 			</Paper>
 
@@ -150,6 +179,16 @@ export default function KeywordPage() {
 					loading={generateAiLoading}
 					onClose={() => setIsAiDialogOpen(false)}
 					onConfirm={handleAiGenerate}
+				/>
+			)}
+
+			{domainId && (
+				<KeywordAiResultDialog
+					open={isAiResultOpen}
+					loading={aiSubmitLoading}
+					suggestions={aiSuggestions}
+					onClose={() => setIsAiResultOpen(false)}
+					onConfirm={handleAiConfirmSelected}
 				/>
 			)}
 		</Box>

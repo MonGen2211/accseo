@@ -21,19 +21,22 @@ interface KeywordGroupFormProps {
 }
 
 export function KeywordGroupForm({ open, domainId, onClose, onSuccess }: KeywordGroupFormProps) {
-	const [name, setName] = useState('');
+	const [namesText, setNamesText] = useState('');
 	const dispatch = useAppDispatch();
 	const { actionLoading } = useAppSelector((state) => state.keywordGroups);
 	const { showToast } = useToastify();
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!name.trim()) return;
+		if (!namesText.trim()) return;
+
+		const names = namesText.split('\n').map(n => n.trim()).filter(n => n);
+		if (names.length === 0) return;
 
 		try {
-			await dispatch(createKeywordGroup({ name: name.trim(), domainId })).unwrap();
+			await dispatch(createKeywordGroup({ names, domainId })).unwrap();
 			showToast('Tạo bộ keywords thành công!', 'success');
-			setName('');
+			setNamesText('');
 			onSuccess?.();
 			onClose();
 		} catch (err: unknown) {
@@ -43,7 +46,7 @@ export function KeywordGroupForm({ open, domainId, onClose, onSuccess }: Keyword
 	};
 
 	const handleClose = () => {
-		setName('');
+		setNamesText('');
 		onClose();
 	};
 
@@ -57,12 +60,14 @@ export function KeywordGroupForm({ open, domainId, onClose, onSuccess }: Keyword
 							Nhập tên bộ keywords bạn muốn tạo cho Domain ID: <strong>{domainId}</strong>
 						</Typography>
 						<TextField
-							label="Tên bộ keywords"
+							label="Tên bộ keywords (mỗi dòng 1 từ khóa)"
 							variant="outlined"
 							fullWidth
+							multiline
+							minRows={4}
 							size="small"
-							value={name}
-							onChange={(e) => setName(e.target.value)}
+							value={namesText}
+							onChange={(e) => setNamesText(e.target.value)}
 							required
 							autoFocus
 						/>
@@ -75,7 +80,7 @@ export function KeywordGroupForm({ open, domainId, onClose, onSuccess }: Keyword
 					<Button
 						type="submit"
 						variant="contained"
-						disabled={actionLoading || !name.trim()}
+						disabled={actionLoading || !namesText.trim()}
 					>
 						{actionLoading ? 'Đang tạo...' : 'Tạo từ khoá'}
 					</Button>
