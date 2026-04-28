@@ -21,6 +21,7 @@ interface Ga4State {
   pagesLimit: number;
   pagesTotal: number;
   sortField: Ga4SortField;
+  sortOrder: 'asc' | 'desc';
 }
 
 const initialState: Ga4State = {
@@ -35,6 +36,7 @@ const initialState: Ga4State = {
   pagesLimit: 10,
   pagesTotal: 0,
   sortField: 'sessions',
+  sortOrder: 'desc',
 };
 
 export const fetchGa4Overview = createAsyncThunk(
@@ -52,17 +54,18 @@ export const fetchGa4Overview = createAsyncThunk(
 export const fetchGa4Pages = createAsyncThunk(
   'ga4/fetchPages',
   async (
-    { domainId, days, page, limit, sort }: {
+    { domainId, days, page, limit, sort, order }: {
       domainId: string;
       days: number;
       page?: number;
       limit?: number;
       sort?: string;
+      order?: string;
     },
     { rejectWithValue }
   ) => {
     try {
-      return await ga4Service.getPages(domainId, days, { page, limit, sort });
+      return await ga4Service.getPages(domainId, days, { page, limit, sort, order });
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(err.response?.data?.message || 'Lỗi khi tải danh sách trang GA4');
@@ -82,6 +85,9 @@ const ga4Slice = createSlice({
     },
     setGa4SortField: (state, action: PayloadAction<Ga4SortField>) => {
       state.sortField = action.payload;
+    },
+    setGa4SortOrder: (state, action: PayloadAction<'asc' | 'desc'>) => {
+      state.sortOrder = action.payload;
     },
     setGa4PagesPage: (state, action: PayloadAction<number>) => {
       state.pagesPage = action.payload;
@@ -121,5 +127,5 @@ const ga4Slice = createSlice({
   },
 });
 
-export const { setGa4DateRange, setGa4ActiveTab, setGa4SortField, setGa4PagesPage } = ga4Slice.actions;
+export const { setGa4DateRange, setGa4ActiveTab, setGa4SortField, setGa4SortOrder, setGa4PagesPage } = ga4Slice.actions;
 export default ga4Slice.reducer;

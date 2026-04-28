@@ -5,7 +5,7 @@ import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../../../app/store';
 import {
 	fetchGa4Overview,
@@ -14,6 +14,7 @@ import {
 	setGa4ActiveTab,
 	setGa4PagesPage,
 	setGa4SortField,
+	setGa4SortOrder,
 } from '../ga4Slice';
 import type { Ga4DateRange, Ga4ContentTab } from '../ga4Types';
 import { Ga4OverviewCards } from './Ga4OverviewCards';
@@ -47,6 +48,7 @@ export function Ga4Panel({ domainId }: Ga4PanelProps) {
 		pagesLimit,
 		pagesTotal,
 		sortField,
+		sortOrder,
 	} = useAppSelector((state) => state.ga4);
 
 	// Fetch overview when domainId or dateRange changes
@@ -58,8 +60,8 @@ export function Ga4Panel({ domainId }: Ga4PanelProps) {
 	// Fetch pages when relevant state changes
 	useEffect(() => {
 		if (!domainId) return;
-		dispatch(fetchGa4Pages({ domainId, days: dateRange, page: pagesPage, limit: pagesLimit, sort: sortField }));
-	}, [domainId, dateRange, pagesPage, pagesLimit, sortField, dispatch]);
+		dispatch(fetchGa4Pages({ domainId, days: dateRange, page: pagesPage, limit: pagesLimit, sort: sortField, order: sortOrder }));
+	}, [domainId, dateRange, pagesPage, pagesLimit, sortField, sortOrder, dispatch]);
 
 	const handleDateChange = (_: React.MouseEvent<HTMLElement>, newRange: Ga4DateRange | null) => {
 		if (newRange !== null) {
@@ -78,17 +80,15 @@ export function Ga4Panel({ domainId }: Ga4PanelProps) {
 
 	const handleRowsPerPageChange = (newLimit: number) => {
 		dispatch(setGa4PagesPage(1));
-		dispatch(fetchGa4Pages({ domainId, days: dateRange, page: 1, limit: newLimit, sort: sortField }));
+		dispatch(fetchGa4Pages({ domainId, days: dateRange, page: 1, limit: newLimit, sort: sortField, order: sortOrder }));
 	};
-
-	const [localSortOrder, setLocalSortOrder] = useState<'asc' | 'desc'>('desc');
 
 	const handleSort = (field: string) => {
 		if (field === sortField) {
-			setLocalSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'));
+			dispatch(setGa4SortOrder(sortOrder === 'desc' ? 'asc' : 'desc'));
 		} else {
 			dispatch(setGa4SortField(field as import('../ga4Types').Ga4SortField));
-			setLocalSortOrder('desc');
+			dispatch(setGa4SortOrder('desc'));
 		}
 		dispatch(setGa4PagesPage(1));
 	};
@@ -171,7 +171,7 @@ export function Ga4Panel({ domainId }: Ga4PanelProps) {
 						limit={pagesLimit}
 						total={pagesTotal}
 						sortBy={sortField}
-						sortOrder={localSortOrder}
+						sortOrder={sortOrder}
 						onPageChange={handlePageChange}
 						onRowsPerPageChange={handleRowsPerPageChange}
 						onSort={handleSort}

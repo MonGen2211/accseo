@@ -29,22 +29,22 @@ export const gscService = {
 
   async getKeywords(
     domainId: string,
-    params: { sort?: string; page?: number; limit?: number } = {}
+    params: { sort?: string; order?: string; page?: number; limit?: number } = {}
   ): Promise<GscKeywordsData> {
-    const { sort = 'clicks', page = 1, limit = 10 } = params;
+    const { sort = 'clicks', order = 'desc', page = 1, limit = 10 } = params;
     const response = await api.get<ApiResponse<GscKeywordsData>>(
-      `/gsc/${domainId}/keywords?sort=${sort}&page=${page}&limit=${limit}`
+      `/gsc/${domainId}/keywords?sort=${sort}&order=${order}&page=${page}&limit=${limit}`
     );
     return response.data.data;
   },
 
   async getPages(
     domainId: string,
-    params: { sort?: string; page?: number; limit?: number } = {}
+    params: { sort?: string; order?: string; page?: number; limit?: number } = {}
   ): Promise<GscPagesData> {
-    const { sort = 'clicks', page = 1, limit = 10 } = params;
+    const { sort = 'clicks', order = 'desc', page = 1, limit = 10 } = params;
     const response = await api.get<ApiResponse<GscPagesData>>(
-      `/gsc/${domainId}/pages?sort=${sort}&page=${page}&limit=${limit}`
+      `/gsc/${domainId}/pages?sort=${sort}&order=${order}&page=${page}&limit=${limit}`
     );
     return response.data.data;
   },

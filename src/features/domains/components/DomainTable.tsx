@@ -17,7 +17,7 @@ interface DomainTableProps {
 	onRowsPerPageChange?: (newLimit: number) => void;
 	onCheck?: (id: string) => void;
 	onEdit?: (domain: Domain) => void;
-	onDelete: (id: string) => void;
+	onDelete?: (id: string) => void;
 	headerActions?: React.ReactNode;
 	actionLoadingId?: string | null;
 	sortBy?: string;
@@ -42,6 +42,7 @@ export default function DomainTable({
 	sortOrder,
 	onSort,
 }: DomainTableProps) {
+	const hasActions = !!(onEdit || onDelete);
 	const fields: TableField[] = [
 		{ id: 'stt', name: 'stt', label: 'STT', type: 'text', width: 80, align: 'center' },
 		{ id: '_id', name: 'id', label: 'ID', type: 'hide' },
@@ -76,7 +77,11 @@ export default function DomainTable({
 						textOverflow: 'ellipsis',
 					}}
 				>
-					{row.metaDescription || <span style={{ color: '#94a3b8' }}>N/A</span>}
+					{row.metaDescription == null
+						? <span style={{ color: '#94a3b8' }}>N/A</span>
+						: row.metaDescription === ''
+							? <span style={{ color: '#e17055' }}>Không lấy được dữ liệu</span>
+							: row.metaDescription}
 				</Typography>
 			)
 		},
@@ -106,14 +111,14 @@ export default function DomainTable({
 				);
 			},
 		},
-		{
+		...(hasActions ? [{
 			id: 'actions',
 			name: 'actions',
 			label: 'Thao tác',
-			type: 'actions',
+			type: 'actions' as const,
 			width: 130,
-			align: 'center',
-		}
+			align: 'center' as const,
+		}] : []),
 	];
 
 	const tableData: TableRowData[] = domains.map((domain, index) => ({
@@ -132,8 +137,8 @@ export default function DomainTable({
 			onPageChange={onPageChange}
 			onRowsPerPageChange={onRowsPerPageChange}
 			onCheck={(row) => onCheck && onCheck(row._id as string)}
-			onEdit={(row) => onEdit && onEdit(row as unknown as Domain)}
-			onDelete={(row) => onDelete(row._id as string)}
+			onEdit={onEdit ? (row) => onEdit(row as unknown as Domain) : undefined}
+			onDelete={onDelete ? (row) => onDelete(row._id as string) : undefined}
 			headerActions={headerActions}
 			actionLoadingId={actionLoadingId}
 			minWidth={900}

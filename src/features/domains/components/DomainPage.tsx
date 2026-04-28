@@ -19,6 +19,7 @@ import { useToastify } from '../../../components/Toastify';
 import { userService } from '../../users/userService';
 import type { Domain } from '../../../types/domain.types';
 import type { UserProfile } from '../../../types/user.types';
+import { useRole } from '../../../hooks/useRole';
 
 export default function DomainPage() {
 	const dispatch = useAppDispatch();
@@ -29,6 +30,7 @@ export default function DomainPage() {
 	const [usersLoading, setUsersLoading] = useState(false);
 
 	const { showToast } = useToastify();
+	const isAdmin = useRole(['ADMIN']);
 
 
 	useEffect(() => {
@@ -132,20 +134,22 @@ export default function DomainPage() {
 						onPageChange={handlePageChange}
 						onRowsPerPageChange={handleRowsPerPageChange}
 						onCheck={handleCheckMeta}
-						onEdit={handleEdit}
-						onDelete={handleDelete}
+						onEdit={isAdmin ? handleEdit : undefined}
+						onDelete={isAdmin ? handleDelete : undefined}
 						sortBy={sortField}
 						sortOrder={sortOrder}
 						onSort={handleSort}
 						headerActions={
-							<>
-								<Button variant="contained" startIcon={<AddOutlinedIcon />} onClick={() => {
-									dispatch(clearDomainError());
-									setShowForm(true);
-								}}>
-									Thêm Tên Miền
-								</Button>
-							</>
+							isAdmin ? (
+								<>
+									<Button variant="contained" startIcon={<AddOutlinedIcon />} onClick={() => {
+										dispatch(clearDomainError());
+										setShowForm(true);
+									}}>
+										Thêm Tên Miền
+									</Button>
+								</>
+							) : undefined
 						}
 					/>
 				</Box>

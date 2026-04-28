@@ -18,19 +18,19 @@ interface Ga4PagesTableProps {
 
 const pageFields: TableField[] = [
 	{ id: 'stt', name: 'stt', label: 'STT', type: 'text', width: 60, align: 'center' },
-	{ id: 'pagePath', name: 'pagePath', label: 'Trang', type: 'text', width: 250, ellipsis: true },
-	{ id: 'sessions', name: 'sessions', label: 'Sessions', type: 'text', width: 120, align: 'center', sortable: true },
-	{ id: 'activeUsers', name: 'activeUsers', label: 'Users', type: 'text', width: 100, align: 'center', sortable: true },
+	{ id: 'pagePath', name: 'pagePath', label: 'Trang', type: 'text', width: 180, ellipsis: true },
+	{ id: 'sessions', name: 'sessions', label: 'Sessions', type: 'text', width: 130, align: 'center', sortable: true },
+	{ id: 'activeUsers', name: 'activeUsers', label: 'Users', type: 'text', width: 180, align: 'center', sortable: true },
 	{
 		id: 'screenPageViews',
 		name: 'screenPageViews',
 		label: 'Pageviews',
 		type: 'text',
-		width: 120,
+		width: 130,
 		align: 'center',
 		sortable: true,
 	},
-	{ id: 'conversions', name: 'conversions', label: 'Conversions', type: 'text', width: 120, align: 'center', sortable: true },
+	{ id: 'conversions', name: 'conversions', label: 'Conversions', type: 'text', width: 150, align: 'center', sortable: true },
 	{
 		id: 'engagedSessions',
 		name: 'engagedSessions',

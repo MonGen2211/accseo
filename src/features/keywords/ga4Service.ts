@@ -30,12 +30,12 @@ export const ga4Service = {
   async getPages(
     domainId: string,
     days: number,
-    params: { page?: number; limit?: number; sort?: string } = {}
+    params: { page?: number; limit?: number; sort?: string; order?: string } = {}
   ): Promise<Ga4PagesData> {
     const { startDate, endDate, period } = getDateRange(days);
-    const { page = 1, limit = 10, sort = 'sessions' } = params;
+    const { page = 1, limit = 10, sort = 'sessions', order = 'desc' } = params;
     const response = await api.get<ApiResponse<Ga4PagesData>>(
-      `/ga4/${domainId}/pages?period=${period}&startDate=${startDate}&endDate=${endDate}&sort=${sort}&page=${page}&limit=${limit}`
+      `/ga4/${domainId}/pages?period=${period}&startDate=${startDate}&endDate=${endDate}&sort=${sort}&order=${order}&page=${page}&limit=${limit}`
     );
     return response.data.data;
   },

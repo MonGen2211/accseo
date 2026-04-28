@@ -22,7 +22,9 @@ interface GscState {
   dateRange: GscDateRange;
   activeTab: GscContentTab;
   keywordsSortField: GscSortField;
+  keywordsSortOrder: 'asc' | 'desc';
   pagesSortField: GscSortField;
+  pagesSortOrder: 'asc' | 'desc';
   keywordsPage: number;
   keywordsLimit: number;
   keywordsTotal: number;
@@ -42,7 +44,9 @@ const initialState: GscState = {
   dateRange: 28,
   activeTab: 'overview',
   keywordsSortField: 'clicks',
+  keywordsSortOrder: 'desc',
   pagesSortField: 'clicks',
+  pagesSortOrder: 'desc',
   keywordsPage: 1,
   keywordsLimit: 10,
   keywordsTotal: 0,
@@ -66,11 +70,11 @@ export const fetchGscOverview = createAsyncThunk(
 export const fetchGscKeywords = createAsyncThunk(
   'gsc/fetchKeywords',
   async (
-    { domainId, sort, page, limit }: { domainId: string; sort?: string; page?: number; limit?: number },
+    { domainId, sort, order, page, limit }: { domainId: string; sort?: string; order?: string; page?: number; limit?: number },
     { rejectWithValue }
   ) => {
     try {
-      return await gscService.getKeywords(domainId, { sort, page, limit });
+      return await gscService.getKeywords(domainId, { sort, order, page, limit });
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(err.response?.data?.message || 'Lỗi khi tải danh sách từ khóa GSC');
@@ -81,11 +85,11 @@ export const fetchGscKeywords = createAsyncThunk(
 export const fetchGscPages = createAsyncThunk(
   'gsc/fetchPages',
   async (
-    { domainId, sort, page, limit }: { domainId: string; sort?: string; page?: number; limit?: number },
+    { domainId, sort, order, page, limit }: { domainId: string; sort?: string; order?: string; page?: number; limit?: number },
     { rejectWithValue }
   ) => {
     try {
-      return await gscService.getPages(domainId, { sort, page, limit });
+      return await gscService.getPages(domainId, { sort, order, page, limit });
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(err.response?.data?.message || 'Lỗi khi tải danh sách trang GSC');
@@ -106,8 +110,14 @@ const gscSlice = createSlice({
     setGscKeywordsSortField: (state, action: PayloadAction<GscSortField>) => {
       state.keywordsSortField = action.payload;
     },
+    setGscKeywordsSortOrder: (state, action: PayloadAction<'asc' | 'desc'>) => {
+      state.keywordsSortOrder = action.payload;
+    },
     setGscPagesSortField: (state, action: PayloadAction<GscSortField>) => {
       state.pagesSortField = action.payload;
+    },
+    setGscPagesSortOrder: (state, action: PayloadAction<'asc' | 'desc'>) => {
+      state.pagesSortOrder = action.payload;
     },
     setGscKeywordsPage: (state, action: PayloadAction<number>) => {
       state.keywordsPage = action.payload;
@@ -173,7 +183,9 @@ export const {
   setDateRange,
   setActiveTab,
   setGscKeywordsSortField,
+  setGscKeywordsSortOrder,
   setGscPagesSortField,
+  setGscPagesSortOrder,
   setGscKeywordsPage,
   setGscPagesPage,
   clearGscError,

@@ -5,7 +5,7 @@ import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../../../app/store';
 import {
 	fetchGscOverview,
@@ -14,7 +14,9 @@ import {
 	setDateRange,
 	setActiveTab,
 	setGscKeywordsSortField,
+	setGscKeywordsSortOrder,
 	setGscPagesSortField,
+	setGscPagesSortOrder,
 	setGscKeywordsPage,
 	setGscPagesPage,
 } from '../gscSlice';
@@ -51,7 +53,9 @@ export function GscPanel({ domainId }: GscPanelProps) {
 		dateRange,
 		activeTab,
 		keywordsSortField,
+		keywordsSortOrder,
 		pagesSortField,
+		pagesSortOrder,
 		keywordsPage,
 		keywordsLimit,
 		keywordsTotal,
@@ -59,9 +63,6 @@ export function GscPanel({ domainId }: GscPanelProps) {
 		pagesLimit,
 		pagesTotal,
 	} = useAppSelector((state) => state.gsc);
-
-	const [kwSortOrder, setKwSortOrder] = useState<'asc' | 'desc'>('desc');
-	const [pgSortOrder, setPgSortOrder] = useState<'asc' | 'desc'>('desc');
 
 	// Fetch overview
 	useEffect(() => {
@@ -72,14 +73,14 @@ export function GscPanel({ domainId }: GscPanelProps) {
 	// Fetch keywords (with sort + pagination)
 	useEffect(() => {
 		if (!domainId) return;
-		dispatch(fetchGscKeywords({ domainId, sort: keywordsSortField, page: keywordsPage, limit: keywordsLimit }));
-	}, [domainId, dateRange, keywordsSortField, keywordsPage, keywordsLimit, dispatch]);
+		dispatch(fetchGscKeywords({ domainId, sort: keywordsSortField, order: keywordsSortOrder, page: keywordsPage, limit: keywordsLimit }));
+	}, [domainId, dateRange, keywordsSortField, keywordsSortOrder, keywordsPage, keywordsLimit, dispatch]);
 
 	// Fetch pages (with sort + pagination)
 	useEffect(() => {
 		if (!domainId) return;
-		dispatch(fetchGscPages({ domainId, sort: pagesSortField, page: pagesPage, limit: pagesLimit }));
-	}, [domainId, dateRange, pagesSortField, pagesPage, pagesLimit, dispatch]);
+		dispatch(fetchGscPages({ domainId, sort: pagesSortField, order: pagesSortOrder, page: pagesPage, limit: pagesLimit }));
+	}, [domainId, dateRange, pagesSortField, pagesSortOrder, pagesPage, pagesLimit, dispatch]);
 
 	const handleDateChange = (_: React.MouseEvent<HTMLElement>, newRange: GscDateRange | null) => {
 		if (newRange !== null) {
@@ -99,7 +100,7 @@ export function GscPanel({ domainId }: GscPanelProps) {
 	};
 	const handleKwRowsPerPageChange = (newLimit: number) => {
 		dispatch(setGscKeywordsPage(1));
-		dispatch(fetchGscKeywords({ domainId, sort: keywordsSortField, page: 1, limit: newLimit }));
+		dispatch(fetchGscKeywords({ domainId, sort: keywordsSortField, order: keywordsSortOrder, page: 1, limit: newLimit }));
 	};
 
 	// Pages pagination
@@ -108,26 +109,26 @@ export function GscPanel({ domainId }: GscPanelProps) {
 	};
 	const handlePgRowsPerPageChange = (newLimit: number) => {
 		dispatch(setGscPagesPage(1));
-		dispatch(fetchGscPages({ domainId, sort: pagesSortField, page: 1, limit: newLimit }));
+		dispatch(fetchGscPages({ domainId, sort: pagesSortField, order: pagesSortOrder, page: 1, limit: newLimit }));
 	};
 
 	// Sort handlers
 	const handleKeywordsSort = (field: string) => {
 		if (field === keywordsSortField) {
-			setKwSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'));
+			dispatch(setGscKeywordsSortOrder(keywordsSortOrder === 'desc' ? 'asc' : 'desc'));
 		} else {
 			dispatch(setGscKeywordsSortField(field as GscSortField));
-			setKwSortOrder('desc');
+			dispatch(setGscKeywordsSortOrder('desc'));
 		}
 		dispatch(setGscKeywordsPage(1));
 	};
 
 	const handlePagesSort = (field: string) => {
 		if (field === pagesSortField) {
-			setPgSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'));
+			dispatch(setGscPagesSortOrder(pagesSortOrder === 'desc' ? 'asc' : 'desc'));
 		} else {
 			dispatch(setGscPagesSortField(field as GscSortField));
-			setPgSortOrder('desc');
+			dispatch(setGscPagesSortOrder('desc'));
 		}
 		dispatch(setGscPagesPage(1));
 	};
@@ -210,7 +211,7 @@ export function GscPanel({ domainId }: GscPanelProps) {
 						limit={keywordsLimit}
 						total={keywordsTotal}
 						sortBy={keywordsSortField}
-						sortOrder={kwSortOrder}
+						sortOrder={keywordsSortOrder}
 						onPageChange={handleKwPageChange}
 						onRowsPerPageChange={handleKwRowsPerPageChange}
 						onSort={handleKeywordsSort}
@@ -224,7 +225,7 @@ export function GscPanel({ domainId }: GscPanelProps) {
 						limit={pagesLimit}
 						total={pagesTotal}
 						sortBy={pagesSortField}
-						sortOrder={pgSortOrder}
+						sortOrder={pagesSortOrder}
 						onPageChange={handlePgPageChange}
 						onRowsPerPageChange={handlePgRowsPerPageChange}
 						onSort={handlePagesSort}
