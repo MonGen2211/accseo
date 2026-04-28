@@ -88,7 +88,7 @@ export default function DomainPage() {
 		setEditDomain(domain);
 		setUsersLoading(true);
 		try {
-			const result = await userService.getAll(1, 1000);
+			const result = await userService.getAll(1, 200);
 			setUsersList(result.items);
 		} catch {
 			showToast('Lỗi khi tải danh sách người dùng', 'danger');
