@@ -109,7 +109,8 @@ export default function UserPage() {
 		} else {
 			const action = await dispatch(createUser(data));
 			if (!action.type.endsWith('/rejected')) {
-				showToast('Tạo người dùng thành công', 'success');
+				const payload = action.payload as { user: unknown; message: string };
+				showToast(payload.message || 'Tạo người dùng thành công', 'success');
 				setShowForm(false);
 				dispatch(clearSelectedUser());
 			} else {

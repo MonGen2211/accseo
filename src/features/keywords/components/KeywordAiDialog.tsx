@@ -14,21 +14,28 @@ interface KeywordAiDialogProps {
 	open: boolean;
 	loading: boolean;
 	onClose: () => void;
-	onConfirm: (days: number, top: number) => void;
+	onConfirm: (days: number, top: number, keywords: string[]) => void;
 }
 
 export function KeywordAiDialog({ open, loading, onClose, onConfirm }: KeywordAiDialogProps) {
 	const [days, setDays] = useState(30);
 	const [top, setTop] = useState(100);
+	const [keywordsText, setKeywordsText] = useState('');
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (days <= 0 || top <= 0) return;
-		onConfirm(days, top);
+
+		const keywords = keywordsText
+			.split('\n')
+			.map((line) => line.trim())
+			.filter((line) => line.length > 0);
+
+		onConfirm(days, top, keywords);
 	};
 
 	return (
-		<Dialog open={open} onClose={!loading ? onClose : undefined} maxWidth="xs" fullWidth>
+		<Dialog open={open} onClose={!loading ? onClose : undefined} maxWidth="sm" fullWidth>
 			<DialogTitle sx={{ fontWeight: 600 }}>Cấu hình AI Suggestion</DialogTitle>
 			<form onSubmit={handleSubmit}>
 				<DialogContent dividers>
@@ -57,6 +64,18 @@ export function KeywordAiDialog({ open, loading, onClose, onConfirm }: KeywordAi
 							onChange={(e) => setTop(Number(e.target.value))}
 							required
 							slotProps={{ htmlInput: { min: 1 } }}
+						/>
+						<TextField
+							label="Danh sách keywords (mỗi dòng 1 keyword)"
+							placeholder={"keyword 1\nkeyword 2\nkeyword 3"}
+							multiline
+							minRows={4}
+							maxRows={10}
+							variant="outlined"
+							fullWidth
+							value={keywordsText}
+							onChange={(e) => setKeywordsText(e.target.value)}
+						// helperText="Nhập mỗi keyword trên một dòng. Để trống nếu muốn AI tự gợi ý."
 						/>
 					</Box>
 				</DialogContent>

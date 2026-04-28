@@ -94,6 +94,7 @@ export default function NotificationPanel() {
 				onClose={() => setAnchorEl(null)}
 				anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
 				transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+				disableScrollLock
 				slotProps={{
 					paper: {
 						sx: {

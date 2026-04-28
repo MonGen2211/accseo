@@ -23,6 +23,7 @@ export interface CreateKeywordGroupPayload {
 export interface SuggestAiKeywordsPayload {
   days: number;
   top: number;
+  keywords?: string[];
 }
 
 export interface UpdateKeywordGroupPayload {

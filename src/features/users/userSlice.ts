@@ -27,7 +27,8 @@ export const createUser = createAsyncThunk(
   'users/create',
   async (data: UserFormData, { rejectWithValue }) => {
     try {
-      return await userService.create(data);
+      const result = await userService.create(data);
+      return { user: result.user, message: result.message };
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(err.response?.data?.message || 'Lỗi khi tạo người dùng');
@@ -97,7 +98,7 @@ const userSlice = createSlice({
         state.error = action.payload as string;
       })
       .addCase(createUser.fulfilled, (state, action) => {
-        state.users.unshift(action.payload);
+        state.users.unshift(action.payload.user);
         state.pagination.total += 1;
       })
       .addCase(updateUser.fulfilled, (state, action) => {

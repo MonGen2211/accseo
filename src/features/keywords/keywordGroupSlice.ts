@@ -77,8 +77,8 @@ export const deleteKeywordGroup = createAsyncThunk(
   'keywordGroups/deleteGroup',
   async (id: string, { rejectWithValue }) => {
     try {
-      await keywordGroupService.deleteGroup(id);
-      return id;
+      const result = await keywordGroupService.deleteGroup(id);
+      return { id, message: result.message };
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(err.response?.data?.message || 'Lỗi khi xóa bộ keywords');
@@ -90,8 +90,8 @@ export const updateKeywordGroupStatus = createAsyncThunk(
   'keywordGroups/updateStatus',
   async ({ id, status }: { id: string; status: string }, { rejectWithValue }) => {
     try {
-      await keywordGroupService.updateGroupStatus(id, { status });
-      return { id, status };
+      const result = await keywordGroupService.updateGroupStatus(id, { status });
+      return { id, status, message: result.message };
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(err.response?.data?.message || 'Lỗi khi cập nhật trạng thái keywords');
@@ -166,7 +166,7 @@ const keywordGroupSlice = createSlice({
       })
       .addCase(deleteKeywordGroup.fulfilled, (state, action) => {
         state.deleteLoadingId = null;
-        state.items = state.items.filter((item) => (item as { _id?: string })._id !== action.payload && item.id !== action.payload);
+        state.items = state.items.filter((item) => (item as { _id?: string })._id !== action.payload.id && item.id !== action.payload.id);
         state.total -= 1;
       })
       .addCase(deleteKeywordGroup.rejected, (state, action) => {

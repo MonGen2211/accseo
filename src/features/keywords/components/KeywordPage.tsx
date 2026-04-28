@@ -55,10 +55,10 @@ export default function KeywordPage() {
 		loadData(0, limit);
 	};
 
-	const handleAiGenerate = async (days: number, top: number) => {
+	const handleAiGenerate = async (days: number, top: number, keywords: string[]) => {
 		if (!domainId) return;
 		try {
-			await dispatch(suggestAiKeywords({ domainId, payload: { days, top } })).unwrap();
+			await dispatch(suggestAiKeywords({ domainId, payload: { days, top, ...(keywords.length > 0 && { keywords }) } })).unwrap();
 			showToast('Tạo keywords bằng AI thành công!', 'success');
 			loadData(0, limit);
 			setIsAiDialogOpen(false);
@@ -72,8 +72,8 @@ export default function KeywordPage() {
 		const id = row.id || row._id;
 		if (!id) return;
 		try {
-			await dispatch(deleteKeywordGroup(String(id))).unwrap();
-			showToast('Xóa bộ keywords thành công!', 'success');
+			const result = await dispatch(deleteKeywordGroup(String(id))).unwrap();
+			showToast(result.message || 'Xóa bộ keywords thành công!', 'success');
 			const zeroPage = page - 1;
 			loadData(zeroPage > 0 && items.length === 1 ? zeroPage - 1 : zeroPage, limit);
 		} catch (err: unknown) {
@@ -86,8 +86,8 @@ export default function KeywordPage() {
 		const id = row.id || row._id;
 		if (!id) return;
 		try {
-			await dispatch(updateKeywordGroupStatus({ id: String(id), status: newStatus })).unwrap();
-			showToast('Cập nhật trạng thái thành công!', 'success');
+			const result = await dispatch(updateKeywordGroupStatus({ id: String(id), status: newStatus })).unwrap();
+			showToast(result.message || 'Cập nhật trạng thái thành công!', 'success');
 		} catch (err: unknown) {
 			const errorMsg = typeof err === 'string' ? err : 'Đã có lỗi xảy ra';
 			showToast(errorMsg, 'danger');

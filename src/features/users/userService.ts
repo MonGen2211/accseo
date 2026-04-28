@@ -55,7 +55,7 @@ export const userService = {
     return mapApiUserToProfile(response.data.data);
   },
 
-  async create(data: UserFormData): Promise<UserProfile> {
+  async create(data: UserFormData): Promise<{ user: UserProfile; message: string }> {
     const response = await authService.register({
       email: data.email,
       name: data.name,
@@ -64,13 +64,16 @@ export const userService = {
     });
     const user = response.data; 
     return {
-      id: user.id || (user as unknown as { _id: string })._id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      avatar: user.avatar,
-      status: 'active',
-      createdAt: user.createdAt,
+      user: {
+        id: user.id || (user as unknown as { _id: string })._id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        avatar: user.avatar,
+        status: 'active',
+        createdAt: user.createdAt,
+      },
+      message: response.message,
     };
   },
 
