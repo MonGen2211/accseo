@@ -26,6 +26,7 @@ export interface SuggestAiKeywordsPayload {
   top: number;
   count: number;
   names?: string[];
+  retry?: boolean;
 }
 
 export interface AiSuggestedKeyword {

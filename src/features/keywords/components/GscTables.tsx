@@ -20,7 +20,7 @@ interface GscKeywordsTableProps {
 
 const keywordFields: TableField[] = [
 	{ id: 'stt', name: 'stt', label: 'STT', type: 'text', width: 60, align: 'center' },
-	{ id: 'query', name: 'query', label: 'Từ khóa', type: 'text', width: 180, ellipsis: true },
+	{ id: 'query', name: 'query', label: 'Từ khóa', type: 'text', width: 180, wrapText: true, ellipsis: true },
 	{ id: 'clicks', name: 'clicks', label: 'Clicks', type: 'text', width: 100, align: 'center', sortable: true },
 	{ id: 'impressions', name: 'impressions', label: 'Impressions', type: 'text', width: 180, align: 'center', sortable: true },
 	{
@@ -70,7 +70,6 @@ export function GscKeywordsTable({ items, loading, page, limit, total, sortBy, s
 	);
 }
 
-// ─── GSC Pages Table ───────────────────────────────────────────────────────
 
 interface GscPagesTableProps {
 	items: GscPageItem[];
@@ -101,6 +100,7 @@ const pageFields: TableField[] = [
 		label: 'Trang',
 		type: 'custom',
 		width: 180,
+		wrapText: true,
 		ellipsis: true,
 		renderCell: (row: TableRowData) => extractPath(row.page as string),
 	},

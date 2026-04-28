@@ -9,6 +9,9 @@ import {
 	Box,
 	Typography,
 } from '@mui/material';
+import { z } from 'zod';
+
+const countSchema = z.number().min(1, 'Số lượng tối thiểu là 1').max(8, 'Số lượng tối đa là 8');
 
 interface KeywordAiDialogProps {
 	open: boolean;
@@ -21,11 +24,19 @@ export function KeywordAiDialog({ open, loading, onClose, onConfirm }: KeywordAi
 	const [days, setDays] = useState(30);
 	const [top, setTop] = useState(100);
 	const [count, setCount] = useState(5);
+	const [countError, setCountError] = useState<string | null>(null);
 	const [namesText, setNamesText] = useState('');
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		if (days <= 0 || top <= 0 || count <= 0) return;
+		if (days <= 0 || top <= 0) return;
+
+		const parseResult = countSchema.safeParse(count);
+		if (!parseResult.success) {
+			setCountError(parseResult.error.issues[0].message);
+			return;
+		}
+		setCountError(null);
 
 		const names = namesText
 			.split('\n')
@@ -73,8 +84,13 @@ export function KeywordAiDialog({ open, loading, onClose, onConfirm }: KeywordAi
 							fullWidth
 							size="small"
 							value={count}
-							onChange={(e) => setCount(Number(e.target.value))}
+							onChange={(e) => {
+								setCount(Number(e.target.value));
+								setCountError(null);
+							}}
 							required
+							error={!!countError}
+							helperText={countError}
 							slotProps={{ htmlInput: { min: 1, max: 8 } }}
 						/>
 						<TextField

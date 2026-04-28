@@ -9,6 +9,7 @@ import {
 	Typography,
 	Checkbox,
 	FormControlLabel,
+	Chip,
 } from '@mui/material';
 import type { AiSuggestedKeyword } from '../types';
 import CustomTable from '../../../components/custom-table/CustomTable';
@@ -18,16 +19,19 @@ import type { TableRowData } from '../../../types/tableRows.types';
 interface KeywordAiResultDialogProps {
 	open: boolean;
 	loading: boolean;
+	generateLoading?: boolean;
 	suggestions: AiSuggestedKeyword[];
 	onClose: () => void;
 	onConfirm: (selectedNames: string[]) => void;
+	onRetry?: () => void;
 }
 
-export function KeywordAiResultDialog({ open, loading, suggestions, onClose, onConfirm }: KeywordAiResultDialogProps) {
+export function KeywordAiResultDialog({ open, loading, generateLoading, suggestions, onClose, onConfirm, onRetry }: KeywordAiResultDialogProps) {
 	const [selected, setSelected] = useState<string[]>([]);
 	const [prevOpen, setPrevOpen] = useState(open);
+	const [prevSuggestions, setPrevSuggestions] = useState(suggestions);
 
-	// Derived state during render (React 18 recommended way to reset state on prop change)
+	// Derived state during render: accumulate picks instead of flush
 	if (open !== prevOpen) {
 		setPrevOpen(open);
 		if (open) {
@@ -35,13 +39,18 @@ export function KeywordAiResultDialog({ open, loading, suggestions, onClose, onC
 		} else {
 			setSelected([]);
 		}
+	} else if (suggestions !== prevSuggestions) {
+		setPrevSuggestions(suggestions);
+		// Auto-select NEW suggestions and retain old ones
+		setSelected([...new Set([...selected, ...suggestions.map((s) => s.name)])]);
 	}
 
 	const handleToggleAll = (event: React.ChangeEvent<HTMLInputElement>) => {
 		if (event.target.checked) {
-			setSelected(suggestions.map((s) => s.name));
+			setSelected(prev => [...new Set([...prev, ...suggestions.map((s) => s.name)])]);
 		} else {
-			setSelected([]);
+			const currentNames = new Set(suggestions.map(s => s.name));
+			setSelected(prev => prev.filter(name => !currentNames.has(name)));
 		}
 	};
 
@@ -105,13 +114,43 @@ export function KeywordAiResultDialog({ open, loading, suggestions, onClose, onC
 		return suggestions.map((s, idx) => ({ ...s, id: s.name, __index: idx }));
 	}, [suggestions]);
 
+	const checkedInCurrentPage = suggestions.filter(s => selected.includes(s.name));
+	const allCheckedInPage = suggestions.length > 0 && checkedInCurrentPage.length === suggestions.length;
+	const isIndeterminate = checkedInCurrentPage.length > 0 && checkedInCurrentPage.length < suggestions.length;
+
 	return (
 		<Dialog open={open} onClose={!loading ? onClose : undefined} maxWidth="lg" fullWidth>
-			<DialogTitle sx={{ fontWeight: 600 }}>Kết quả gợi ý từ AI</DialogTitle>
+			<DialogTitle sx={{ fontWeight: 600 }}>Kết quả gợi ý bộ từ khóa từ AI</DialogTitle>
 			<DialogContent dividers>
 				<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-					<Typography variant="body2" color="text.secondary">
-						Dưới đây là danh sách từ khóa do AI gợi ý. Chọn các từ khóa muốn tạo và nhấn Xác nhận.
+
+					{/* Giỏ chứa từ khoá đã chọn (Cherry-picks) */}
+					<Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 2, border: '1px dashed #cbd5e1' }}>
+						<Typography variant="body2" color="primary.main" sx={{ fontWeight: 600, mb: 1.5 }}>
+							Giỏ chứa bộ từ khoá sẽ tạo ({selected.length})
+						</Typography>
+						<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, maxHeight: 150, overflow: 'auto' }}>
+							{selected.length === 0 && (
+								<Typography variant="caption" color="text.secondary">
+									Chưa có bộ từ khoá nào được chọn.
+								</Typography>
+							)}
+							{selected.map(name => (
+								<Chip
+									key={name}
+									label={name}
+									onDelete={() => handleToggle(name)}
+									size="small"
+									color="primary"
+									variant="filled"
+									sx={{ fontWeight: 500 }}
+								/>
+							))}
+						</Box>
+					</Box>
+
+					<Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+						Dưới đây là danh sách các bộ từ khóa do AI gợi ý ở lần Generate này. Tick chọn để thêm vào Giỏ.
 					</Typography>
 
 					{/* CustomTable integration */}
@@ -125,8 +164,8 @@ export function KeywordAiResultDialog({ open, loading, suggestions, onClose, onC
 									control={
 										<Checkbox
 											size="small"
-											indeterminate={selected.length > 0 && selected.length < suggestions.length}
-											checked={suggestions.length > 0 && selected.length === suggestions.length}
+											indeterminate={isIndeterminate}
+											checked={allCheckedInPage}
 											onChange={handleToggleAll}
 										/>
 									}
@@ -139,13 +178,15 @@ export function KeywordAiResultDialog({ open, loading, suggestions, onClose, onC
 				</Box>
 			</DialogContent>
 			<DialogActions sx={{ px: 3, py: 2 }}>
-				<Button onClick={onClose} disabled={loading} color="inherit">
-					Bỏ qua
-				</Button>
+				{onRetry && (
+					<Button onClick={onRetry} disabled={loading || generateLoading} color="secondary">
+						{generateLoading ? 'Đang tạo lại...' : 'Tạo lại AI (Retry)'}
+					</Button>
+				)}
 				<Button
 					onClick={handleSubmit}
 					variant="contained"
-					disabled={loading || selected.length === 0}
+					disabled={loading || generateLoading || selected.length === 0}
 				>
 					{loading ? 'Đang tạo...' : `Xác nhận tạo (${selected.length})`}
 				</Button>

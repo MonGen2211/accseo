@@ -1,7 +1,6 @@
 import api from '../../utils/api';
 import type { KeywordGroup, KeywordGroupDataResponse, CreateKeywordGroupPayload } from './types';
 
-// API Response wrapper as seen in other services
 interface ApiResponse<T> {
   success: boolean;
   statusCode: number;

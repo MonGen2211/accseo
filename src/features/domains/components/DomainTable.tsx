@@ -66,17 +66,9 @@ export default function DomainTable({
 			type: 'custom',
 			width: 350,
 			sortable: true,
+			wrapText: true,
 			renderCell: (row) => (
-				<Typography
-					variant="body2"
-					sx={{
-						display: '-webkit-box',
-						WebkitLineClamp: 2,
-						WebkitBoxOrient: 'vertical',
-						overflow: 'hidden',
-						textOverflow: 'ellipsis',
-					}}
-				>
+				<Typography variant="body2">
 					{row.metaDescription == null
 						? <span style={{ color: '#94a3b8' }}>N/A</span>
 						: row.metaDescription === ''

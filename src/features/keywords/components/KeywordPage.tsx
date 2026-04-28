@@ -28,6 +28,7 @@ export default function KeywordPage() {
 	const [isAiResultOpen, setIsAiResultOpen] = useState(false);
 	const [aiSuggestions, setAiSuggestions] = useState<AiSuggestedKeyword[]>([]);
 	const [aiSubmitLoading, setAiSubmitLoading] = useState(false);
+	const [lastAiConfig, setLastAiConfig] = useState<{ days: number; top: number; count: number; names: string[] } | null>(null);
 
 	const loadData = (p: number, l: number) => {
 		if (domainId) {
@@ -61,10 +62,13 @@ export default function KeywordPage() {
 		loadData(0, limit);
 	};
 
-	const handleAiGenerate = async (days: number, top: number, count: number, names: string[]) => {
+	const handleAiGenerate = async (days: number, top: number, count: number, names: string[], isRetry = false) => {
 		if (!domainId) return;
 		try {
-			const result = await dispatch(suggestAiKeywords({ domainId, payload: { days, top, count, ...(names.length > 0 && { names }) } })).unwrap();
+			if (!isRetry) {
+				setLastAiConfig({ days, top, count, names });
+			}
+			const result = await dispatch(suggestAiKeywords({ domainId, payload: { days, top, count, ...(names.length > 0 && { names }), retry: isRetry } })).unwrap();
 			setIsAiDialogOpen(false);
 
 			if (Array.isArray(result)) {
@@ -76,6 +80,12 @@ export default function KeywordPage() {
 		} catch (err: unknown) {
 			const errorMsg = typeof err === 'string' ? err : 'Đã có lỗi xảy ra';
 			showToast(errorMsg, 'danger');
+		}
+	};
+
+	const handleAiRetry = () => {
+		if (lastAiConfig) {
+			handleAiGenerate(lastAiConfig.days, lastAiConfig.top, lastAiConfig.count, lastAiConfig.names, true);
 		}
 	};
 
@@ -186,9 +196,11 @@ export default function KeywordPage() {
 				<KeywordAiResultDialog
 					open={isAiResultOpen}
 					loading={aiSubmitLoading}
+					generateLoading={generateAiLoading}
 					suggestions={aiSuggestions}
 					onClose={() => setIsAiResultOpen(false)}
 					onConfirm={handleAiConfirmSelected}
+					onRetry={handleAiRetry}
 				/>
 			)}
 		</Box>
