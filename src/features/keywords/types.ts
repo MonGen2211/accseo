@@ -27,6 +27,7 @@ export interface SuggestAiKeywordsPayload {
   count: number;
   names?: string[];
   retry?: boolean;
+  rejection_reason?: string[];
 }
 
 export interface AiSuggestedKeyword {

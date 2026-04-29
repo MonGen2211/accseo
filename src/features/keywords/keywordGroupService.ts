@@ -37,4 +37,8 @@ export const keywordGroupService = {
     const response = await api.patch<ApiResponse<unknown>>(`/keywords/groups/${id}`, payload);
     return { data: response.data.data, message: response.data.message || '' };
   },
+
+  async clearSuggestionsCache(domainId: string): Promise<void> {
+    await api.delete(`/keywords/suggest-for-domain/${domainId}/cache`);
+  },
 };

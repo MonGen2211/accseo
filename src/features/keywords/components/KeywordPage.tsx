@@ -9,6 +9,7 @@ import { KeywordGroupForm } from './KeywordGroupForm';
 import { KeywordAiDialog } from './KeywordAiDialog';
 import { KeywordAiResultDialog } from './KeywordAiResultDialog';
 import type { AiSuggestedKeyword } from '../types';
+import { keywordGroupService } from '../keywordGroupService';
 import { createKeywordGroup } from '../keywordGroupSlice';
 import { GscPanel } from './GscPanel';
 import { Ga4Panel } from './Ga4Panel';
@@ -62,13 +63,13 @@ export default function KeywordPage() {
 		loadData(0, limit);
 	};
 
-	const handleAiGenerate = async (days: number, top: number, count: number, names: string[], isRetry = false) => {
+	const handleAiGenerate = async (days: number, top: number, count: number, names: string[], isRetry = false, rejection_reason?: string[]) => {
 		if (!domainId) return;
 		try {
 			if (!isRetry) {
 				setLastAiConfig({ days, top, count, names });
 			}
-			const result = await dispatch(suggestAiKeywords({ domainId, payload: { days, top, count, ...(names.length > 0 && { names }), retry: isRetry } })).unwrap();
+			const result = await dispatch(suggestAiKeywords({ domainId, payload: { days, top, count, ...(names.length > 0 && { names }), retry: isRetry, ...(rejection_reason && rejection_reason.length > 0 && { rejection_reason }) } })).unwrap();
 			setIsAiDialogOpen(false);
 
 			if (Array.isArray(result)) {
@@ -83,9 +84,9 @@ export default function KeywordPage() {
 		}
 	};
 
-	const handleAiRetry = () => {
+	const handleAiRetry = (rejection_reason: string[]) => {
 		if (lastAiConfig) {
-			handleAiGenerate(lastAiConfig.days, lastAiConfig.top, lastAiConfig.count, lastAiConfig.names, true);
+			handleAiGenerate(lastAiConfig.days, lastAiConfig.top, lastAiConfig.count, lastAiConfig.names, true, rejection_reason);
 		}
 	};
 
@@ -94,6 +95,8 @@ export default function KeywordPage() {
 		try {
 			setAiSubmitLoading(true);
 			await dispatch(createKeywordGroup({ names: selectedNames, domainId, aiGen: true })).unwrap();
+			// Xóa cache gợi ý AI sau khi tạo thành công
+			await keywordGroupService.clearSuggestionsCache(domainId);
 			showToast('Tạo keywords từ gợi ý thành công!', 'success');
 			loadData(0, limit);
 			setIsAiResultOpen(false);
