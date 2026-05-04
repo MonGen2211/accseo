@@ -36,7 +36,7 @@ export function KeywordAiDialog({ open, loading, onClose, onConfirm }: KeywordAi
 		let isMounted = true;
 		const loadData = async () => {
 			if (open && categoryOptions.length === 0) {
-				 
+
 				setLoadingCategories(true);
 				try {
 					const res = await keywordGroupService.getCategories();
@@ -116,11 +116,10 @@ export function KeywordAiDialog({ open, loading, onClose, onConfirm }: KeywordAi
 							slotProps={{ htmlInput: { min: 1, max: 3 } }}
 						/>
 						<Autocomplete
-							multiple
 							options={categoryOptions}
 							loading={loadingCategories}
-							value={categories}
-							onChange={(_, newValue) => setCategories(newValue)}
+							value={categories.length > 0 ? categories[0] : null}
+							onChange={(_, newValue) => setCategories(newValue ? [newValue] : [])}
 							slotProps={{
 								listbox: {
 									sx: { maxHeight: 160 },
