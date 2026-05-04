@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
 	Dialog,
 	DialogTitle,
@@ -8,24 +8,39 @@ import {
 	Button,
 	Box,
 	Typography,
+	Autocomplete,
+	CircularProgress
 } from '@mui/material';
+import { keywordGroupService } from '../keywordGroupService';
 import { z } from 'zod';
 
-const countSchema = z.number().min(1, 'Số lượng tối thiểu là 1').max(8, 'Số lượng tối đa là 8');
+const countSchema = z.number().min(1, 'Số lượng tối thiểu là 1').max(3, 'Số lượng tối đa là 3');
 
 interface KeywordAiDialogProps {
 	open: boolean;
 	loading: boolean;
 	onClose: () => void;
-	onConfirm: (days: number, top: number, count: number, names: string[]) => void;
+	onConfirm: (days: number, top: number, count: number, categories: string[]) => void;
 }
 
 export function KeywordAiDialog({ open, loading, onClose, onConfirm }: KeywordAiDialogProps) {
 	const [days, setDays] = useState(30);
 	const [top, setTop] = useState(100);
-	const [count, setCount] = useState(5);
+	const [count, setCount] = useState(3);
 	const [countError, setCountError] = useState<string | null>(null);
-	const [namesText, setNamesText] = useState('');
+	const [categories, setCategories] = useState<string[]>([]);
+	const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
+	const [loadingCategories, setLoadingCategories] = useState(false);
+
+	useEffect(() => {
+		if (open && categoryOptions.length === 0) {
+			setLoadingCategories(true);
+			keywordGroupService.getCategories()
+				.then(res => setCategoryOptions(res))
+				.catch(err => console.error('Failed to load categories', err))
+				.finally(() => setLoadingCategories(false));
+		}
+	}, [open, categoryOptions.length]);
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -38,12 +53,7 @@ export function KeywordAiDialog({ open, loading, onClose, onConfirm }: KeywordAi
 		}
 		setCountError(null);
 
-		const names = namesText
-			.split('\n')
-			.map((line) => line.trim())
-			.filter((line) => line.length > 0);
-
-		onConfirm(days, top, count, names);
+		onConfirm(days, top, count, categories);
 	};
 
 	return (
@@ -85,25 +95,64 @@ export function KeywordAiDialog({ open, loading, onClose, onConfirm }: KeywordAi
 							size="small"
 							value={count}
 							onChange={(e) => {
-								setCount(Number(e.target.value));
-								setCountError(null);
+								const val = Number(e.target.value);
+								setCount(val);
+								const result = countSchema.safeParse(val);
+								setCountError(result.success ? null : result.error.issues[0].message);
 							}}
 							required
 							error={!!countError}
 							helperText={countError}
-							slotProps={{ htmlInput: { min: 1, max: 8 } }}
+							slotProps={{ htmlInput: { min: 1, max: 3 } }}
 						/>
-						<TextField
-							label="Danh sách keywords (mỗi dòng 1 keyword)"
-							placeholder={"keyword 1\nkeyword 2\nkeyword 3"}
-							multiline
-							minRows={4}
-							maxRows={10}
-							variant="outlined"
-							fullWidth
-							value={namesText}
-							onChange={(e) => setNamesText(e.target.value)}
-						// helperText="Nhập mỗi name trên một dòng. Để trống nếu muốn AI tự gợi ý."
+						<Autocomplete
+							multiple
+							options={categoryOptions}
+							loading={loadingCategories}
+							value={categories}
+							onChange={(_, newValue) => setCategories(newValue)}
+							slotProps={{
+								listbox: {
+									sx: { maxHeight: 160 },
+								},
+								popper: {
+									modifiers: [
+										{
+											name: 'flip',
+											enabled: false,
+										},
+										{
+											name: 'preventOverflow',
+											enabled: false,
+										},
+									],
+								},
+							}}
+							renderInput={(params) => {
+								const mergedSlotProps = {
+									...params.slotProps,
+									input: {
+										...params.slotProps?.input,
+										endAdornment: (
+											<React.Fragment>
+												{loadingCategories ? <CircularProgress color="inherit" size={20} /> : null}
+												{params.slotProps?.input?.endAdornment}
+											</React.Fragment>
+										),
+									},
+								};
+
+								return (
+									<TextField
+										{...params}
+										variant="outlined"
+										label="Danh mục (Categories)"
+										size="small"
+										placeholder="Chọn danh mục..."
+										slotProps={mergedSlotProps}
+									/>
+								);
+							}}
 						/>
 					</Box>
 				</DialogContent>

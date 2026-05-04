@@ -2,7 +2,6 @@ import { configureStore } from '@reduxjs/toolkit';
 import { useDispatch, useSelector } from 'react-redux';
 import type { TypedUseSelectorHook } from 'react-redux';
 import authReducer from '../features/auth/authSlice';
-import articleReducer from '../features/articles/articleSlice';
 import userReducer from '../features/users/userSlice';
 import domainReducer from '../features/domains/domainSlice';
 import keywordGroupReducer from '../features/keywords/keywordGroupSlice';
@@ -13,7 +12,6 @@ import notificationReducer from '../features/notifications/notificationSlice';
 export const store = configureStore({
   reducer: {
     auth: authReducer,
-    articles: articleReducer,
     users: userReducer,
     domains: domainReducer,
     keywordGroups: keywordGroupReducer,

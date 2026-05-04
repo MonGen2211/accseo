@@ -23,7 +23,7 @@ interface KeywordAiResultDialogProps {
 	generateLoading?: boolean;
 	suggestions: AiSuggestedKeyword[];
 	onClose: () => void;
-	onConfirm: (selectedNames: string[]) => void;
+	onConfirm: (selectedItems: AiSuggestedKeyword[]) => void;
 	onRetry?: (rejection_reason: string[]) => void;
 }
 
@@ -99,7 +99,8 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 
 	const handleSubmit = () => {
 		if (selected.length === 0) return;
-		onConfirm(selected);
+		const selectedItems = suggestions.filter(s => selected.includes(s.name));
+		onConfirm(selectedItems);
 	};
 
 	const fields: TableField[] = useMemo(() => [
@@ -134,8 +135,15 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 		{
 			id: 'reason',
 			name: 'reason',
-			label: 'LÝ DO (REASON)',
+			label: 'LÝ DO',
 			width: 400,
+			wrapText: true,
+		},
+		{
+			id: 'expandExample',
+			name: 'expandExample',
+			label: 'VÍ DỤ MỞ RỘNG',
+			width: 300,
 			wrapText: true,
 		},
 	], [selected, handleToggle]);

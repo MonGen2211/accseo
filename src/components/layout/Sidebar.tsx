@@ -7,7 +7,6 @@ import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
 import Divider from '@mui/material/Divider';
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
-import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
 import LanguageOutlinedIcon from '@mui/icons-material/LanguageOutlined';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
@@ -16,7 +15,6 @@ import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 
 const navItems = [
 	{ label: 'Tổng quan', icon: <DashboardOutlinedIcon />, path: ROUTES.DASHBOARD, end: true },
-	{ label: 'Bài viết', icon: <ArticleOutlinedIcon />, path: ROUTES.ARTICLES, end: false },
 	{ label: 'Tên miền', icon: <LanguageOutlinedIcon />, path: ROUTES.DOMAINS, end: false },
 ];
 

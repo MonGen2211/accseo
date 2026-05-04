@@ -85,6 +85,47 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 					overflow: 'hidden',
 				}}
 			>
+
+				{/* Breadcrumbs */}
+				<Box sx={{ mr: 'auto', zIndex: 1 }}>
+					<Breadcrumbs sx={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
+						{meta.breadcrumb.map((crumb, i) => {
+							const isLast = i === meta.breadcrumb.length - 1;
+							const linkPath = BREADCRUMB_LINKS[crumb];
+
+							if (!isLast && linkPath) {
+								return (
+									<Link
+										key={crumb}
+										to={linkPath}
+										style={{
+											fontSize: '0.85rem',
+											color: 'rgba(255,255,255,0.7)',
+											textDecoration: 'none',
+										}}
+									>
+										{crumb}
+									</Link>
+								);
+							}
+
+							return (
+								<Typography
+									key={crumb}
+									sx={{
+										fontSize: '0.85rem',
+										color: isLast ? '#fff' : 'rgba(255,255,255,0.6)',
+										fontWeight: isLast ? 600 : 400,
+									}}
+								>
+									{crumb}
+								</Typography>
+							);
+						})}
+					</Breadcrumbs>
+				</Box>
+				{/* Empty Box just to replace lines */}
+
 				{/* Decorative circles */}
 				<Box
 					sx={{
@@ -205,44 +246,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 				</Menu>
 			</Box>
 
-			{/* Breadcrumb bar (separate) */}
-			<Box sx={{ px: 1, pt: 1.5, pb: 0.5 }}>
-				<Breadcrumbs sx={{ fontSize: '0.82rem' }}>
-					{meta.breadcrumb.map((crumb, i) => {
-						const isLast = i === meta.breadcrumb.length - 1;
-						const linkPath = BREADCRUMB_LINKS[crumb];
 
-						if (!isLast && linkPath) {
-							return (
-								<Link
-									key={crumb}
-									to={linkPath}
-									style={{
-										fontSize: '0.82rem',
-										color: '#94a3b8',
-										textDecoration: 'none',
-									}}
-								>
-									{crumb}
-								</Link>
-							);
-						}
-
-						return (
-							<Typography
-								key={crumb}
-								sx={{
-									fontSize: '0.82rem',
-									color: isLast ? 'text.primary' : 'text.disabled',
-									fontWeight: isLast ? 600 : 400,
-								}}
-							>
-								{crumb}
-							</Typography>
-						);
-					})}
-				</Breadcrumbs>
-			</Box>
 		</Box>
 	);
 }

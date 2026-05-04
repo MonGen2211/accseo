@@ -1,16 +1,15 @@
-import { useEffect } from 'react';
-import { useAppDispatch, useAppSelector } from '../../app/store';
-import { fetchArticles, updateArticle } from '../articles/articleSlice';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
-import { CustomTable } from '../../components/custom-table';
-import type { TableField, TableRowData } from '../../components/custom-table';
-import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
-import PublishIcon from '@mui/icons-material/Publish';
+import PublicIcon from '@mui/icons-material/Public';
+import GroupIcon from '@mui/icons-material/Group';
 import DraftsOutlinedIcon from '@mui/icons-material/DraftsOutlined';
-import ArchiveOutlinedIcon from '@mui/icons-material/ArchiveOutlined';
-import type { ArticleFormData } from '../../types/article.types';
+import PendingActionsIcon from '@mui/icons-material/PendingActions';
+import { useState, useEffect } from 'react';
+import { domainService } from '../domains/domainService';
+import { userService } from '../users/userService';
+import { keywordGroupService } from '../keywords/keywordGroupService';
+import { useToastify } from '../../components/Toastify';
 
 interface StatCardProps {
 	title: string;
@@ -62,46 +61,63 @@ function StatCard({ title, value, icon, bgColor, iconBgColor }: StatCardProps) {
 	);
 }
 
-const recentArticleFields: TableField[] = [
-	{ id: 'title', name: 'title', label: 'Tiêu đề', type: 'text', width: 250 },
-	{ id: 'category', name: 'category', label: 'Danh mục', type: 'text', width: 120 },
-	{ id: 'author', name: 'author', label: 'Tác giả', type: 'text', width: 150 },
-	{ id: 'status', name: 'status', label: 'Trạng thái', type: 'status', width: 120, statusReadonly: false, statusType: 'article' },
-	{ id: 'createdAt', name: 'createdAt', label: 'Ngày tạo', type: 'date', width: 120 },
-];
-
-
 export default function DashboardPage() {
-	const dispatch = useAppDispatch();
-	const { articles, loading } = useAppSelector((state) => state.articles);
+	const { showToast } = useToastify();
+
+	const [stats, setStats] = useState({
+		domains: 0,
+		activeUsers: 0,
+		deployedKeywords: 0,
+		pendingKeywords: 0,
+	});
+
 	useEffect(() => {
-		dispatch(fetchArticles());
-	}, [dispatch]);
+		const fetchDashboardStats = async () => {
+			let domainsTotal = 0;
+			let activeUsersCount = 0;
+			let deployedTotal = 0;
+			let pendingTotal = 0;
 
-	const totalArticles = articles.length;
-	const published = articles.filter((a) => a.status === 'published').length;
-	const drafts = articles.filter((a) => a.status === 'draft').length;
-	const archived = articles.filter((a) => a.status === 'archived').length;
+			// 1. Fetch Domains
+			try {
+				const domainsRes = await domainService.getAll();
+				domainsTotal = domainsRes.total ?? domainsRes.items?.length ?? 0;
+			} catch (err: unknown) {
+				const errorMsg = (err as any)?.response?.data?.message || (err as Error)?.message;
+				showToast(`Lỗi tải Domain: ${errorMsg || 'Không xác định'}`, 'danger');
+			}
 
-	const recentArticles = [...articles]
-		.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-		.slice(0, 5);
+			// 2. Fetch Users
+			try {
+				const usersRes = await userService.getAll(1, 100);
+				activeUsersCount = usersRes.items?.filter(u => u.status === 'active').length ?? 0;
+			} catch (err: unknown) {
+				const errorMsg = (err as any)?.response?.data?.message || (err as Error)?.message;
+				showToast(`Lỗi tải User: ${errorMsg || 'Không xác định'}`, 'danger');
+			}
 
-	const handleStatusChange = async (row: TableRowData, newStatus: string) => {
-		const articleToUpdate = row as unknown as import('../../types/article.types').Article;
-		if (articleToUpdate && articleToUpdate.id) {
-			const data: ArticleFormData = {
-				title: articleToUpdate.title,
-				content: articleToUpdate.content,
-				excerpt: articleToUpdate.excerpt,
-				status: newStatus as import('../../types/article.types').ArticleStatus,
-				category: articleToUpdate.category,
-				tags: articleToUpdate.tags,
-			};
-			await dispatch(updateArticle({ id: articleToUpdate.id, data }));
-		}
-	};
+			// 3. Fetch Keywords
+			try {
+				const deployedRes = await keywordGroupService.getGroups('', 1, 1, '', 'desc', 'deployed');
+				deployedTotal = deployedRes.total ?? 0;
+				const pendingRes = await keywordGroupService.getGroups('', 1, 1, '', 'desc', 'pending_approval');
+				pendingTotal = pendingRes.total ?? 0;
+			} catch (err: unknown) {
+				const errorMsg = (err as any)?.response?.data?.message || (err as Error)?.message || 'Không thể lấy thống kê từ khóa';
+				showToast(`Lỗi từ khóa: ${errorMsg}`, 'danger');
+			}
 
+			// Cuối cùng luôn gắn giá trị (dù API thành công hay lỗi)
+			setStats({
+				domains: domainsTotal,
+				activeUsers: activeUsersCount,
+				deployedKeywords: deployedTotal,
+				pendingKeywords: pendingTotal,
+			});
+		};
+
+		fetchDashboardStats();
+	}, []);
 
 	return (
 		<Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 3 }}>
@@ -119,30 +135,30 @@ export default function DashboardPage() {
 					width: '100%',
 				}}>
 					<StatCard
-						title="Tổng bài viết"
-						value={totalArticles}
-						icon={<ArticleOutlinedIcon sx={{ color: '#2563eb', fontSize: 26 }} />}
+						title="Domain quản lý"
+						value={stats.domains}
+						icon={<PublicIcon sx={{ color: '#2563eb', fontSize: 26 }} />}
 						bgColor="#dbeafe"
 						iconBgColor="rgba(37, 99, 235, 0.15)"
 					/>
 					<StatCard
-						title="Đã xuất bản"
-						value={published}
-						icon={<PublishIcon sx={{ color: '#059669', fontSize: 26 }} />}
+						title="User đang hoạt động"
+						value={stats.activeUsers}
+						icon={<GroupIcon sx={{ color: '#059669', fontSize: 26 }} />}
 						bgColor="#d1fae5"
 						iconBgColor="rgba(5, 150, 105, 0.15)"
 					/>
 					<StatCard
-						title="Bản nháp"
-						value={drafts}
+						title="Bộ từ khoá đã triển khai"
+						value={stats.deployedKeywords}
 						icon={<DraftsOutlinedIcon sx={{ color: '#d97706', fontSize: 26 }} />}
 						bgColor="#fef3c7"
 						iconBgColor="rgba(217, 119, 6, 0.15)"
 					/>
 					<StatCard
-						title="Lưu trữ"
-						value={archived}
-						icon={<ArchiveOutlinedIcon sx={{ color: '#7c3aed', fontSize: 26 }} />}
+						title="Bộ từ khoá cần phê duyệt"
+						value={stats.pendingKeywords}
+						icon={<PendingActionsIcon sx={{ color: '#7c3aed', fontSize: 26 }} />}
 						bgColor="#ede9fe"
 						iconBgColor="rgba(124, 58, 237, 0.15)"
 					/>
@@ -191,23 +207,6 @@ export default function DashboardPage() {
 				</Paper>
 			</Box>
 
-			{/* Recent Articles */}
-			<Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
-				<Box sx={{ px: 3, pt: 3, pb: 1.5 }}>
-					<Typography sx={{ fontSize: '20px', fontWeight: 700, color: 'text.primary' }}>
-						Bài viết gần đây
-					</Typography>
-				</Box>
-				<Box sx={{ p: 2 }}>
-					<CustomTable
-						fields={recentArticleFields}
-						loading={loading}
-						data={recentArticles as TableRowData[]}
-						enablePagination={false}
-						onStatusChange={handleStatusChange}
-					/>
-				</Box>
-			</Paper>
-		</Box >
+		</Box>
 	);
 }

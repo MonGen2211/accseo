@@ -23,8 +23,18 @@ export const keywordGroupService = {
     return response.data.data;
   },
 
+  async createGroupItems(payload: import('./types').CreateKeywordGroupItemsPayload): Promise<KeywordGroup[]> {
+    const response = await api.post<ApiResponse<KeywordGroup[]>>('/keywords/groups', payload);
+    return response.data.data;
+  },
+
+  async getCategories(): Promise<string[]> {
+    const response = await api.get<ApiResponse<{ count: number; items: { category: string }[] }>>('/serpapi/categories');
+    return response.data.data.items.map(item => item.category);
+  },
+
   async suggestAiKeywords(domainId: string, payload: import('./types').SuggestAiKeywordsPayload): Promise<import('./types').AiSuggestedKeyword[]> {
-    const response = await api.post<ApiResponse<{ source?: string, items: import('./types').AiSuggestedKeyword[] }>>(`/keywords/suggest-for-domain/${domainId}/by-keywords`, payload);
+    const response = await api.post<ApiResponse<{ source?: string, items: import('./types').AiSuggestedKeyword[] }>>(`/keywords/suggest-for-domain/${domainId}/by-serpapi`, payload);
     return response.data.data.items;
   },
 
@@ -39,6 +49,6 @@ export const keywordGroupService = {
   },
 
   async clearSuggestionsCache(domainId: string): Promise<void> {
-    await api.delete(`/keywords/suggest-for-domain/${domainId}/cache`);
+    await api.delete(`/keywords/suggest-for-domain/${domainId}/by-serpapi/cache`);
   },
 };

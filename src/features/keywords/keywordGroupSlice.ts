@@ -63,6 +63,18 @@ export const createKeywordGroup = createAsyncThunk(
   }
 );
 
+export const createKeywordGroupItems = createAsyncThunk(
+  'keywordGroups/createGroupItems',
+  async (payload: import('./types').CreateKeywordGroupItemsPayload, { rejectWithValue }) => {
+    try {
+      return await keywordGroupService.createGroupItems(payload);
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      return rejectWithValue(err.response?.data?.message || 'Lỗi khi thêm từ khoá');
+    }
+  }
+);
+
 export const suggestAiKeywords = createAsyncThunk(
   'keywordGroups/suggestAiKeywords',
   async ({ domainId, payload }: { domainId: string; payload: import('./types').SuggestAiKeywordsPayload }, { rejectWithValue }) => {
@@ -150,6 +162,21 @@ const keywordGroupSlice = createSlice({
         state.total += payloadArray.length;
       })
       .addCase(createKeywordGroup.rejected, (state, action) => {
+        state.actionLoading = false;
+        state.error = action.payload as string;
+      })
+      // Create Items
+      .addCase(createKeywordGroupItems.pending, (state) => {
+        state.actionLoading = true;
+        state.error = null;
+      })
+      .addCase(createKeywordGroupItems.fulfilled, (state, action: PayloadAction<KeywordGroup | KeywordGroup[]>) => {
+        state.actionLoading = false;
+        const payloadArray = Array.isArray(action.payload) ? action.payload : [action.payload];
+        state.items.unshift(...payloadArray);
+        state.total += payloadArray.length;
+      })
+      .addCase(createKeywordGroupItems.rejected, (state, action) => {
         state.actionLoading = false;
         state.error = action.payload as string;
       })

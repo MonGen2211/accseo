@@ -25,17 +25,38 @@ export interface SuggestAiKeywordsPayload {
   days: number;
   top: number;
   count: number;
-  names?: string[];
   retry?: boolean;
   rejection_reason?: string[];
+  categories?: string[];
 }
 
 export interface AiSuggestedKeyword {
   name: string;
   reason?: string;
+  expandExample?: string;
 }
 
 export interface UpdateKeywordGroupPayload {
   name?: string;
   status?: string;
+}
+
+export const KeywordItemStatus = {
+  PENDING_APPROVAL: 'pending_approval',
+  NOT_STARTED: 'not_started',
+  IN_PROGRESS: 'in_progress',
+  DEPLOYED: 'deployed',
+} as const;
+
+export type KeywordItemStatus = typeof KeywordItemStatus[keyof typeof KeywordItemStatus];
+
+export interface KeywordItemInput {
+  name: string;
+  reason?: string;
+  status?: KeywordItemStatus;
+}
+
+export interface CreateKeywordGroupItemsPayload {
+  domainId: string;
+  items: KeywordItemInput[];
 }

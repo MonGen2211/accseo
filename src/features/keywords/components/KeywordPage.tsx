@@ -10,7 +10,7 @@ import { KeywordAiDialog } from './KeywordAiDialog';
 import { KeywordAiResultDialog } from './KeywordAiResultDialog';
 import type { AiSuggestedKeyword } from '../types';
 import { keywordGroupService } from '../keywordGroupService';
-import { createKeywordGroup } from '../keywordGroupSlice';
+import { createKeywordGroupItems } from '../keywordGroupSlice';
 import { GscPanel } from './GscPanel';
 import { Ga4Panel } from './Ga4Panel';
 
@@ -29,7 +29,7 @@ export default function KeywordPage() {
 	const [isAiResultOpen, setIsAiResultOpen] = useState(false);
 	const [aiSuggestions, setAiSuggestions] = useState<AiSuggestedKeyword[]>([]);
 	const [aiSubmitLoading, setAiSubmitLoading] = useState(false);
-	const [lastAiConfig, setLastAiConfig] = useState<{ days: number; top: number; count: number; names: string[] } | null>(null);
+	const [lastAiConfig, setLastAiConfig] = useState<{ days: number; top: number; count: number, categories: string[] } | null>(null);
 
 	const loadData = (p: number, l: number) => {
 		if (domainId) {
@@ -63,13 +63,13 @@ export default function KeywordPage() {
 		loadData(0, limit);
 	};
 
-	const handleAiGenerate = async (days: number, top: number, count: number, names: string[], isRetry = false, rejection_reason?: string[]) => {
+	const handleAiGenerate = async (days: number, top: number, count: number, categories: string[], isRetry = false, rejection_reason?: string[]) => {
 		if (!domainId) return;
 		try {
 			if (!isRetry) {
-				setLastAiConfig({ days, top, count, names });
+				setLastAiConfig({ days, top, count, categories });
 			}
-			const result = await dispatch(suggestAiKeywords({ domainId, payload: { days, top, count, ...(names.length > 0 && { names }), retry: isRetry, ...(rejection_reason && rejection_reason.length > 0 && { rejection_reason }) } })).unwrap();
+			const result = await dispatch(suggestAiKeywords({ domainId, payload: { days, top, count, categories, retry: isRetry, ...(rejection_reason && rejection_reason.length > 0 && { rejection_reason }) } })).unwrap();
 			setIsAiDialogOpen(false);
 
 			if (Array.isArray(result)) {
@@ -86,15 +86,15 @@ export default function KeywordPage() {
 
 	const handleAiRetry = (rejection_reason: string[]) => {
 		if (lastAiConfig) {
-			handleAiGenerate(lastAiConfig.days, lastAiConfig.top, lastAiConfig.count, lastAiConfig.names, true, rejection_reason);
+			handleAiGenerate(lastAiConfig.days, lastAiConfig.top, lastAiConfig.count, lastAiConfig.categories, true, rejection_reason);
 		}
 	};
 
-	const handleAiConfirmSelected = async (selectedNames: string[]) => {
-		if (!domainId || selectedNames.length === 0) return;
+	const handleAiConfirmSelected = async (selectedItems: AiSuggestedKeyword[]) => {
+		if (!domainId || selectedItems.length === 0) return;
 		try {
 			setAiSubmitLoading(true);
-			await dispatch(createKeywordGroup({ names: selectedNames, domainId, aiGen: true })).unwrap();
+			await dispatch(createKeywordGroupItems({ domainId, items: selectedItems.map(item => ({ name: item.name, ...(item.reason && { reason: item.reason }) })) })).unwrap();
 			// Xóa cache gợi ý AI sau khi tạo thành công
 			await keywordGroupService.clearSuggestionsCache(domainId);
 			showToast('Tạo keywords từ gợi ý thành công!', 'success');

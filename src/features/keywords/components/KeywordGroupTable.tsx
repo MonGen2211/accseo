@@ -3,6 +3,7 @@ import AddIcon from '@mui/icons-material/Add';
 import CustomTable from '../../../components/custom-table/CustomTable';
 import type { TableField } from '../../../types/tableFields.types';
 import type { KeywordGroup } from '../types';
+import type { TableRowData } from '../../../types/tableRows.types';
 
 interface KeywordGroupTableProps {
 	data: KeywordGroup[];
@@ -17,8 +18,8 @@ interface KeywordGroupTableProps {
 	onRowsPerPageChange: (newLimit: number) => void;
 	onOpenCreate: () => void;
 	onAiGenerate?: () => void;
-	onDelete?: (row: import('../../../types/tableRows.types').TableRowData) => void;
-	onStatusChange?: (row: import('../../../types/tableRows.types').TableRowData, newStatus: string) => void;
+	onDelete?: (row: TableRowData) => void;
+	onStatusChange?: (row: TableRowData, newStatus: string) => void;
 	sortBy?: string;
 	sortOrder?: 'asc' | 'desc';
 	onSort?: (field: string) => void;
@@ -48,32 +49,17 @@ export function KeywordGroupTable({
 	onStatusFilterChange,
 }: KeywordGroupTableProps) {
 	const fields: TableField[] = [
-		{ id: 'stt', name: 'stt', label: 'STT', type: 'text', width: 80, align: 'center' },
-		{ id: 'name', name: 'name', label: 'Tên Bộ Keywords', type: 'text', width: 350, sortable: true },
+		{ id: 'stt', name: 'stt', label: 'STT', type: 'text', width: 40, align: 'center' },
+		{ id: 'name', name: 'name', label: 'Tên Bộ Keywords', type: 'text', width: 120, sortable: true },
+		{ id: 'reason', name: 'reason', label: 'Lý do', type: 'text', width: 300, wrapText: true },
 		{
 			id: 'status',
 			name: 'status',
 			label: 'Trạng thái',
 			type: 'status',
-			width: 150,
+			width: 100,
 			statusType: 'keyword',
 			sortable: true,
-		},
-		{
-			id: 'createdAt',
-			name: 'createdAt',
-			label: 'Ngày tạo',
-			type: 'date',
-			width: 200,
-			sortable: true,
-		},
-		{
-			id: 'actions',
-			name: 'actions',
-			label: 'Thao tác',
-			type: 'actions',
-			width: 120,
-			align: 'center',
 		},
 	];
 
@@ -143,7 +129,7 @@ export function KeywordGroupTable({
 		<Box>
 			<CustomTable
 				fields={fields}
-				data={displayData as import('../../../types/tableRows.types').TableRowData[]}
+				data={displayData as TableRowData[]}
 				loading={loading}
 				actionLoadingId={deleteLoadingId || statusLoadingId}
 				onDelete={onDelete}

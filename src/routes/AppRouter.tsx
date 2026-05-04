@@ -7,7 +7,6 @@ import PrivateRoute from './PrivateRoute';
 import MainLayout from '../components/layout/MainLayout';
 import LoginPage from '../features/auth/components/LoginPage';
 import DashboardPage from '../features/dashboard/DashboardPage';
-import ArticlePage from '../features/articles/components/ArticlePage';
 import UserPage from '../features/users/components/UserPage';
 import DomainPage from '../features/domains/components/DomainPage';
 import KeywordPage from '../features/keywords/components/KeywordPage';
@@ -38,7 +37,6 @@ export default function AppRouter() {
 					}
 				>
 					<Route index element={<DashboardPage />} />
-					<Route path="articles" element={<ArticlePage />} />
 					<Route path="settings" element={<SettingsPage />} />
 					<Route path="users" element={<UserPage />} />
 					<Route path="domains" element={<DomainPage />} />

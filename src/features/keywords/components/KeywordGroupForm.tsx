@@ -7,11 +7,27 @@ import {
 	TextField,
 	Button,
 	Box,
-	Typography,
+	IconButton,
+	Select,
+	MenuItem,
+	FormControl,
+	InputLabel,
+	Chip,
 } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
+import Typography from '@mui/material/Typography';
+
 import { useAppDispatch, useAppSelector } from '../../../app/store';
-import { createKeywordGroup } from '../keywordGroupSlice';
+import { createKeywordGroupItems } from '../keywordGroupSlice';
 import { useToastify } from '../../../components/Toastify';
+import { KeywordItemStatus } from '../types';
+
+interface KeywordItemRow {
+	name: string;
+	reason: string;
+	status: KeywordItemStatus;
+}
 
 interface KeywordGroupFormProps {
 	open: boolean;
@@ -20,23 +36,55 @@ interface KeywordGroupFormProps {
 	onSuccess?: () => void;
 }
 
+const STATUS_OPTIONS: { value: KeywordItemStatus; label: string; color: string }[] = [
+	{ value: KeywordItemStatus.PENDING_APPROVAL, label: 'Chờ duyệt', color: '#f59e0b' },
+	{ value: KeywordItemStatus.NOT_STARTED, label: 'Chưa triển khai', color: '#6b7280' },
+	{ value: KeywordItemStatus.IN_PROGRESS, label: 'Đang triển khai', color: '#3b82f6' },
+	{ value: KeywordItemStatus.DEPLOYED, label: 'Đã triển khai', color: '#10b981' },
+];
+
+const createEmptyItem = (): KeywordItemRow => ({
+	name: '',
+	reason: '',
+	status: KeywordItemStatus.PENDING_APPROVAL,
+});
+
 export function KeywordGroupForm({ open, domainId, onClose, onSuccess }: KeywordGroupFormProps) {
-	const [namesText, setNamesText] = useState('');
+	const [items, setItems] = useState<KeywordItemRow[]>([createEmptyItem()]);
 	const dispatch = useAppDispatch();
 	const { actionLoading } = useAppSelector((state) => state.keywordGroups);
 	const { showToast } = useToastify();
 
+	const handleAddItem = () => {
+		setItems((prev) => [...prev, createEmptyItem()]);
+	};
+
+	const handleRemoveItem = (index: number) => {
+		setItems((prev) => prev.filter((_, i) => i !== index));
+	};
+
+	const handleItemChange = (index: number, field: keyof KeywordItemRow, value: string) => {
+		setItems((prev) => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
+	};
+
+	const validCount = items.filter((i) => i.name.trim()).length;
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!namesText.trim()) return;
+		const validItems = items
+			.filter((item) => item.name.trim())
+			.map((item) => ({
+				name: item.name.trim(),
+				...(item.reason.trim() && { reason: item.reason.trim() }),
+				status: item.status,
+			}));
 
-		const names = namesText.split('\n').map(n => n.trim()).filter(n => n);
-		if (names.length === 0) return;
+		if (validItems.length === 0) return;
 
 		try {
-			await dispatch(createKeywordGroup({ names, domainId })).unwrap();
-			showToast('Tạo bộ keywords thành công!', 'success');
-			setNamesText('');
+			await dispatch(createKeywordGroupItems({ domainId, items: validItems })).unwrap();
+			showToast('Thêm từ khoá thành công!', 'success');
+			setItems([createEmptyItem()]);
 			onSuccess?.();
 			onClose();
 		} catch (err: unknown) {
@@ -46,43 +94,128 @@ export function KeywordGroupForm({ open, domainId, onClose, onSuccess }: Keyword
 	};
 
 	const handleClose = () => {
-		setNamesText('');
+		setItems([createEmptyItem()]);
 		onClose();
 	};
 
 	return (
-		<Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-			<DialogTitle sx={{ fontWeight: 600 }}>Thêm bộ keywords</DialogTitle>
+		<Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+			<DialogTitle sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+				Thêm từ khoá
+				{validCount > 0 && (
+					<Chip label={`${validCount} từ khoá`} size="small" color="primary" variant="outlined" />
+				)}
+			</DialogTitle>
 			<form onSubmit={handleSubmit}>
-				<DialogContent dividers>
+				<DialogContent dividers sx={{ maxHeight: '60vh' }}>
 					<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
 						<Typography variant="body2" color="text.secondary">
-							Nhập tên bộ keywords bạn muốn tạo cho Domain ID: <strong>{domainId}</strong>
+							Thêm từ khoá cho Domain: <strong>{domainId}</strong>
 						</Typography>
-						<TextField
-							label="Tên bộ keywords (mỗi dòng 1 từ khóa)"
-							variant="outlined"
-							fullWidth
-							multiline
-							minRows={4}
+
+						{/* Header row */}
+						<Box
+							sx={{
+								display: 'grid',
+								gridTemplateColumns: '2fr 2fr 160px 40px',
+								gap: 1.5,
+								px: 0.5,
+							}}
+						>
+							<Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+								Từ khoá *
+							</Typography>
+							<Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+								Lý do
+							</Typography>
+							<Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+								Trạng thái
+							</Typography>
+							<Box />
+						</Box>
+
+						{/* Item rows */}
+						{items.map((item, index) => (
+							<Box
+								key={index}
+								sx={{
+									display: 'grid',
+									gridTemplateColumns: '2fr 2fr 160px 40px',
+									gap: 1.5,
+									alignItems: 'center',
+								}}
+							>
+								<TextField
+									placeholder="Nhập từ khoá"
+									size="small"
+									fullWidth
+									value={item.name}
+									onChange={(e) => handleItemChange(index, 'name', e.target.value)}
+									required
+									autoFocus={index === items.length - 1}
+								/>
+								<TextField
+									placeholder="Nhập lý do (tuỳ chọn)"
+									size="small"
+									fullWidth
+									value={item.reason}
+									onChange={(e) => handleItemChange(index, 'reason', e.target.value)}
+								/>
+								<FormControl size="small" fullWidth>
+									<InputLabel>Trạng thái</InputLabel>
+									<Select
+										value={item.status}
+										label="Trạng thái"
+										onChange={(e) => handleItemChange(index, 'status', e.target.value)}
+									>
+										{STATUS_OPTIONS.map((opt) => (
+											<MenuItem key={opt.value} value={opt.value}>
+												<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+													<Box
+														sx={{
+															width: 8,
+															height: 8,
+															borderRadius: '50%',
+															backgroundColor: opt.color,
+															flexShrink: 0,
+														}}
+													/>
+													{opt.label}
+												</Box>
+											</MenuItem>
+										))}
+									</Select>
+								</FormControl>
+								<IconButton
+									type="button"
+									onClick={() => handleRemoveItem(index)}
+									disabled={items.length === 1}
+									color="error"
+									size="small"
+								>
+									<DeleteIcon fontSize="small" />
+								</IconButton>
+							</Box>
+						))}
+
+						{/* Add button */}
+						<Button
+							startIcon={<AddIcon />}
+							onClick={handleAddItem}
+							variant="text"
 							size="small"
-							value={namesText}
-							onChange={(e) => setNamesText(e.target.value)}
-							required
-							autoFocus
-						/>
+							sx={{ alignSelf: 'flex-start', textTransform: 'none' }}
+						>
+							Thêm dòng
+						</Button>
 					</Box>
 				</DialogContent>
 				<DialogActions sx={{ px: 3, py: 2 }}>
 					<Button onClick={handleClose} disabled={actionLoading} color="inherit">
 						Hủy
 					</Button>
-					<Button
-						type="submit"
-						variant="contained"
-						disabled={actionLoading || !namesText.trim()}
-					>
-						{actionLoading ? 'Đang tạo...' : 'Tạo từ khoá'}
+					<Button type="submit" variant="contained" disabled={actionLoading || validCount === 0}>
+						{actionLoading ? 'Đang thêm...' : `Thêm ${validCount} từ khoá`}
 					</Button>
 				</DialogActions>
 			</form>
