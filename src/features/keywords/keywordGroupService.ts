@@ -51,4 +51,17 @@ export const keywordGroupService = {
   async clearSuggestionsCache(domainId: string): Promise<void> {
     await api.delete(`/keywords/suggest-for-domain/${domainId}/by-serpapi/cache`);
   },
+
+  async getDashboardStatsByCurrentUser(): Promise<{
+    domainTotal: number;
+    group: { total: number; pendingApproval: number; notStarted: number; inProgress: number; deployed: number };
+    keyword: { total: number; pending: number; approved: number; published: number };
+  }> {
+    const response = await api.get<ApiResponse<{ overall: {
+      domainTotal: number;
+      group: { total: number; pendingApproval: number; notStarted: number; inProgress: number; deployed: number };
+      keyword: { total: number; pending: number; approved: number; published: number };
+    } }>>('/keywords/by-current-user?includeKeywords=false');
+    return response.data.data.overall;
+  },
 };

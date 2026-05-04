@@ -7,10 +7,18 @@ export interface Ga4OverviewSummary {
   totalPages: number;
 }
 
+export interface Ga4OverviewTrend {
+  sessions: number;
+  activeUsers: number;
+  screenPageViews: number;
+  date: string;
+}
+
 export interface Ga4OverviewData {
   startDate: string;
   endDate: string;
   summary: Ga4OverviewSummary;
+  trend: Ga4OverviewTrend[];
 }
 
 // ─── GA4 Pages ─────────────────────────────────────────────────────────────

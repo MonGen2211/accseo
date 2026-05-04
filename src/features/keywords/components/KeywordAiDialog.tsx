@@ -33,13 +33,23 @@ export function KeywordAiDialog({ open, loading, onClose, onConfirm }: KeywordAi
 	const [loadingCategories, setLoadingCategories] = useState(false);
 
 	useEffect(() => {
-		if (open && categoryOptions.length === 0) {
-			setLoadingCategories(true);
-			keywordGroupService.getCategories()
-				.then(res => setCategoryOptions(res))
-				.catch(err => console.error('Failed to load categories', err))
-				.finally(() => setLoadingCategories(false));
-		}
+		let isMounted = true;
+		const loadData = async () => {
+			if (open && categoryOptions.length === 0) {
+				 
+				setLoadingCategories(true);
+				try {
+					const res = await keywordGroupService.getCategories();
+					if (isMounted) setCategoryOptions(res);
+				} catch (err) {
+					console.error('Failed to load categories', err);
+				} finally {
+					if (isMounted) setLoadingCategories(false);
+				}
+			}
+		};
+		loadData();
+		return () => { isMounted = false; };
 	}, [open, categoryOptions.length]);
 
 	const handleSubmit = (e: React.FormEvent) => {
