@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 import Typography from '@mui/material/Typography';
 
 import { useAppDispatch, useAppSelector } from '../../../app/store';
@@ -67,6 +68,24 @@ export function KeywordGroupForm({ open, domainId, onClose, onSuccess }: Keyword
 		setItems((prev) => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
 	};
 
+	const [bulkText, setBulkText] = useState('');
+	const [showBulkInput, setShowBulkInput] = useState(false);
+
+	const handleBulkPaste = () => {
+		const lines = bulkText
+			.split('\n')
+			.map((l) => l.trim())
+			.filter(Boolean);
+		if (lines.length === 0) return;
+		const newItems = lines.map((name) => ({ name, reason: '', status: KeywordItemStatus.PENDING_APPROVAL }));
+		setItems((prev) => {
+			const filtered = prev.filter((i) => i.name.trim());
+			return [...filtered, ...newItems];
+		});
+		setBulkText('');
+		setShowBulkInput(false);
+	};
+
 	const validCount = items.filter((i) => i.name.trim()).length;
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -95,6 +114,8 @@ export function KeywordGroupForm({ open, domainId, onClose, onSuccess }: Keyword
 
 	const handleClose = () => {
 		setItems([createEmptyItem()]);
+		setBulkText('');
+		setShowBulkInput(false);
 		onClose();
 	};
 
@@ -198,16 +219,55 @@ export function KeywordGroupForm({ open, domainId, onClose, onSuccess }: Keyword
 							</Box>
 						))}
 
-						{/* Add button */}
-						<Button
-							startIcon={<AddIcon />}
-							onClick={handleAddItem}
-							variant="text"
-							size="small"
-							sx={{ alignSelf: 'flex-start', textTransform: 'none' }}
-						>
-							Thêm dòng
-						</Button>
+						{/* Bulk paste area */}
+						{showBulkInput && (
+							<Box sx={{ border: '1px dashed #cbd5e1', borderRadius: 2, p: 2, bgcolor: '#f8fafc' }}>
+								<Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, fontWeight: 600 }}>
+									Dán danh sách từ khoá (mỗi từ khoá 1 dòng)
+								</Typography>
+								<TextField
+									multiline
+									rows={6}
+									fullWidth
+									size="small"
+									placeholder={'Thanh lý\nChấm dứt\nĐiều khoản\n...'}
+									value={bulkText}
+									autoFocus
+									onChange={(e) => setBulkText(e.target.value)}
+								/>
+								<Box sx={{ display: 'flex', gap: 1, mt: 1.5, justifyContent: 'flex-end' }}>
+									<Button size="small" color="inherit" onClick={() => { setShowBulkInput(false); setBulkText(''); }}>
+										Hủy
+									</Button>
+									<Button size="small" variant="contained" onClick={handleBulkPaste} disabled={!bulkText.trim()}>
+										Thêm {bulkText.split('\n').filter((l) => l.trim()).length} từ khoá
+									</Button>
+								</Box>
+							</Box>
+						)}
+
+						{/* Add buttons */}
+						<Box sx={{ display: 'flex', gap: 1 }}>
+							<Button
+								startIcon={<AddIcon />}
+								onClick={handleAddItem}
+								variant="text"
+								size="small"
+								sx={{ textTransform: 'none' }}
+							>
+								Thêm dòng
+							</Button>
+							<Button
+								startIcon={<ContentPasteIcon />}
+								onClick={() => setShowBulkInput((v) => !v)}
+								variant="text"
+								size="small"
+								color="secondary"
+								sx={{ textTransform: 'none' }}
+							>
+								Nhập nhiều
+							</Button>
+						</Box>
 					</Box>
 				</DialogContent>
 				<DialogActions sx={{ px: 3, py: 2 }}>

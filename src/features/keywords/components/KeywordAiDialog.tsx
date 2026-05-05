@@ -9,10 +9,12 @@ import {
 	Box,
 	Typography,
 	Autocomplete,
-	CircularProgress
+	CircularProgress,
+	LinearProgress,
 } from '@mui/material';
 import { keywordGroupService } from '../keywordGroupService';
 import { z } from 'zod';
+import { useAiProgress } from '../hooks/useAiProgress';
 
 const countSchema = z.number().min(1, 'Số lượng tối thiểu là 1').max(3, 'Số lượng tối đa là 3');
 
@@ -31,6 +33,7 @@ export function KeywordAiDialog({ open, loading, onClose, onConfirm }: KeywordAi
 	const [categories, setCategories] = useState<string[]>([]);
 	const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
 	const [loadingCategories, setLoadingCategories] = useState(false);
+	const progress = useAiProgress(loading);
 
 	useEffect(() => {
 		let isMounted = true;
@@ -67,8 +70,21 @@ export function KeywordAiDialog({ open, loading, onClose, onConfirm }: KeywordAi
 	};
 
 	return (
-		<Dialog open={open} onClose={!loading ? onClose : undefined} maxWidth="sm" fullWidth>
-			<DialogTitle sx={{ fontWeight: 600 }}>Cấu hình AI Suggestion</DialogTitle>
+		<Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+			<DialogTitle sx={{ fontWeight: 600, pb: loading ? 0 : undefined }}>Cấu hình AI Suggestion</DialogTitle>
+			{loading && (
+				<Box sx={{ px: 3, pt: 1.5, pb: 0.5 }}>
+					<Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+						<Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+							✨ AI đang phân tích và tạo keywords, bạn có thể đóng hộp thoại này...
+						</Typography>
+						<Typography variant="caption" color="primary" sx={{ fontWeight: 700, ml: 1, whiteSpace: 'nowrap' }}>
+							{Math.round(progress)}%
+						</Typography>
+					</Box>
+					<LinearProgress variant="determinate" value={progress} sx={{ borderRadius: 2, height: 6 }} />
+				</Box>
+			)}
 			<form onSubmit={handleSubmit}>
 				<DialogContent dividers>
 					<Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -166,8 +182,8 @@ export function KeywordAiDialog({ open, loading, onClose, onConfirm }: KeywordAi
 					</Box>
 				</DialogContent>
 				<DialogActions sx={{ px: 3, py: 2 }}>
-					<Button onClick={onClose} disabled={loading} color="inherit">
-						Hủy
+					<Button onClick={onClose} color="inherit">
+						{loading ? 'Đóng (vẫn xử lý nền)' : 'Hủy'}
 					</Button>
 					<Button type="submit" variant="contained" disabled={loading || days <= 0 || top <= 0 || count <= 0}>
 						{loading ? 'Đang tạo...' : 'Xác nhận tạo'}

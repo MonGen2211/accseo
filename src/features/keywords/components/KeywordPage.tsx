@@ -70,13 +70,14 @@ export default function KeywordPage() {
 				setLastAiConfig({ days, top, count, categories });
 			}
 			const result = await dispatch(suggestAiKeywords({ domainId, payload: { days, top, count, categories, retry: isRetry, ...(rejection_reason && rejection_reason.length > 0 && { rejection_reason }) } })).unwrap();
-			setIsAiDialogOpen(false);
 
 			if (Array.isArray(result)) {
 				setAiSuggestions(result as AiSuggestedKeyword[]);
 			} else {
 				setAiSuggestions([]);
 			}
+			showToast('✅ AI đã tạo xong! Xem kết quả đề xác nhận.', 'success');
+			setIsAiDialogOpen(false);
 			setIsAiResultOpen(true);
 		} catch (err: unknown) {
 			const errorMsg = typeof err === 'string' ? err : 'Đã có lỗi xảy ra';
@@ -165,7 +166,16 @@ export default function KeywordPage() {
 					onPageChange={handlePageChange}
 					onRowsPerPageChange={handleRowsPerPageChange}
 					onOpenCreate={() => setIsFormOpen(true)}
-					onAiGenerate={() => setIsAiDialogOpen(true)}
+					onAiGenerate={() => {
+						// Đang retry (có suggestions + đang loading) → mở result dialog
+						if (generateAiLoading && aiSuggestions.length > 0) {
+							setIsAiResultOpen(true);
+						} else {
+							setIsAiDialogOpen(true);
+						}
+					}}
+					hasAiResults={aiSuggestions.length > 0 && !isAiResultOpen}
+					onViewAiResults={() => setIsAiResultOpen(true)}
 					onDelete={handleDelete}
 					onStatusChange={handleStatusChange}
 					sortBy={sortField}

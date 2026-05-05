@@ -1,5 +1,6 @@
-import { Box, Button, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+import { Box, Button, Select, MenuItem, FormControl, InputLabel, Chip } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import CustomTable from '../../../components/custom-table/CustomTable';
 import type { TableField } from '../../../types/tableFields.types';
 import type { KeywordGroup } from '../types';
@@ -12,6 +13,8 @@ interface KeywordGroupTableProps {
 	page: number;
 	limit: number;
 	generateAiLoading?: boolean;
+	hasAiResults?: boolean;
+	onViewAiResults?: () => void;
 	deleteLoadingId?: string | null;
 	statusLoadingId?: string | null;
 	onPageChange: (newPage: number) => void;
@@ -34,6 +37,8 @@ export function KeywordGroupTable({
 	page,
 	limit,
 	generateAiLoading = false,
+	hasAiResults = false,
+	onViewAiResults,
 	onPageChange,
 	onRowsPerPageChange,
 	onOpenCreate,
@@ -61,6 +66,7 @@ export function KeywordGroupTable({
 			statusType: 'keyword',
 			sortable: true,
 		},
+		{ id: 'actions', name: 'actions', label: 'Thao tác', type: 'actions', width: 100, align: 'center' },
 	];
 
 	const displayData = data.map((item, index) => ({
@@ -101,16 +107,47 @@ export function KeywordGroupTable({
 	) : undefined;
 
 	const headerActions = (
-		<Box sx={{ display: 'flex', gap: 2 }}>
+		<Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+			{/* Nút mở lại kết quả AI khi đã có data */}
+			{hasAiResults && onViewAiResults && !generateAiLoading && (
+				<Chip
+					icon={<AutoAwesomeIcon sx={{ fontSize: 16 }} />}
+					label="Xem kết quả AI"
+					color="secondary"
+					variant="filled"
+					onClick={onViewAiResults}
+					clickable
+					sx={{
+						fontWeight: 600,
+						animation: 'pulse 2s ease-in-out infinite',
+						'@keyframes pulse': {
+							'0%, 100%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0.4)' },
+							'50%': { boxShadow: '0 0 0 6px rgba(156, 39, 176, 0)' },
+						},
+					}}
+				/>
+			)}
 			{onAiGenerate && (
 				<Button
 					variant="contained"
 					color="secondary"
-					disabled={generateAiLoading}
 					onClick={onAiGenerate}
-					sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+					sx={{
+						borderRadius: 2,
+						textTransform: 'none',
+						fontWeight: 600,
+						position: 'relative',
+						overflow: 'hidden',
+						...(generateAiLoading && {
+							animation: 'aiPulse 1.5s ease-in-out infinite',
+							'@keyframes aiPulse': {
+								'0%, 100%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0.5)' },
+								'50%': { boxShadow: '0 0 0 8px rgba(156, 39, 176, 0)' },
+							},
+						}),
+					}}
 				>
-					{generateAiLoading ? 'Đang tạo bằng AI...' : 'Tạo bằng AI'}
+					{generateAiLoading ? '⏳ Đang tạo bằng AI... (Xem tiến trình)' : 'Tạo bằng AI'}
 				</Button>
 			)}
 			<Button

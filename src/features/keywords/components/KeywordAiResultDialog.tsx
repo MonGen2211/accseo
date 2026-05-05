@@ -11,11 +11,13 @@ import {
 	FormControlLabel,
 	Chip,
 	TextField,
+	LinearProgress,
 } from '@mui/material';
 import type { AiSuggestedKeyword } from '../types';
 import CustomTable from '../../../components/custom-table/CustomTable';
 import type { TableField } from '../../../types/tableFields.types';
 import type { TableRowData } from '../../../types/tableRows.types';
+import { useAiProgress } from '../hooks/useAiProgress';
 
 interface KeywordAiResultDialogProps {
 	open: boolean;
@@ -28,6 +30,7 @@ interface KeywordAiResultDialogProps {
 }
 
 export function KeywordAiResultDialog({ open, loading, generateLoading, suggestions, onClose, onConfirm, onRetry }: KeywordAiResultDialogProps) {
+	const progress = useAiProgress(generateLoading ?? false);
 	const [selected, setSelected] = useState<string[]>([]);
 	const [prevOpen, setPrevOpen] = useState(open);
 	const [prevSuggestions, setPrevSuggestions] = useState(suggestions);
@@ -158,8 +161,21 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 
 	return (
 		<>
-			<Dialog open={open} onClose={!loading ? onClose : undefined} maxWidth="lg" fullWidth>
-				<DialogTitle sx={{ fontWeight: 600 }}>Kết quả gợi ý bộ từ khóa từ AI</DialogTitle>
+			<Dialog open={open} onClose={!loading && !generateLoading ? onClose : undefined} maxWidth="lg" fullWidth>
+				<DialogTitle sx={{ fontWeight: 600, pb: generateLoading ? 0 : undefined }}>Kết quả gợi ý bộ từ khóa từ AI</DialogTitle>
+				{generateLoading && (
+					<Box sx={{ px: 3, pt: 1.5, pb: 0.5 }}>
+						<Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+							<Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+								✨ AI đang tạo lại keywords, bạn có thể đóng hộp thoại này...
+							</Typography>
+							<Typography variant="caption" color="primary" sx={{ fontWeight: 700, ml: 1, whiteSpace: 'nowrap' }}>
+								{Math.round(progress)}%
+							</Typography>
+						</Box>
+						<LinearProgress variant="determinate" value={progress} sx={{ borderRadius: 2, height: 6 }} />
+					</Box>
+				)}
 				<DialogContent dividers>
 					<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
 
@@ -217,6 +233,11 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 					</Box>
 				</DialogContent>
 				<DialogActions sx={{ px: 3, py: 2 }}>
+					{generateLoading && (
+						<Button onClick={onClose} color="inherit" sx={{ mr: 'auto' }}>
+							Đóng (vẫn xử lý nền)
+						</Button>
+					)}
 					{onRetry && (
 						<Button onClick={handleRetryClick} disabled={loading || generateLoading} color="secondary">
 							{generateLoading ? 'Đang tạo lại...' : 'Tạo lại AI (Retry)'}
