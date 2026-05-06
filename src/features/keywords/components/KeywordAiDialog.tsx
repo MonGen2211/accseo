@@ -16,7 +16,7 @@ import { keywordGroupService } from '../keywordGroupService';
 import { z } from 'zod';
 import { useAiProgress } from '../hooks/useAiProgress';
 
-const countSchema = z.number().min(1, 'Số lượng tối thiểu là 1').max(3, 'Số lượng tối đa là 3');
+const countSchema = z.number().min(1, 'Số lượng tối thiểu là 1').max(2, 'Số lượng tối đa là 2');
 
 interface KeywordAiDialogProps {
 	open: boolean;
@@ -104,7 +104,7 @@ export function KeywordAiDialog({ open, loading, onClose, onConfirm }: KeywordAi
 							required
 							error={!!countError}
 							helperText={countError}
-							slotProps={{ htmlInput: { min: 1, max: 3 } }}
+							slotProps={{ htmlInput: { min: 1, max: 2 } }}
 						/>
 						<Autocomplete
 							options={categoryOptions}
