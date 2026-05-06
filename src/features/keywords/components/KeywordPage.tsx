@@ -168,15 +168,13 @@ export default function KeywordPage() {
 					onRowsPerPageChange={handleRowsPerPageChange}
 					onOpenCreate={() => setIsFormOpen(true)}
 					onAiGenerate={() => {
-						// Đang retry (có suggestions + đang loading) → mở result dialog
-						if (generateAiLoading && aiSuggestions.length > 0) {
+						// Nếu đang loading thì mở result dialog để xem tiến trình
+						if (generateAiLoading) {
 							setIsAiResultOpen(true);
 						} else {
 							setIsAiDialogOpen(true);
 						}
 					}}
-					hasAiResults={aiSuggestions.length > 0 && !isAiResultOpen}
-					onViewAiResults={() => setIsAiResultOpen(true)}
 					onDelete={handleDelete}
 					onStatusChange={handleStatusChange}
 					sortBy={sortField}

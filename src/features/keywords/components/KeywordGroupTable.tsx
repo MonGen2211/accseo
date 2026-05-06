@@ -1,4 +1,4 @@
-import { Box, Button, Select, MenuItem, FormControl, InputLabel, Chip } from '@mui/material';
+import { Box, Button, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import CustomTable from '../../../components/custom-table/CustomTable';
@@ -13,8 +13,6 @@ interface KeywordGroupTableProps {
 	page: number;
 	limit: number;
 	generateAiLoading?: boolean;
-	hasAiResults?: boolean;
-	onViewAiResults?: () => void;
 	deleteLoadingId?: string | null;
 	statusLoadingId?: string | null;
 	onPageChange: (newPage: number) => void;
@@ -37,8 +35,6 @@ export function KeywordGroupTable({
 	page,
 	limit,
 	generateAiLoading = false,
-	hasAiResults = false,
-	onViewAiResults,
 	onPageChange,
 	onRowsPerPageChange,
 	onOpenCreate,
@@ -108,25 +104,6 @@ export function KeywordGroupTable({
 
 	const headerActions = (
 		<Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-			{/* Nút mở lại kết quả AI khi đã có data */}
-			{hasAiResults && onViewAiResults && !generateAiLoading && (
-				<Chip
-					icon={<AutoAwesomeIcon sx={{ fontSize: 16 }} />}
-					label="Xem kết quả AI"
-					color="secondary"
-					variant="filled"
-					onClick={onViewAiResults}
-					clickable
-					sx={{
-						fontWeight: 600,
-						animation: 'pulse 2s ease-in-out infinite',
-						'@keyframes pulse': {
-							'0%, 100%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0.4)' },
-							'50%': { boxShadow: '0 0 0 6px rgba(156, 39, 176, 0)' },
-						},
-					}}
-				/>
-			)}
 			{onAiGenerate && (
 				<Button
 					variant="contained"
@@ -150,7 +127,6 @@ export function KeywordGroupTable({
 						...(generateAiLoading && {
 							background: '#94a3b8',
 							boxShadow: 'none',
-							pointerEvents: 'none',
 							animation: 'aiPulse 1.5s ease-in-out infinite',
 							'@keyframes aiPulse': {
 								'0%, 100%': { opacity: 1 },
@@ -159,7 +135,7 @@ export function KeywordGroupTable({
 						}),
 					}}
 				>
-					{generateAiLoading ? '⏳ Đang tạo bằng AI... (Xem tiến trình)' : 'Tạo bằng AI'}
+					{generateAiLoading ? 'Đang tạo bằng AI... (Xem tiến trình)' : 'Tạo bằng AI'}
 				</Button>
 			)}
 			<Button

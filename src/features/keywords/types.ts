@@ -32,7 +32,7 @@ export interface SuggestAiKeywordsPayload {
 export interface AiSuggestedKeyword {
   name: string;
   reason?: string;
-  expandExample?: string;
+  nameScore?: number;
 }
 
 export interface UpdateKeywordGroupPayload {

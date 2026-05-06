@@ -263,7 +263,6 @@ export function CustomTable({
 			)}
 			<TableContainer
 				sx={{
-					maxHeight: 600,
 					overflowX: 'auto',
 					'&::-webkit-scrollbar': { height: 8 },
 					'&::-webkit-scrollbar-track': { backgroundColor: '#f1f5f9', borderRadius: 4 },

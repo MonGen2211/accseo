@@ -11,6 +11,7 @@ import {
 	FormControlLabel,
 	Chip,
 	LinearProgress,
+	Link,
 } from '@mui/material';
 import type { AiSuggestedKeyword } from '../types';
 import CustomTable from '../../../components/custom-table/CustomTable';
@@ -106,8 +107,18 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 		{
 			id: 'name',
 			name: 'name',
-			label: 'TÊN KEYWORD',
+			label: 'TÊN BỘ KEYWORD',
 			width: 250,
+			renderCell: (row: TableRowData) => (
+				<Link
+					href={`https://trends.google.com.vn/trends/explore?cat=19&date=today%203-m&geo=VN&q=${encodeURIComponent(String(row.name))}&hl=vi&legacy`}
+					target="_blank"
+					rel="noopener noreferrer"
+					underline="hover"
+				>
+					{String(row.name)}
+				</Link>
+			)
 		},
 		{
 			id: 'reason',
@@ -117,11 +128,12 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 			wrapText: true,
 		},
 		{
-			id: 'expandExample',
-			name: 'expandExample',
-			label: 'VÍ DỤ MỞ RỘNG',
-			width: 300,
-			wrapText: true,
+			id: 'nameScore',
+			name: 'nameScore',
+			label: 'ĐIỂM SỐ',
+			width: 150,
+			align: 'center',
+			renderCell: (row: TableRowData) => row.nameScore !== undefined ? `${row.nameScore}/100` : '-',
 		},
 	], [selected, handleToggle]);
 
