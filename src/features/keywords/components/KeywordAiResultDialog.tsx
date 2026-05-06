@@ -34,17 +34,31 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 	const [selected, setSelected] = useState<string[]>([]);
 	const [prevOpen, setPrevOpen] = useState(open);
 	const [prevSuggestions, setPrevSuggestions] = useState(suggestions);
+	const [allSuggestions, setAllSuggestions] = useState<Map<string, AiSuggestedKeyword>>(new Map());
 
-	// Derived state during render: accumulate picks instead of flush
+	// Derived state: accumulate picks instead of flush
 	if (open !== prevOpen) {
 		setPrevOpen(open);
 		if (open) {
+			setAllSuggestions(new Map(suggestions.map(s => [s.name, s])));
 			setSelected(suggestions.map((s) => s.name));
 		} else {
+			setAllSuggestions(new Map());
 			setSelected([]);
 		}
 	} else if (suggestions !== prevSuggestions) {
 		setPrevSuggestions(suggestions);
+		const newAllSuggestions = new Map(allSuggestions);
+		let updated = false;
+		suggestions.forEach(s => {
+			if (!newAllSuggestions.has(s.name)) {
+				newAllSuggestions.set(s.name, s);
+				updated = true;
+			}
+		});
+		if (updated) {
+			setAllSuggestions(newAllSuggestions);
+		}
 		// Auto-select NEW suggestions and retain old ones
 		setSelected([...new Set([...selected, ...suggestions.map((s) => s.name)])]);
 	}
@@ -77,8 +91,9 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 
 	const handleSubmit = () => {
 		if (selected.length === 0) return;
-		const selectedItems = suggestions.filter(s => selected.includes(s.name));
-		onConfirm(selectedItems);
+		const selectedItems = selected.map(name => allSuggestions.get(name) || { name });
+		console.log("selectedItems", selectedItems);
+		onConfirm(selectedItems as AiSuggestedKeyword[]);
 	};
 
 	const fields: TableField[] = useMemo(() => [
@@ -111,7 +126,7 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 			width: 250,
 			renderCell: (row: TableRowData) => (
 				<Link
-					href={`https://trends.google.com.vn/trends/explore?cat=19&date=today%203-m&geo=VN&q=${encodeURIComponent(String(row.name))}&hl=vi&legacy`}
+					href={`https://trends.google.com.vn/trends/explore?cat=19&date=today%201-m&geo=VN&q=${encodeURIComponent(String(row.name))}&hl=vi&legacy`}
 					target="_blank"
 					rel="noopener noreferrer"
 					underline="hover"
@@ -133,7 +148,7 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 			label: 'ĐIỂM SỐ',
 			width: 150,
 			align: 'center',
-			renderCell: (row: TableRowData) => row.nameScore !== undefined ? `${row.nameScore}/100` : '-',
+			renderCell: (row: TableRowData) => row.nameScore !== undefined ? `~${row.nameScore}` : '-',
 		},
 	], [selected, handleToggle]);
 

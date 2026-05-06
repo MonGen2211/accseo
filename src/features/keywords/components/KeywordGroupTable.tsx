@@ -1,4 +1,4 @@
-import { Box, Button, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+import { Box, Button, Select, MenuItem, FormControl, InputLabel, Link } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import CustomTable from '../../../components/custom-table/CustomTable';
@@ -51,7 +51,23 @@ export function KeywordGroupTable({
 }: KeywordGroupTableProps) {
 	const fields: TableField[] = [
 		{ id: 'stt', name: 'stt', label: 'STT', type: 'text', width: 40, align: 'center' },
-		{ id: 'name', name: 'name', label: 'Tên Bộ Keywords', type: 'text', width: 120, sortable: true },
+		{
+			id: 'name',
+			name: 'name',
+			label: 'Tên Bộ Keywords',
+			width: 120,
+			sortable: true,
+			renderCell: (row: TableRowData) => (
+				<Link
+					href={`https://trends.google.com.vn/trends/explore?cat=19&date=today%201-m&geo=VN&q=${encodeURIComponent(String(row.name))}&hl=vi&legacy`}
+					target="_blank"
+					rel="noopener noreferrer"
+					underline="hover"
+				>
+					{String(row.name)}
+				</Link>
+			)
+		},
 		{ id: 'reason', name: 'reason', label: 'Lý do', type: 'text', width: 300, wrapText: true },
 		{
 			id: 'status',

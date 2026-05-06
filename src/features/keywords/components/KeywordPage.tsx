@@ -77,7 +77,7 @@ export default function KeywordPage() {
 			} else {
 				setAiSuggestions([]);
 			}
-			showToast('✅ AI đã tạo xong! Xem kết quả đề xác nhận.', 'success');
+			showToast('AI đã tạo xong! Xem kết quả đề xác nhận.', 'success');
 			setIsAiDialogOpen(false);
 			setIsAiResultOpen(true);
 		} catch (err: unknown) {
