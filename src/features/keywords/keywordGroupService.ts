@@ -64,4 +64,13 @@ export const keywordGroupService = {
     } }>>('/keywords/by-current-user?includeKeywords=false');
     return response.data.data.overall;
   },
+
+  async suggestAiKeywordsByTrendsLive(domainId: string, payload: import('./types').SuggestByTrendsLivePayload): Promise<import('./types').AiSuggestedKeyword[]> {
+    const response = await api.post<ApiResponse<{ source?: string, results: import('./types').AiSuggestedKeyword[] }>>(`/keywords/suggest-for-domain/${domainId}/by-trends-live`, payload);
+    return response.data.data.results;
+  },
+
+  async clearTrendsLiveCache(domainId: string): Promise<void> {
+    await api.delete(`/keywords/suggest-for-domain/${domainId}/by-trends-live/cache`);
+  },
 };

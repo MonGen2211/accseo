@@ -212,14 +212,14 @@ export default function DashboardPage() {
 					<StatCard
 						title="Bộ từ khoá cần phê duyệt"
 						value={stats.pendingKeywords}
-						icon={<PendingActionsIcon sx={{ color: '#7c3aed', fontSize: 26 }} />}
-						bgColor="#ede9fe"
-						iconBgColor="rgba(124, 58, 237, 0.15)"
+						icon={<PendingActionsIcon sx={{ color: '#e11d48', fontSize: 26 }} />}
+						bgColor="#ffe4e6"
+						iconBgColor="rgba(225, 29, 72, 0.15)"
 					/>
 				</Box>
 
 				{/* Chart (50%) */}
-				<Paper variant="outlined" sx={{ borderRadius: 3, p: 3, display: 'flex', flexDirection: 'column' }}>
+				<Paper variant="outlined" sx={{ borderRadius: 3, p: 3, display: 'flex', flexDirection: 'column', minHeight: 320 }}>
 					<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
 						<Box>
 							<Typography sx={{ fontSize: '1rem', fontWeight: 700, color: 'text.primary' }}>
@@ -250,24 +250,31 @@ export default function DashboardPage() {
 								</FormControl>
 							</Box>
 						</Box>
-						<Box sx={{ textAlign: 'right' }}>
-							<Typography sx={{ fontSize: '1.5rem', fontWeight: 800, color: '#2563eb' }}>
-								{ga4Data ? new Intl.NumberFormat('en-US', { notation: "compact", compactDisplay: "short" }).format(ga4Data.summary.screenPageViews) : '0'}
-							</Typography>
-							<Typography sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-								Views
-							</Typography>
-						</Box>
+						{ga4Data && ga4Data.trend && ga4Data.trend.length > 0 && (
+							<Box sx={{ textAlign: 'right' }}>
+								<Typography sx={{ fontSize: '1.5rem', fontWeight: 800, color: '#2563eb' }}>
+									{new Intl.NumberFormat('en-US', { notation: "compact", compactDisplay: "short" }).format(ga4Data.summary.screenPageViews)}
+								</Typography>
+								<Typography sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+									Views
+								</Typography>
+							</Box>
+						)}
 					</Box>
 
 					{/* Real Bar Chart */}
-					<Box sx={{ flex: 1, display: 'flex', alignItems: 'flex-end', gap: 1, height: 180, pt: 2, overflowX: 'hidden' }}>
+					<Box sx={{ flex: 1, display: 'flex', alignItems: 'flex-end', gap: 1, height: 220, pt: 2, overflowX: 'hidden' }}>
 						{loadingGa4 ? (
 							<Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
 								<CircularProgress size={30} />
 							</Box>
 						) : (!ga4Data || !ga4Data.trend || ga4Data.trend.length === 0) ? (
-							<Typography sx={{ color: 'text.secondary', m: 'auto' }}>Không có dữ liệu</Typography>
+							<Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+								<Box sx={{ width: 56, height: 56, borderRadius: '50%', bgcolor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+									<PublicIcon sx={{ fontSize: 28, color: '#94a3b8' }} />
+								</Box>
+								<Typography sx={{ color: 'text.secondary', fontWeight: 500, fontSize: '0.9rem' }}>Chưa có dữ liệu truy cập</Typography>
+							</Box>
 						) : (
 							(() => {
 								let chartData = [];

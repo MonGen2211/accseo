@@ -66,7 +66,7 @@ export function KeywordGroupTable({
 			statusType: 'keyword',
 			sortable: true,
 		},
-		{ id: 'actions', name: 'actions', label: 'Thao tác', type: 'actions', width: 100, align: 'center' },
+		// { id: 'actions', name: 'actions', label: 'Thao tác', type: 'actions', width: 100, align: 'center' },
 	];
 
 	const displayData = data.map((item, index) => ({
@@ -130,19 +130,31 @@ export function KeywordGroupTable({
 			{onAiGenerate && (
 				<Button
 					variant="contained"
-					color="secondary"
 					onClick={onAiGenerate}
+					startIcon={!generateAiLoading && <AutoAwesomeIcon />}
 					sx={{
 						borderRadius: 2,
 						textTransform: 'none',
-						fontWeight: 600,
+						fontWeight: 700,
 						position: 'relative',
 						overflow: 'hidden',
+						background: 'linear-gradient(45deg, #f59e0b 30%, #ea580c 90%)',
+						boxShadow: '0 3px 5px 2px rgba(234, 88, 12, .3)',
+						color: 'white',
+						transition: 'all 0.2s',
+						'&:hover': {
+							transform: 'scale(1.02)',
+							background: 'linear-gradient(45deg, #ea580c 30%, #f59e0b 90%)',
+							boxShadow: '0 4px 8px 3px rgba(234, 88, 12, .4)',
+						},
 						...(generateAiLoading && {
+							background: '#94a3b8',
+							boxShadow: 'none',
+							pointerEvents: 'none',
 							animation: 'aiPulse 1.5s ease-in-out infinite',
 							'@keyframes aiPulse': {
-								'0%, 100%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0.5)' },
-								'50%': { boxShadow: '0 0 0 8px rgba(156, 39, 176, 0)' },
+								'0%, 100%': { opacity: 1 },
+								'50%': { opacity: 0.6 },
 							},
 						}),
 					}}

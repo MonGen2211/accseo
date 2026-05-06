@@ -10,7 +10,6 @@ import {
 	Checkbox,
 	FormControlLabel,
 	Chip,
-	TextField,
 	LinearProgress,
 } from '@mui/material';
 import type { AiSuggestedKeyword } from '../types';
@@ -26,7 +25,7 @@ interface KeywordAiResultDialogProps {
 	suggestions: AiSuggestedKeyword[];
 	onClose: () => void;
 	onConfirm: (selectedItems: AiSuggestedKeyword[]) => void;
-	onRetry?: (rejection_reason: string[]) => void;
+	onRetry?: () => void;
 }
 
 export function KeywordAiResultDialog({ open, loading, generateLoading, suggestions, onClose, onConfirm, onRetry }: KeywordAiResultDialogProps) {
@@ -49,33 +48,8 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 		setSelected([...new Set([...selected, ...suggestions.map((s) => s.name)])]);
 	}
 
-	// ── Reason dialog state ──
-	const [reasonDialogOpen, setReasonDialogOpen] = useState(false);
-	const [reasons, setReasons] = useState<Record<string, string>>({});
-
-	const uncheckedItems = suggestions.filter(s => !selected.includes(s.name));
-	const allReasonsProvided = uncheckedItems.length > 0 && uncheckedItems.every(item => (reasons[item.name] || '').trim().length > 0);
-
 	const handleRetryClick = () => {
-		if (uncheckedItems.length > 0) {
-			const initialReasons: Record<string, string> = {};
-			uncheckedItems.forEach(item => {
-				initialReasons[item.name] = '';
-			});
-			setReasons(initialReasons);
-			setReasonDialogOpen(true);
-		} else {
-			onRetry?.(suggestions.map(() => ''));
-		}
-	};
-
-	const handleReasonConfirm = () => {
-		const rejection_reason = suggestions.map(s => {
-			if (selected.includes(s.name)) return '';
-			return reasons[s.name] || '';
-		});
-		setReasonDialogOpen(false);
-		onRetry?.(rejection_reason);
+		onRetry?.();
 	};
 
 	const handleToggleAll = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -253,38 +227,6 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 				</DialogActions>
 			</Dialog>
 
-			{/* Popup nhập lý do cho keywords không chọn */}
-			<Dialog open={reasonDialogOpen} onClose={() => setReasonDialogOpen(false)} maxWidth="sm" fullWidth>
-				<DialogTitle sx={{ fontWeight: 600 }}>Lý do không chọn</DialogTitle>
-				<DialogContent dividers>
-					<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-						<Typography variant="body2" color="text.secondary">
-							Vui lòng nhập lý do cho các keyword không được chọn:
-						</Typography>
-						{uncheckedItems.map((item) => (
-							<TextField
-								key={item.name}
-								label={item.name}
-								value={reasons[item.name] || ''}
-								onChange={(e) => setReasons(prev => ({ ...prev, [item.name]: e.target.value }))}
-								fullWidth
-								size="small"
-								required
-								multiline
-								minRows={1}
-								maxRows={3}
-								placeholder="Nhập lý do..."
-							/>
-						))}
-					</Box>
-				</DialogContent>
-				<DialogActions sx={{ px: 3, py: 2 }}>
-					<Button onClick={() => setReasonDialogOpen(false)} color="inherit">Hủy</Button>
-					<Button onClick={handleReasonConfirm} variant="contained" disabled={!allReasonsProvided}>
-						Xác nhận
-					</Button>
-				</DialogActions>
-			</Dialog>
 		</>
 	);
 }

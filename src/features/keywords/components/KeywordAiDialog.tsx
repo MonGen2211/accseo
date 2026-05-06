@@ -22,12 +22,10 @@ interface KeywordAiDialogProps {
 	open: boolean;
 	loading: boolean;
 	onClose: () => void;
-	onConfirm: (days: number, top: number, count: number, categories: string[]) => void;
+	onConfirm: (count: number, categories: string[]) => void;
 }
 
 export function KeywordAiDialog({ open, loading, onClose, onConfirm }: KeywordAiDialogProps) {
-	const [days, setDays] = useState(30);
-	const [top, setTop] = useState(100);
 	const [count, setCount] = useState(3);
 	const [countError, setCountError] = useState<string | null>(null);
 	const [categories, setCategories] = useState<string[]>([]);
@@ -57,7 +55,6 @@ export function KeywordAiDialog({ open, loading, onClose, onConfirm }: KeywordAi
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		if (days <= 0 || top <= 0) return;
 
 		const parseResult = countSchema.safeParse(count);
 		if (!parseResult.success) {
@@ -66,7 +63,7 @@ export function KeywordAiDialog({ open, loading, onClose, onConfirm }: KeywordAi
 		}
 		setCountError(null);
 
-		onConfirm(days, top, count, categories);
+		onConfirm(count, categories);
 	};
 
 	return (
@@ -91,28 +88,6 @@ export function KeywordAiDialog({ open, loading, onClose, onConfirm }: KeywordAi
 						<Typography variant="body2" color="text.secondary">
 							Vui lòng nhập các thông số để AI có thể phân tích và tạo bộ keywords.
 						</Typography>
-						<TextField
-							label="Số ngày (Days)"
-							type="number"
-							variant="outlined"
-							fullWidth
-							size="small"
-							value={days}
-							onChange={(e) => setDays(Number(e.target.value))}
-							required
-							slotProps={{ htmlInput: { min: 1 } }}
-						/>
-						<TextField
-							label="Số lượng (Top)"
-							type="number"
-							variant="outlined"
-							fullWidth
-							size="small"
-							value={top}
-							onChange={(e) => setTop(Number(e.target.value))}
-							required
-							slotProps={{ htmlInput: { min: 1 } }}
-						/>
 						<TextField
 							label="Số lượng kết quả cần (Count)"
 							type="number"
@@ -185,7 +160,7 @@ export function KeywordAiDialog({ open, loading, onClose, onConfirm }: KeywordAi
 					<Button onClick={onClose} color="inherit">
 						{loading ? 'Đóng (vẫn xử lý nền)' : 'Hủy'}
 					</Button>
-					<Button type="submit" variant="contained" disabled={loading || days <= 0 || top <= 0 || count <= 0}>
+					<Button type="submit" variant="contained" disabled={loading || count <= 0}>
 						{loading ? 'Đang tạo...' : 'Xác nhận tạo'}
 					</Button>
 				</DialogActions>

@@ -26,7 +26,6 @@ export interface SuggestAiKeywordsPayload {
   top: number;
   count: number;
   retry?: boolean;
-  rejection_reason?: string[];
   categories?: string[];
 }
 
@@ -59,4 +58,10 @@ export interface KeywordItemInput {
 export interface CreateKeywordGroupItemsPayload {
   domainId: string;
   items: KeywordItemInput[];
+}
+
+export interface SuggestByTrendsLivePayload {
+  count: number;
+  geo?: string;
+  category?: string;
 }

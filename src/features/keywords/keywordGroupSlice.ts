@@ -77,9 +77,9 @@ export const createKeywordGroupItems = createAsyncThunk(
 
 export const suggestAiKeywords = createAsyncThunk(
   'keywordGroups/suggestAiKeywords',
-  async ({ domainId, payload }: { domainId: string; payload: import('./types').SuggestAiKeywordsPayload }, { rejectWithValue }) => {
+  async ({ domainId, payload }: { domainId: string; payload: import('./types').SuggestByTrendsLivePayload }, { rejectWithValue }) => {
     try {
-      return await keywordGroupService.suggestAiKeywords(domainId, payload);
+      return await keywordGroupService.suggestAiKeywordsByTrendsLive(domainId, payload);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(err.response?.data?.message || 'Lỗi khi tạo keywords bằng AI');
