@@ -9,8 +9,9 @@ import ErrorIcon from '@mui/icons-material/Error';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
-export type ToastStatus = 'danger' | 'warning' | 'success';
+export type ToastStatus = 'danger' | 'warning' | 'success' | 'info';
 
 interface ToastifyContextType {
 	showToast: (message: string, status: ToastStatus) => void;
@@ -45,18 +46,25 @@ const iconMap = {
 			<WarningAmberIcon sx={{ color: 'white', fontSize: 14 }} />
 		</Box>
 	),
+	info: (
+		<Box sx={{ width: 20, height: 20, backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+			<InfoOutlinedIcon sx={{ color: 'white', fontSize: 14 }} />
+		</Box>
+	),
 };
 
 const colorMap = {
 	success: '#10B981',
 	danger: '#EF4444',
 	warning: '#F59E0B',
+	info: '#3B82F6',
 };
 
 const titleMap = {
 	success: 'Thành công',
 	danger: 'Đã có lỗi xảy ra',
 	warning: 'Cảnh báo',
+	info: 'Thông báo',
 };
 
 // ─── Provider Component ─────────────────────────────────────────────────────

@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
 import { z } from 'zod';
+import api from '../../../utils/api';
 import type { UserRole } from '../../../types/auth.types';
 import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
@@ -17,6 +18,8 @@ const baseSchema = z.object({
 	role: z.enum(USER_ROLES),
 	password: z.string().optional(),
 	status: z.enum(['active', 'inactive']),
+	companyName: z.string().optional(),
+	branch: z.string().optional(),
 });
 
 const createSchema = baseSchema.extend({
@@ -47,6 +50,8 @@ const EMPTY_FORM: UserFormData = {
 	role: 'SEO_COLLABORATOR',
 	password: '',
 	status: 'active',
+	companyName: '',
+	branch: '',
 };
 
 export default function UserForm({
@@ -60,8 +65,29 @@ export default function UserForm({
 	const [form, setForm] = useState<UserFormData>({ ...EMPTY_FORM, ...initialData });
 	const [errors, setErrors] = useState<FormErrors>({});
 	const schema = useMemo(() => (isEdit ? baseSchema : createSchema), [isEdit]);
+	const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
+	const [loadingBranches, setLoadingBranches] = useState(false);
 
-
+	useEffect(() => {
+		const fetchBranches = async () => {
+			setLoadingBranches(true);
+			try {
+				const response = await api.get('/branches');
+				const branchData = response.data?.data?.items || response.data?.data || response.data || [];
+				if (Array.isArray(branchData)) {
+					setBranches(branchData.map((b: any) => ({
+						id: b.id || b._id || b.name || b,
+						name: b.name || b.branchName || b
+					})));
+				}
+			} catch (error) {
+				console.error('Failed to fetch branches', error);
+			} finally {
+				setLoadingBranches(false);
+			}
+		};
+		fetchBranches();
+	}, []);
 	const handleChange = useCallback((field: keyof UserFormData, value: string) => {
 		setForm((prev) => ({ ...prev, [field]: value }));
 		setErrors((prev) => {
@@ -135,6 +161,37 @@ export default function UserForm({
 					sx={{ mb: 3 }}
 				/>
 			)}
+
+			<TextField
+				label="Tên công ty"
+				value={form.companyName || ''}
+				onChange={(e) => handleChange('companyName', e.target.value)}
+				placeholder="Công ty ABC"
+				error={Boolean(errors.companyName)}
+				helperText={errors.companyName}
+				fullWidth
+				sx={{ mb: 3 }}
+			/>
+
+			<div className="grid grid-cols-2 gap-4 mb-3">
+				<TextField
+					select
+					label="Chi nhánh"
+					value={form.branch || ''}
+					onChange={(e) => handleChange('branch', e.target.value)}
+					error={Boolean(errors.branch)}
+					helperText={errors.branch}
+					fullWidth
+					disabled={loadingBranches}
+					sx={{ mb: 3 }}
+				>
+					{branches.map((branch) => (
+						<MenuItem key={branch.id} value={branch.name}>
+							{branch.name}
+						</MenuItem>
+					))}
+				</TextField>
+			</div>
 
 			<div className="grid grid-cols-2 gap-4">
 				<TextField

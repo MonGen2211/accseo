@@ -18,6 +18,7 @@ export const ROUTES = {
   USERS: '/users',
   DOMAINS: '/domains',
   SETTINGS: '/settings',
+  PROFILE: '/profile',
 };
 
 export const PAGINATION_DEFAULT = {

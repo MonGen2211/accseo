@@ -11,6 +11,12 @@ export interface UserProfile {
   status: 'active' | 'inactive';
   createdAt: string;
   lastLogin?: string;
+  companyName?: string;
+  branch?: string;
+  msnv?: string | null;
+  phone1?: string | null;
+  phone2?: string | null;
+  imgAvatar?: string | null;
 }
 
 export interface UserFormData {
@@ -19,6 +25,11 @@ export interface UserFormData {
   role: UserRole;
   password?: string;
   status: 'active' | 'inactive';
+  companyName?: string;
+  branch?: string;
+  msnv?: string | null;
+  phone1?: string | null;
+  phone2?: string | null;
 }
 
 export interface UserState {

@@ -38,6 +38,8 @@ export interface RegisterCredentials {
   name: string;
   password: string;
   role?: UserRole;
+  companyName?: string;
+  branch?: string;
 }
 
 export interface RegisterResponse {

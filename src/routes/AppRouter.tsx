@@ -11,6 +11,7 @@ import UserPage from '../features/users/components/UserPage';
 import DomainPage from '../features/domains/components/DomainPage';
 import KeywordPage from '../features/keywords/components/KeywordPage';
 import SettingsPage from '../features/settings/components/SettingsPage';
+import ProfilePage from '../features/profile/components/ProfilePage';
 
 export default function AppRouter() {
 	const dispatch = useAppDispatch();
@@ -41,6 +42,7 @@ export default function AppRouter() {
 					<Route path="users" element={<UserPage />} />
 					<Route path="domains" element={<DomainPage />} />
 					<Route path="domains/:domainId/keywords" element={<KeywordPage />} />
+					<Route path="profile" element={<ProfilePage />} />
 				</Route>
 
 				<Route path="*" element={<Navigate to={ROUTES.DASHBOARD} replace />} />

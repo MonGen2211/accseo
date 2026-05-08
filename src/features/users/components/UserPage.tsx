@@ -12,6 +12,7 @@ import {
 	setSortField,
 	setSortOrder,
 } from '../userSlice';
+import { userService } from '../userService';
 import type { UserFormData } from './UserForm';
 import UserTable from './UserTable';
 import UserForm from './UserForm';
@@ -61,10 +62,16 @@ export default function UserPage() {
 		setShowForm(true);
 	};
 
-	const handleEdit = (user: typeof selectedUser) => {
-		dispatch(setSelectedUser(user));
-		dispatch(clearUserError());
-		setShowForm(true);
+	const handleEdit = async (user: typeof selectedUser) => {
+		if (!user) return;
+		try {
+			const fullUser = await userService.getById(user.id);
+			dispatch(setSelectedUser(fullUser));
+			dispatch(clearUserError());
+			setShowForm(true);
+		} catch (err) {
+			showToast('Không thể tải thông tin chi tiết người dùng', 'danger');
+		}
 	};
 
 	const handleDelete = async (id: string) => {
@@ -91,6 +98,8 @@ export default function UserPage() {
 			if (data.name !== selectedUser.name) changedData.name = data.name;
 			if (data.role !== selectedUser.role) changedData.role = data.role;
 			if (data.status !== selectedUser.status) changedData.status = data.status;
+			if (data.companyName !== selectedUser.companyName) changedData.companyName = data.companyName;
+			if (data.branch !== selectedUser.branch) changedData.branch = data.branch;
 
 			if (Object.keys(changedData).length === 0) {
 				setShowForm(false);
@@ -174,6 +183,8 @@ export default function UserPage() {
 									name: selectedUser.name,
 									role: selectedUser.role,
 									status: selectedUser.status,
+									companyName: selectedUser.companyName,
+									branch: selectedUser.branch,
 								}
 								: undefined
 						}

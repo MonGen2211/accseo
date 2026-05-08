@@ -29,6 +29,7 @@ const PAGE_META: Record<string, { title: string; breadcrumb: string[] }> = {
 	'/users': { title: 'Quản lý Người dùng', breadcrumb: ['Trang chủ', 'Người dùng'] },
 	'/settings': { title: 'Cài đặt hệ thống', breadcrumb: ['Trang chủ', 'Cài đặt hệ thống'] },
 	'/domains': { title: 'Quản lý Tên miền', breadcrumb: ['Trang chủ', 'Tên miền'] },
+	'/profile': { title: 'Hồ sơ cá nhân', breadcrumb: ['Trang chủ', 'Hồ sơ cá nhân'] },
 };
 
 const BREADCRUMB_LINKS: Record<string, string> = {
@@ -234,7 +235,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 					</Box>
 					<Divider />
 
-					<MenuItem onClick={() => handleNavigate('/profile')} sx={{ gap: 1.5, py: 1 }}>
+					<MenuItem onClick={() => handleNavigate(ROUTES.PROFILE)} sx={{ gap: 1.5, py: 1 }}>
 						<PersonOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
 						Profile
 					</MenuItem>
