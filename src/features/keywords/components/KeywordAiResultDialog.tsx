@@ -12,29 +12,48 @@ import {
 	Chip,
 	LinearProgress,
 	Link,
+	Divider,
+	ToggleButtonGroup,
+	ToggleButton,
 } from '@mui/material';
 import type { AiSuggestedKeyword } from '../types';
 import CustomTable from '../../../components/custom-table/CustomTable';
 import type { TableField } from '../../../types/tableFields.types';
 import type { TableRowData } from '../../../types/tableRows.types';
 import { useAiProgress } from '../hooks/useAiProgress';
+import { RelatedQueriesPanel } from './RelatedQueriesPanel';
+import { RelatedTopicsPanel } from './RelatedTopicsPanel';
+import { TrendLineChart } from './TrendLineChart';
 
 interface KeywordAiResultDialogProps {
 	open: boolean;
 	loading: boolean;
 	generateLoading?: boolean;
 	suggestions: AiSuggestedKeyword[];
+	timeRange?: string;
 	onClose: () => void;
 	onConfirm: (selectedItems: AiSuggestedKeyword[]) => void;
-	onRetry?: () => void;
+	onRetry?: (timeRange: string) => void;
+	onExit?: () => void;
 }
 
-export function KeywordAiResultDialog({ open, loading, generateLoading, suggestions, onClose, onConfirm, onRetry }: KeywordAiResultDialogProps) {
+function toGoogleTrendsDate(timeRange: string): string {
+	return `today ${timeRange}`;
+}
+
+function buildTrendsUrl(keyword: string, timeRange: string): string {
+	const date = encodeURIComponent(toGoogleTrendsDate(timeRange));
+	return `https://trends.google.com.vn/trends/explore?date=${date}&geo=VN&q=${encodeURIComponent(keyword)}&hl=vi`;
+}
+
+export function KeywordAiResultDialog({ open, loading, generateLoading, suggestions, timeRange = '3-m', onClose, onConfirm, onRetry, onExit }: KeywordAiResultDialogProps) {
 	const progress = useAiProgress(generateLoading ?? false);
 	const [selected, setSelected] = useState<string[]>([]);
 	const [prevOpen, setPrevOpen] = useState(open);
 	const [prevSuggestions, setPrevSuggestions] = useState(suggestions);
 	const [allSuggestions, setAllSuggestions] = useState<Map<string, AiSuggestedKeyword>>(new Map());
+	const [activeKeyword, setActiveKeyword] = useState<string>('');
+	const [retryTimeRange, setRetryTimeRange] = useState(timeRange);
 
 	// Derived state: accumulate picks instead of flush
 	if (open !== prevOpen) {
@@ -42,9 +61,11 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 		if (open) {
 			setAllSuggestions(new Map(suggestions.map(s => [s.name, s])));
 			setSelected(suggestions.map((s) => s.name));
+			if (suggestions.length > 0) setActiveKeyword(suggestions[0].name);
 		} else {
 			setAllSuggestions(new Map());
 			setSelected([]);
+			setActiveKeyword('');
 		}
 	} else if (suggestions !== prevSuggestions) {
 		setPrevSuggestions(suggestions);
@@ -61,10 +82,11 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 		}
 		// Auto-select NEW suggestions and retain old ones
 		setSelected([...new Set([...selected, ...suggestions.map((s) => s.name)])]);
+		if (!activeKeyword && suggestions.length > 0) setActiveKeyword(suggestions[0].name);
 	}
 
 	const handleRetryClick = () => {
-		onRetry?.();
+		onRetry?.(retryTimeRange);
 	};
 
 	const handleToggleAll = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,6 +118,9 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 		onConfirm(selectedItems as AiSuggestedKeyword[]);
 	};
 
+	const hasGroupsFields = suggestions.some(s => s.currentScore !== undefined || s.avg !== undefined);
+	const hasTrendTimeline = suggestions.some(s => s.trendTimeline && s.trendTimeline.length > 0);
+
 	const fields: TableField[] = useMemo(() => [
 		{
 			id: 'select',
@@ -126,7 +151,7 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 			width: 250,
 			renderCell: (row: TableRowData) => (
 				<Link
-					href={`https://trends.google.com.vn/trends/explore?cat=19&date=today%201-m&geo=VN&q=${encodeURIComponent(String(row.name))}&hl=vi&legacy`}
+					href={buildTrendsUrl(String(row.name), timeRange)}
 					target="_blank"
 					rel="noopener noreferrer"
 					underline="hover"
@@ -142,15 +167,66 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 			width: 400,
 			wrapText: true,
 		},
-		{
+		...(!hasGroupsFields ? [{
 			id: 'nameScore',
 			name: 'nameScore',
 			label: 'ĐIỂM SỐ',
-			width: 150,
-			align: 'center',
+			width: 120,
+			align: 'center' as const,
 			renderCell: (row: TableRowData) => row.nameScore !== undefined ? `~${row.nameScore}` : '-',
-		},
-	], [selected, handleToggle]);
+		}] : []),
+		...(hasGroupsFields ? [
+			{
+				id: 'currentScore',
+				name: 'currentScore',
+				label: 'ĐIỂM HIỆN TẠI',
+				width: 120,
+				align: 'center' as const,
+				renderCell: (row: TableRowData) => row.currentScore !== undefined ? String(row.currentScore) : '-',
+			},
+			{
+				id: 'avg',
+				name: 'avg',
+				label: 'TB TRENDS',
+				width: 100,
+				align: 'center' as const,
+				renderCell: (row: TableRowData) => row.avg !== undefined ? String(row.avg) : '-',
+			},
+			{
+				id: 'slope',
+				name: 'slope',
+				label: 'XU HƯỚNG',
+				width: 100,
+				align: 'center' as const,
+				renderCell: (row: TableRowData) => row.slope !== undefined ? (Number(row.slope) > 0 ? `+${row.slope}` : String(row.slope)) : '-',
+			},
+			{
+				id: 'isSpike',
+				name: 'isSpike',
+				label: 'SPIKE',
+				width: 80,
+				align: 'center' as const,
+				renderCell: (row: TableRowData) => row.isSpike ? 'Có' : 'Không',
+			},
+		] : []),
+		...(hasTrendTimeline ? [{
+			id: 'trendTimeline',
+			name: 'trendTimeline',
+			label: 'XU HƯỚNG',
+			width: 160,
+			align: 'center' as const,
+			renderCell: (row: TableRowData) => {
+				const timeline = row.trendTimeline as import('../types').TrendTimelinePoint[] | undefined;
+				if (!timeline || timeline.length === 0) return <span style={{ color: '#94a3b8', fontSize: 12 }}>—</span>;
+				const score = row.currentScore !== undefined ? Number(row.currentScore) : undefined;
+				return (
+					<Box sx={{ width: 150, height: 48 }}>
+						<TrendLineChart data={timeline} currentScore={score} height={48} showAxes={false} />
+					</Box>
+				);
+			},
+		}] : []),
+	], [selected, handleToggle, hasGroupsFields, hasTrendTimeline]);
 
 	const tableData = useMemo(() => {
 		return suggestions.map((s, idx) => ({ ...s, id: s.name, __index: idx }));
@@ -231,18 +307,85 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 								}
 							/>
 						</Box>
+
+						{/* Trends Analysis từ data trả về */}
+						{suggestions.length > 0 && suggestions.some(s => s.relatedQueries ?? s.relatedTopics ?? s.trendTimeline?.length) && (
+							<>
+								<Divider sx={{ my: 1 }} />
+								<Box>
+									<Typography variant="body2" sx={{ fontWeight: 700, mb: 1.5, color: 'text.primary' }}>
+										Phân tích xu hướng
+									</Typography>
+									<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+										{suggestions.filter(s => s.relatedQueries ?? s.relatedTopics ?? s.trendTimeline?.length).map((s) => (
+											<Chip
+												key={s.name}
+												label={s.name}
+												size="small"
+												variant={activeKeyword === s.name ? 'filled' : 'outlined'}
+												color={activeKeyword === s.name ? 'primary' : 'default'}
+												onClick={() => setActiveKeyword(s.name)}
+												sx={{ cursor: 'pointer', fontWeight: activeKeyword === s.name ? 700 : 400 }}
+											/>
+										))}
+									</Box>
+									{activeKeyword && (() => {
+										const activeSuggestion = suggestions.find(s => s.name === activeKeyword);
+										return (
+											<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+												{activeSuggestion?.trendTimeline && activeSuggestion.trendTimeline.length > 0 && (
+													<Box sx={{ border: '1px solid #e2e8f0', borderRadius: 2, p: 2 }}>
+														<Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
+															Biểu đồ xu hướng — {activeKeyword}
+														</Typography>
+														<TrendLineChart
+															data={activeSuggestion.trendTimeline}
+															currentScore={activeSuggestion.currentScore}
+															height={180}
+															showAxes={true}
+														/>
+													</Box>
+												)}
+												<Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+													<RelatedQueriesPanel data={activeSuggestion?.relatedQueries} timeRange={retryTimeRange} />
+													<RelatedTopicsPanel data={activeSuggestion?.relatedTopics} timeRange={retryTimeRange} />
+												</Box>
+											</Box>
+										);
+									})()}
+								</Box>
+							</>
+						)}
 					</Box>
 				</DialogContent>
 				<DialogActions sx={{ px: 3, py: 2 }}>
+					{onExit && !generateLoading && (
+						<Button onClick={onExit} color="error" variant="outlined" disabled={loading} sx={{ mr: 'auto' }}>
+							Thoát
+						</Button>
+					)}
 					{generateLoading && (
 						<Button onClick={onClose} color="inherit" sx={{ mr: 'auto' }}>
 							Đóng (vẫn xử lý nền)
 						</Button>
 					)}
 					{onRetry && (
-						<Button onClick={handleRetryClick} disabled={loading || generateLoading} color="secondary">
-							{generateLoading ? 'Đang tạo lại...' : 'Tạo lại AI (Retry)'}
-						</Button>
+						<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+							<ToggleButtonGroup
+								value={retryTimeRange}
+								exclusive
+								onChange={(_, val) => { if (val) setRetryTimeRange(val); }}
+								size="small"
+								disabled={loading || generateLoading}
+								sx={{ '& .MuiToggleButton-root': { px: 1.5, py: 0.5, fontSize: 12, textTransform: 'none', fontWeight: 600 } }}
+							>
+								<ToggleButton value="1-m">1 tháng</ToggleButton>
+								<ToggleButton value="3-m">3 tháng</ToggleButton>
+							</ToggleButtonGroup>
+							<Button onClick={handleRetryClick} disabled={loading || generateLoading} color="secondary">
+								{generateLoading ? 'Đang tạo lại...' : 'Tạo lại AI (Retry)'}
+							</Button>
+						</Box>
 					)}
 					<Button
 						onClick={handleSubmit}

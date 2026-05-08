@@ -1,5 +1,7 @@
 import api from '../../utils/api';
-import type { KeywordGroup, KeywordGroupDataResponse, CreateKeywordGroupPayload } from './types';
+import { API_BASE_URL } from '../../utils/constants';
+import { authService } from '../auth/authService';
+import type { KeywordGroup, KeywordGroupDataResponse, CreateKeywordGroupPayload, StreamLogEvent, AiSuggestedKeyword, SuggestByGroupsPayload } from './types';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -72,5 +74,68 @@ export const keywordGroupService = {
 
   async clearTrendsLiveCache(domainId: string): Promise<void> {
     await api.delete(`/keywords/suggest-for-domain/${domainId}/by-trends-live/cache`);
+  },
+
+  async suggestKeywordsByGroups(payload: import('./types').SuggestByGroupsPayload): Promise<import('./types').AiSuggestedKeyword[]> {
+    const response = await api.post<ApiResponse<{ suggestions: import('./types').AiSuggestedKeyword[] }>>('/keywords/groups/suggest', payload);
+    return response.data.data.suggestions;
+  },
+
+  async clearGroupsSuggestCache(domainId: string): Promise<void> {
+    await api.delete(`/keywords/groups/suggest/cache/${domainId}`);
+  },
+
+  async suggestKeywordsByGroupsStream(
+    payload: SuggestByGroupsPayload,
+    onLog: (event: StreamLogEvent) => void,
+    onResult: (suggestions: AiSuggestedKeyword[]) => void,
+    onError: (message: string) => void,
+    signal: AbortSignal,
+  ): Promise<void> {
+    const token = authService.getAccessToken();
+    const res = await fetch(`${API_BASE_URL}/keywords/groups/suggest/stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(payload),
+      signal,
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({})) as { message?: string };
+      onError(err.message || `Lỗi ${res.status}`);
+      return;
+    }
+
+    const reader = res.body!.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split('\n\n');
+      buffer = parts.pop() ?? '';
+
+      for (const part of parts) {
+        let eventType = 'message';
+        let dataStr = '';
+        for (const line of part.split('\n')) {
+          if (line.startsWith('event: ')) eventType = line.slice(7).trim();
+          else if (line.startsWith('data: ')) dataStr = line.slice(6).trim();
+        }
+        if (!dataStr) continue;
+        try {
+          const data = JSON.parse(dataStr) as StreamLogEvent & { suggestions?: AiSuggestedKeyword[]; code?: string };
+          if (eventType === 'log') onLog(data as StreamLogEvent);
+          else if (eventType === 'result') onResult(data.suggestions ?? []);
+          else if (eventType === 'error') onError(data.message || 'Đã có lỗi');
+        } catch { /* bỏ qua chunk lỗi parse */ }
+      }
+    }
   },
 };

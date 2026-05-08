@@ -12,13 +12,13 @@ interface KeywordGroupTableProps {
 	total: number;
 	page: number;
 	limit: number;
-	generateAiLoading?: boolean;
+	generateAiGroupsLoading?: boolean;
 	deleteLoadingId?: string | null;
 	statusLoadingId?: string | null;
 	onPageChange: (newPage: number) => void;
 	onRowsPerPageChange: (newLimit: number) => void;
 	onOpenCreate: () => void;
-	onAiGenerate?: () => void;
+	onAiGenerateByGroups?: () => void;
 	onDelete?: (row: TableRowData) => void;
 	onStatusChange?: (row: TableRowData, newStatus: string) => void;
 	sortBy?: string;
@@ -34,11 +34,11 @@ export function KeywordGroupTable({
 	total,
 	page,
 	limit,
-	generateAiLoading = false,
+	generateAiGroupsLoading = false,
 	onPageChange,
 	onRowsPerPageChange,
 	onOpenCreate,
-	onAiGenerate,
+	onAiGenerateByGroups,
 	deleteLoadingId = null,
 	statusLoadingId = null,
 	onDelete,
@@ -59,7 +59,7 @@ export function KeywordGroupTable({
 			sortable: true,
 			renderCell: (row: TableRowData) => (
 				<Link
-					href={`https://trends.google.com.vn/trends/explore?cat=19&date=today%201-m&geo=VN&q=${encodeURIComponent(String(row.name))}&hl=vi&legacy`}
+					href={`https://trends.google.com.vn/trends/explore?date=today%203-m&geo=VN&q=${encodeURIComponent(String(row.name))}&hl=vi`}
 					target="_blank"
 					rel="noopener noreferrer"
 					underline="hover"
@@ -118,40 +118,47 @@ export function KeywordGroupTable({
 		</FormControl>
 	) : undefined;
 
+	const aiButtonSx = (loading: boolean, gradient: string, hoverGradient: string, shadowColor: string) => ({
+		borderRadius: 2,
+		textTransform: 'none' as const,
+		fontWeight: 700,
+		position: 'relative' as const,
+		overflow: 'hidden',
+		background: gradient,
+		boxShadow: `0 3px 5px 2px ${shadowColor}`,
+		color: 'white',
+		transition: 'all 0.2s',
+		'&:hover': {
+			transform: 'scale(1.02)',
+			background: hoverGradient,
+			boxShadow: `0 4px 8px 3px ${shadowColor}`,
+		},
+		...(loading && {
+			background: '#94a3b8',
+			boxShadow: 'none',
+			animation: 'aiPulse 1.5s ease-in-out infinite',
+			'@keyframes aiPulse': {
+				'0%, 100%': { opacity: 1 },
+				'50%': { opacity: 0.6 },
+			},
+		}),
+	});
+
 	const headerActions = (
 		<Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-			{onAiGenerate && (
+			{onAiGenerateByGroups && (
 				<Button
 					variant="contained"
-					onClick={onAiGenerate}
-					startIcon={!generateAiLoading && <AutoAwesomeIcon />}
-					sx={{
-						borderRadius: 2,
-						textTransform: 'none',
-						fontWeight: 700,
-						position: 'relative',
-						overflow: 'hidden',
-						background: 'linear-gradient(45deg, #f59e0b 30%, #ea580c 90%)',
-						boxShadow: '0 3px 5px 2px rgba(234, 88, 12, .3)',
-						color: 'white',
-						transition: 'all 0.2s',
-						'&:hover': {
-							transform: 'scale(1.02)',
-							background: 'linear-gradient(45deg, #ea580c 30%, #f59e0b 90%)',
-							boxShadow: '0 4px 8px 3px rgba(234, 88, 12, .4)',
-						},
-						...(generateAiLoading && {
-							background: '#94a3b8',
-							boxShadow: 'none',
-							animation: 'aiPulse 1.5s ease-in-out infinite',
-							'@keyframes aiPulse': {
-								'0%, 100%': { opacity: 1 },
-								'50%': { opacity: 0.6 },
-							},
-						}),
-					}}
+					onClick={onAiGenerateByGroups}
+					startIcon={!generateAiGroupsLoading && <AutoAwesomeIcon />}
+					sx={aiButtonSx(
+						generateAiGroupsLoading,
+						'linear-gradient(45deg, #6366f1 30%, #8b5cf6 90%)',
+						'linear-gradient(45deg, #8b5cf6 30%, #6366f1 90%)',
+						'rgba(99, 102, 241, .3)',
+					)}
 				>
-					{generateAiLoading ? 'Đang tạo bằng AI... (Xem tiến trình)' : 'Tạo bằng AI'}
+					{generateAiGroupsLoading ? 'Đang tạo bằng AI... (Xem tiến trình)' : 'Tạo bằng AI'}
 				</Button>
 			)}
 			<Button

@@ -1,14 +1,15 @@
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../../../app/store';
-import { fetchKeywordGroups, suggestAiKeywords, deleteKeywordGroup, updateKeywordGroupStatus, setKeywordSortField, setKeywordSortOrder, setKeywordStatusFilter } from '../keywordGroupSlice';
+import { fetchKeywordGroups, deleteKeywordGroup, updateKeywordGroupStatus, setKeywordSortField, setKeywordSortOrder, setKeywordStatusFilter } from '../keywordGroupSlice';
 import { KeywordGroupTable } from './KeywordGroupTable';
 import { KeywordGroupForm } from './KeywordGroupForm';
-import { KeywordAiDialog } from './KeywordAiDialog';
+import { KeywordGroupsAiDialog } from './KeywordGroupsAiDialog';
+import { KeywordGroupsStreamDialog } from './KeywordGroupsStreamDialog';
 import { KeywordAiResultDialog } from './KeywordAiResultDialog';
-import type { AiSuggestedKeyword } from '../types';
+import type { AiSuggestedKeyword, StreamLogEvent } from '../types';
 import { keywordGroupService } from '../keywordGroupService';
 import { createKeywordGroupItems } from '../keywordGroupSlice';
 import { GscPanel } from './GscPanel';
@@ -21,15 +22,22 @@ import { useParams } from 'react-router-dom';
 export default function KeywordPage() {
 	const { domainId } = useParams<{ domainId: string }>();
 	const dispatch = useAppDispatch();
-	const { items, loading, total, page, limit, generateAiLoading, deleteLoadingId, statusLoadingId, sortField, sortOrder, statusFilter } = useAppSelector((state) => state.keywordGroups);
+	const { items, loading, total, page, limit, deleteLoadingId, statusLoadingId, sortField, sortOrder, statusFilter } = useAppSelector((state) => state.keywordGroups);
 	const { showToast } = useToastify();
 
 	const [isFormOpen, setIsFormOpen] = useState(false);
-	const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
+	const [isAiGroupsDialogOpen, setIsAiGroupsDialogOpen] = useState(false);
+	const [isStreamDialogOpen, setIsStreamDialogOpen] = useState(false);
 	const [isAiResultOpen, setIsAiResultOpen] = useState(false);
+	const [streamLogs, setStreamLogs] = useState<StreamLogEvent[]>([]);
+	const [isStreaming, setIsStreaming] = useState(false);
 	const [aiSuggestions, setAiSuggestions] = useState<AiSuggestedKeyword[]>([]);
 	const [aiSubmitLoading, setAiSubmitLoading] = useState(false);
-	const [lastAiConfig, setLastAiConfig] = useState<{ count: number, categories: string[] } | null>(null);
+	const [lastAiGroupsTimeRange, setLastAiGroupsTimeRange] = useState<string>('3-m');
+	const [lastAiGroupsMinScore, setLastAiGroupsMinScore] = useState<number>(60);
+	const [lastAiGroupsCount, setLastAiGroupsCount] = useState<number>(2);
+
+	const abortRef = useRef<AbortController | null>(null);
 
 	const loadData = (p: number, l: number) => {
 		if (domainId) {
@@ -42,13 +50,8 @@ export default function KeywordPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [domainId, sortField, sortOrder, statusFilter]);
 
-	const handlePageChange = (newPage: number) => {
-		loadData(newPage, limit);
-	};
-
-	const handleRowsPerPageChange = (newLimit: number) => {
-		loadData(0, newLimit);
-	};
+	const handlePageChange = (newPage: number) => loadData(newPage, limit);
+	const handleRowsPerPageChange = (newLimit: number) => loadData(0, newLimit);
 
 	const handleSort = (field: string) => {
 		if (field === sortField) {
@@ -59,37 +62,63 @@ export default function KeywordPage() {
 		}
 	};
 
-	const handleFormSuccess = () => {
-		loadData(0, limit);
-	};
+	const handleFormSuccess = () => loadData(0, limit);
 
-	const handleAiGenerate = async (count: number, categories: string[], isRetry = false) => {
+	const startStream = async (timeRange: string, minScore: number, count: number) => {
 		if (!domainId) return;
-		try {
-			if (!isRetry) {
-				setLastAiConfig({ count, categories });
-			}
-			const category = categories.length > 0 ? categories[0] : undefined;
-			const result = await dispatch(suggestAiKeywords({ domainId, payload: { count, geo: "VN", category } })).unwrap();
 
-			if (Array.isArray(result)) {
-				setAiSuggestions(result as AiSuggestedKeyword[]);
-			} else {
-				setAiSuggestions([]);
-			}
-			showToast('AI đã tạo xong! Xem kết quả đề xác nhận.', 'success');
-			setIsAiDialogOpen(false);
-			setIsAiResultOpen(true);
+		setLastAiGroupsTimeRange(timeRange);
+		setLastAiGroupsMinScore(minScore);
+		setLastAiGroupsCount(count);
+		setStreamLogs([]);
+		setIsStreaming(true);
+		setIsAiGroupsDialogOpen(false);
+		setIsStreamDialogOpen(true);
+
+		const controller = new AbortController();
+		abortRef.current = controller;
+
+		try {
+			await keywordGroupService.suggestKeywordsByGroupsStream(
+				{ domainId, timeRange, minScore, count },
+				(log) => setStreamLogs((prev) => [...prev, log]),
+				(suggestions) => {
+					setIsStreamDialogOpen(false);
+					setIsStreaming(false);
+					setAiSuggestions(suggestions);
+					setIsAiResultOpen(true);
+					showToast('AI đã tạo xong! Xem kết quả để xác nhận.', 'success');
+				},
+				(errMsg) => {
+					setIsStreamDialogOpen(false);
+					setIsStreaming(false);
+					showToast(errMsg, 'danger');
+				},
+				controller.signal,
+			);
 		} catch (err: unknown) {
-			const errorMsg = typeof err === 'string' ? err : 'Đã có lỗi xảy ra';
-			showToast(errorMsg, 'danger');
+			if ((err as { name?: string }).name === 'AbortError') return;
+			setIsStreamDialogOpen(false);
+			setIsStreaming(false);
+			showToast('Đã có lỗi xảy ra', 'danger');
+		} finally {
+			abortRef.current = null;
 		}
 	};
 
-	const handleAiRetry = () => {
-		if (lastAiConfig) {
-			handleAiGenerate(lastAiConfig.count, lastAiConfig.categories, true);
-		}
+	const handleStreamCancel = () => {
+		abortRef.current?.abort();
+		abortRef.current = null;
+		setIsStreamDialogOpen(false);
+		setIsStreaming(false);
+		setStreamLogs([]);
+	};
+
+	const handleAiRetry = (retryTimeRange: string) => {
+		setLastAiGroupsTimeRange(retryTimeRange);
+		setIsAiResultOpen(false);
+		setAiSuggestions([]);
+		startStream(retryTimeRange, lastAiGroupsMinScore, lastAiGroupsCount);
 	};
 
 	const handleAiConfirmSelected = async (selectedItems: AiSuggestedKeyword[]) => {
@@ -97,16 +126,26 @@ export default function KeywordPage() {
 		try {
 			setAiSubmitLoading(true);
 			await dispatch(createKeywordGroupItems({ domainId, items: selectedItems.map(item => ({ name: item.name, ...(item.reason && { reason: item.reason }) })) })).unwrap();
-			// Xóa cache gợi ý AI sau khi tạo thành công
 			await keywordGroupService.clearTrendsLiveCache(domainId);
 			showToast('Tạo keywords từ gợi ý thành công!', 'success');
 			loadData(0, limit);
 			setIsAiResultOpen(false);
+			setAiSuggestions([]);
 		} catch (err: unknown) {
 			const errorMsg = typeof err === 'string' ? err : 'Đã có lỗi xảy ra';
 			showToast(errorMsg, 'danger');
 		} finally {
 			setAiSubmitLoading(false);
+		}
+	};
+
+	const handleAiExit = async () => {
+		setIsAiResultOpen(false);
+		setAiSuggestions([]);
+		if (domainId) {
+			try {
+				await keywordGroupService.clearGroupsSuggestCache(domainId);
+			} catch { /* best-effort */ }
 		}
 	};
 
@@ -138,16 +177,11 @@ export default function KeywordPage() {
 
 	return (
 		<Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-			{/* Top Row: GSC (left) + GA4 (right) — 50/50 */}
 			<Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 3, alignItems: 'start' }}>
-				{/* LEFT: GSC Panel */}
 				{domainId && <GscPanel domainId={domainId} />}
-
-				{/* RIGHT: GA4 Panel */}
 				{domainId && <Ga4Panel domainId={domainId} />}
 			</Box>
 
-			{/* Bottom: Keyword Groups — full width */}
 			<Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
 				<Box sx={{ px: 3, pt: 2.5, pb: 1 }}>
 					<Typography sx={{ fontSize: '18px', fontWeight: 700, color: 'text.primary' }}>
@@ -161,18 +195,19 @@ export default function KeywordPage() {
 					total={total}
 					page={page - 1}
 					limit={limit}
-					generateAiLoading={generateAiLoading}
+					generateAiGroupsLoading={isStreaming}
 					deleteLoadingId={deleteLoadingId}
 					statusLoadingId={statusLoadingId}
 					onPageChange={handlePageChange}
 					onRowsPerPageChange={handleRowsPerPageChange}
 					onOpenCreate={() => setIsFormOpen(true)}
-					onAiGenerate={() => {
-						// Nếu đang loading thì mở result dialog để xem tiến trình
-						if (generateAiLoading) {
+					onAiGenerateByGroups={() => {
+						if (isStreaming) {
+							setIsStreamDialogOpen(true);
+						} else if (aiSuggestions.length > 0) {
 							setIsAiResultOpen(true);
 						} else {
-							setIsAiDialogOpen(true);
+							setIsAiGroupsDialogOpen(true);
 						}
 					}}
 					onDelete={handleDelete}
@@ -185,7 +220,6 @@ export default function KeywordPage() {
 				/>
 			</Paper>
 
-			{/* Dialogs */}
 			{domainId && (
 				<KeywordGroupForm
 					open={isFormOpen}
@@ -196,23 +230,31 @@ export default function KeywordPage() {
 			)}
 
 			{domainId && (
-				<KeywordAiDialog
-					open={isAiDialogOpen}
-					loading={generateAiLoading}
-					onClose={() => setIsAiDialogOpen(false)}
-					onConfirm={handleAiGenerate}
+				<KeywordGroupsAiDialog
+					open={isAiGroupsDialogOpen}
+					loading={false}
+					onClose={() => setIsAiGroupsDialogOpen(false)}
+					onConfirm={(timeRange, minScore, count) => startStream(timeRange, minScore, count)}
 				/>
 			)}
+
+			<KeywordGroupsStreamDialog
+				open={isStreamDialogOpen}
+				logs={streamLogs}
+				onCancel={handleStreamCancel}
+			/>
 
 			{domainId && (
 				<KeywordAiResultDialog
 					open={isAiResultOpen}
 					loading={aiSubmitLoading}
-					generateLoading={generateAiLoading}
+					generateLoading={false}
 					suggestions={aiSuggestions}
+					timeRange={lastAiGroupsTimeRange}
 					onClose={() => setIsAiResultOpen(false)}
 					onConfirm={handleAiConfirmSelected}
 					onRetry={handleAiRetry}
+					onExit={handleAiExit}
 				/>
 			)}
 		</Box>
