@@ -10,6 +10,7 @@ interface KeywordGroupState {
   loading: boolean;
   actionLoading: boolean;
   generateAiLoading: boolean;
+  generateAiGroupsLoading: boolean;
   deleteLoadingId: string | null;
   statusLoadingId: string | null;
   error: string | null;
@@ -27,6 +28,7 @@ const initialState: KeywordGroupState = {
   loading: false,
   actionLoading: false,
   generateAiLoading: false,
+  generateAiGroupsLoading: false,
   error: null,
   total: 0,
   page: 1,
@@ -83,6 +85,18 @@ export const suggestAiKeywords = createAsyncThunk(
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(err.response?.data?.message || 'Lỗi khi tạo keywords bằng AI');
+    }
+  }
+);
+
+export const suggestAiKeywordsByGroups = createAsyncThunk(
+  'keywordGroups/suggestAiKeywordsByGroups',
+  async (payload: import('./types').SuggestByGroupsPayload, { rejectWithValue }) => {
+    try {
+      return await keywordGroupService.suggestKeywordsByGroups(payload);
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      return rejectWithValue(err.response?.data?.message || 'Lỗi khi tạo keywords bằng AI (Groups)');
     }
   }
 );
@@ -190,6 +204,18 @@ const keywordGroupSlice = createSlice({
       })
       .addCase(suggestAiKeywords.rejected, (state, action) => {
         state.generateAiLoading = false;
+        state.error = action.payload as string;
+      })
+      // AI Generate by Groups
+      .addCase(suggestAiKeywordsByGroups.pending, (state) => {
+        state.generateAiGroupsLoading = true;
+        state.error = null;
+      })
+      .addCase(suggestAiKeywordsByGroups.fulfilled, (state) => {
+        state.generateAiGroupsLoading = false;
+      })
+      .addCase(suggestAiKeywordsByGroups.rejected, (state, action) => {
+        state.generateAiGroupsLoading = false;
         state.error = action.payload as string;
       })
       // Delete

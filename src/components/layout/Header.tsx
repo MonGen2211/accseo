@@ -8,12 +8,16 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Avatar from '@mui/material/Avatar';
 import Breadcrumbs from '@mui/material/Breadcrumbs';
+import Divider from '@mui/material/Divider';
 import MenuIcon from '@mui/icons-material/Menu';
 import NotificationPanel from './NotificationPanel';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import LogoutIcon from '@mui/icons-material/Logout';
+import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import PersonAddOutlinedIcon from '@mui/icons-material/PersonAddOutlined';
 
 interface HeaderProps {
 	onMenuToggle: () => void;
@@ -62,10 +66,17 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 		setAnchorEl(null);
 	};
 
+	const isAdmin = user?.role === 'ADMIN';
+
 	const handleLogout = async () => {
 		handleMenuClose();
 		await dispatch(logoutUser());
 		navigate(ROUTES.LOGIN);
+	};
+
+	const handleNavigate = (path: string) => {
+		handleMenuClose();
+		navigate(path);
 	};
 
 	return (
@@ -79,16 +90,15 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 					justifyContent: 'flex-end',
 					px: 3,
 					gap: 2,
-					background: 'linear-gradient(135deg, #00b894 0%, #00cec9 50%, #0984e3 100%)',
+					bgcolor: '#ffffff',
 					borderRadius: '16px',
-					position: 'relative',
-					overflow: 'hidden',
+					border: '1px solid #e5e7eb',
+					boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
 				}}
 			>
-
 				{/* Breadcrumbs */}
-				<Box sx={{ mr: 'auto', zIndex: 1 }}>
-					<Breadcrumbs sx={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
+				<Box sx={{ mr: 'auto' }}>
+					<Breadcrumbs sx={{ fontSize: '0.85rem' }}>
 						{meta.breadcrumb.map((crumb, i) => {
 							const isLast = i === meta.breadcrumb.length - 1;
 							const linkPath = BREADCRUMB_LINKS[crumb];
@@ -100,7 +110,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 										to={linkPath}
 										style={{
 											fontSize: '0.85rem',
-											color: 'rgba(255,255,255,0.7)',
+											color: '#6b7280',
 											textDecoration: 'none',
 										}}
 									>
@@ -114,7 +124,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 									key={crumb}
 									sx={{
 										fontSize: '0.85rem',
-										color: isLast ? '#fff' : 'rgba(255,255,255,0.6)',
+										color: isLast ? '#111827' : '#6b7280',
 										fontWeight: isLast ? 600 : 400,
 									}}
 								>
@@ -124,31 +134,6 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 						})}
 					</Breadcrumbs>
 				</Box>
-				{/* Empty Box just to replace lines */}
-
-				{/* Decorative circles */}
-				<Box
-					sx={{
-						position: 'absolute',
-						top: -20,
-						left: -10,
-						width: 80,
-						height: 80,
-						borderRadius: '50%',
-						bgcolor: 'rgba(255,255,255,0.08)',
-					}}
-				/>
-				<Box
-					sx={{
-						position: 'absolute',
-						top: 10,
-						left: 40,
-						width: 50,
-						height: 50,
-						borderRadius: '50%',
-						bgcolor: 'rgba(255,255,255,0.06)',
-					}}
-				/>
 
 				{/* Mobile menu button */}
 				<IconButton
@@ -156,7 +141,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 					size="small"
 					sx={{
 						display: 'none',
-						color: 'rgba(255,255,255,0.85)',
+						color: '#374151',
 						position: 'absolute',
 						left: 12,
 					}}
@@ -177,7 +162,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 						px: 1,
 						py: 0.5,
 						borderRadius: '10px',
-						'&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
+						'&:hover': { bgcolor: '#f3f4f6' },
 					}}
 				>
 					<Avatar
@@ -186,21 +171,20 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 							height: 34,
 							fontSize: '0.85rem',
 							fontWeight: 700,
-							bgcolor: 'rgba(255,255,255,0.2)',
-							border: '2px solid rgba(255,255,255,0.4)',
+							bgcolor: 'primary.main',
 						}}
 					>
 						{user?.name?.charAt(0) || 'U'}
 					</Avatar>
 					<Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-						<Typography sx={{ color: '#fff', fontSize: '0.82rem', fontWeight: 600, lineHeight: 1.2 }}>
+						<Typography sx={{ color: '#111827', fontSize: '0.82rem', fontWeight: 600, lineHeight: 1.2 }}>
 							{user?.name}
 						</Typography>
-						<Typography sx={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.68rem', textTransform: 'capitalize' }}>
+						<Typography sx={{ color: '#6b7280', fontSize: '0.68rem', textTransform: 'capitalize' }}>
 							{user?.role}
 						</Typography>
 					</Box>
-					<ExpandMoreIcon sx={{ fontSize: 16, color: 'rgba(255,255,255,0.6)', display: { xs: 'none', sm: 'block' }, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+					<ExpandMoreIcon sx={{ fontSize: 16, color: '#9ca3af', display: { xs: 'none', sm: 'block' }, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
 				</Box>
 
 				<Menu
@@ -239,8 +223,40 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 					transformOrigin={{ horizontal: 'right', vertical: 'top' }}
 					anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
 				>
-					<MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
-						<LogoutIcon fontSize="small" sx={{ mr: 1.5, color: 'inherit' }} />
+					{/* Profile header */}
+					<Box sx={{ px: 2, py: 1.5, pointerEvents: 'none' }}>
+						<Typography sx={{ fontWeight: 600, fontSize: '0.85rem', color: 'text.primary' }}>
+							{user?.name}
+						</Typography>
+						<Typography sx={{ fontSize: '0.75rem', color: 'text.secondary', textTransform: 'capitalize' }}>
+							{user?.role}
+						</Typography>
+					</Box>
+					<Divider />
+
+					<MenuItem onClick={() => handleNavigate('/profile')} sx={{ gap: 1.5, py: 1 }}>
+						<PersonOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+						Profile
+					</MenuItem>
+
+					{isAdmin && (
+						<MenuItem onClick={() => handleNavigate(ROUTES.SETTINGS)} sx={{ gap: 1.5, py: 1 }}>
+							<SettingsOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+							Set up key
+						</MenuItem>
+					)}
+
+					{isAdmin && (
+						<MenuItem onClick={() => handleNavigate(ROUTES.USERS)} sx={{ gap: 1.5, py: 1 }}>
+							<PersonAddOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+							Tạo tài khoản user
+						</MenuItem>
+					)}
+
+					<Divider />
+
+					<MenuItem onClick={handleLogout} sx={{ color: 'error.main', gap: 1.5, py: 1 }}>
+						<LogoutIcon fontSize="small" sx={{ color: 'inherit' }} />
 						Đăng xuất
 					</MenuItem>
 				</Menu>

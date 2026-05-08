@@ -29,10 +29,53 @@ export interface SuggestAiKeywordsPayload {
   categories?: string[];
 }
 
+export interface SerpRelatedQuery {
+  query: string;
+  value: string;
+  extracted_value?: number;
+  link?: string;
+}
+
+export interface SerpRelatedQueriesData {
+  rising?: SerpRelatedQuery[];
+  top?: SerpRelatedQuery[];
+}
+
+export interface SerpTopic {
+  value?: string;
+  title: string;
+  type: string;
+}
+
+export interface SerpRelatedTopic {
+  topic: SerpTopic;
+  value: string;
+  extracted_value?: number;
+  link?: string;
+}
+
+export interface SerpRelatedTopicsData {
+  rising?: SerpRelatedTopic[];
+  top?: SerpRelatedTopic[];
+}
+
+export interface TrendTimelinePoint {
+  date: string;
+  value: number;
+}
+
 export interface AiSuggestedKeyword {
   name: string;
   reason?: string;
   nameScore?: number;
+  avg?: number;
+  slope?: number;
+  isSpike?: boolean;
+  currentScore?: number;
+  isPartial?: boolean;
+  trendTimeline?: TrendTimelinePoint[];
+  relatedQueries?: SerpRelatedQueriesData;
+  relatedTopics?: SerpRelatedTopicsData;
 }
 
 export interface UpdateKeywordGroupPayload {
@@ -64,4 +107,30 @@ export interface SuggestByTrendsLivePayload {
   count: number;
   geo?: string;
   category?: string;
+}
+
+export type StreamLogStep =
+  | 'llm_start' | 'llm_done'
+  | 'serp_start'
+  | 'candidate_pass' | 'candidate_fail'
+  | 'enrich_start';
+
+export interface StreamLogEvent {
+  step: StreamLogStep;
+  message: string;
+  name?: string;
+  avg?: number;
+  currentScore?: number;
+  passedCount?: number;
+  needed?: number;
+  reasons?: string[];
+  candidates?: string[];
+  count?: number;
+}
+
+export interface SuggestByGroupsPayload {
+  domainId: string;
+  timeRange: string;
+  minScore?: number;
+  count?: number;
 }

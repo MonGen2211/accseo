@@ -11,7 +11,6 @@ import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
 import LanguageOutlinedIcon from '@mui/icons-material/LanguageOutlined';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 
 const navItems = [
 	{ label: 'Tổng quan', icon: <DashboardOutlinedIcon />, path: ROUTES.DASHBOARD, end: true },
@@ -52,7 +51,6 @@ const DockBtn = ({ label, icon, path, end }: { label: string; icon: React.ReactN
 export default function Sidebar() {
 	const [collapsed, setCollapsed] = useState(false);
 	const canViewUsers = useRole(['ADMIN', 'MAR_SPECIALIST']);
-	const canViewSettings = useRole(['ADMIN']);
 
 	return (
 		<Box component="nav" sx={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 1200 }}>
@@ -113,12 +111,6 @@ export default function Sidebar() {
 						</>
 					)}
 
-					{canViewSettings && (
-						<>
-							<Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
-							<DockBtn label="Cài đặt" icon={<SettingsOutlinedIcon />} path={ROUTES.SETTINGS} end={false} />
-						</>
-					)}
 
 				</Box>
 			)}
