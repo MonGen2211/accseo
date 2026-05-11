@@ -340,7 +340,7 @@ export default function GroupsPage() {
 
       {/* Member list dialog */}
       <Dialog open={!!expandedGroup} onClose={() => setExpandedGroup(null)} maxWidth="sm" fullWidth
-        PaperProps={{ sx: { borderRadius: 3, overflow: 'hidden' } }}>
+        slotProps={{ paper: { sx: { borderRadius: 3, overflow: 'hidden' } } }}>
         {expandedGroup && (
           <Box sx={{
             p: 3, pb: 2,
@@ -400,7 +400,7 @@ export default function GroupsPage() {
       </Dialog>
 
       {/* Delete confirm */}
-      <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} PaperProps={{ sx: { borderRadius: 3 } }}>
+      <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
         <DialogTitle sx={{ fontWeight: 700 }}>Xoá nhóm</DialogTitle>
         <Divider />
         <DialogContent sx={{ pt: 2 }}>

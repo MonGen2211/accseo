@@ -23,7 +23,7 @@ export interface UserProfile {
 export interface UserFormData {
   email: string;
   name: string;
-  role: UserRole;
+  role?: UserRole;
   roles?: string[];
   password?: string;
   status: 'active' | 'inactive';

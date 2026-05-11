@@ -194,7 +194,7 @@ export default function ProfilePage() {
 			// Sync lại auth state để header hiển thị ảnh/tên mới ngay lập tức
 			dispatch(updateAuthUser({
 				name: updated.name,
-				imgAvatar: updated.imgAvatar,
+				imgAvatar: updated.imgAvatar ?? undefined,
 			}));
 
 			// Cập nhật lại originalProfile sau khi lưu thành công

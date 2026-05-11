@@ -50,7 +50,6 @@ export default function AssignRoleTab() {
   const [assignUser, setAssignUser] = useState<UserWithRoles | null>(null);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [assignLoading, setAssignLoading] = useState(false);
-  const [rolesLoading, setRolesLoading] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -79,19 +78,9 @@ export default function AssignRoleTab() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const openAssign = async (user: UserWithRoles) => {
+  const openAssign = (user: UserWithRoles) => {
     setAssignUser(user);
     setSelectedRoles(user.roles);
-    setRolesLoading(true);
-    try {
-      const roles = await roleService.getUserRoles(user.id);
-      setSelectedRoles(roles);
-      setUsers((prev) => prev.map((u) => u.id === user.id ? { ...u, roles } : u));
-    } catch {
-      // fallback to cached
-    } finally {
-      setRolesLoading(false);
-    }
   };
 
   const handleToggleRole = (roleName: string) => {
@@ -104,7 +93,7 @@ export default function AssignRoleTab() {
     if (!assignUser) return;
     setAssignLoading(true);
     try {
-      await roleService.assignRoles(assignUser.id, selectedRoles);
+      await userService.update(assignUser.id, { roles: selectedRoles });
       setUsers((prev) =>
         prev.map((u) => u.id === assignUser.id ? { ...u, roles: selectedRoles } : u)
       );
@@ -237,12 +226,7 @@ export default function AssignRoleTab() {
           <IconButton size="small" onClick={() => setAssignUser(null)}><CloseIcon /></IconButton>
         </DialogTitle>
         <DialogContent dividers>
-          {rolesLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-              <CircularProgress size={28} />
-            </Box>
-          ) : (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
               {allRoles.length === 0 && (
                 <Typography sx={{ color: 'text.secondary', py: 2, textAlign: 'center' }}>
                   Chưa có phân quyền nào. Hãy tạo phân quyền trước.
@@ -270,11 +254,10 @@ export default function AssignRoleTab() {
                 />
               ))}
             </Box>
-          )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button variant="text" color="inherit" onClick={() => setAssignUser(null)}>Hủy</Button>
-          <Button variant="contained" onClick={handleAssignSubmit} disabled={assignLoading || rolesLoading}>
+          <Button variant="contained" onClick={handleAssignSubmit} disabled={assignLoading}>
             {assignLoading ? 'Đang lưu...' : 'Lưu'}
           </Button>
         </DialogActions>

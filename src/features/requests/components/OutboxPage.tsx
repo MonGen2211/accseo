@@ -366,7 +366,7 @@ export default function OutboxPage() {
       )}
 
       {/* Cancel Dialog */}
-      <Dialog open={!!cancelTarget} onClose={() => setCancelTarget(null)} PaperProps={{ sx: { borderRadius: 3 } }}>
+      <Dialog open={!!cancelTarget} onClose={() => setCancelTarget(null)} slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
         <DialogTitle sx={{ fontWeight: 700 }}>Huỷ yêu cầu</DialogTitle>
         <Divider />
         <DialogContent sx={{ pt: 2 }}>
@@ -381,7 +381,7 @@ export default function OutboxPage() {
 
       {/* Reassign Dialog */}
       <Dialog open={!!reassignTarget} onClose={() => setReassignTarget(null)} maxWidth="sm" fullWidth
-        PaperProps={{ sx: { borderRadius: 3 } }}>
+        slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
         <DialogTitle sx={{ fontWeight: 700 }}>Chuyển người xử lý</DialogTitle>
         <Divider />
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2.5 }}>

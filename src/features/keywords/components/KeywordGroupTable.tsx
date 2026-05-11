@@ -103,9 +103,9 @@ const aiButtonSx = (isLoading: boolean) => ({
 export function KeywordGroupTable({
   data, loading, total, page, limit,
   generateAiGroupsLoading = false,
-  deleteLoadingId, statusLoadingId,
+  deleteLoadingId: _deleteLoadingId, statusLoadingId: _statusLoadingId,
   onPageChange, onRowsPerPageChange, onOpenCreate, onAiGenerateByGroups,
-  onDelete, onStatusChange,
+  onDelete: _onDelete, onStatusChange: _onStatusChange,
   sortBy, sortOrder, onSort,
   statusFilter, onStatusFilterChange,
 }: KeywordGroupTableProps) {

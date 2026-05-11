@@ -96,7 +96,7 @@ function StatCard({ title, value, icon, bgColor, iconBgColor, activeColor = '#25
 }
 
 // ─── Keyword Panel ─────────────────────────────────────────────────────────────
-function KeywordPanel({ groups, loading, title, domains, selectedDomainId, onDomainChange, navigate, filterStatus }: {
+function KeywordPanel({ groups, loading, title, domains, selectedDomainId, onDomainChange, navigate }: {
   groups: KeywordGroup[];
   loading: boolean;
   title: string;
@@ -104,7 +104,6 @@ function KeywordPanel({ groups, loading, title, domains, selectedDomainId, onDom
   selectedDomainId: string;
   onDomainChange: (id: string) => void;
   navigate: (path: string) => void;
-  filterStatus?: string;
 }) {
   const STATUS_COLORS: Record<string, string> = {
     deployed:         '#059669',
@@ -345,7 +344,6 @@ export default function DashboardPage() {
     notIndexedArticles: 0,
   });
   const [domains, setDomains] = useState<Domain[]>([]);
-  const [firstDomainId, setFirstDomainId] = useState('');
   const [selectedDomainId, setSelectedDomainId] = useState('');
   const [selectedDays, setSelectedDays] = useState(7);
   const [ga4Data, setGa4Data] = useState<Ga4OverviewData | null>(null);
@@ -359,8 +357,6 @@ export default function DashboardPage() {
   const [inboxRequests, setInboxRequests] = useState<Request[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
 
-  const [pendingGroups, setPendingGroups] = useState<KeywordGroup[]>([]);
-  const [loadingPendingGroups, setLoadingPendingGroups] = useState(false);
 
 
   // Load dashboard stats
@@ -376,7 +372,6 @@ export default function DashboardPage() {
         const items = domainsResult.value.items;
         if (items.length > 0) {
           setDomains(items);
-          setFirstDomainId(items[0]._id);
           setSelectedDomainId(items[0]._id);
           setPanelDomainId(items[0]._id);
         }
@@ -422,17 +417,6 @@ export default function DashboardPage() {
     return () => { mounted = false; };
   }, [activePanel]);
 
-  // Load pending keyword groups (for bottom section)
-  useEffect(() => {
-    if (!firstDomainId) return;
-    let mounted = true;
-    setLoadingPendingGroups(true);
-    keywordGroupService.getGroups(firstDomainId, 1, 8, '', 'desc', 'pending_approval')
-      .then(res => { if (mounted) setPendingGroups(res.items); })
-      .catch(() => {})
-      .finally(() => { if (mounted) setLoadingPendingGroups(false); });
-    return () => { mounted = false; };
-  }, [firstDomainId]);
 
   // Load panel keywords
   useEffect(() => {
@@ -586,7 +570,6 @@ export default function DashboardPage() {
               selectedDomainId={panelDomainId}
               onDomainChange={setPanelDomainId}
               navigate={navigate}
-              filterStatus={activePanel === 'deployed' ? 'deployed' : 'pending_approval'}
             />
           )}
         </Paper>

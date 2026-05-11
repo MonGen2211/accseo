@@ -360,7 +360,7 @@ export default function InboxPage() {
 
       {/* Resolve Dialog */}
       <Dialog open={resolveOpen} onClose={() => setResolveOpen(false)} maxWidth="sm" fullWidth
-        PaperProps={{ sx: { borderRadius: 3 } }}>
+        slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
         <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>Xử lý yêu cầu</DialogTitle>
         <Divider />
         <DialogContent sx={{ pt: 2.5 }}>
