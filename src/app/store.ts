@@ -10,6 +10,7 @@ import ga4Reducer from '../features/keywords/ga4Slice';
 import notificationReducer from '../features/notifications/notificationSlice';
 import requestReducer from '../features/requests/requestSlice';
 import groupReducer from '../features/requests/groupSlice';
+import activityReducer from '../features/dashboard/activitySlice';
 
 export const store = configureStore({
   reducer: {
@@ -22,6 +23,7 @@ export const store = configureStore({
     notifications: notificationReducer,
     requests: requestReducer,
     groups: groupReducer,
+    activities: activityReducer,
   },
 });
 

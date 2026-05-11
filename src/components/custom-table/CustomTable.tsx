@@ -61,6 +61,11 @@ export interface CustomTableProps {
 	searchPlaceholder?: string;
 	extraFilters?: React.ReactNode;
 	headerActions?: React.ReactNode;
+
+	// Expand row support
+	onRowClick?: (row: TableRowData) => void;
+	expandedRowId?: string | null;
+	renderExpandedRow?: (row: TableRowData) => React.ReactNode;
 }
 
 export function CustomTable({
@@ -87,6 +92,9 @@ export function CustomTable({
 	searchPlaceholder,
 	extraFilters,
 	headerActions,
+	onRowClick,
+	expandedRowId,
+	renderExpandedRow,
 }: CustomTableProps) {
 	const [localPage, setLocalPage] = useState(0);
 	const [localRowsPerPage, setLocalRowsPerPage] = useState(10);
@@ -325,30 +333,50 @@ export function CustomTable({
 								</TableCell>
 							</TableRow>
 						) : (
-							displayedData.map((row, rowIndex) => (
-								<TableRow hover key={row.id || rowIndex}>
-									{visibleFields.map((field) => (
-										<TableCell
-											key={field.id}
-											align={field.align || 'left'}
-											sx={{
-												width: field.width,
-												minWidth: field.width,
-												maxWidth: field.width,
-												whiteSpace: field.type === 'actions' || field.type === 'status' || field.wrapText ? 'normal' : 'nowrap',
-												wordBreak: field.wrapText ? 'break-word' : 'normal',
-												overflow: 'hidden',
-												textOverflow: field.wrapText ? 'clip' : 'ellipsis',
-												verticalAlign: 'middle',
-											}}
-											title={field.type === 'text' && typeof row[field.id] === 'string' ? row[field.id] : undefined}
-										>
-											{renderCellContent(field, row)}
-										</TableCell>
-									))}
-								</TableRow>
-							))
-						)}
+						displayedData.map((row, rowIndex) => {
+							const rowId = row.id || row._id || String(rowIndex);
+							const isExpanded = expandedRowId === rowId;
+							return (
+								<React.Fragment key={rowId}>
+									<TableRow
+										hover
+										sx={{
+											cursor: onRowClick ? 'pointer' : 'default',
+											'& td': { borderBottom: isExpanded ? 0 : undefined },
+										}}
+										onClick={() => onRowClick?.(row)}
+									>
+										{visibleFields.map((field) => (
+											<TableCell
+												key={field.id}
+												align={field.align || 'left'}
+												sx={{
+													width: field.width,
+													minWidth: field.width,
+													maxWidth: field.width,
+													whiteSpace: field.type === 'actions' || field.type === 'status' || field.wrapText ? 'normal' : 'nowrap',
+													wordBreak: field.wrapText ? 'break-word' : 'normal',
+													overflow: 'hidden',
+													textOverflow: field.wrapText ? 'clip' : 'ellipsis',
+													verticalAlign: 'middle',
+												}}
+												title={field.type === 'text' && typeof row[field.id] === 'string' ? row[field.id] : undefined}
+											>
+												{renderCellContent(field, row)}
+											</TableCell>
+										))}
+									</TableRow>
+									{renderExpandedRow && (
+										<TableRow key={`${rowId}-expand`}>
+											<TableCell colSpan={visibleFields.length} sx={{ p: 0, border: 0 }}>
+												{renderExpandedRow(row)}
+											</TableCell>
+										</TableRow>
+									)}
+								</React.Fragment>
+							);
+						})
+					)}
 					</TableBody>
 				</Table>
 			</TableContainer>

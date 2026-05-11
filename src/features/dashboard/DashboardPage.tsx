@@ -1,4 +1,5 @@
 import TrendingKeywordsSection from './TrendingKeywordsSection';
+import ActivitySection from './ActivitySection';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
@@ -575,7 +576,11 @@ export default function DashboardPage() {
         </Paper>
       </Box>
 
-      <TrendingKeywordsSection />
+      {/* Bottom row: Trending (50%) + Activity (50%) */}
+      <Box sx={{ display: 'flex', gap: 3, alignItems: 'stretch' }}>
+        <TrendingKeywordsSection />
+        <ActivitySection />
+      </Box>
 
     </Box>
   );

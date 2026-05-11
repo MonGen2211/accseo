@@ -2,9 +2,6 @@ import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
-import TextField from '@mui/material/TextField';
-import InputAdornment from '@mui/material/InputAdornment';
-import SearchIcon from '@mui/icons-material/Search';
 import ManageSearchIcon from '@mui/icons-material/ManageSearch';
 import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined';
 import { useEffect, useRef, useState } from 'react';
@@ -265,14 +262,6 @@ export default function KeywordPage() {
 						<Typography sx={{ fontSize: '18px', fontWeight: 700, color: 'text.primary' }}>
 							Bộ Keywords
 						</Typography>
-						<TextField
-							size="small"
-							placeholder="Tìm theo tên..."
-							value={searchFilter}
-							onChange={(e) => dispatch(setKeywordSearchFilter(e.target.value))}
-							slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: 18, color: 'text.disabled' }} /></InputAdornment> } }}
-							sx={{ width: 200, '& .MuiOutlinedInput-root': { borderRadius: 2, fontSize: '0.85rem' } }}
-						/>
 					</Box>
 
 					{/* Quick stats bar */}
@@ -325,6 +314,8 @@ export default function KeywordPage() {
 					onSort={handleSort}
 					statusFilter={statusFilter}
 					onStatusFilterChange={(st) => dispatch(setKeywordStatusFilter(st))}
+					searchValue={searchFilter}
+					onSearchChange={(v) => dispatch(setKeywordSearchFilter(v))}
 				/>
 			</Paper>
 
