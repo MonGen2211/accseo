@@ -110,7 +110,7 @@ export default function DomainPage() {
 	};
 
 	return (
-		<Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 3 }}>
+		<Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 3, zoom: 0.9 }}>
 			<Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
 				<Box sx={{ px: 3, pt: 3, pb: 1.5 }}>
 					<Typography sx={{ fontSize: '20px', fontWeight: 700, color: 'text.primary' }}>

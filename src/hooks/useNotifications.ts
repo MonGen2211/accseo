@@ -35,12 +35,15 @@ export function useNotifications() {
     dispatch(setSseConnected(true));
 
     // Lắng nghe Firebase foreground messages
+    // Bỏ qua nếu SSE đang kết nối — SSE đã deliver rồi, tránh duplicate
     const unsubscribe = onForegroundMessage((payload) => {
+      if (notificationService.isSseConnected()) return;
+
       const { title, body } = payload.notification || {};
       if (!title) return;
 
       handleNewNotification({
-        _id: payload.messageId || `fcm-${Date.now()}`,
+        _id: payload.data?._id || payload.messageId || `fcm-${Date.now()}`,
         title,
         body: body || '',
         type: (payload.data?.type as AppNotification['type']) || 'system',

@@ -19,6 +19,9 @@ export const ROUTES = {
   DOMAINS: '/domains',
   SETTINGS: '/settings',
   PROFILE: '/profile',
+  REQUESTS: '/requests',
+  REQUESTS_CREATE: '/requests/create',
+  GROUPS_CREATE: '/groups/create',
 };
 
 export const PAGINATION_DEFAULT = {

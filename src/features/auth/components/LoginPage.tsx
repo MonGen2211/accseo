@@ -59,7 +59,7 @@ export default function LoginPage() {
 		e.preventDefault();
 		dispatch(clearError());
 		try {
-			await dispatch(loginUser({ email, password })).unwrap();
+			await dispatch(loginUser({ email, password, rememberMe: remember })).unwrap();
 			showToast('Đăng nhập thành công', 'success');
 		} catch {
 			showToast('Tài khoản hoặc mật khẩu không chính xác', 'danger');

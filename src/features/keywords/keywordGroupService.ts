@@ -11,11 +11,12 @@ interface ApiResponse<T> {
 }
 
 export const keywordGroupService = {
-  async getGroups(domainId: string, page = 1, limit = 20, sort = '', order: 'asc' | 'desc' = 'desc', status = ''): Promise<KeywordGroupDataResponse> {
+  async getGroups(domainId: string, page = 1, limit = 20, sort = '', order: 'asc' | 'desc' = 'desc', status = '', search = ''): Promise<KeywordGroupDataResponse> {
     const sortParam = sort ? `&sort=${sort}&order=${order}` : '';
     const statusParam = status ? `&status=${status}` : '';
+    const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
     const response = await api.get<ApiResponse<KeywordGroupDataResponse>>(
-      `/keywords/groups?domainId=${domainId}&page=${page}&limit=${limit}${sortParam}${statusParam}`
+      `/keywords/groups?domainId=${domainId}&page=${page}&limit=${limit}${sortParam}${statusParam}${searchParam}`
     );
     return response.data.data;
   },
@@ -79,6 +80,29 @@ export const keywordGroupService = {
   async suggestKeywordsByGroups(payload: import('./types').SuggestByGroupsPayload): Promise<import('./types').AiSuggestedKeyword[]> {
     const response = await api.post<ApiResponse<{ suggestions: import('./types').AiSuggestedKeyword[] }>>('/keywords/groups/suggest', payload);
     return response.data.data.suggestions;
+  },
+
+  async getGroupById(id: string): Promise<{
+    group: KeywordGroup;
+    keywords: { items: Array<{ _id: string; value: string; status: string; isAiGenerated: boolean }>; total: number; page: number; limit: number; totalPages: number };
+  }> {
+    const response = await api.get<ApiResponse<{
+      group: KeywordGroup;
+      keywords: { items: Array<{ _id: string; value: string; status: string; isAiGenerated: boolean }>; total: number; page: number; limit: number; totalPages: number };
+    }>>(`/keywords/groups/${id}`);
+    return response.data.data;
+  },
+
+  async approveGroup(id: string, reason?: string, silent = false): Promise<KeywordGroup> {
+    const url = `/keywords/groups/${id}/approve${silent ? '?silent=true' : ''}`;
+    const response = await api.post<ApiResponse<{ message: string; group: KeywordGroup }>>(url, reason ? { reason } : {});
+    return response.data.data.group;
+  },
+
+  async rejectGroup(id: string, reason?: string, silent = false): Promise<KeywordGroup> {
+    const url = `/keywords/groups/${id}/reject${silent ? '?silent=true' : ''}`;
+    const response = await api.post<ApiResponse<{ message: string; group: KeywordGroup }>>(url, reason ? { reason } : {});
+    return response.data.data.group;
   },
 
   async clearGroupsSuggestCache(domainId: string): Promise<void> {

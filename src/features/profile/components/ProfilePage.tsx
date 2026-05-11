@@ -8,6 +8,7 @@ import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
 import Divider from '@mui/material/Divider';
 import InputAdornment from '@mui/material/InputAdornment';
+import CircularProgress from '@mui/material/CircularProgress';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
@@ -16,16 +17,43 @@ import BadgeOutlinedIcon from '@mui/icons-material/BadgeOutlined';
 import StoreOutlinedIcon from '@mui/icons-material/StoreOutlined';
 import WorkOutlineOutlinedIcon from '@mui/icons-material/WorkOutlineOutlined';
 import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
-import { useAppSelector } from '../../../app/store';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
+import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
+import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
+import { useNavigate } from 'react-router-dom';
+import { useAppSelector, useAppDispatch } from '../../../app/store';
+import { updateAuthUser, logoutUser } from '../../auth/authSlice';
 import { useToastify } from '../../../components/Toastify';
 import { userService } from '../../users/userService';
+import { ROUTES } from '../../../utils/constants';
+
+const PASSWORD_RULES = [
+	{ label: 'Tối thiểu 8 ký tự', test: (v: string) => v.length >= 8 },
+	{ label: 'Có chữ hoa (A-Z)', test: (v: string) => /[A-Z]/.test(v) },
+	{ label: 'Có chữ thường (a-z)', test: (v: string) => /[a-z]/.test(v) },
+	{ label: 'Có chữ số (0-9)', test: (v: string) => /[0-9]/.test(v) },
+	{ label: 'Có ký tự đặc biệt (!@#$%^&*...)', test: (v: string) => /[!@#$%^&*()\-_=+[\]{};:'",.<>?/\\|`~]/.test(v) },
+];
 
 export default function ProfilePage() {
 	const currentUser = useAppSelector(state => state.auth.user);
+	const dispatch = useAppDispatch();
+	const navigate = useNavigate();
 	const { showToast } = useToastify();
 	const [loading, setLoading] = useState(false);
 	const [avatarFile, setAvatarFile] = useState<File | null>(null);
 	const [avatarPreview, setAvatarPreview] = useState<string>('');
+
+	// Password change state
+	const [showPwSection, setShowPwSection] = useState(false);
+	const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '' });
+	const [pwLoading, setPwLoading] = useState(false);
+	const [showCurrent, setShowCurrent] = useState(false);
+	const [showNew, setShowNew] = useState(false);
+	const [pwErrors, setPwErrors] = useState({ currentPassword: '', newPassword: '' });
+	const [pwTouched, setPwTouched] = useState({ currentPassword: false, newPassword: false });
 
 	const [profile, setProfile] = useState({
 		name: '',
@@ -75,6 +103,62 @@ export default function ProfilePage() {
 		}
 	}, [currentUser?.id, showToast]);
 
+	const validatePwForm = (form = pwForm) => {
+		const errors = { currentPassword: '', newPassword: '' };
+		if (!form.currentPassword) errors.currentPassword = 'Vui lòng nhập mật khẩu hiện tại';
+		if (!form.newPassword) {
+			errors.newPassword = 'Vui lòng nhập mật khẩu mới';
+		} else if (PASSWORD_RULES.some(r => !r.test(form.newPassword))) {
+			errors.newPassword = 'Mật khẩu mới chưa đủ mạnh';
+		} else if (form.newPassword === form.currentPassword) {
+			errors.newPassword = 'Mật khẩu mới phải khác mật khẩu hiện tại';
+		}
+		return errors;
+	};
+
+	const handlePwChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const { name, value } = e.target;
+		const updated = { ...pwForm, [name]: value };
+		setPwForm(updated);
+		if (pwTouched[name as keyof typeof pwTouched]) {
+			setPwErrors(validatePwForm(updated));
+		}
+	};
+
+	const handlePwBlur = (field: keyof typeof pwTouched) => {
+		setPwTouched(prev => ({ ...prev, [field]: true }));
+		setPwErrors(validatePwForm());
+	};
+
+	const handleChangePassword = async () => {
+		setPwTouched({ currentPassword: true, newPassword: true });
+		const errors = validatePwForm();
+		setPwErrors(errors);
+		if (errors.currentPassword || errors.newPassword) return;
+
+		setPwLoading(true);
+		try {
+			await userService.changePassword(pwForm.currentPassword, pwForm.newPassword);
+			showToast('Đổi mật khẩu thành công, vui lòng đăng nhập lại', 'success');
+			setPwForm({ currentPassword: '', newPassword: '' });
+			setPwTouched({ currentPassword: false, newPassword: false });
+			setTimeout(async () => {
+				await dispatch(logoutUser());
+				navigate(ROUTES.LOGIN);
+			}, 1500);
+		} catch (err: any) {
+			const code = err?.response?.data?.code;
+			const status = err?.response?.status;
+			if (code === 'WRONG_PASSWORD' || status === 401) {
+				setPwErrors(prev => ({ ...prev, currentPassword: 'Mật khẩu hiện tại không đúng' }));
+			} else {
+				showToast(err?.response?.data?.message || 'Đổi mật khẩu thất bại', 'danger');
+			}
+		} finally {
+			setPwLoading(false);
+		}
+	};
+
 	const handleSave = async () => {
 		if (!currentUser?.id) return;
 		setLoading(true);
@@ -105,7 +189,13 @@ export default function ProfilePage() {
 				return;
 			}
 
-			await userService.updateProfile(payload);
+			const updated = await userService.updateProfile(payload);
+
+			// Sync lại auth state để header hiển thị ảnh/tên mới ngay lập tức
+			dispatch(updateAuthUser({
+				name: updated.name,
+				imgAvatar: updated.imgAvatar,
+			}));
 
 			// Cập nhật lại originalProfile sau khi lưu thành công
 			setOriginalProfile({
@@ -129,97 +219,85 @@ export default function ProfilePage() {
 
 	return (
 		<Box sx={{ mx: 'auto' }}>
-			<Paper elevation={0} sx={{ borderRadius: 3, overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
-				{/* Banner Gradient */}
-				<Box
-					sx={{
-						height: 160,
-						background: 'linear-gradient(135deg, #00b894 0%, #009975 100%)',
-						position: 'relative',
-					}}
-				/>
+			{/* Banner */}
+			<Box sx={{
+				height: 180,
+				borderRadius: '16px 16px 0 0',
+				background: 'linear-gradient(135deg, #00b894 0%, #0984e3 100%)',
+				position: 'relative',
+			}} />
 
-				<Box sx={{ px: { xs: 3, md: 5 }, pb: 5, position: 'relative' }}>
-					{/* Avatar Section overlaying the banner */}
-					<Box
-						sx={{
-							display: 'flex',
-							justifyContent: 'space-between',
-							alignItems: 'flex-end',
-							mt: -6,
-							mb: 4,
-						}}
-					>
-						<Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 3 }}>
-							<Box sx={{ position: 'relative', width: 130, height: 130 }}>
-								<Avatar
-									src={avatarPreview || profile.avatar}
-									sx={{
-										width: 130,
-										height: 130,
-										border: '4px solid #fff',
-										boxShadow: '0 4px 14px rgba(0,0,0,0.1)',
-										bgcolor: '#f5f6fa',
-									}}
-								/>
-								<IconButton
-									component="label"
-									sx={{
-										position: 'absolute',
-										bottom: 4,
-										right: 4,
-										backgroundColor: 'primary.main',
-										color: '#fff',
-										width: 36,
-										height: 36,
-										boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-										'&:hover': { backgroundColor: 'primary.dark' },
-									}}
-								>
-									<input hidden accept="image/*" type="file" onChange={handleAvatarChange} />
-									<PhotoCameraIcon sx={{ fontSize: 18 }} />
-								</IconButton>
-							</Box>
-							<Box sx={{ pb: 1, display: { xs: 'none', sm: 'block' } }}>
-								<Typography variant="h5" color="text.primary" sx={{ fontWeight: 700 }}>
-									{profile.name}
-								</Typography>
-								<Typography variant="body1" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.8rem', mt: 0.5, fontWeight: 600 }}>
-									{profile.role}
-								</Typography>
-							</Box>
+			<Paper elevation={0} sx={{ borderRadius: '0 0 16px 16px', border: '1px solid', borderColor: 'divider', borderTop: 'none' }}>
+				<Box sx={{
+					display: 'grid',
+					gridTemplateColumns: { xs: '1fr', md: '340px 1fr' },
+					gap: 0,
+					alignItems: 'start',
+				}}>
+					{/* ── Cột trái: ảnh + fields có thể sửa ── */}
+					<Box sx={{
+						borderRight: { md: '1px solid' },
+						borderColor: { md: 'divider' },
+						px: 4,
+						pt: 0,
+						pb: 4,
+						display: 'flex',
+						flexDirection: 'column',
+						alignItems: 'center',
+					}}>
+						{/* Avatar nổi lên banner */}
+						<Box sx={{ mt: -8, mb: 2, position: 'relative', width: 140, height: 140 }}>
+							<Avatar
+								src={avatarPreview || profile.avatar}
+								sx={{
+									width: 140,
+									height: 140,
+									border: '4px solid #fff',
+									boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+									bgcolor: '#f1f5f9',
+									fontSize: 48,
+								}}
+							/>
+							<IconButton
+								component="label"
+								sx={{
+									position: 'absolute',
+									bottom: 6,
+									right: 6,
+									backgroundColor: 'primary.main',
+									color: '#fff',
+									width: 36,
+									height: 36,
+									boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+									'&:hover': { backgroundColor: 'primary.dark' },
+								}}
+							>
+								<input hidden accept="image/*" type="file" onChange={handleAvatarChange} />
+								<PhotoCameraIcon sx={{ fontSize: 18 }} />
+							</IconButton>
 						</Box>
 
-						{/* Quick Action Button */}
-						<Box sx={{ pb: 1 }}>
-							<Button variant="contained" color="primary" size="large" sx={{ borderRadius: 2, px: 3 }} onClick={handleSave} disabled={loading}>
-								{loading ? 'Đang lưu...' : 'Lưu thay đổi'}
-							</Button>
-						</Box>
-					</Box>
-
-					<Typography variant="body2" color="text.secondary" sx={{ mb: 4, display: { sm: 'none' } }}>
-						Tải lên ảnh định dạng bmp, jpg, jpeg hoặc png. Kích thước tối đa: 5MB
-					</Typography>
-
-					{/* Form Section */}
-					<Box sx={{ mt: 2 }}>
-						<Typography variant="h6" sx={{ fontWeight: 600, mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
-							Thông tin cá nhân
+						<Typography sx={{ fontWeight: 700, fontSize: '1.1rem', textAlign: 'center', mb: 0.5 }}>
+							{profile.name || '—'}
+						</Typography>
+						<Typography sx={{ fontSize: '0.78rem', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, mb: 3 }}>
+							{profile.role || '—'}
 						</Typography>
 
-						<Box sx={{
-							display: 'grid',
-							gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
-							gap: 3,
-							mb: 5
-						}}>
+						<Divider sx={{ width: '100%', mb: 3 }} />
+
+						<Typography sx={{ fontWeight: 700, fontSize: '0.8rem', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.8, mb: 2, alignSelf: 'flex-start' }}>
+							Thông tin có thể chỉnh sửa
+						</Typography>
+
+						<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%' }}>
 							<TextField
 								fullWidth
 								label="Họ và tên"
 								name="name"
 								value={profile.name}
 								onChange={handleChange}
+								size="small"
 								slotProps={{
 									input: {
 										startAdornment: (
@@ -229,118 +307,14 @@ export default function ProfilePage() {
 										)
 									}
 								}}
-								required
 							/>
-
-							<TextField
-								fullWidth
-								label="Mã nhân viên (MSNV)"
-								name="msnv"
-								value={profile.msnv}
-								onChange={handleChange}
-								slotProps={{
-									input: {
-										startAdornment: (
-											<InputAdornment position="start">
-												<BadgeOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
-											</InputAdornment>
-										)
-									}
-								}}
-								required
-							/>
-
-							<TextField
-								fullWidth
-								label="Chức vụ (Role)"
-								name="role"
-								value={profile.role}
-								onChange={handleChange}
-								slotProps={{
-									input: {
-										startAdornment: (
-											<InputAdornment position="start">
-												<WorkOutlineOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
-											</InputAdornment>
-										)
-									}
-								}}
-								required
-							/>
-
-							<TextField
-								fullWidth
-								label="Tên công ty"
-								name="companyName"
-								value={profile.companyName}
-								onChange={handleChange}
-								slotProps={{
-									input: {
-										startAdornment: (
-											<InputAdornment position="start">
-												<BusinessOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
-											</InputAdornment>
-										)
-									}
-								}}
-							/>
-
-							<TextField
-								fullWidth
-								label="Chi nhánh"
-								name="branch"
-								value={profile.branch}
-								onChange={handleChange}
-								slotProps={{
-									input: {
-										startAdornment: (
-											<InputAdornment position="start">
-												<StoreOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
-											</InputAdornment>
-										)
-									}
-								}}
-							/>
-						</Box>
-
-						<Divider sx={{ mb: 4 }} />
-
-						<Typography variant="h6" sx={{ fontWeight: 600, mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
-							Thông tin liên lạc
-						</Typography>
-
-						<Box sx={{
-							display: 'grid',
-							gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
-							gap: 3
-						}}>
-							<TextField
-								fullWidth
-								label="Email"
-								name="email"
-								type="email"
-								value={profile.email}
-								onChange={handleChange}
-								slotProps={{
-									input: {
-										startAdornment: (
-											<InputAdornment position="start">
-												<EmailOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
-											</InputAdornment>
-										)
-									}
-								}}
-								required
-							/>
-
-
-
 							<TextField
 								fullWidth
 								label="Số điện thoại cá nhân"
 								name="phone1"
 								value={profile.phone1}
 								onChange={handleChange}
+								size="small"
 								slotProps={{
 									input: {
 										startAdornment: (
@@ -350,9 +324,7 @@ export default function ProfilePage() {
 										)
 									}
 								}}
-								required
 							/>
-
 							<TextField
 								fullWidth
 								label="Số điện thoại công ty"
@@ -360,6 +332,7 @@ export default function ProfilePage() {
 								value={profile.phone2}
 								onChange={handleChange}
 								placeholder="Không bắt buộc"
+								size="small"
 								slotProps={{
 									input: {
 										startAdornment: (
@@ -370,6 +343,264 @@ export default function ProfilePage() {
 									}
 								}}
 							/>
+
+							<Button
+								variant="contained"
+								fullWidth
+								size="large"
+								onClick={handleSave}
+								disabled={loading}
+								sx={{ mt: 1, borderRadius: 2, fontWeight: 700, py: 1.2 }}
+							>
+								{loading ? 'Đang lưu...' : 'Lưu thay đổi'}
+							</Button>
+						</Box>
+					</Box>
+
+					{/* ── Cột phải: thông tin chỉ đọc ── */}
+					<Box sx={{ px: 4, pt: 4, pb: 4 }}>
+						<Typography sx={{ fontWeight: 700, fontSize: '0.8rem', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.8, mb: 3 }}>
+							Thông tin tài khoản
+						</Typography>
+
+						<Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2.5 }}>
+							<TextField
+								fullWidth
+								label="Email"
+								name="email"
+								value={profile.email}
+								disabled
+								size="small"
+								slotProps={{
+									input: {
+										startAdornment: (
+											<InputAdornment position="start">
+												<EmailOutlinedIcon fontSize="small" />
+											</InputAdornment>
+										)
+									}
+								}}
+							/>
+							<TextField
+								fullWidth
+								label="Mã nhân viên (MSNV)"
+								name="msnv"
+								value={profile.msnv}
+								disabled
+								size="small"
+								slotProps={{
+									input: {
+										startAdornment: (
+											<InputAdornment position="start">
+												<BadgeOutlinedIcon fontSize="small" />
+											</InputAdornment>
+										)
+									}
+								}}
+							/>
+							<TextField
+								fullWidth
+								label="Chức vụ"
+								name="role"
+								value={profile.role}
+								disabled
+								size="small"
+								slotProps={{
+									input: {
+										startAdornment: (
+											<InputAdornment position="start">
+												<WorkOutlineOutlinedIcon fontSize="small" />
+											</InputAdornment>
+										)
+									}
+								}}
+							/>
+							<TextField
+								fullWidth
+								label="Chi nhánh"
+								name="branch"
+								value={profile.branch}
+								disabled
+								size="small"
+								slotProps={{
+									input: {
+										startAdornment: (
+											<InputAdornment position="start">
+												<StoreOutlinedIcon fontSize="small" />
+											</InputAdornment>
+										)
+									}
+								}}
+							/>
+							<TextField
+								fullWidth
+								label="Tên công ty"
+								name="companyName"
+								value={profile.companyName}
+								disabled
+								size="small"
+								sx={{ gridColumn: { sm: 'span 2' } }}
+								slotProps={{
+									input: {
+										startAdornment: (
+											<InputAdornment position="start">
+												<BusinessOutlinedIcon fontSize="small" />
+											</InputAdornment>
+										)
+									}
+								}}
+							/>
+						</Box>
+
+						<Box sx={{ mt: 4, p: 2.5, borderRadius: 2, bgcolor: '#f8fafc', border: '1px solid', borderColor: 'divider' }}>
+							<Typography sx={{ fontSize: '0.78rem', color: 'text.secondary', lineHeight: 1.6 }}>
+								Các thông tin trên được quản lý bởi Admin. Liên hệ Admin để cập nhật.
+							</Typography>
+						</Box>
+
+						{/* ── Đổi mật khẩu ── */}
+						<Box sx={{ mt: 4 }}>
+							<Divider sx={{ mb: 3 }} />
+
+							<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: showPwSection ? 3 : 0 }}>
+								<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+									<Box sx={{
+										width: 36, height: 36, borderRadius: '10px',
+										bgcolor: 'primary.main',
+										display: 'flex', alignItems: 'center', justifyContent: 'center',
+										boxShadow: '0 4px 12px rgba(25,118,210,0.3)',
+									}}>
+										<LockOutlinedIcon sx={{ color: '#fff', fontSize: 18 }} />
+									</Box>
+									<Box>
+										<Typography sx={{ fontWeight: 700, fontSize: '0.95rem', lineHeight: 1.2 }}>
+											Đổi mật khẩu
+										</Typography>
+										<Typography sx={{ fontSize: '0.73rem', color: 'text.secondary' }}>
+											Sau khi đổi, bạn sẽ được đăng xuất khỏi tất cả thiết bị
+										</Typography>
+									</Box>
+								</Box>
+								<Button
+									variant={showPwSection ? 'outlined' : 'contained'}
+									color="primary"
+									size="small"
+									startIcon={<LockOutlinedIcon />}
+									onClick={() => {
+										setShowPwSection(v => !v);
+										if (showPwSection) {
+											setPwForm({ currentPassword: '', newPassword: '' });
+											setPwTouched({ currentPassword: false, newPassword: false });
+											setPwErrors({ currentPassword: '', newPassword: '' });
+										}
+									}}
+									sx={{ borderRadius: 2, fontWeight: 600, whiteSpace: 'nowrap' }}
+								>
+									{showPwSection ? 'Huỷ' : 'Đổi mật khẩu'}
+								</Button>
+							</Box>
+
+							{showPwSection && <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+								{/* Mật khẩu hiện tại */}
+								<TextField
+									fullWidth
+									label="Mật khẩu hiện tại"
+									name="currentPassword"
+									type={showCurrent ? 'text' : 'password'}
+									value={pwForm.currentPassword}
+									onChange={handlePwChange}
+									onBlur={() => handlePwBlur('currentPassword')}
+									error={pwTouched.currentPassword && !!pwErrors.currentPassword}
+									helperText={pwTouched.currentPassword && pwErrors.currentPassword}
+									size="small"
+									slotProps={{
+										input: {
+											startAdornment: (
+												<InputAdornment position="start">
+													<LockOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+												</InputAdornment>
+											),
+											endAdornment: (
+												<InputAdornment position="end">
+													<IconButton size="small" onClick={() => setShowCurrent(v => !v)} edge="end">
+														{showCurrent
+															? <VisibilityOffOutlinedIcon fontSize="small" />
+															: <VisibilityOutlinedIcon fontSize="small" />}
+													</IconButton>
+												</InputAdornment>
+											),
+										}
+									}}
+								/>
+
+								{/* Mật khẩu mới */}
+								<TextField
+									fullWidth
+									label="Mật khẩu mới"
+									name="newPassword"
+									type={showNew ? 'text' : 'password'}
+									value={pwForm.newPassword}
+									onChange={handlePwChange}
+									onBlur={() => handlePwBlur('newPassword')}
+									error={pwTouched.newPassword && !!pwErrors.newPassword}
+									helperText={pwTouched.newPassword && pwErrors.newPassword}
+									size="small"
+									slotProps={{
+										input: {
+											startAdornment: (
+												<InputAdornment position="start">
+													<LockOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+												</InputAdornment>
+											),
+											endAdornment: (
+												<InputAdornment position="end">
+													<IconButton size="small" onClick={() => setShowNew(v => !v)} edge="end">
+														{showNew
+															? <VisibilityOffOutlinedIcon fontSize="small" />
+															: <VisibilityOutlinedIcon fontSize="small" />}
+													</IconButton>
+												</InputAdornment>
+											),
+										}
+									}}
+								/>
+
+								{/* Password strength checklist */}
+								{pwForm.newPassword && (
+									<Box sx={{
+										p: 2, borderRadius: 2,
+										bgcolor: '#f8fafc',
+										border: '1px solid', borderColor: 'divider',
+										display: 'flex', flexDirection: 'column', gap: 0.75,
+									}}>
+										{PASSWORD_RULES.map(rule => {
+											const passed = rule.test(pwForm.newPassword);
+											return (
+												<Box key={rule.label} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+													{passed
+														? <CheckCircleOutlinedIcon sx={{ fontSize: 15, color: 'success.main' }} />
+														: <RadioButtonUncheckedIcon sx={{ fontSize: 15, color: 'text.disabled' }} />}
+													<Typography sx={{ fontSize: '0.75rem', color: passed ? 'success.main' : 'text.secondary' }}>
+														{rule.label}
+													</Typography>
+												</Box>
+											);
+										})}
+									</Box>
+								)}
+
+								<Button
+									variant="contained"
+									color="primary"
+									size="large"
+									onClick={handleChangePassword}
+									disabled={pwLoading}
+									startIcon={pwLoading ? <CircularProgress size={16} color="inherit" /> : <LockOutlinedIcon />}
+									sx={{ borderRadius: 2, fontWeight: 700, py: 1.2, alignSelf: 'flex-start', px: 4 }}
+								>
+									{pwLoading ? 'Đang xử lý...' : 'Xác nhận đổi mật khẩu'}
+								</Button>
+							</Box>}
 						</Box>
 					</Box>
 				</Box>

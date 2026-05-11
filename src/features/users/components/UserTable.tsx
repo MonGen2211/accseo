@@ -36,7 +36,16 @@ export default function UserTable({ users, loading, page, rowsPerPage, totalCoun
 		{ id: 'stt', name: 'stt', label: 'STT', type: 'text', width: 80, align: 'center' },
 		{ id: 'name', name: 'name', label: 'Người dùng', type: 'text', width: 200, sortable: true },
 		{ id: 'email', name: 'email', label: 'Email', type: 'text', width: 200, sortable: true },
-		{ id: 'role', name: 'role', label: 'Vai trò', type: 'text', width: 200, sortable: true, renderCell: (row: TableRowData) => ROLE_LABELS[row.role as UserRole] || row.role },
+		{
+			id: 'role', name: 'role', label: 'Vai trò', type: 'text', width: 200, sortable: true,
+			renderCell: (row: TableRowData) => {
+				const roles = row.roles as string[] | undefined;
+				if (roles && roles.length > 0) {
+					return roles.map((r) => ROLE_LABELS[r as UserRole] || r).join(', ');
+				}
+				return ROLE_LABELS[row.role as UserRole] || row.role as string || '';
+			},
+		},
 		{ id: 'status', name: 'isActive', label: 'Trạng thái', type: 'status', width: 150, statusType: 'user', sortable: true },
 		{ id: 'createdAt', name: 'createdAt', label: 'Ngày tạo', type: 'date', width: 150, sortable: true },
 		{ id: 'actions', name: 'actions', label: 'Thao tác', type: 'actions', width: 100, align: 'center' },

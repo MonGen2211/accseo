@@ -1,3 +1,11 @@
+export interface KeywordUserRef {
+  _id: string;
+  name: string;
+  email: string;
+  imgAvatar?: string;
+  role: string;
+}
+
 export interface KeywordGroup {
   id: string;
   name: string;
@@ -5,6 +13,19 @@ export interface KeywordGroup {
   createdAt?: string;
   updatedAt?: string;
   _id?: string;
+  reason?: string | null;
+  createdBy?: KeywordUserRef;
+  approvedBy?: KeywordUserRef | null;
+  approvalReason?: string | null;
+}
+
+export interface KeywordGroupSummary {
+  total: number;
+  pending_approval: number;
+  not_started: number;
+  in_progress: number;
+  deployed: number;
+  rejected: number;
 }
 
 export interface KeywordGroupDataResponse {
@@ -13,6 +34,7 @@ export interface KeywordGroupDataResponse {
   page: number;
   limit: number;
   totalPages: number;
+  summary?: KeywordGroupSummary;
 }
 
 export interface CreateKeywordGroupPayload {
@@ -88,6 +110,7 @@ export const KeywordItemStatus = {
   NOT_STARTED: 'not_started',
   IN_PROGRESS: 'in_progress',
   DEPLOYED: 'deployed',
+  REJECTED: 'rejected',
 } as const;
 
 export type KeywordItemStatus = typeof KeywordItemStatus[keyof typeof KeywordItemStatus];

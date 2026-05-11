@@ -36,7 +36,6 @@ const DATE_OPTIONS: { label: string; value: GscDateRange }[] = [
 ];
 
 const TAB_MAP: { label: string; value: GscContentTab }[] = [
-	{ label: 'Tổng quan', value: 'overview' },
 	{ label: 'Từ khóa', value: 'keywords' },
 	{ label: 'Trang', value: 'pages' },
 ];
@@ -136,7 +135,7 @@ export function GscPanel({ domainId }: GscPanelProps) {
 	const activeTabIndex = TAB_MAP.findIndex((t) => t.value === activeTab);
 
 	return (
-		<Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden', height: '100%' }}>
+		<Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden', height: '100%', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
 			{/* Header */}
 			<Box sx={{ px: 3, pt: 2.5, pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
 				<Typography sx={{ fontSize: '18px', fontWeight: 700, color: 'text.primary' }}>
@@ -195,14 +194,12 @@ export function GscPanel({ domainId }: GscPanelProps) {
 				</Tabs>
 			</Box>
 
+			{/* Stats row — luôn hiện */}
+			<GscOverviewCards summary={overview?.summary ?? null} loading={overviewLoading} />
+
 			{/* Tab Content */}
-			<Box sx={{ p: 3, pt: 2 }}>
-				{activeTab === 'overview' && (
-					<GscOverviewCards
-						summary={overview?.summary ?? null}
-						loading={overviewLoading}
-					/>
-				)}
+			<Box sx={{ flex: 1, overflowX: 'auto', overflowY: 'auto' }}>
+				<Box sx={{ p: 3, pt: 1 }}>
 				{activeTab === 'keywords' && (
 					<GscKeywordsTable
 						items={keywords?.items ?? []}
@@ -231,6 +228,7 @@ export function GscPanel({ domainId }: GscPanelProps) {
 						onSort={handlePagesSort}
 					/>
 				)}
+				</Box>
 			</Box>
 		</Paper>
 	);

@@ -1,12 +1,17 @@
 import { useCallback, useMemo, useState, useEffect } from 'react';
 import { z } from 'zod';
 import api from '../../../utils/api';
+import { roleService } from '../roleService';
+import type { Role } from '../roleService';
 import type { UserRole } from '../../../types/auth.types';
 import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
+import Checkbox from '@mui/material/Checkbox';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Typography from '@mui/material/Typography';
 
 // ─── Zod Schema ─────────────────────────────────────────────────────────────
 
@@ -15,7 +20,8 @@ const USER_ROLES = ['ADMIN', 'MAR_SPECIALIST', 'CONTENT_SPECIALIST', 'SEO_COLLAB
 const baseSchema = z.object({
 	name: z.string().min(2, 'Tên phải có ít nhất 2 ký tự'),
 	email: z.string().email('Email không hợp lệ'),
-	role: z.enum(USER_ROLES),
+	role: z.enum(USER_ROLES).optional(),
+	roles: z.array(z.string()).optional(),
 	password: z.string().optional(),
 	status: z.enum(['active', 'inactive']),
 	companyName: z.string().optional(),
@@ -23,6 +29,7 @@ const baseSchema = z.object({
 });
 
 const createSchema = baseSchema.extend({
+	role: z.enum(USER_ROLES),
 	password: z
 		.string()
 		.min(6, 'Mật khẩu phải có ít nhất 6 ký tự')
@@ -30,6 +37,10 @@ const createSchema = baseSchema.extend({
 			/^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9])/,
 			'Mật khẩu phải có chữ hoa, chữ thường, số và ký tự đặc biệt'
 		),
+});
+
+const editSchema = baseSchema.extend({
+	roles: z.array(z.string()).min(1, 'Phải chọn ít nhất 1 vai trò').max(20, 'Tối đa 20 vai trò'),
 });
 
 export type UserFormData = z.infer<typeof baseSchema>;
@@ -48,6 +59,7 @@ const EMPTY_FORM: UserFormData = {
 	email: '',
 	name: '',
 	role: 'SEO_COLLABORATOR',
+	roles: [],
 	password: '',
 	status: 'active',
 	companyName: '',
@@ -64,9 +76,10 @@ export default function UserForm({
 	const isEdit = Boolean(initialData);
 	const [form, setForm] = useState<UserFormData>({ ...EMPTY_FORM, ...initialData });
 	const [errors, setErrors] = useState<FormErrors>({});
-	const schema = useMemo(() => (isEdit ? baseSchema : createSchema), [isEdit]);
+	const schema = useMemo(() => (isEdit ? editSchema : createSchema), [isEdit]);
 	const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
 	const [loadingBranches, setLoadingBranches] = useState(false);
+	const [roles, setRoles] = useState<Role[]>([]);
 
 	useEffect(() => {
 		const fetchBranches = async () => {
@@ -86,7 +99,16 @@ export default function UserForm({
 				setLoadingBranches(false);
 			}
 		};
+		const fetchRoles = async () => {
+			try {
+				const data = await roleService.getAll();
+				setRoles(data);
+			} catch {
+				// fallback: roles stay empty, form still usable
+			}
+		};
 		fetchBranches();
+		fetchRoles();
 	}, []);
 	const handleChange = useCallback((field: keyof UserFormData, value: string) => {
 		setForm((prev) => ({ ...prev, [field]: value }));
@@ -94,7 +116,18 @@ export default function UserForm({
 			if (!prev[field]) return prev;
 			return { ...prev, [field]: undefined };
 		});
-	}, [])
+	}, []);
+
+	const handleRoleToggle = useCallback((roleName: string) => {
+		setForm((prev) => {
+			const current = prev.roles || [];
+			const next = current.includes(roleName)
+				? current.filter((r) => r !== roleName)
+				: [...current, roleName];
+			return { ...prev, roles: next };
+		});
+		setErrors((prev) => ({ ...prev, roles: undefined }));
+	}, []);
 
 
 
@@ -193,23 +226,56 @@ export default function UserForm({
 				</TextField>
 			</div>
 
-			<div className="grid grid-cols-2 gap-4">
+			{!isEdit && (
 				<TextField
 					select
 					label="Vai trò"
-					value={form.role}
+					value={form.role || 'SEO_COLLABORATOR'}
 					onChange={(e) => handleChange('role', e.target.value as UserRole)}
 					fullWidth
 					sx={{ mb: 3 }}
 				>
-					{/* <MenuItem value="ADMIN">Quản trị viên</MenuItem> */}
-					<MenuItem value="MAR_SPECIALIST">Chuyên viên Marketing</MenuItem>
-					<MenuItem value="CONTENT_SPECIALIST">Chuyên viên Content</MenuItem>
-					<MenuItem value="SEO_COLLABORATOR">Cộng tác viên SEO</MenuItem>
-					<MenuItem value="REVIEWER">Người kiểm duyệt</MenuItem>
+					{roles.map((r) => (
+						<MenuItem key={r._id} value={r.name}>
+							{r.label || r.name}
+						</MenuItem>
+					))}
 				</TextField>
+			)}
 
-			</div>
+			{isEdit && (
+				<Box sx={{ mb: 3 }}>
+					<Typography sx={{ fontSize: 13, fontWeight: 500, color: 'text.secondary', mb: 1 }}>
+						Vai trò
+					</Typography>
+					{errors.roles && (
+						<Alert severity="error" sx={{ mb: 1, py: 0 }}>{errors.roles}</Alert>
+					)}
+					<Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+						{roles.map((r) => (
+							<FormControlLabel
+								key={r._id}
+								control={
+									<Checkbox
+										checked={(form.roles || []).includes(r.name)}
+										onChange={() => handleRoleToggle(r.name)}
+										size="small"
+									/>
+								}
+								label={
+									<Box>
+										<Typography sx={{ fontSize: 14, fontWeight: 500 }}>{r.label}</Typography>
+										{r.description && (
+											<Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{r.description}</Typography>
+										)}
+									</Box>
+								}
+								sx={{ alignItems: 'center', py: 0.25 }}
+							/>
+						))}
+					</Box>
+				</Box>
+			)}
 
 			<Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
 				<Button variant="text" color="inherit" onClick={onCancel}>

@@ -167,6 +167,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 					}}
 				>
 					<Avatar
+						src={user?.imgAvatar || user?.avatar}
 						sx={{
 							width: 34,
 							height: 34,

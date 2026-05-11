@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { API_BASE_URL } from './constants';
 
 const api = axios.create({
@@ -7,6 +8,27 @@ const api = axios.create({
   timeout: 360000,
   withCredentials: true,
 });
+
+// ─── GET deduplication ────────────────────────────────────────────────────────
+// Khi StrictMode mount 2 lần, cả 2 thunk chia sẻ cùng 1 promise → chỉ 1 HTTP request.
+const _pendingGets = new Map<string, Promise<AxiosResponse>>();
+const _originalGet = api.get.bind(api);
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(api as any).get = <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> => {
+  const key = `${url}|${JSON.stringify(config?.params ?? {})}`;
+
+  if (_pendingGets.has(key)) {
+    return _pendingGets.get(key) as Promise<AxiosResponse<T>>;
+  }
+
+  const promise = _originalGet<T>(url, config).finally(() => {
+    _pendingGets.delete(key);
+  }) as Promise<AxiosResponse>;
+
+  _pendingGets.set(key, promise);
+  return promise as Promise<AxiosResponse<T>>;
+};
 
 // Inject từ bên ngoài để tránh circular dependency
 let getAccessToken: (() => string | null) | null = null;

@@ -72,49 +72,20 @@ export function Ga4OverviewCards({ summary, loading }: Ga4OverviewCardsProps) {
 	];
 
 	return (
-		<Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 2 }}>
-			{cards.map((card) => (
-				<Card
-					key={card.label}
-					variant="outlined"
-					sx={{
-						p: 2,
-						borderRadius: 2.5,
-						display: 'flex',
-						alignItems: 'center',
-						gap: 1.5,
-						transition: 'box-shadow 0.2s',
-						'&:hover': { boxShadow: '0 2px 12px rgba(0,0,0,0.08)' },
-					}}
-				>
-					<Box
-						sx={{
-							width: 40,
-							height: 40,
-							borderRadius: 2,
-							display: 'flex',
-							alignItems: 'center',
-							justifyContent: 'center',
-							backgroundColor: card.bgColor,
-							color: card.color,
-							flexShrink: 0,
-						}}
-					>
-						{card.icon}
-					</Box>
-					<Box sx={{ minWidth: 0 }}>
-						<Typography sx={{ fontSize: '11px', fontWeight: 500, color: 'text.secondary', mb: 0.25 }}>
-							{card.label}
+		<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 0, px: 3, py: 1.25, borderBottom: '1px solid', borderColor: 'divider' }}>
+			{cards.map((card, i) => (
+				<Box key={card.label} sx={{ display: 'flex', alignItems: 'baseline', gap: 0.6, px: 2, borderRight: i < cards.length - 1 ? '1px solid' : 'none', borderColor: 'divider' }}>
+					<Typography sx={{ fontSize: 11, color: 'text.secondary', whiteSpace: 'nowrap' }}>
+						{card.label}
+					</Typography>
+					{loading ? (
+						<Skeleton width={36} height={18} />
+					) : (
+						<Typography sx={{ fontSize: 16, fontWeight: 800, color: 'primary.main', whiteSpace: 'nowrap' }}>
+							{card.value}
 						</Typography>
-						{loading ? (
-							<Skeleton width={50} height={24} />
-						) : (
-							<Typography sx={{ fontSize: '18px', fontWeight: 700, color: card.color, lineHeight: 1.2 }}>
-								{card.value}
-							</Typography>
-						)}
-					</Box>
-				</Card>
+					)}
+				</Box>
 			))}
 		</Box>
 	);

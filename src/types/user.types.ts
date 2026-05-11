@@ -7,6 +7,7 @@ export interface UserProfile {
   email: string;
   name: string;
   role: UserRole;
+  roles?: string[];
   avatar?: string;
   status: 'active' | 'inactive';
   createdAt: string;
@@ -23,6 +24,7 @@ export interface UserFormData {
   email: string;
   name: string;
   role: UserRole;
+  roles?: string[];
   password?: string;
   status: 'active' | 'inactive';
   companyName?: string;

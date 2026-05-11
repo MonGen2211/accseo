@@ -3,14 +3,16 @@ import type { AuthState, LoginCredentials } from '../../types/auth.types';
 import { authService } from './authService';
 import { notificationService } from '../notifications/notificationService';
 import { resetNotifications } from '../notifications/notificationSlice';
+import api from '../../utils/api';
 
 const initialState: AuthState = {
   user: authService.getCurrentUser(),
   accessToken: null,
   isAuthenticated: false,
-  initializing: true, // true cho đến khi bootstrapAuth chạy xong
+  initializing: true,
   loading: false,
   error: null,
+  allowedPages: undefined,
 };
 
 // Khôi phục session từ HttpOnly cookie khi app khởi động
@@ -25,6 +27,38 @@ export const loginUser = createAsyncThunk(
       return await authService.login(credentials);
     } catch (err) {
       return rejectWithValue((err as Error).message);
+    }
+  }
+);
+
+export const fetchRolePermissions = createAsyncThunk(
+  'auth/fetchRolePermissions',
+  async (_, { getState }) => {
+    const { auth } = getState() as { auth: AuthState };
+    if (!auth.user) return ['dashboard'];
+
+    // Collect all roles the user has (prefer roles[] array, fallback to single role)
+    const userRoles: string[] = auth.user.roles?.length
+      ? auth.user.roles
+      : [auth.user.role];
+
+    // ADMIN always gets full access regardless of other roles
+    if (userRoles.includes('ADMIN')) return null;
+
+    try {
+      // Fetch permissions for every role in parallel, then union all allowed pages
+      const results = await Promise.all(
+        userRoles.map((role) =>
+          api.get<{ data: { pages: string[] } | null }>(`/role-permissions/${role}`)
+            .then((res) => res.data.data?.pages ?? [])
+            .catch(() => [] as string[])
+        )
+      );
+
+      const merged = [...new Set(results.flat())];
+      return merged.length ? merged : ['dashboard'];
+    } catch {
+      return ['dashboard'];
     }
   }
 );
@@ -45,6 +79,12 @@ const authSlice = createSlice({
   reducers: {
     clearError(state) {
       state.error = null;
+    },
+    updateAuthUser(state, action: { payload: Partial<import('../../types/auth.types').User> }) {
+      if (state.user) {
+        state.user = { ...state.user, ...action.payload };
+        localStorage.setItem('user', JSON.stringify(state.user));
+      }
     },
   },
   extraReducers: (builder) => {
@@ -81,14 +121,22 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
+      // Role permissions
+      .addCase(fetchRolePermissions.fulfilled, (state, action) => {
+        state.allowedPages = action.payload;
+      })
+      .addCase(fetchRolePermissions.rejected, (state) => {
+        state.allowedPages = ['dashboard'];
+      })
       // Logout
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
         state.accessToken = null;
         state.isAuthenticated = false;
+        state.allowedPages = undefined;
       });
   },
 });
 
-export const { clearError } = authSlice.actions;
+export const { clearError, updateAuthUser } = authSlice.actions;
 export default authSlice.reducer;

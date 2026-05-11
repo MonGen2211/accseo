@@ -5,13 +5,16 @@ export interface User {
   email: string;
   name: string;
   role: UserRole;
+  roles?: string[];
   avatar?: string;
+  imgAvatar?: string;
   createdAt: string;
 }
 
 export interface LoginCredentials {
   email: string;
   password: string;
+  rememberMe?: boolean;
 }
 
 export interface AuthState {
@@ -21,6 +24,7 @@ export interface AuthState {
   initializing: boolean;
   loading: boolean;
   error: string | null;
+  allowedPages: string[] | null | undefined; // undefined = not yet fetched; null = admin (all access); string[] = specific pages
 }
 
 export interface LoginResponse {
@@ -37,7 +41,7 @@ export interface RegisterCredentials {
   email: string;
   name: string;
   password: string;
-  role?: UserRole;
+  roles?: string[];
   companyName?: string;
   branch?: string;
 }

@@ -108,4 +108,9 @@ export const notificationService = {
       sseController = null;
     }
   },
+
+  /** Kiểm tra SSE đang kết nối không */
+  isSseConnected(): boolean {
+    return sseController !== null;
+  },
 };

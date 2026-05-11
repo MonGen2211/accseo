@@ -16,28 +16,37 @@ import { userService } from '../userService';
 import type { UserFormData } from './UserForm';
 import UserTable from './UserTable';
 import UserForm from './UserForm';
+import RoleManagementTab from './RoleManagementTab';
+import RolePermissionsTab from './RolePermissionsTab';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import IconButton from '@mui/material/IconButton';
 import Box from '@mui/material/Box';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import Paper from '@mui/material/Paper';
+import Typography from '@mui/material/Typography';
 import PersonAddOutlinedIcon from '@mui/icons-material/PersonAddOutlined';
 import CloseIcon from '@mui/icons-material/Close';
-import { Paper, Typography } from '@mui/material';
 import { useToastify } from '../../../components/Toastify';
+
+type TabValue = 'users' | 'roles' | 'permissions';
 
 export default function UserPage() {
 	const dispatch = useAppDispatch();
 	const { users, selectedUser, loading, error, pagination, sortField, sortOrder } = useAppSelector((state) => state.users);
+	const [tab, setTab] = useState<TabValue>('users');
 	const [showForm, setShowForm] = useState(false);
 	const [search, setSearch] = useState('');
 	const debouncedSearch = useDebounce(search, 300);
 	const { showToast } = useToastify();
 
 	useEffect(() => {
+		if (tab !== 'users') return;
 		dispatch(fetchUsers({ page: pagination.page, limit: pagination.limit, search: debouncedSearch, sort: sortField, order: sortOrder }));
-	}, [dispatch, pagination.page, pagination.limit, debouncedSearch, sortField, sortOrder]);
+	}, [dispatch, pagination.page, pagination.limit, debouncedSearch, sortField, sortOrder, tab]);
 
 	const handlePageChange = (newPage: number) => {
 		dispatch(fetchUsers({ page: newPage + 1, limit: pagination.limit, search: debouncedSearch, sort: sortField, order: sortOrder }));
@@ -69,7 +78,7 @@ export default function UserPage() {
 			dispatch(setSelectedUser(fullUser));
 			dispatch(clearUserError());
 			setShowForm(true);
-		} catch (err) {
+		} catch {
 			showToast('Không thể tải thông tin chi tiết người dùng', 'danger');
 		}
 	};
@@ -80,9 +89,7 @@ export default function UserPage() {
 
 	const handleStatusChange = async (userToUpdate: typeof selectedUser, newStatus: string) => {
 		if (userToUpdate) {
-			const data: Partial<UserFormData> = {
-				status: newStatus as 'active' | 'inactive',
-			};
+			const data: Partial<UserFormData> = { status: newStatus as 'active' | 'inactive' };
 			const action = await dispatch(updateUser({ id: userToUpdate.id, data }));
 			if (!action.type.endsWith('/rejected')) {
 				showToast('Cập nhật trạng thái người dùng thành công', 'success');
@@ -96,10 +103,13 @@ export default function UserPage() {
 		if (selectedUser) {
 			const changedData: Partial<UserFormData> = {};
 			if (data.name !== selectedUser.name) changedData.name = data.name;
-			if (data.role !== selectedUser.role) changedData.role = data.role;
 			if (data.status !== selectedUser.status) changedData.status = data.status;
 			if (data.companyName !== selectedUser.companyName) changedData.companyName = data.companyName;
 			if (data.branch !== selectedUser.branch) changedData.branch = data.branch;
+
+			const newRoles = [...(data.roles || [])].sort();
+			const oldRoles = [...(selectedUser.roles || (selectedUser.role ? [selectedUser.role] : []))].sort();
+			if (JSON.stringify(newRoles) !== JSON.stringify(oldRoles)) changedData.roles = data.roles;
 
 			if (Object.keys(changedData).length === 0) {
 				setShowForm(false);
@@ -136,34 +146,50 @@ export default function UserPage() {
 	return (
 		<Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 3 }}>
 			<Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
-				<Box sx={{ px: 3, pt: 3, pb: 1.5 }}>
-					<Typography sx={{ fontSize: '20px', fontWeight: 700, color: 'text.primary' }}>
-						Danh sách người dùng
+				<Box sx={{ px: 3, pt: 3, pb: 0 }}>
+					<Typography sx={{ fontSize: '20px', fontWeight: 700, color: 'text.primary', mb: 2 }}>
+						Quản lý người dùng
 					</Typography>
+					<Tabs
+						value={tab}
+						onChange={(_, v) => setTab(v as TabValue)}
+						sx={{ borderBottom: 1, borderColor: 'divider' }}
+					>
+						<Tab label="Danh sách người dùng" value="users" />
+						<Tab label="Tạo phân quyền" value="roles" />
+						<Tab label="Quyền trang theo vai trò" value="permissions" />
+					</Tabs>
 				</Box>
-				<Box sx={{ p: 2 }}>
-					<UserTable
-						users={users}
-						loading={loading}
-						page={pagination.page - 1}
-						rowsPerPage={pagination.limit}
-						totalCount={pagination.total}
-						onPageChange={handlePageChange}
-						onRowsPerPageChange={handleRowsPerPageChange}
-						onEdit={handleEdit}
-						onDelete={handleDelete}
-						onStatusChange={handleStatusChange}
-						searchValue={search}
-						onSearchChange={setSearch}
-						sortBy={sortField}
-						sortOrder={sortOrder}
-						onSort={handleSort}
-						headerActions={
-							<Button variant="contained" startIcon={<PersonAddOutlinedIcon />} onClick={handleCreate}>
-								Thêm người dùng
-							</Button>
-						}
-					/>
+
+				<Box sx={{ p: 3 }}>
+					{tab === 'users' && (
+						<UserTable
+							users={users}
+							loading={loading}
+							page={pagination.page - 1}
+							rowsPerPage={pagination.limit}
+							totalCount={pagination.total}
+							onPageChange={handlePageChange}
+							onRowsPerPageChange={handleRowsPerPageChange}
+							onEdit={handleEdit}
+							onDelete={handleDelete}
+							onStatusChange={handleStatusChange}
+							searchValue={search}
+							onSearchChange={setSearch}
+							sortBy={sortField}
+							sortOrder={sortOrder}
+							onSort={handleSort}
+							headerActions={
+								<Button variant="contained" startIcon={<PersonAddOutlinedIcon />} onClick={handleCreate}>
+									Thêm người dùng
+								</Button>
+							}
+						/>
+					)}
+
+					{tab === 'roles' && <RoleManagementTab />}
+
+					{tab === 'permissions' && <RolePermissionsTab />}
 				</Box>
 			</Paper>
 
@@ -182,6 +208,7 @@ export default function UserPage() {
 									email: selectedUser.email,
 									name: selectedUser.name,
 									role: selectedUser.role,
+									roles: selectedUser.roles || (selectedUser.role ? [selectedUser.role] : []),
 									status: selectedUser.status,
 									companyName: selectedUser.companyName,
 									branch: selectedUser.branch,

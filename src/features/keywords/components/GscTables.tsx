@@ -19,37 +19,23 @@ interface GscKeywordsTableProps {
 }
 
 const keywordFields: TableField[] = [
-	{ id: 'stt', name: 'stt', label: 'STT', type: 'text', width: 60, align: 'center' },
-	{ id: 'query', name: 'query', label: 'Từ khóa', type: 'text', width: 180, wrapText: true, ellipsis: true },
-	{ id: 'clicks', name: 'clicks', label: 'Clicks', type: 'text', width: 100, align: 'center', sortable: true },
-	{ id: 'impressions', name: 'impressions', label: 'Impressions', type: 'text', width: 180, align: 'center', sortable: true },
+	{ id: 'query', name: 'query', label: 'Từ khóa', type: 'text', width: 100, wrapText: true },
+	{ id: 'clicks', name: 'clicks', label: 'Clicks', type: 'text', width: 70, align: 'center', sortable: true },
+	{ id: 'impressions', name: 'impressions', label: 'Impr.', type: 'text', width: 72, align: 'center', sortable: true },
 	{
-		id: 'ctr',
-		name: 'ctr',
-		label: 'CTR',
-		type: 'custom',
-		width: 130,
-		align: 'center',
-		sortable: true,
-		renderCell: (row: TableRowData) => `${((row.ctr as number) * 100).toFixed(2)}%`,
+		id: 'ctr', name: 'ctr', label: 'CTR', type: 'custom', width: 68, align: 'center', sortable: true,
+		renderCell: (row: TableRowData) => `${((row.ctr as number) * 100).toFixed(1)}%`,
 	},
 	{
-		id: 'position',
-		name: 'position',
-		label: 'Position',
-		type: 'custom',
-		width: 150,
-		align: 'center',
-		sortable: true,
+		id: 'position', name: 'position', label: 'Pos.', type: 'custom', width: 65, align: 'center', sortable: true,
 		renderCell: (row: TableRowData) => (row.position as number).toFixed(1),
 	},
 ];
 
 export function GscKeywordsTable({ items, loading, page, limit, total, sortBy, sortOrder, onPageChange, onRowsPerPageChange, onSort }: GscKeywordsTableProps) {
-	const data: TableRowData[] = items.map((item, index) => ({
+	const data: TableRowData[] = items.map((item) => ({
 		...item,
 		id: item.query,
-		stt: (page - 1) * limit + index + 1,
 	}));
 
 	return (
@@ -93,46 +79,26 @@ function extractPath(url: string): string {
 }
 
 const pageFields: TableField[] = [
-	{ id: 'stt', name: 'stt', label: 'STT', type: 'text', width: 60, align: 'center' },
 	{
-		id: 'page',
-		name: 'page',
-		label: 'Trang',
-		type: 'custom',
-		width: 180,
-		wrapText: true,
-		ellipsis: true,
+		id: 'page', name: 'page', label: 'Trang', type: 'custom', width: 100, wrapText: true,
 		renderCell: (row: TableRowData) => extractPath(row.page as string),
 	},
-	{ id: 'clicks', name: 'clicks', label: 'Clicks', type: 'text', width: 100, align: 'center', sortable: true },
-	{ id: 'impressions', name: 'impressions', label: 'Impressions', type: 'text', width: 180, align: 'center', sortable: true },
+	{ id: 'clicks', name: 'clicks', label: 'Clicks', type: 'text', width: 70, align: 'center', sortable: true },
+	{ id: 'impressions', name: 'impressions', label: 'Impr.', type: 'text', width: 72, align: 'center', sortable: true },
 	{
-		id: 'ctr',
-		name: 'ctr',
-		label: 'CTR',
-		type: 'custom',
-		width: 130,
-		align: 'center',
-		sortable: true,
-		renderCell: (row: TableRowData) => `${((row.ctr as number) * 100).toFixed(2)}%`,
+		id: 'ctr', name: 'ctr', label: 'CTR', type: 'custom', width: 68, align: 'center', sortable: true,
+		renderCell: (row: TableRowData) => `${((row.ctr as number) * 100).toFixed(1)}%`,
 	},
 	{
-		id: 'position',
-		name: 'position',
-		label: 'Position',
-		type: 'custom',
-		width: 150,
-		align: 'center',
-		sortable: true,
+		id: 'position', name: 'position', label: 'Pos.', type: 'custom', width: 65, align: 'center', sortable: true,
 		renderCell: (row: TableRowData) => (row.position as number).toFixed(1),
 	},
 ];
 
 export function GscPagesTable({ items, loading, page, limit, total, sortBy, sortOrder, onPageChange, onRowsPerPageChange, onSort }: GscPagesTableProps) {
-	const data: TableRowData[] = items.map((item, index) => ({
+	const data: TableRowData[] = items.map((item) => ({
 		...item,
 		id: item.page,
-		stt: (page - 1) * limit + index + 1,
 	}));
 
 	return (

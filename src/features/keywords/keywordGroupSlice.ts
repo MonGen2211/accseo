@@ -1,11 +1,14 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { keywordGroupService } from './keywordGroupService';
-import type { KeywordGroup, KeywordGroupDataResponse, CreateKeywordGroupPayload } from './types';
+import type { KeywordGroup, KeywordGroupDataResponse, CreateKeywordGroupPayload, KeywordGroupSummary } from './types';
 
 export type KeywordGroupSortField = 'name' | 'status' | 'createdAt' | '';
 
 interface KeywordGroupState {
+  approveLoadingId: string | null;
+  summary: KeywordGroupSummary | null;
+  searchFilter: string;
   items: KeywordGroup[];
   loading: boolean;
   actionLoading: boolean;
@@ -36,6 +39,9 @@ const initialState: KeywordGroupState = {
   totalPages: 0,
   deleteLoadingId: null,
   statusLoadingId: null,
+  approveLoadingId: null,
+  summary: null,
+  searchFilter: '',
   sortField: '',
   sortOrder: 'desc',
   statusFilter: '',
@@ -43,9 +49,9 @@ const initialState: KeywordGroupState = {
 
 export const fetchKeywordGroups = createAsyncThunk(
   'keywordGroups/fetchGroups',
-  async ({ domainId, page, limit, sort = '', order = 'desc' as const, status = '' }: { domainId: string; page?: number; limit?: number; sort?: string; order?: 'asc' | 'desc'; status?: string }, { rejectWithValue }) => {
+  async ({ domainId, page, limit, sort = '', order = 'desc' as const, status = '', search = '' }: { domainId: string; page?: number; limit?: number; sort?: string; order?: 'asc' | 'desc'; status?: string; search?: string }, { rejectWithValue }) => {
     try {
-      return await keywordGroupService.getGroups(domainId, page, limit, sort, order, status);
+      return await keywordGroupService.getGroups(domainId, page, limit, sort, order, status, search);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(err.response?.data?.message || 'Lỗi khi tải danh sách bộ keywords');
@@ -127,6 +133,30 @@ export const updateKeywordGroupStatus = createAsyncThunk(
   }
 );
 
+export const approveKeywordGroup = createAsyncThunk(
+  'keywordGroups/approve',
+  async ({ id, reason }: { id: string; reason?: string }, { rejectWithValue }) => {
+    try {
+      return await keywordGroupService.approveGroup(id, reason);
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      return rejectWithValue(err.response?.data?.message || 'Lỗi khi duyệt bộ keywords');
+    }
+  }
+);
+
+export const rejectKeywordGroup = createAsyncThunk(
+  'keywordGroups/reject',
+  async ({ id, reason }: { id: string; reason?: string }, { rejectWithValue }) => {
+    try {
+      return await keywordGroupService.rejectGroup(id, reason);
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      return rejectWithValue(err.response?.data?.message || 'Lỗi khi từ chối bộ keywords');
+    }
+  }
+);
+
 const keywordGroupSlice = createSlice({
   name: 'keywordGroups',
   initialState,
@@ -143,6 +173,9 @@ const keywordGroupSlice = createSlice({
     setKeywordStatusFilter: (state, action: { payload: string }) => {
       state.statusFilter = action.payload;
     },
+    setKeywordSearchFilter: (state, action: { payload: string }) => {
+      state.searchFilter = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -158,6 +191,7 @@ const keywordGroupSlice = createSlice({
         state.page = action.payload.page || 1;
         state.limit = action.payload.limit || 10;
         state.totalPages = action.payload.totalPages || 0;
+        if (action.payload.summary) state.summary = action.payload.summary;
       })
       .addCase(fetchKeywordGroups.rejected, (state, action) => {
         state.loading = false;
@@ -247,9 +281,33 @@ const keywordGroupSlice = createSlice({
       .addCase(updateKeywordGroupStatus.rejected, (state, action) => {
         state.statusLoadingId = null;
         state.error = action.payload as string;
+      })
+      // Approve
+      .addCase(approveKeywordGroup.pending, (state, action) => {
+        state.approveLoadingId = action.meta.arg.id;
+      })
+      .addCase(approveKeywordGroup.fulfilled, (state, action) => {
+        state.approveLoadingId = null;
+        const idx = state.items.findIndex((i) => (i as { _id?: string })._id === action.payload.id || i.id === action.payload.id);
+        if (idx !== -1) state.items[idx] = { ...state.items[idx], ...action.payload };
+      })
+      .addCase(approveKeywordGroup.rejected, (state) => {
+        state.approveLoadingId = null;
+      })
+      // Reject
+      .addCase(rejectKeywordGroup.pending, (state, action) => {
+        state.approveLoadingId = action.meta.arg.id;
+      })
+      .addCase(rejectKeywordGroup.fulfilled, (state, action) => {
+        state.approveLoadingId = null;
+        const idx = state.items.findIndex((i) => (i as { _id?: string })._id === action.payload.id || i.id === action.payload.id);
+        if (idx !== -1) state.items[idx] = { ...state.items[idx], ...action.payload };
+      })
+      .addCase(rejectKeywordGroup.rejected, (state) => {
+        state.approveLoadingId = null;
       });
   },
 });
 
-export const { clearError, setKeywordSortField, setKeywordSortOrder, setKeywordStatusFilter } = keywordGroupSlice.actions;
+export const { clearError, setKeywordSortField, setKeywordSortOrder, setKeywordStatusFilter, setKeywordSearchFilter } = keywordGroupSlice.actions;
 export default keywordGroupSlice.reducer;

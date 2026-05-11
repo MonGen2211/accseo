@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { ROUTES } from '../../utils/constants';
-import { useRole } from '../../hooks/useRole';
+import { useAppSelector } from '../../app/store';
 import Box from '@mui/material/Box';
 import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
@@ -9,16 +9,15 @@ import Divider from '@mui/material/Divider';
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
 import LanguageOutlinedIcon from '@mui/icons-material/LanguageOutlined';
+import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 const navItems = [
-	{ label: 'Tổng quan', icon: <DashboardOutlinedIcon />, path: ROUTES.DASHBOARD, end: true },
-	{ label: 'Tên miền', icon: <LanguageOutlinedIcon />, path: ROUTES.DOMAINS, end: false },
-];
-
-const adminItems = [
-	{ label: 'Người dùng', icon: <PeopleOutlinedIcon />, path: ROUTES.USERS, end: false },
+	{ label: 'Tổng quan', icon: <DashboardOutlinedIcon />, path: ROUTES.DASHBOARD, end: true, pageKey: 'dashboard' },
+	{ label: 'Tên miền', icon: <LanguageOutlinedIcon />, path: ROUTES.DOMAINS, end: false, pageKey: 'domains' },
+	{ label: 'Yêu cầu & Nhóm', icon: <AssignmentOutlinedIcon />, path: ROUTES.REQUESTS, end: false, pageKey: 'requests' },
+	{ label: 'Người dùng', icon: <PeopleOutlinedIcon />, path: ROUTES.USERS, end: false, pageKey: 'users' },
 ];
 
 const DockBtn = ({ label, icon, path, end }: { label: string; icon: React.ReactNode; path: string; end: boolean }) => (
@@ -50,7 +49,11 @@ const DockBtn = ({ label, icon, path, end }: { label: string; icon: React.ReactN
 
 export default function Sidebar() {
 	const [collapsed, setCollapsed] = useState(false);
-	const canViewUsers = useRole(['ADMIN', 'MAR_SPECIALIST']);
+	const allowedPages = useAppSelector((state) => state.auth.allowedPages);
+
+	// null = admin (all pages); string[] = specific pages; undefined = blocked by MainLayout
+	const canView = (pageKey: string) => allowedPages === null || (Array.isArray(allowedPages) && allowedPages.includes(pageKey));
+	const visibleItems = navItems.filter((item) => canView(item.pageKey));
 
 	return (
 		<Box component="nav" sx={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 1200 }}>
@@ -98,18 +101,9 @@ export default function Sidebar() {
 
 					<Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
 
-					{navItems.map((item) => (
+					{visibleItems.map((item) => (
 						<DockBtn key={item.path} {...item} />
 					))}
-
-					{canViewUsers && (
-						<>
-							<Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
-							{adminItems.map((item) => (
-								<DockBtn key={item.path} {...item} />
-							))}
-						</>
-					)}
 
 
 				</Box>

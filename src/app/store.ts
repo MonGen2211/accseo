@@ -8,6 +8,8 @@ import keywordGroupReducer from '../features/keywords/keywordGroupSlice';
 import gscReducer from '../features/keywords/gscSlice';
 import ga4Reducer from '../features/keywords/ga4Slice';
 import notificationReducer from '../features/notifications/notificationSlice';
+import requestReducer from '../features/requests/requestSlice';
+import groupReducer from '../features/requests/groupSlice';
 
 export const store = configureStore({
   reducer: {
@@ -18,6 +20,8 @@ export const store = configureStore({
     gsc: gscReducer,
     ga4: ga4Reducer,
     notifications: notificationReducer,
+    requests: requestReducer,
+    groups: groupReducer,
   },
 });
 

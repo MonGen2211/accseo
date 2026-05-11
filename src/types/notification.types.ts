@@ -1,4 +1,7 @@
-export type NotificationType = 'article' | 'schedule' | 'system' | 'sync' | 'change';
+export type NotificationType =
+  | 'article' | 'schedule' | 'system' | 'sync' | 'change'
+  | 'REQUEST_ASSIGNED' | 'REQUEST_CLAIMED' | 'REQUEST_DONE'
+  | 'REQUEST_REJECTED' | 'REQUEST_CANCELLED' | 'REQUEST_REMINDER' | 'REQUEST_REASSIGNED';
 
 export interface AppNotification {
   _id: string;
@@ -32,4 +35,5 @@ export interface NotificationState {
   unreadCount: number;
   loading: boolean;
   sseConnected: boolean;
+  error: string | null;
 }

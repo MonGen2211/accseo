@@ -7,6 +7,7 @@ interface ApiUser {
 	email: string;
 	name: string;
 	role: string;
+	roles?: string[];
 	isActive: boolean;
 	createdAt: string;
 	updatedAt: string;
@@ -31,6 +32,7 @@ const mapApiUserToProfile = (user: ApiUser & { companyName?: string, branch?: st
 	email: user.email,
 	name: user.name,
 	role: user.role as UserProfile['role'],
+	roles: user.roles,
 	status: user.isActive ? 'active' : 'inactive',
 	createdAt: user.createdAt,
 	companyName: user.companyName,
@@ -66,7 +68,7 @@ export const userService = {
 			email: data.email,
 			name: data.name,
 			password: data.password ?? '',
-			role: data.role,
+			roles: data.role ? [data.role] : undefined,
 			companyName: data.companyName,
 			branch: data.branch
 		});
@@ -91,7 +93,7 @@ export const userService = {
 		const payload: Record<string, unknown> = {};
 		if (data.email !== undefined) payload.email = data.email;
 		if (data.name !== undefined) payload.name = data.name;
-		if (data.role !== undefined) payload.role = data.role;
+		if (data.roles !== undefined) payload.roles = data.roles;
 		if (data.status !== undefined) payload.isActive = data.status === 'active';
 		if (data.companyName !== undefined) payload.companyName = data.companyName;
 		if (data.branch !== undefined) payload.branch = data.branch;
@@ -120,5 +122,17 @@ export const userService = {
 
 	async remove(id: string): Promise<void> {
 		await api.delete(`/users/${id}`);
+	},
+
+	async getAssignable(search = '', includeAdmin = false): Promise<UserProfile[]> {
+		const params: Record<string, string | boolean> = {};
+		if (search) params.search = search;
+		if (includeAdmin) params.includeAdmin = true;
+		const response = await api.get<ApiResponse<ApiUser[]>>('/users/assignable', { params });
+		return (response.data.data ?? []).map(mapApiUserToProfile);
+	},
+
+	async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+		await api.patch('/users/me/password', { currentPassword, newPassword });
 	},
 };

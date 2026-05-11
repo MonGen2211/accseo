@@ -42,7 +42,7 @@ const initialState: GscState = {
   pagesLoading: false,
   error: null,
   dateRange: 28,
-  activeTab: 'overview',
+  activeTab: 'keywords',
   keywordsSortField: 'clicks',
   keywordsSortOrder: 'desc',
   pagesSortField: 'clicks',
