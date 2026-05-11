@@ -31,6 +31,7 @@ interface KeywordAiResultDialogProps {
 	generateLoading?: boolean;
 	suggestions: AiSuggestedKeyword[];
 	timeRange?: string;
+	hideRelated?: boolean;
 	onClose: () => void;
 	onConfirm: (selectedItems: AiSuggestedKeyword[]) => void;
 	onRetry?: (timeRange: string) => void;
@@ -46,7 +47,7 @@ function buildTrendsUrl(keyword: string, timeRange: string): string {
 	return `https://trends.google.com.vn/trends/explore?date=${date}&geo=VN&q=${encodeURIComponent(keyword)}&hl=vi`;
 }
 
-export function KeywordAiResultDialog({ open, loading, generateLoading, suggestions, timeRange = '3-m', onClose, onConfirm, onRetry, onExit }: KeywordAiResultDialogProps) {
+export function KeywordAiResultDialog({ open, loading, generateLoading, suggestions, timeRange = '3-m', hideRelated = false, onClose, onConfirm, onRetry, onExit }: KeywordAiResultDialogProps) {
 	const progress = useAiProgress(generateLoading ?? false);
 	const [selected, setSelected] = useState<string[]>([]);
 	const [prevOpen, setPrevOpen] = useState(open);
@@ -309,7 +310,7 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 						</Box>
 
 						{/* Trends Analysis từ data trả về */}
-						{suggestions.length > 0 && suggestions.some(s => s.relatedQueries ?? s.relatedTopics ?? s.trendTimeline?.length) && (
+						{suggestions.length > 0 && suggestions.some(s => hideRelated ? !!s.trendTimeline?.length : !!(s.relatedQueries ?? s.relatedTopics ?? s.trendTimeline?.length)) && (
 							<>
 								<Divider sx={{ my: 1 }} />
 								<Box>
@@ -317,7 +318,7 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 										Phân tích xu hướng
 									</Typography>
 									<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-										{suggestions.filter(s => s.relatedQueries ?? s.relatedTopics ?? s.trendTimeline?.length).map((s) => (
+										{suggestions.filter(s => hideRelated ? !!s.trendTimeline?.length : !!(s.relatedQueries ?? s.relatedTopics ?? s.trendTimeline?.length)).map((s) => (
 											<Chip
 												key={s.name}
 												label={s.name}
@@ -346,10 +347,12 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 														/>
 													</Box>
 												)}
-												<Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
-													<RelatedQueriesPanel data={activeSuggestion?.relatedQueries} timeRange={retryTimeRange} />
-													<RelatedTopicsPanel data={activeSuggestion?.relatedTopics} timeRange={retryTimeRange} />
-												</Box>
+												{!hideRelated && (
+													<Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+														<RelatedQueriesPanel data={activeSuggestion?.relatedQueries} timeRange={retryTimeRange} />
+														<RelatedTopicsPanel data={activeSuggestion?.relatedTopics} timeRange={retryTimeRange} />
+													</Box>
+												)}
 											</Box>
 										);
 									})()}

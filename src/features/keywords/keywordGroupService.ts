@@ -109,6 +109,64 @@ export const keywordGroupService = {
     await api.delete(`/keywords/groups/suggest/cache/${domainId}`);
   },
 
+  async suggestKeywordsByGroupsPuppeteerStream(
+    payload: SuggestByGroupsPayload,
+    onLog: (event: StreamLogEvent) => void,
+    onResult: (suggestions: AiSuggestedKeyword[]) => void,
+    onError: (message: string) => void,
+    signal: AbortSignal,
+  ): Promise<void> {
+    const token = authService.getAccessToken();
+    const res = await fetch(`${API_BASE_URL}/keywords/groups/suggest-puppeteer/stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(payload),
+      signal,
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({})) as { message?: string };
+      onError(err.message || `Lỗi ${res.status}`);
+      return;
+    }
+
+    const reader = res.body!.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split('\n\n');
+      buffer = parts.pop() ?? '';
+
+      for (const part of parts) {
+        let eventType = 'message';
+        let dataStr = '';
+        for (const line of part.split('\n')) {
+          if (line.startsWith('event: ')) eventType = line.slice(7).trim();
+          else if (line.startsWith('data: ')) dataStr = line.slice(6).trim();
+        }
+        if (!dataStr) continue;
+        try {
+          const data = JSON.parse(dataStr) as StreamLogEvent & { suggestions?: AiSuggestedKeyword[]; code?: string };
+          if (eventType === 'log') onLog(data as StreamLogEvent);
+          else if (eventType === 'result') onResult(data.suggestions ?? []);
+          else if (eventType === 'error') onError(data.message || 'Đã có lỗi');
+        } catch { /* bỏ qua chunk lỗi parse */ }
+      }
+    }
+  },
+
+  async clearPuppeteerSuggestCache(domainId: string): Promise<void> {
+    await api.delete(`/keywords/groups/suggest-puppeteer/cache/${domainId}`);
+  },
+
   async suggestKeywordsByGroupsStream(
     payload: SuggestByGroupsPayload,
     onLog: (event: StreamLogEvent) => void,

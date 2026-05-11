@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(del *)",
+      "Bash(npm install *)",
+      "Bash(npm list *)",
+      "Bash(git checkout *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git fetch *)",
+      "Bash(git merge *)",
+      "Bash(git pull *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\code\\\\New folder \\(2\\)\\\\accseo\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(npm run *)",
+      "mcp__ide__getDiagnostics",
+      "Bash(npx vite *)",
+      "Bash(Get-ChildItem *)",
+      "Bash(git commit *)"
+    ]
+  }
+}

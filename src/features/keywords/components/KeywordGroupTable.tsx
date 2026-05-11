@@ -8,6 +8,7 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import TravelExploreIcon from '@mui/icons-material/TravelExplore';
 import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import DoNotDisturbAltOutlinedIcon from '@mui/icons-material/DoNotDisturbAltOutlined';
 import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
@@ -30,12 +31,14 @@ interface KeywordGroupTableProps {
 	page: number;
 	limit: number;
 	generateAiGroupsLoading?: boolean;
+	generateAiScrapeLoading?: boolean;
 	deleteLoadingId?: string | null;
 	statusLoadingId?: string | null;
 	onPageChange: (newPage: number) => void;
 	onRowsPerPageChange: (newLimit: number) => void;
 	onOpenCreate: () => void;
 	onAiGenerateByGroups?: () => void;
+	onAiScrapeByGroups?: () => void;
 	onDelete?: (row: KeywordGroup) => void;
 	onStatusChange?: (row: KeywordGroup, newStatus: string) => void;
 	sortBy?: string;
@@ -94,10 +97,20 @@ const aiButtonSx = (isLoading: boolean) => ({
 	...(isLoading && { animation: 'aiPulse 1.5s ease-in-out infinite', '@keyframes aiPulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.6 } } }),
 });
 
+const aiScrapeButtonSx = (isLoading: boolean) => ({
+	borderRadius: 2, textTransform: 'none' as const, fontWeight: 700,
+	background: isLoading ? '#94a3b8' : 'linear-gradient(45deg, #0ea5e9 30%, #06b6d4 90%)',
+	boxShadow: isLoading ? 'none' : '0 3px 5px 2px rgba(14,165,233,.3)',
+	color: 'white',
+	'&:hover': { background: 'linear-gradient(45deg, #06b6d4 30%, #0ea5e9 90%)' },
+	...(isLoading && { animation: 'aiPulse 1.5s ease-in-out infinite', '@keyframes aiPulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.6 } } }),
+});
+
 export function KeywordGroupTable({
 	data, loading, total, page, limit,
 	generateAiGroupsLoading = false,
-	onPageChange, onRowsPerPageChange, onOpenCreate, onAiGenerateByGroups,
+	generateAiScrapeLoading = false,
+	onPageChange, onRowsPerPageChange, onOpenCreate, onAiGenerateByGroups, onAiScrapeByGroups,
 	sortBy, sortOrder, onSort,
 	statusFilter, onStatusFilterChange,
 	searchValue, onSearchChange,
@@ -323,6 +336,11 @@ export function KeywordGroupTable({
 
 	const headerActions = (
 		<Box sx={{ display: 'flex', gap: 1.5 }}>
+			{onAiScrapeByGroups && (
+				<Button variant="contained" onClick={onAiScrapeByGroups} startIcon={!generateAiScrapeLoading && <TravelExploreIcon />} sx={aiScrapeButtonSx(generateAiScrapeLoading)}>
+					{generateAiScrapeLoading ? 'AI Scrape đang chạy... (Xem tiến trình)' : 'AI Scrape'}
+				</Button>
+			)}
 			{onAiGenerateByGroups && (
 				<Button variant="contained" onClick={onAiGenerateByGroups} startIcon={!generateAiGroupsLoading && <AutoAwesomeIcon />} sx={aiButtonSx(generateAiGroupsLoading)}>
 					{generateAiGroupsLoading ? 'Đang tạo bằng AI... (Xem tiến trình)' : 'Tạo bằng AI'}

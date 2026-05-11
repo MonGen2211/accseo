@@ -43,6 +43,20 @@ export default function KeywordPage() {
 	const [lastAiGroupsCount, setLastAiGroupsCount] = useState<number>(2);
 
 	const abortRef = useRef<AbortController | null>(null);
+
+	// ── AI Scrape (Puppeteer) state ───────────────────────────────────────────
+	const [isAiScrapeDialogOpen, setIsAiScrapeDialogOpen] = useState(false);
+	const [isAiScrapeStreamDialogOpen, setIsAiScrapeStreamDialogOpen] = useState(false);
+	const [isAiScrapeResultOpen, setIsAiScrapeResultOpen] = useState(false);
+	const [aiScrapeStreamLogs, setAiScrapeStreamLogs] = useState<StreamLogEvent[]>([]);
+	const [isAiScrapeStreaming, setIsAiScrapeStreaming] = useState(false);
+	const [aiScrapeSuggestions, setAiScrapeSuggestions] = useState<AiSuggestedKeyword[]>([]);
+	const [aiScrapeSubmitLoading, setAiScrapeSubmitLoading] = useState(false);
+	const [lastScrapeTimeRange, setLastScrapeTimeRange] = useState<string>('3-m');
+	const [lastScrapeMinScore, setLastScrapeMinScore] = useState<number>(60);
+	const [lastScrapeCount, setLastScrapeCount] = useState<number>(2);
+	const abortScrapeRef = useRef<AbortController | null>(null);
+
 	const [activeAnalytic, setActiveAnalytic] = useState<'gsc' | 'ga4'>('gsc');
 	const debouncedSearch = useDebounce(searchFilter, 400);
 
@@ -161,6 +175,92 @@ export default function KeywordPage() {
 		if (domainId) {
 			try {
 				await keywordGroupService.clearGroupsSuggestCache(domainId);
+			} catch { /* best-effort */ }
+		}
+	};
+
+	// ── AI Scrape (Puppeteer) handlers ────────────────────────────────────────
+	const startPuppeteerStream = async (timeRange: string, minScore: number, count: number) => {
+		if (!domainId) return;
+
+		setLastScrapeTimeRange(timeRange);
+		setLastScrapeMinScore(minScore);
+		setLastScrapeCount(count);
+		setAiScrapeStreamLogs([]);
+		setIsAiScrapeStreaming(true);
+		setIsAiScrapeDialogOpen(false);
+		setIsAiScrapeStreamDialogOpen(true);
+
+		const controller = new AbortController();
+		abortScrapeRef.current = controller;
+
+		try {
+			await keywordGroupService.suggestKeywordsByGroupsPuppeteerStream(
+				{ domainId, timeRange, minScore, count },
+				(log) => setAiScrapeStreamLogs((prev) => [...prev, log]),
+				(suggestions) => {
+					setIsAiScrapeStreamDialogOpen(false);
+					setIsAiScrapeStreaming(false);
+					setAiScrapeSuggestions(suggestions);
+					setIsAiScrapeResultOpen(true);
+					showToast('AI Scrape đã xong! Xem kết quả để xác nhận.', 'success');
+				},
+				(errMsg) => {
+					setIsAiScrapeStreamDialogOpen(false);
+					setIsAiScrapeStreaming(false);
+					showToast(errMsg, 'danger');
+				},
+				controller.signal,
+			);
+		} catch (err: unknown) {
+			if ((err as { name?: string }).name === 'AbortError') return;
+			setIsAiScrapeStreamDialogOpen(false);
+			setIsAiScrapeStreaming(false);
+			showToast('Đã có lỗi xảy ra', 'danger');
+		} finally {
+			abortScrapeRef.current = null;
+		}
+	};
+
+	const handlePuppeteerStreamCancel = () => {
+		abortScrapeRef.current?.abort();
+		abortScrapeRef.current = null;
+		setIsAiScrapeStreamDialogOpen(false);
+		setIsAiScrapeStreaming(false);
+		setAiScrapeStreamLogs([]);
+	};
+
+	const handlePuppeteerRetry = (retryTimeRange: string) => {
+		setLastScrapeTimeRange(retryTimeRange);
+		setIsAiScrapeResultOpen(false);
+		setAiScrapeSuggestions([]);
+		startPuppeteerStream(retryTimeRange, lastScrapeMinScore, lastScrapeCount);
+	};
+
+	const handlePuppeteerConfirmSelected = async (selectedItems: AiSuggestedKeyword[]) => {
+		if (!domainId || selectedItems.length === 0) return;
+		try {
+			setAiScrapeSubmitLoading(true);
+			await dispatch(createKeywordGroupItems({ domainId, items: selectedItems.map(item => ({ name: item.name, status: 'pending_approval' as const, ...(item.reason && { reason: item.reason }) })) })).unwrap();
+			await keywordGroupService.clearPuppeteerSuggestCache(domainId);
+			showToast('Tạo keywords từ AI Scrape thành công!', 'success');
+			loadData(0, limit);
+			setIsAiScrapeResultOpen(false);
+			setAiScrapeSuggestions([]);
+		} catch (err: unknown) {
+			const errorMsg = typeof err === 'string' ? err : 'Đã có lỗi xảy ra';
+			showToast(errorMsg, 'danger');
+		} finally {
+			setAiScrapeSubmitLoading(false);
+		}
+	};
+
+	const handlePuppeteerExit = async () => {
+		setIsAiScrapeResultOpen(false);
+		setAiScrapeSuggestions([]);
+		if (domainId) {
+			try {
+				await keywordGroupService.clearPuppeteerSuggestCache(domainId);
 			} catch { /* best-effort */ }
 		}
 	};
@@ -293,6 +393,7 @@ export default function KeywordPage() {
 					page={page - 1}
 					limit={limit}
 					generateAiGroupsLoading={isStreaming}
+					generateAiScrapeLoading={isAiScrapeStreaming}
 					deleteLoadingId={deleteLoadingId}
 					statusLoadingId={statusLoadingId}
 					onPageChange={handlePageChange}
@@ -305,6 +406,15 @@ export default function KeywordPage() {
 							setIsAiResultOpen(true);
 						} else {
 							setIsAiGroupsDialogOpen(true);
+						}
+					}}
+					onAiScrapeByGroups={() => {
+						if (isAiScrapeStreaming) {
+							setIsAiScrapeStreamDialogOpen(true);
+						} else if (aiScrapeSuggestions.length > 0) {
+							setIsAiScrapeResultOpen(true);
+						} else {
+							setIsAiScrapeDialogOpen(true);
 						}
 					}}
 					onDelete={handleDelete}
@@ -355,6 +465,37 @@ export default function KeywordPage() {
 					onConfirm={handleAiConfirmSelected}
 					onRetry={handleAiRetry}
 					onExit={handleAiExit}
+				/>
+			)}
+
+			{/* ── AI Scrape (Puppeteer) dialogs ─────────────────────────────────── */}
+			{domainId && (
+				<KeywordGroupsAiDialog
+					open={isAiScrapeDialogOpen}
+					loading={false}
+					onClose={() => setIsAiScrapeDialogOpen(false)}
+					onConfirm={(timeRange, minScore, count) => startPuppeteerStream(timeRange, minScore, count)}
+				/>
+			)}
+
+			<KeywordGroupsStreamDialog
+				open={isAiScrapeStreamDialogOpen}
+				logs={aiScrapeStreamLogs}
+				onCancel={handlePuppeteerStreamCancel}
+			/>
+
+			{domainId && (
+				<KeywordAiResultDialog
+					open={isAiScrapeResultOpen}
+					loading={aiScrapeSubmitLoading}
+					generateLoading={false}
+					suggestions={aiScrapeSuggestions}
+					timeRange={lastScrapeTimeRange}
+					hideRelated
+					onClose={() => setIsAiScrapeResultOpen(false)}
+					onConfirm={handlePuppeteerConfirmSelected}
+					onRetry={handlePuppeteerRetry}
+					onExit={handlePuppeteerExit}
 				/>
 			)}
 		</Box>
