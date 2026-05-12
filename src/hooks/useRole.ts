@@ -6,7 +6,7 @@ export const useRole = (allowedRoles: UserRole[]): boolean => {
 
 	if (!user) return false;
 
-	if (user.role === 'ADMIN') return true;
+	if (user.roles?.includes('ADMIN')) return true;
 
-	return allowedRoles.includes(user.role);
+	return allowedRoles.some((role) => user.roles?.includes(role));
 };

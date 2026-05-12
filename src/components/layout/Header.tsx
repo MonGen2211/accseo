@@ -67,7 +67,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 		setAnchorEl(null);
 	};
 
-	const isAdmin = user?.role === 'ADMIN';
+	const isAdmin = user?.roles?.includes('ADMIN');
 
 	const handleLogout = async () => {
 		handleMenuClose();
@@ -183,7 +183,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 							{user?.name}
 						</Typography>
 						<Typography sx={{ color: '#6b7280', fontSize: '0.68rem', textTransform: 'capitalize' }}>
-							{user?.role}
+							{user?.roles?.join(', ')}
 						</Typography>
 					</Box>
 					<ExpandMoreIcon sx={{ fontSize: 16, color: '#9ca3af', display: { xs: 'none', sm: 'block' }, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
@@ -231,7 +231,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 							{user?.name}
 						</Typography>
 						<Typography sx={{ fontSize: '0.75rem', color: 'text.secondary', textTransform: 'capitalize' }}>
-							{user?.role}
+							{user?.roles?.join(', ')}
 						</Typography>
 					</Box>
 					<Divider />
