@@ -18,6 +18,7 @@ export interface UserProfile {
   phone1?: string | null;
   phone2?: string | null;
   imgAvatar?: string | null;
+  dateOfBirth?: string | null;
 }
 
 export interface UserFormData {
@@ -32,6 +33,7 @@ export interface UserFormData {
   msnv?: string | null;
   phone1?: string | null;
   phone2?: string | null;
+  dateOfBirth?: string | null;
 }
 
 export interface UserState {

@@ -44,6 +44,8 @@ export interface RegisterCredentials {
   roles?: string[];
   companyName?: string;
   branch?: string;
+  msnv?: string;
+  dateOfBirth?: string;
 }
 
 export interface RegisterResponse {

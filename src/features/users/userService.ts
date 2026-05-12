@@ -11,6 +11,7 @@ interface ApiUser {
 	isActive: boolean;
 	createdAt: string;
 	updatedAt: string;
+	dateOfBirth?: string;
 }
 
 interface PaginatedData<T> {
@@ -27,7 +28,7 @@ interface ApiResponse<T> {
 	data: T;
 }
 
-const mapApiUserToProfile = (user: ApiUser & { companyName?: string, branch?: string, msnv?: string, phone1?: string, phone2?: string, imgAvatar?: string }): UserProfile => ({
+const mapApiUserToProfile = (user: ApiUser & { companyName?: string, branch?: string, msnv?: string, phone1?: string, phone2?: string, imgAvatar?: string, dateOfBirth?: string }): UserProfile => ({
 	id: user._id,
 	email: user.email,
 	name: user.name,
@@ -41,6 +42,7 @@ const mapApiUserToProfile = (user: ApiUser & { companyName?: string, branch?: st
 	phone1: user.phone1,
 	phone2: user.phone2,
 	imgAvatar: user.imgAvatar,
+	dateOfBirth: user.dateOfBirth,
 });
 
 export const userService = {
@@ -70,7 +72,9 @@ export const userService = {
 			password: data.password ?? '',
 			roles: data.role ? [data.role] : undefined,
 			companyName: data.companyName,
-			branch: data.branch
+			branch: data.branch,
+			msnv: data.msnv || undefined,
+			dateOfBirth: data.dateOfBirth || undefined
 		});
 		const user = response.data;
 		return {
@@ -78,12 +82,15 @@ export const userService = {
 				id: user.id || (user as unknown as { _id: string })._id,
 				email: user.email,
 				name: user.name,
-				role: user.role,
+				role: (user.role || (user.roles && user.roles[0])) as UserProfile['role'],
+				roles: user.roles || (data.role ? [data.role] : []),
 				avatar: user.avatar,
 				status: 'active',
 				createdAt: user.createdAt,
 				companyName: data.companyName,
-				branch: data.branch
+				branch: data.branch,
+				msnv: data.msnv,
+				dateOfBirth: data.dateOfBirth
 			},
 			message: response.message,
 		};
@@ -98,16 +105,18 @@ export const userService = {
 		if (data.companyName !== undefined) payload.companyName = data.companyName;
 		if (data.branch !== undefined) payload.branch = data.branch;
 		if (data.msnv !== undefined) payload.msnv = data.msnv;
+		if (data.dateOfBirth !== undefined) payload.dateOfBirth = data.dateOfBirth;
 
 		const response = await api.patch<ApiResponse<{ user: ApiUser }>>(`/users/${id}`, payload);
 		return mapApiUserToProfile(response.data.data.user);
 	},
 
-	async updateProfile(data: { name?: string; phone1?: string; phone2?: string; imgAvatar?: File }): Promise<UserProfile> {
+	async updateProfile(data: { name?: string; phone1?: string; phone2?: string; imgAvatar?: File; dateOfBirth?: string }): Promise<UserProfile> {
 		const formData = new FormData();
 		if (data.name !== undefined) formData.append('name', data.name);
 		if (data.phone1 !== undefined) formData.append('phone1', data.phone1);
 		if (data.phone2 !== undefined) formData.append('phone2', data.phone2);
+		if (data.dateOfBirth !== undefined) formData.append('dateOfBirth', data.dateOfBirth);
 		if (data.imgAvatar !== undefined) formData.append('imgAvatar', data.imgAvatar);
 
 		const response = await api.patch<ApiResponse<ApiUser | { user: ApiUser }>>('/users/me', formData, {

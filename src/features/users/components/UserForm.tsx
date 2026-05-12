@@ -26,6 +26,8 @@ const baseSchema = z.object({
 	status: z.enum(['active', 'inactive']),
 	companyName: z.string().optional(),
 	branch: z.string().optional(),
+	msnv: z.string().optional(),
+	dateOfBirth: z.string().optional(),
 });
 
 const createSchema = baseSchema.extend({
@@ -64,6 +66,8 @@ const EMPTY_FORM: UserFormData = {
 	status: 'active',
 	companyName: '',
 	branch: '',
+	msnv: '',
+	dateOfBirth: '',
 };
 
 export default function UserForm({
@@ -194,6 +198,33 @@ export default function UserForm({
 					sx={{ mb: 3 }}
 				/>
 			)}
+
+			<TextField
+				label="Mã nhân viên (MSNV)"
+				value={form.msnv || ''}
+				onChange={(e) => handleChange('msnv', e.target.value)}
+				placeholder="VD: NV001"
+				error={Boolean(errors.msnv)}
+				helperText={errors.msnv}
+				fullWidth
+				sx={{ mb: 3 }}
+			/>
+
+			<TextField
+				type="date"
+				disabled={isEdit}
+				value={form.dateOfBirth || ''}
+				onChange={(e) => handleChange('dateOfBirth', e.target.value)}
+				error={Boolean(errors.dateOfBirth)}
+				helperText={errors.dateOfBirth}
+				fullWidth
+				sx={{ mb: 3 }}
+				slotProps={{
+					inputLabel: {
+						shrink: true,
+					}
+				}}
+			/>
 
 			<TextField
 				label="Tên công ty"

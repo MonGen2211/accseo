@@ -22,6 +22,7 @@ import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
 import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
+import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../../app/store';
 import { updateAuthUser, logoutUser } from '../../auth/authSlice';
@@ -65,6 +66,7 @@ export default function ProfilePage() {
 		phone2: '',
 		avatar: '',
 		companyName: '',
+		dateOfBirth: '',
 	});
 	const [originalProfile, setOriginalProfile] = useState(profile);
 
@@ -93,7 +95,8 @@ export default function ProfilePage() {
 					phone1: fullProfile.phone1 || '',
 					phone2: fullProfile.phone2 || '',
 					avatar: fullProfile.imgAvatar || fullProfile.avatar || 'https://i.pravatar.cc/150?img=12',
-					companyName: fullProfile.companyName || ''
+					companyName: fullProfile.companyName || '',
+					dateOfBirth: fullProfile.dateOfBirth ? fullProfile.dateOfBirth.split('T')[0] : '',
 				};
 				setProfile(fetchedProfile);
 				setOriginalProfile(fetchedProfile);
@@ -164,7 +167,7 @@ export default function ProfilePage() {
 		if (!currentUser?.id) return;
 		setLoading(true);
 		try {
-			const payload: { name?: string; phone1?: string; phone2?: string; imgAvatar?: File } = {};
+			const payload: { name?: string; phone1?: string; phone2?: string; imgAvatar?: File; dateOfBirth?: string } = {};
 			let hasChanges = false;
 
 			if (profile.name !== originalProfile.name) {
@@ -177,6 +180,11 @@ export default function ProfilePage() {
 			}
 			if (profile.phone2 !== originalProfile.phone2) {
 				payload.phone2 = profile.phone2;
+				hasChanges = true;
+			}
+
+			if (profile.dateOfBirth !== originalProfile.dateOfBirth) {
+				payload.dateOfBirth = profile.dateOfBirth;
 				hasChanges = true;
 			}
 			if (avatarFile) {
@@ -203,7 +211,8 @@ export default function ProfilePage() {
 				...originalProfile,
 				name: profile.name,
 				phone1: profile.phone1,
-				phone2: profile.phone2
+				phone2: profile.phone2,
+				dateOfBirth: profile.dateOfBirth
 			});
 			if (avatarPreview) {
 				setOriginalProfile(prev => ({ ...prev, avatar: avatarPreview }));
@@ -342,6 +351,28 @@ export default function ProfilePage() {
 												<PhoneOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
 											</InputAdornment>
 										)
+									}
+								}}
+							/>
+
+							<TextField
+								fullWidth
+								label="Ngày sinh"
+								name="dateOfBirth"
+								type="date"
+								value={profile.dateOfBirth}
+								onChange={handleChange}
+								size="small"
+								slotProps={{
+									input: {
+										startAdornment: (
+											<InputAdornment position="start">
+												<CalendarTodayOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+											</InputAdornment>
+										)
+									},
+									inputLabel: {
+										shrink: true,
 									}
 								}}
 							/>

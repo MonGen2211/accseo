@@ -106,6 +106,10 @@ export default function UserPage() {
 			if (data.status !== selectedUser.status) changedData.status = data.status;
 			if (data.companyName !== selectedUser.companyName) changedData.companyName = data.companyName;
 			if (data.branch !== selectedUser.branch) changedData.branch = data.branch;
+			if (data.msnv !== selectedUser.msnv) changedData.msnv = data.msnv;
+
+			const oldDob = selectedUser.dateOfBirth ? selectedUser.dateOfBirth.split('T')[0] : '';
+			if ((data.dateOfBirth || '') !== oldDob) changedData.dateOfBirth = data.dateOfBirth;
 
 			const newRoles = [...(data.roles || [])].sort();
 			const oldRoles = [...(selectedUser.roles || (selectedUser.role ? [selectedUser.role] : []))].sort();
@@ -129,6 +133,7 @@ export default function UserPage() {
 			const action = await dispatch(createUser(data));
 			if (!action.type.endsWith('/rejected')) {
 				const payload = action.payload as { user: unknown; message: string };
+				console.log(payload);
 				showToast(payload.message || 'Tạo người dùng thành công', 'success');
 				setShowForm(false);
 				dispatch(clearSelectedUser());
@@ -212,6 +217,8 @@ export default function UserPage() {
 									status: selectedUser.status,
 									companyName: selectedUser.companyName,
 									branch: selectedUser.branch,
+									msnv: selectedUser.msnv || '',
+									dateOfBirth: selectedUser.dateOfBirth ? selectedUser.dateOfBirth.split('T')[0] : '',
 								}
 								: undefined
 						}
