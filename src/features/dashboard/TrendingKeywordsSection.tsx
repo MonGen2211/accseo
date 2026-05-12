@@ -184,6 +184,7 @@ export default function TrendingKeywordsSection() {
 
 
 	useEffect(() => {
+		// eslint-disable-next-line react-hooks/set-state-in-effect
 		if (!syncBlockedUntil) { setCountdown(''); return; }
 		const update = () => {
 			const rem = syncBlockedUntil - Date.now();
@@ -225,6 +226,7 @@ export default function TrendingKeywordsSection() {
 		}
 	}, [qp]);
 
+	// eslint-disable-next-line react-hooks/set-state-in-effect
 	useEffect(() => { fetchTrending(); }, [fetchTrending]);
 
 	const displayItems = data?.items ?? [];
@@ -293,8 +295,8 @@ export default function TrendingKeywordsSection() {
 	const isBlocked_ = isBlocked;
 
 	return (
-		<Box sx={{ width: '50%', minWidth: 480 }}>
-			<Paper elevation={0} sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider', overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.05)' }}>
+		<Box sx={{ flex: 1, minWidth: { xs: '100%', md: 480 }, height: { xs: 600, md: '100%' } }}>
+			<Paper elevation={0} sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider', overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', height: '100%' }}>
 				{/* ── Header ── */}
 				<Box sx={{ px: 3, pt: 2.5, pb: 2, background: 'linear-gradient(135deg, #fff7ed 0%, #ffffff 70%)', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
 					<Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -302,10 +304,12 @@ export default function TrendingKeywordsSection() {
 							<WhatshotIcon sx={{ color: '#fff', fontSize: 22 }} />
 						</Box>
 						<Box>
-							<Typography sx={{ fontWeight: 800, fontSize: '1.05rem', lineHeight: 1.2, display: 'flex', alignItems: 'center', gap: 0.75 }}>
-								Trending Keywords
+							<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+								<Typography sx={{ fontWeight: 800, fontSize: '1.05rem', lineHeight: 1.2 }}>
+									Trending Keywords
+								</Typography>
 								<Chip label="LIVE" size="small" sx={{ fontSize: 9, height: 16, bgcolor: '#ef4444', color: '#fff', fontWeight: 800, letterSpacing: 0.5, px: 0.25 }} />
-							</Typography>
+							</Box>
 							<Typography sx={{ fontSize: '0.75rem', color: 'text.secondary', mt: 0.1 }}>Từ khoá bùng nổ tại Việt Nam · Nguồn Google Trends</Typography>
 						</Box>
 					</Box>
@@ -339,6 +343,8 @@ export default function TrendingKeywordsSection() {
 					</Box>
 				</Box>
 
+				{/* ── Body (scrollable) ── */}
+				<Box sx={{ flex: 1, overflowY: 'auto' }}>
 				{/* ── Skeleton ── */}
 				{loading && (
 					<Box>
@@ -392,6 +398,7 @@ export default function TrendingKeywordsSection() {
 						renderExpandedRow={renderExpandedRow}
 					/>
 				)}
+				</Box>{/* end scrollable body */}
 			</Paper>
 		</Box>
 	);

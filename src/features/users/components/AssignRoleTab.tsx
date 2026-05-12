@@ -76,6 +76,7 @@ export default function AssignRoleTab() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, rowsPerPage, debouncedSearch]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadData(); }, [loadData]);
 
   const openAssign = (user: UserWithRoles) => {
@@ -99,9 +100,9 @@ export default function AssignRoleTab() {
       );
       setAssignUser(null);
       showToast('Cập nhật phân quyền thành công', 'success');
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || 'Có lỗi xảy ra';
-      showToast(Array.isArray(msg) ? msg.join(', ') : msg, 'danger');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: unknown } } })?.response?.data?.message || 'Có lỗi xảy ra';
+      showToast(Array.isArray(msg) ? (msg as string[]).join(', ') : String(msg), 'danger');
     } finally {
       setAssignLoading(false);
     }

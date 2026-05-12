@@ -227,7 +227,7 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 				);
 			},
 		}] : []),
-	], [selected, handleToggle, hasGroupsFields, hasTrendTimeline]);
+	], [selected, handleToggle, hasGroupsFields, hasTrendTimeline, timeRange]);
 
 	const tableData = useMemo(() => {
 		return suggestions.map((s, idx) => ({ ...s, id: s.name, __index: idx }));

@@ -9,13 +9,13 @@ function loadFromStorage(): AppNotification[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? (JSON.parse(raw) as AppNotification[]) : [];
-  } catch { return []; }
+  } catch { /* intentional: use empty array on parse failure */ return []; }
 }
 
 function saveToStorage(items: AppNotification[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, 50)));
-  } catch {}
+  } catch { /* intentional: ignore storage quota errors */ }
 }
 
 const initialState: NotificationState = {

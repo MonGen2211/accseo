@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import Chip from '@mui/material/Chip';
 import type { RequestType, RequestPriority, RequestStatus } from '../types';
 

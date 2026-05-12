@@ -74,6 +74,7 @@ export default function RolePermissionsTab() {
     }
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadRoles(); }, [loadRoles]);
 
   const handleSelectRole = async (role: Role) => {
@@ -116,9 +117,9 @@ export default function RolePermissionsTab() {
       await saveRolePermission(selectedRole.name, [...ALWAYS_ON_PAGES, ...checkedPages]);
       setDirty(false);
       showToast(`Đã lưu quyền trang cho vai trò ${selectedRole.label}`, 'success');
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || 'Có lỗi xảy ra';
-      showToast(Array.isArray(msg) ? msg.join(', ') : msg, 'danger');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: unknown } } })?.response?.data?.message || 'Có lỗi xảy ra';
+      showToast(Array.isArray(msg) ? (msg as string[]).join(', ') : String(msg), 'danger');
     } finally {
       setSaveLoading(false);
     }

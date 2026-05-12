@@ -146,13 +146,14 @@ export default function ProfilePage() {
 				await dispatch(logoutUser());
 				navigate(ROUTES.LOGIN);
 			}, 1500);
-		} catch (err: any) {
-			const code = err?.response?.data?.code;
-			const status = err?.response?.status;
+		} catch (err: unknown) {
+			const e = err as { response?: { data?: { code?: string; message?: string }; status?: number } };
+			const code = e?.response?.data?.code;
+			const status = e?.response?.status;
 			if (code === 'WRONG_PASSWORD' || status === 401) {
 				setPwErrors(prev => ({ ...prev, currentPassword: 'Mật khẩu hiện tại không đúng' }));
 			} else {
-				showToast(err?.response?.data?.message || 'Đổi mật khẩu thất bại', 'danger');
+				showToast(e?.response?.data?.message || 'Đổi mật khẩu thất bại', 'danger');
 			}
 		} finally {
 			setPwLoading(false);
@@ -210,8 +211,9 @@ export default function ProfilePage() {
 			setAvatarFile(null); // Reset file sau khi lưu
 
 			showToast('Lưu thay đổi thành công', 'success');
-		} catch (err: any) {
-			showToast(err?.response?.data?.message || err.message || 'Lỗi khi lưu thông tin', 'danger');
+		} catch (err: unknown) {
+			const e = err as { response?: { data?: { message?: string } }; message?: string };
+			showToast(e?.response?.data?.message || e?.message || 'Lỗi khi lưu thông tin', 'danger');
 		} finally {
 			setLoading(false);
 		}

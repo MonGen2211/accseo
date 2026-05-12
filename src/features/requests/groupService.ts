@@ -19,6 +19,7 @@ const mapGroup = (g: any): Group => ({
   id: g._id || g.id,
   name: g.name,
   description: g.description,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   members: (g.members ?? []).map((m: any) => ({
     id: m._id || m.id,
     name: m.name,

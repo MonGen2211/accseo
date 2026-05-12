@@ -60,6 +60,7 @@ export default function RoleManagementTab() {
     }
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadRoles(); }, [loadRoles]);
 
   // ── Create ───────────────────────────────────────────────────────────────
@@ -78,9 +79,9 @@ export default function RoleManagementTab() {
       setCreateOpen(false);
       setCreateForm(EMPTY_CREATE);
       showToast('Tạo phân quyền thành công', 'success');
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || 'Có lỗi xảy ra';
-      showToast(Array.isArray(msg) ? msg.join(', ') : msg, 'danger');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: unknown } } })?.response?.data?.message || 'Có lỗi xảy ra';
+      showToast(Array.isArray(msg) ? (msg as string[]).join(', ') : String(msg), 'danger');
     } finally {
       setCreateLoading(false);
     }
@@ -111,9 +112,9 @@ export default function RoleManagementTab() {
       setRoles((prev) => prev.map((r) => (r._id === updated._id ? updated : r)));
       setEditRole(null);
       showToast('Cập nhật phân quyền thành công', 'success');
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || 'Có lỗi xảy ra';
-      showToast(Array.isArray(msg) ? msg.join(', ') : msg, 'danger');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: unknown } } })?.response?.data?.message || 'Có lỗi xảy ra';
+      showToast(Array.isArray(msg) ? (msg as string[]).join(', ') : String(msg), 'danger');
     } finally {
       setEditLoading(false);
     }
@@ -129,9 +130,9 @@ export default function RoleManagementTab() {
       setRoles((prev) => prev.filter((r) => r._id !== deleteRole._id));
       setDeleteRole(null);
       showToast('Xóa phân quyền thành công', 'success');
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || 'Có lỗi xảy ra';
-      showToast(Array.isArray(msg) ? msg.join(', ') : msg, 'danger');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: unknown } } })?.response?.data?.message || 'Có lỗi xảy ra';
+      showToast(Array.isArray(msg) ? (msg as string[]).join(', ') : String(msg), 'danger');
     } finally {
       setDeleteLoading(false);
     }

@@ -88,9 +88,9 @@ export default function UserForm({
 				const response = await api.get('/branches');
 				const branchData = response.data?.data?.items || response.data?.data || response.data || [];
 				if (Array.isArray(branchData)) {
-					setBranches(branchData.map((b: any) => ({
-						id: b.id || b._id || b.name || b,
-						name: b.name || b.branchName || b
+					setBranches(branchData.map((b: { id?: string; _id?: string; name?: string; branchName?: string }) => ({
+						id: b.id || b._id || b.name || '',
+						name: b.name || b.branchName || ''
 					})));
 				}
 			} catch (error) {

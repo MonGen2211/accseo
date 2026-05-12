@@ -115,7 +115,7 @@ export const userService = {
 				'Content-Type': 'multipart/form-data',
 			},
 		});
-		// @ts-ignore - Handle both response formats
+		// @ts-expect-error - Handle both response formats
 		const user = response.data.data.user || response.data.data;
 		return mapApiUserToProfile(user as ApiUser);
 	},
@@ -124,10 +124,11 @@ export const userService = {
 		await api.delete(`/users/${id}`);
 	},
 
-	async getAssignable(search = '', includeAdmin = false): Promise<UserProfile[]> {
+	async getAssignable(search = '', includeAdmin = false, role?: string): Promise<UserProfile[]> {
 		const params: Record<string, string | boolean> = {};
 		if (search) params.search = search;
 		if (includeAdmin) params.includeAdmin = true;
+		if (role) params.role = role;
 		const response = await api.get<ApiResponse<ApiUser[]>>('/users/assignable', { params });
 		return (response.data.data ?? []).map(mapApiUserToProfile);
 	},

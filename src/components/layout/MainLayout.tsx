@@ -18,7 +18,7 @@ export default function MainLayout() {
 		if (isAuthenticated && user) {
 			dispatch(fetchRolePermissions());
 		}
-	}, [isAuthenticated, user?.role, dispatch]);
+	}, [isAuthenticated, user, dispatch]);
 
 	// Block render until permissions are resolved to prevent flash of unauthorized content
 	if (allowedPages === undefined) {

@@ -69,7 +69,7 @@ function StatusChip({ status }: { status: string }) {
 	);
 }
 
-function UserCell({ user }: { user?: any }) {
+function UserCell({ user }: { user?: { name?: string; imgAvatar?: string } }) {
 	if (!user) {
 		return <Typography variant="caption" sx={{ color: 'text.disabled' }}>—</Typography>;
 	}

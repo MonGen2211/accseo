@@ -398,6 +398,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!selectedDomainId || activePanel !== 'ga4') return;
     let mounted = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoadingGa4(true);
     ga4Service.getOverview(selectedDomainId, selectedDays)
       .then(data => { if (mounted) setGa4Data(data); })
@@ -410,6 +411,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (activePanel !== 'requests') return;
     let mounted = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoadingRequests(true);
     requestService.getInbox({ page: 1, limit: 20 })
       .then(res => { if (mounted) setInboxRequests(res.items.filter(r => r.status === 'PENDING' || r.status === 'IN_PROGRESS')); })
@@ -423,6 +425,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (activePanel === 'ga4' || activePanel === 'requests' || !panelDomainId) return;
     let mounted = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoadingPanel(true);
     const status = activePanel === 'deployed' ? 'deployed' : 'pending_approval';
     keywordGroupService.getGroups(panelDomainId, 1, 20, '', 'desc', status)
@@ -577,7 +580,7 @@ export default function DashboardPage() {
       </Box>
 
       {/* Bottom row: Trending (50%) + Activity (50%) */}
-      <Box sx={{ display: 'flex', gap: 3, alignItems: 'stretch' }}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'stretch', height: { xs: 'auto', md: 660 } }}>
         <TrendingKeywordsSection />
         <ActivitySection />
       </Box>

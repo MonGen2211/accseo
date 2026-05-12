@@ -1,14 +1,17 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import Avatar from '@mui/material/Avatar';
 import Skeleton from '@mui/material/Skeleton';
 import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import { useAppDispatch, useAppSelector } from '../../app/store';
-import { fetchActivities } from './activitySlice';
+import { fetchActivities, loadMoreActivities } from './activitySlice';
+
+const LIMIT = 20;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const fmtTime = (iso: string): string => {
@@ -53,14 +56,32 @@ interface ActivitySectionProps {
 
 export default function ActivitySection({ onViewAll }: ActivitySectionProps) {
 	const dispatch = useAppDispatch();
-	const { items, loading } = useAppSelector(state => state.activities);
+	const { items, loading, loadingMore, hasMore } = useAppSelector(state => state.activities);
+	const [page, setPage] = useState(1);
 
+	// Initial fetch
 	useEffect(() => {
-		dispatch(fetchActivities({ page: 1, limit: 10, success: true }));
+		dispatch(fetchActivities({ page: 1, limit: LIMIT, success: true }));
 	}, [dispatch]);
 
+	// Load next page
+	const loadMore = useCallback(() => {
+		if (loadingMore || !hasMore) return;
+		const nextPage = page + 1;
+		setPage(nextPage);
+		dispatch(loadMoreActivities({ page: nextPage, limit: LIMIT, success: true }));
+	}, [dispatch, loadingMore, hasMore, page]);
+
+	// Scroll handler — fire when within 100px of bottom
+	const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+		const el = e.currentTarget;
+		if (el.scrollHeight - el.scrollTop <= el.clientHeight + 100) {
+			loadMore();
+		}
+	};
+
 	return (
-		<Box sx={{ width: '50%', minWidth: 380 }}>
+		<Box sx={{ flex: 1, minWidth: { xs: '100%', md: 380 }, height: { xs: 600, md: '100%' } }}>
 			<Paper elevation={0} sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider', overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', height: '100%' }}>
 
 				{/* ── Header ── */}
@@ -71,7 +92,7 @@ export default function ActivitySection({ onViewAll }: ActivitySectionProps) {
 						</Box>
 						<Box>
 							<Typography sx={{ fontWeight: 800, fontSize: '1.05rem', lineHeight: 1.2 }}>
-								Activities information
+								Hoạt động gần đây
 							</Typography>
 							<Typography sx={{ fontSize: '0.75rem', color: 'text.secondary', mt: 0.1 }}>
 								Lịch sử hoạt động hệ thống gần đây
@@ -82,7 +103,7 @@ export default function ActivitySection({ onViewAll }: ActivitySectionProps) {
 				</Box>
 
 				{/* ── List ── */}
-				<Box sx={{ flex: 1, overflowY: 'auto', px: 0 }}>
+				<Box onScroll={handleScroll} sx={{ flex: 1, overflowY: 'auto', px: 0 }}>
 					{loading ? (
 						<Box>
 							{[...Array(7)].map((_, i) => (
@@ -101,47 +122,59 @@ export default function ActivitySection({ onViewAll }: ActivitySectionProps) {
 							<Typography sx={{ color: 'text.secondary', fontSize: '0.88rem' }}>Chưa có hoạt động nào</Typography>
 						</Box>
 					) : (
-						items.map((item, index) => {
-							const { bg, color } = getMsgColor(item.message);
-							const avatarBg = getAvatarColor(item.name);
-							return (
-								<Box
-									key={item.id}
-									sx={{
-										display: 'flex',
-										gap: 1.75,
-										px: 3,
-										py: 1.6,
-										borderBottom: index < items.length - 1 ? '1px solid' : 'none',
-										borderColor: 'divider',
-										alignItems: 'flex-start',
-										transition: 'background 0.15s',
-										'&:hover': { bgcolor: '#fafbfc' },
-									}}
-								>
-									<Avatar
-										src={item.userAvatar ?? undefined}
-										sx={{ width: 34, height: 34, fontSize: '0.72rem', fontWeight: 700, bgcolor: avatarBg, flexShrink: 0, mt: 0.25 }}
+						<>
+							{items.map((item) => {
+								const { bg, color } = getMsgColor(item.message);
+								const avatarBg = getAvatarColor(item.name);
+								return (
+									<Box
+										key={item.id}
+										sx={{
+											display: 'flex',
+											gap: 1.75,
+											px: 3,
+											py: 1.6,
+											borderBottom: '1px solid',
+											borderColor: 'divider',
+											alignItems: 'flex-start',
+											transition: 'background 0.15s',
+											'&:hover': { bgcolor: '#fafbfc' },
+										}}
 									>
-										{getInitials(item.name)}
-									</Avatar>
+										<Avatar
+											src={item.userAvatar ?? undefined}
+											sx={{ width: 34, height: 34, fontSize: '0.72rem', fontWeight: 700, bgcolor: avatarBg, flexShrink: 0, mt: 0.25 }}
+										>
+											{getInitials(item.name)}
+										</Avatar>
 
-									<Box sx={{ flex: 1, minWidth: 0 }}>
-										<Typography sx={{ fontSize: '0.875rem', lineHeight: 1.45, color: '#1e293b' }}>
-											<Box component="span" sx={{ fontWeight: 800, color: '#0f172a', mr: 0.5 }}>
-												{item.name}
-											</Box>
-											<Box component="span" sx={{ color, fontWeight: 600, bgcolor: bg, px: 0.6, py: 0.1, borderRadius: 0.75, fontSize: '0.82rem' }}>
-												{item.message}
-											</Box>
-										</Typography>
-										<Typography sx={{ fontSize: '0.72rem', color: 'text.disabled', mt: 0.4, fontWeight: 500 }}>
-											{fmtTime(item.createdAt)}
-										</Typography>
+										<Box sx={{ flex: 1, minWidth: 0 }}>
+											<Typography sx={{ fontSize: '0.875rem', lineHeight: 1.45, color: '#1e293b' }}>
+												<Box component="span" sx={{ fontWeight: 800, color: '#0f172a', mr: 0.5 }}>
+													{item.name}
+												</Box>
+												<Box component="span" sx={{ color, fontWeight: 600, bgcolor: bg, px: 0.6, py: 0.1, borderRadius: 0.75, fontSize: '0.82rem' }}>
+													{item.message}
+												</Box>
+											</Typography>
+											<Typography sx={{ fontSize: '0.72rem', color: 'text.disabled', mt: 0.4, fontWeight: 500 }}>
+												{fmtTime(item.createdAt)}
+											</Typography>
+										</Box>
 									</Box>
-								</Box>
-							);
-						})
+								);
+							})}
+
+							{/* Loading more indicator */}
+							<Box sx={{ py: 1, display: 'flex', justifyContent: 'center' }}>
+								{loadingMore && <CircularProgress size={20} sx={{ color: '#3b82f6', my: 0.5 }} />}
+								{!loadingMore && !hasMore && items.length > 0 && (
+									<Typography sx={{ fontSize: '0.72rem', color: 'text.disabled', py: 0.5 }}>
+										Đã tải hết
+									</Typography>
+								)}
+							</Box>
+						</>
 					)}
 				</Box>
 

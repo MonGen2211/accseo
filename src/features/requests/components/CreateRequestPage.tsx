@@ -103,6 +103,7 @@ export default function CreateRequestPage() {
 
   // Load groups khi domain thay đổi, chỉ lấy của mình + pending_approval
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!selectedDomainForKw) { setKwGroupOptions([]); setSelectedKwGroup(null); return; }
     keywordGroupService.getGroups(selectedDomainForKw._id, 1, 100, '', 'desc', 'pending_approval').then((res) => {
       const mine = res.items.filter((g) => g.createdBy?._id === currentUser?.id);
