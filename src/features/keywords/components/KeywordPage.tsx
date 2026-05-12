@@ -394,6 +394,8 @@ export default function KeywordPage() {
 					limit={limit}
 					generateAiGroupsLoading={isStreaming}
 					generateAiScrapeLoading={isAiScrapeStreaming}
+					hasAiSuggestions={aiSuggestions.length > 0}
+					hasAiScrapeSuggestions={aiScrapeSuggestions.length > 0}
 					deleteLoadingId={deleteLoadingId}
 					statusLoadingId={statusLoadingId}
 					onPageChange={handlePageChange}
@@ -452,6 +454,7 @@ export default function KeywordPage() {
 				open={isStreamDialogOpen}
 				logs={streamLogs}
 				onCancel={handleStreamCancel}
+				onHide={() => setIsStreamDialogOpen(false)}
 			/>
 
 			{domainId && (
@@ -482,6 +485,7 @@ export default function KeywordPage() {
 				open={isAiScrapeStreamDialogOpen}
 				logs={aiScrapeStreamLogs}
 				onCancel={handlePuppeteerStreamCancel}
+				onHide={() => setIsAiScrapeStreamDialogOpen(false)}
 			/>
 
 			{domainId && (

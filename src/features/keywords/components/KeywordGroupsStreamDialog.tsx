@@ -14,6 +14,7 @@ interface KeywordGroupsStreamDialogProps {
 	open: boolean;
 	logs: StreamLogEvent[];
 	onCancel: () => void;
+	onHide?: () => void;
 }
 
 const STEP_ICON: Record<string, string> = {
@@ -47,7 +48,7 @@ function LogLine({ log }: { log: StreamLogEvent }) {
 	);
 }
 
-export function KeywordGroupsStreamDialog({ open, logs, onCancel }: KeywordGroupsStreamDialogProps) {
+export function KeywordGroupsStreamDialog({ open, logs, onCancel, onHide }: KeywordGroupsStreamDialogProps) {
 	const bottomRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -55,7 +56,7 @@ export function KeywordGroupsStreamDialog({ open, logs, onCancel }: KeywordGroup
 	}, [logs]);
 
 	return (
-		<Dialog open={open} maxWidth="sm" fullWidth onClose={() => {}}>
+		<Dialog open={open} maxWidth="sm" fullWidth onClose={() => { }}>
 			<DialogTitle sx={{ fontWeight: 600, pb: 1, bgcolor: '#ffffff', color: '#000000' }}>
 				<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
 					<Box
@@ -93,6 +94,11 @@ export function KeywordGroupsStreamDialog({ open, logs, onCancel }: KeywordGroup
 			</DialogContent>
 
 			<DialogActions sx={{ px: 3, py: 2 }}>
+				{onHide && (
+					<Button onClick={onHide} color="primary" variant="outlined">
+						Chạy nền
+					</Button>
+				)}
 				<Button onClick={onCancel} color="error" variant="outlined">
 					Huỷ
 				</Button>

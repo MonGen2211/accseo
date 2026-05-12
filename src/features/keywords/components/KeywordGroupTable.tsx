@@ -32,6 +32,8 @@ interface KeywordGroupTableProps {
 	limit: number;
 	generateAiGroupsLoading?: boolean;
 	generateAiScrapeLoading?: boolean;
+	hasAiSuggestions?: boolean;
+	hasAiScrapeSuggestions?: boolean;
 	deleteLoadingId?: string | null;
 	statusLoadingId?: string | null;
 	onPageChange: (newPage: number) => void;
@@ -110,6 +112,8 @@ export function KeywordGroupTable({
 	data, loading, total, page, limit,
 	generateAiGroupsLoading = false,
 	generateAiScrapeLoading = false,
+	hasAiSuggestions = false,
+	hasAiScrapeSuggestions = false,
 	onPageChange, onRowsPerPageChange, onOpenCreate, onAiGenerateByGroups, onAiScrapeByGroups,
 	sortBy, sortOrder, onSort,
 	statusFilter, onStatusFilterChange,
@@ -338,12 +342,12 @@ export function KeywordGroupTable({
 		<Box sx={{ display: 'flex', gap: 1.5 }}>
 			{onAiScrapeByGroups && (
 				<Button variant="contained" onClick={onAiScrapeByGroups} startIcon={!generateAiScrapeLoading && <TravelExploreIcon />} sx={aiScrapeButtonSx(generateAiScrapeLoading)}>
-					{generateAiScrapeLoading ? 'AI Scrape đang chạy... (Xem tiến trình)' : 'AI Scrape'}
+					{generateAiScrapeLoading ? 'AI Scrape đang chạy... (Xem tiến trình)' : hasAiScrapeSuggestions ? 'Xem kết quả AI Scrape' : 'AI Scrape'}
 				</Button>
 			)}
 			{onAiGenerateByGroups && (
 				<Button variant="contained" onClick={onAiGenerateByGroups} startIcon={!generateAiGroupsLoading && <AutoAwesomeIcon />} sx={aiButtonSx(generateAiGroupsLoading)}>
-					{generateAiGroupsLoading ? 'Đang tạo bằng AI... (Xem tiến trình)' : 'Tạo bằng AI'}
+					{generateAiGroupsLoading ? 'Đang tạo bằng AI... (Xem tiến trình)' : hasAiSuggestions ? 'Xem kết quả AI' : 'Tạo bằng AI'}
 				</Button>
 			)}
 			<Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={onOpenCreate} sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}>
