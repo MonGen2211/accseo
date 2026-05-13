@@ -70,11 +70,11 @@ export const fetchGscOverview = createAsyncThunk(
 export const fetchGscKeywords = createAsyncThunk(
   'gsc/fetchKeywords',
   async (
-    { domainId, sort, order, page, limit }: { domainId: string; sort?: string; order?: string; page?: number; limit?: number },
+    { domainId, sort, order, page, limit, days }: { domainId: string; sort?: string; order?: string; page?: number; limit?: number; days?: number },
     { rejectWithValue }
   ) => {
     try {
-      return await gscService.getKeywords(domainId, { sort, order, page, limit });
+      return await gscService.getKeywords(domainId, { sort, order, page, limit, days });
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(err.response?.data?.message || 'Lỗi khi tải danh sách từ khóa GSC');
@@ -85,11 +85,11 @@ export const fetchGscKeywords = createAsyncThunk(
 export const fetchGscPages = createAsyncThunk(
   'gsc/fetchPages',
   async (
-    { domainId, sort, order, page, limit }: { domainId: string; sort?: string; order?: string; page?: number; limit?: number },
+    { domainId, sort, order, page, limit, days }: { domainId: string; sort?: string; order?: string; page?: number; limit?: number; days?: number },
     { rejectWithValue }
   ) => {
     try {
-      return await gscService.getPages(domainId, { sort, order, page, limit });
+      return await gscService.getPages(domainId, { sort, order, page, limit, days });
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(err.response?.data?.message || 'Lỗi khi tải danh sách trang GSC');

@@ -7,6 +7,7 @@ import IconButton from '@mui/material/IconButton';
 import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
 import Divider from '@mui/material/Divider';
+import Chip from '@mui/material/Chip';
 import InputAdornment from '@mui/material/InputAdornment';
 import CircularProgress from '@mui/material/CircularProgress';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
@@ -59,7 +60,7 @@ export default function ProfilePage() {
 	const [profile, setProfile] = useState({
 		name: '',
 		email: '',
-		role: '',
+		roles: [] as string[],
 		branch: '',
 		msnv: '',
 		phone1: '',
@@ -89,7 +90,7 @@ export default function ProfilePage() {
 				const fetchedProfile = {
 					name: fullProfile.name || '',
 					email: fullProfile.email || '',
-					role: fullProfile.role || '',
+					roles: fullProfile.roles || (fullProfile.role ? [fullProfile.role] : []),
 					branch: fullProfile.branch || '',
 					msnv: fullProfile.msnv || '',
 					phone1: fullProfile.phone1 || '',
@@ -229,16 +230,8 @@ export default function ProfilePage() {
 	};
 
 	return (
-		<Box sx={{ mx: 'auto' }}>
-			{/* Banner */}
-			<Box sx={{
-				height: 180,
-				borderRadius: '16px 16px 0 0',
-				background: 'linear-gradient(135deg, #00b894 0%, #0984e3 100%)',
-				position: 'relative',
-			}} />
-
-			<Paper elevation={0} sx={{ borderRadius: '0 0 16px 16px', border: '1px solid', borderColor: 'divider', borderTop: 'none' }}>
+		<Box sx={{ mx: 'auto', zoom: 0.9 }}>
+			<Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider' }}>
 				<Box sx={{
 					display: 'grid',
 					gridTemplateColumns: { xs: '1fr', md: '340px 1fr' },
@@ -256,8 +249,8 @@ export default function ProfilePage() {
 						flexDirection: 'column',
 						alignItems: 'center',
 					}}>
-						{/* Avatar nổi lên banner */}
-						<Box sx={{ mt: -8, mb: 2, position: 'relative', width: 140, height: 140 }}>
+						{/* Avatar */}
+						<Box sx={{ mt: 4, mb: 2, position: 'relative', width: 140, height: 140 }}>
 							<Avatar
 								src={avatarPreview || profile.avatar}
 								sx={{
@@ -288,12 +281,16 @@ export default function ProfilePage() {
 							</IconButton>
 						</Box>
 
-						<Typography sx={{ fontWeight: 700, fontSize: '1.1rem', textAlign: 'center', mb: 0.5 }}>
+						<Typography sx={{ fontWeight: 700, fontSize: '1.1rem', textAlign: 'center', mb: 1 }}>
 							{profile.name || '—'}
 						</Typography>
-						<Typography sx={{ fontSize: '0.78rem', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, mb: 3 }}>
-							{profile.role || '—'}
-						</Typography>
+						<Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap', justifyContent: 'center' }}>
+							{profile.roles && profile.roles.length > 0 ? profile.roles.map(r => (
+								<Chip key={r} label={r} size="small" sx={{ fontSize: '0.75rem', fontWeight: 600, bgcolor: 'primary.main', color: '#fff', letterSpacing: 0.5 }} />
+							)) : (
+								<Typography sx={{ fontSize: '0.78rem', color: 'text.secondary', fontWeight: 600 }}>—</Typography>
+							)}
+						</Box>
 
 						<Divider sx={{ width: '100%', mb: 3 }} />
 
@@ -434,8 +431,8 @@ export default function ProfilePage() {
 							<TextField
 								fullWidth
 								label="Chức vụ"
-								name="role"
-								value={profile.role}
+								name="roles"
+								value={profile.roles.join(', ')}
 								disabled
 								size="small"
 								slotProps={{

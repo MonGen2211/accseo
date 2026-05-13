@@ -33,7 +33,7 @@ import { useDebounce } from '../../../hooks/useDebounce';
 import type { Group } from '../types';
 
 
-export default function GroupsPage() {
+export default function GroupsPage({ tabsNode }: { tabsNode?: React.ReactNode }) {
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
 	const { showToast } = useToastify();
@@ -70,82 +70,68 @@ export default function GroupsPage() {
 
 	return (
 		<Box sx={{ px: 3, pb: 10 }}>
-			{/* Header */}
-			<Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-				<Box sx={{
-					width: 48, height: 48, borderRadius: 3,
-					background: 'linear-gradient(135deg, #16a34a, #22c55e)',
-					display: 'flex', alignItems: 'center', justifyContent: 'center',
-					boxShadow: '0 4px 14px rgba(22,163,74,0.35)',
-					flexShrink: 0,
-				}}>
-					<GroupsOutlinedIcon sx={{ color: '#fff', fontSize: 22 }} />
+			{/* Header Row: Tabs & Filter */}
+			<Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 2, mb: 3 }}>
+				<Box sx={{ flexShrink: 0 }}>
+					{tabsNode}
 				</Box>
-				<Box sx={{ flex: 1 }}>
-					<Typography sx={{ fontWeight: 800, fontSize: '1.1rem', lineHeight: 1.2 }}>Nhóm</Typography>
-					<Typography sx={{ fontSize: '0.78rem', color: 'text.secondary' }}>
-						{total > 0 ? `${total} nhóm · Quản lý nhóm và thành viên` : 'Quản lý nhóm và thành viên'}
-					</Typography>
-				</Box>
-				{isAdmin && (
-					<Button
-						variant="contained"
-						startIcon={<AddOutlinedIcon />}
-						onClick={() => navigate('/groups/create')}
+
+				{/* Filter Right */}
+				<Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
+					<TextField
+						size="small"
+						placeholder="Tìm nhóm..."
+						value={search}
+						onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+						slotProps={{
+							input: {
+								startAdornment: (
+									<InputAdornment position="start">
+										<SearchIcon fontSize="small" sx={{ color: 'text.disabled' }} />
+									</InputAdornment>
+								),
+							},
+						}}
+						sx={{ width: 180, '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: '#fff', height: 36, fontSize: '0.85rem' } }}
+					/>
+					<ToggleButtonGroup
+						size="small"
+						value={activeFilter}
+						exclusive
+						onChange={(_, v) => { if (v) { setActiveFilter(v); setPage(1); } }}
 						sx={{
-							borderRadius: 2, fontWeight: 700,
-							background: 'linear-gradient(135deg, #16a34a, #22c55e)',
-							boxShadow: '0 2px 8px rgba(22,163,74,0.3)',
-							'&:hover': { boxShadow: '0 4px 14px rgba(22,163,74,0.4)' },
+							height: 36,
+							'& .MuiToggleButton-root': {
+								borderRadius: '8px !important',
+								fontWeight: 600,
+								fontSize: '0.78rem',
+								px: 1.5,
+								border: '1px solid',
+								borderColor: 'divider',
+								'&.Mui-selected': { bgcolor: '#f1f5f9', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.05)' },
+							},
 						}}
 					>
-						Tạo nhóm
-					</Button>
-				)}
-			</Box>
-
-			{/* Filter bar */}
-			<Box sx={{
-				display: 'flex', gap: 1.5, mb: 3, flexWrap: 'wrap', alignItems: 'center',
-				p: 1.5, bgcolor: '#f8fafc', borderRadius: 2.5, border: '1px solid', borderColor: 'divider',
-			}}>
-				<TextField
-					size="small"
-					placeholder="Tìm nhóm..."
-					value={search}
-					onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-					slotProps={{
-						input: {
-							startAdornment: (
-								<InputAdornment position="start">
-									<SearchIcon fontSize="small" sx={{ color: 'text.disabled' }} />
-								</InputAdornment>
-							),
-						},
-					}}
-					sx={{ width: 220, '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: '#fff' } }}
-				/>
-				<ToggleButtonGroup
-					size="small"
-					value={activeFilter}
-					exclusive
-					onChange={(_, v) => { if (v) { setActiveFilter(v); setPage(1); } }}
-					sx={{
-						'& .MuiToggleButton-root': {
-							borderRadius: '8px !important',
-							fontWeight: 600,
-							fontSize: '0.78rem',
-							px: 1.5,
-							border: '1px solid',
-							borderColor: 'divider',
-							'&.Mui-selected': { bgcolor: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.1)' },
-						},
-					}}
-				>
-					<ToggleButton value="all">Tất cả</ToggleButton>
-					<ToggleButton value="active">Hoạt động</ToggleButton>
-					<ToggleButton value="inactive">Tắt</ToggleButton>
-				</ToggleButtonGroup>
+						<ToggleButton value="all">Tất cả</ToggleButton>
+						<ToggleButton value="active">Hoạt động</ToggleButton>
+						<ToggleButton value="inactive">Tắt</ToggleButton>
+					</ToggleButtonGroup>
+					{isAdmin && (
+						<Button
+							variant="contained"
+							startIcon={<AddOutlinedIcon />}
+							onClick={() => navigate('/groups/create')}
+							sx={{
+								borderRadius: 2, fontWeight: 700, ml: 0.5,
+								background: 'linear-gradient(135deg, #00b894, #00cec9)',
+								boxShadow: '0 2px 8px rgba(22,163,74,0.3)',
+								'&:hover': { boxShadow: '0 4px 14px rgba(22,163,74,0.4)' },
+							}}
+						>
+							Tạo nhóm
+						</Button>
+					)}
+				</Box>
 			</Box>
 
 			{/* Loading */}
@@ -160,7 +146,7 @@ export default function GroupsPage() {
 				<Box sx={{ textAlign: 'center', py: 12 }}>
 					<Box sx={{
 						width: 80, height: 80, borderRadius: '50%',
-						background: 'linear-gradient(135deg, #dcfce7, #bbf7d0)',
+						background: 'linear-gradient(135deg, #e6f8f4, #cbf2e8)',
 						display: 'flex', alignItems: 'center', justifyContent: 'center',
 						mx: 'auto', mb: 2,
 					}}>
@@ -172,7 +158,7 @@ export default function GroupsPage() {
 					</Typography>
 					{isAdmin && (
 						<Button variant="contained" startIcon={<AddOutlinedIcon />} onClick={() => navigate('/groups/create')}
-							sx={{ borderRadius: 2, fontWeight: 700, background: 'linear-gradient(135deg, #16a34a, #22c55e)' }}>
+							sx={{ borderRadius: 2, fontWeight: 700, background: 'linear-gradient(135deg, #00b894, #00cec9)' }}>
 							Tạo nhóm đầu tiên
 						</Button>
 					)}
@@ -208,7 +194,7 @@ export default function GroupsPage() {
 								<Box sx={{
 									p: 2.5, pb: 2,
 									background: group.isActive
-										? 'linear-gradient(135deg, #16a34a, #22c55e)'
+										? 'linear-gradient(135deg, #00b894, #00cec9)'
 										: 'linear-gradient(135deg, #94a3b8, #cbd5e1)',
 									display: 'flex',
 									justifyContent: 'space-between',
@@ -335,7 +321,7 @@ export default function GroupsPage() {
 					<Box sx={{
 						p: 3, pb: 2,
 						background: expandedGroup.isActive
-							? 'linear-gradient(135deg, #16a34a, #22c55e)'
+							? 'linear-gradient(135deg, #00b894, #00cec9)'
 							: 'linear-gradient(135deg, #94a3b8, #cbd5e1)',
 						display: 'flex', alignItems: 'center', gap: 1.5,
 					}}>

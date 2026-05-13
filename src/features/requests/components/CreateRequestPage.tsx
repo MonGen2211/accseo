@@ -9,11 +9,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
-import RadioGroup from '@mui/material/RadioGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Radio from '@mui/material/Radio';
 import FormLabel from '@mui/material/FormLabel';
-import Checkbox from '@mui/material/Checkbox';
 import Autocomplete from '@mui/material/Autocomplete';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
@@ -22,12 +18,11 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useAppDispatch, useAppSelector } from '../../../app/store';
 import { createRequest } from '../requestSlice';
-import { groupService } from '../groupService';
 import { userService } from '../../users/userService';
 import { domainService } from '../../domains/domainService';
 import { keywordGroupService } from '../../keywords/keywordGroupService';
 import { useToastify } from '../../../components/Toastify';
-import type { AssignmentType, RequestType, RequestPriority, Group } from '../types';
+import type { RequestType, RequestPriority } from '../types';
 import type { UserProfile } from '../../../types/user.types';
 import type { Domain } from '../../../types/domain.types';
 import type { KeywordGroup } from '../../keywords/types';
@@ -47,8 +42,6 @@ const PRIORITY_OPTIONS: { value: RequestPriority; label: string }[] = [
   { value: 'URGENT', label: 'Khẩn cấp' },
 ];
 
-const ROLE_OPTIONS = ['ADMIN', 'MAR_SPECIALIST', 'CONTENT_SPECIALIST', 'SEO_COLLABORATOR', 'REVIEWER'];
-
 const DEFAULT_REMINDERS = [{ offsetHours: 72 }, { offsetHours: 24 }, { offsetHours: 2 }];
 
 export default function CreateRequestPage() {
@@ -60,8 +53,7 @@ export default function CreateRequestPage() {
   const currentUser = useAppSelector((s) => s.auth.user);
 
   const locState = (location.state ?? {}) as {
-    title?: string; type?: RequestType; assignmentType?: AssignmentType;
-    toRole?: string; priority?: RequestPriority;
+    title?: string; type?: RequestType; priority?: RequestPriority;
     refType?: string; refId?: string; refDomainId?: string;
   };
 
@@ -69,18 +61,12 @@ export default function CreateRequestPage() {
   const [description, setDescription] = useState('');
   const [type, setType] = useState<RequestType>(locState.type ?? 'GENERAL');
   const [priority, setPriority] = useState<RequestPriority>(locState.priority ?? 'NORMAL');
-  const [assignmentType, setAssignmentType] = useState<AssignmentType>(locState.assignmentType ?? 'user');
   const [toUser, setToUser] = useState<UserProfile | null>(null);
-  const [toRole, setToRole] = useState(locState.toRole ?? '');
-  const [toGroup, setToGroup] = useState<Group | null>(null);
-  const [splitMode, setSplitMode] = useState(false);
   const [dueDate, setDueDate] = useState('');
   const [reminders, setReminders] = useState(DEFAULT_REMINDERS);
 
   const [userOptions, setUserOptions] = useState<UserProfile[]>([]);
   const [userSearch, setUserSearch] = useState('');
-  const [groupOptions, setGroupOptions] = useState<Group[]>([]);
-  const [groupSearch, setGroupSearch] = useState('');
 
   // ── Keyword group ref ─────────────────────────────────────────────────────
   const [domainOptions, setDomainOptions] = useState<Domain[]>([]);
@@ -120,12 +106,6 @@ export default function CreateRequestPage() {
     userService.getAssignable(userSearch, true).then(setUserOptions);
   }, [userSearch]);
 
-  useEffect(() => {
-    if (assignmentType === 'group') {
-      groupService.getAll({ page: 1, limit: 10, search: groupSearch, isActive: true }).then((res) => setGroupOptions(res.items));
-    }
-  }, [groupSearch, assignmentType]);
-
   const addReminder = () => setReminders([...reminders, { offsetHours: 24 }]);
   const removeReminder = (i: number) => setReminders(reminders.filter((_, idx) => idx !== i));
   const updateReminder = (i: number, val: number) => setReminders(reminders.map((r, idx) => idx === i ? { offsetHours: val } : r));
@@ -135,16 +115,8 @@ export default function CreateRequestPage() {
       showToast('Vui lòng điền đủ tiêu đề và mô tả', 'warning');
       return;
     }
-    if (assignmentType === 'user' && !toUser) {
+    if (!toUser) {
       showToast('Vui lòng chọn người nhận', 'warning');
-      return;
-    }
-    if (assignmentType === 'role' && !toRole) {
-      showToast('Vui lòng chọn vai trò', 'warning');
-      return;
-    }
-    if (assignmentType === 'group' && !toGroup) {
-      showToast('Vui lòng chọn nhóm', 'warning');
       return;
     }
     if (type === 'KEYWORD_APPROVAL' && !selectedKwGroup) {
@@ -157,11 +129,8 @@ export default function CreateRequestPage() {
       description: description.trim(),
       type,
       priority,
-      assignmentType,
-      ...(assignmentType === 'user' && toUser ? { toUser: toUser.id } : {}),
-      ...(assignmentType === 'role' ? { toRole } : {}),
-      ...(assignmentType === 'group' && toGroup ? { toGroup: toGroup.id } : {}),
-      splitMode: assignmentType !== 'user' ? splitMode : undefined,
+      assignmentType: 'user' as const,
+      toUser: toUser!.id,
       dueDate: dueDate || undefined,
       reminders: reminders.filter((r) => r.offsetHours > 0),
       ...(type === 'KEYWORD_APPROVAL' && selectedKwGroup
@@ -172,7 +141,7 @@ export default function CreateRequestPage() {
     const result = await dispatch(createRequest(payload));
     if (!result.type.endsWith('/rejected')) {
       showToast('Tạo yêu cầu thành công', 'success');
-      navigate('/requests');
+      navigate('/requests?tab=1');
     } else {
       showToast(String((result as { payload?: unknown }).payload ?? 'Lỗi tạo yêu cầu'), 'danger');
     }
@@ -221,31 +190,38 @@ export default function CreateRequestPage() {
 
         {/* Assignment */}
         <Box>
+          {/* MỐT CẦN DÙNG GIAO VIỆC THEO NHÓM / VAI TRÒ THÌ BỎ COMMENT ĐOẠN NÀY
+              VÀ THÊM STATE: const [assignmentType, setAssignmentType] = useState<'user'|'role'|'group'>('user');
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Loại người nhận</InputLabel>
+            <Select value={assignmentType} label="Loại người nhận" onChange={(e) => setAssignmentType(e.target.value as any)}>
+              <MenuItem value="user">Cá nhân (User)</MenuItem>
+              <MenuItem value="role">Vai trò (Role)</MenuItem>
+              <MenuItem value="group">Nhóm (Group)</MenuItem>
+            </Select>
+          </FormControl>
+          */}
+
           <FormLabel sx={{ mb: 1, display: 'block', fontWeight: 600 }}>Giao cho *</FormLabel>
-          <RadioGroup row value={assignmentType} onChange={(e) => setAssignmentType(e.target.value as AssignmentType)}>
-            <FormControlLabel value="user" control={<Radio />} label="Người dùng" />
-            <FormControlLabel value="role" control={<Radio />} label="Vai trò" />
-            <FormControlLabel value="group" control={<Radio />} label="Nhóm" />
-          </RadioGroup>
+          
+          {/* Đang mặc định hiển thị chọn User (vì assignmentType fix cứng là 'user') */}
+          <Autocomplete
+            options={userOptions}
+            getOptionLabel={(u) => `${u.name} (${u.email})`}
+            value={toUser}
+            onChange={(_, v) => setToUser(v)}
+            onInputChange={(_, v) => setUserSearch(v)}
+            renderInput={(params) => <TextField {...params} label="Tìm và chọn người nhận" size="small" sx={{ mt: 1.5 }} />}
+          />
 
-          {assignmentType === 'user' && (
-            <Autocomplete
-              options={userOptions}
-              getOptionLabel={(u) => `${u.name} (${u.email})`}
-              value={toUser}
-              onChange={(_, v) => setToUser(v)}
-              onInputChange={(_, v) => setUserSearch(v)}
-              renderInput={(params) => <TextField {...params} label="Tìm và chọn người nhận" size="small" sx={{ mt: 1.5 }} />}
-            />
-          )}
-
+          {/* MỞ COMMENT ĐOẠN NÀY ĐỂ RENDER DROPDOWN CHỌN ROLE / GROUP KHI assignmentType THAY ĐỔI
           {assignmentType === 'role' && (
-            <FormControl fullWidth size="small" sx={{ mt: 1.5 }}>
-              <InputLabel>Chọn vai trò</InputLabel>
-              <Select value={toRole} label="Chọn vai trò" onChange={(e) => setToRole(e.target.value)}>
-                {ROLE_OPTIONS.map((r) => <MenuItem key={r} value={r}>{r}</MenuItem>)}
-              </Select>
-            </FormControl>
+            <Autocomplete
+              options={['CONTENT_CREATOR', 'CONTENT_MANAGER', 'SEO_COLLABORATOR', 'SEO_MANAGER', 'ADMIN']}
+              value={toRole}
+              onChange={(_, v) => setToRole(v)}
+              renderInput={(params) => <TextField {...params} label="Chọn vai trò" size="small" sx={{ mt: 1.5 }} />}
+            />
           )}
 
           {assignmentType === 'group' && (
@@ -254,18 +230,10 @@ export default function CreateRequestPage() {
               getOptionLabel={(g) => g.name}
               value={toGroup}
               onChange={(_, v) => setToGroup(v)}
-              onInputChange={(_, v) => setGroupSearch(v)}
-              renderInput={(params) => <TextField {...params} label="Tìm và chọn nhóm" size="small" sx={{ mt: 1.5 }} />}
+              renderInput={(params) => <TextField {...params} label="Chọn nhóm" size="small" sx={{ mt: 1.5 }} />}
             />
           )}
-
-          {assignmentType !== 'user' && (
-            <FormControlLabel
-              control={<Checkbox checked={splitMode} onChange={(e) => setSplitMode(e.target.checked)} />}
-              label="Split mode — mỗi thành viên xử lý độc lập"
-              sx={{ mt: 1 }}
-            />
-          )}
+          */}
         </Box>
 
         <Divider />

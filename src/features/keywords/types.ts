@@ -84,6 +84,7 @@ export interface SerpRelatedTopicsData {
 export interface TrendTimelinePoint {
   date: string;
   value: number;
+  isPartial?: boolean;
 }
 
 export interface AiSuggestedKeyword {
@@ -96,6 +97,19 @@ export interface AiSuggestedKeyword {
   currentScore?: number;
   isPartial?: boolean;
   trendTimeline?: TrendTimelinePoint[];
+  relatedQueries?: SerpRelatedQueriesData;
+  relatedTopics?: SerpRelatedTopicsData;
+}
+
+export interface KeywordGroupTrends {
+  group: string;
+  currentScore: number;
+  avg: number;
+  slope: number;
+  isSpike: boolean;
+  isPartial: boolean;
+  nameScore: number | null;
+  trendTimeline: TrendTimelinePoint[];
   relatedQueries?: SerpRelatedQueriesData;
   relatedTopics?: SerpRelatedTopicsData;
 }
@@ -117,13 +131,23 @@ export type KeywordItemStatus = typeof KeywordItemStatus[keyof typeof KeywordIte
 
 export interface KeywordItemInput {
   name: string;
-  reason?: string;
+  reason?: string | null;
   status?: KeywordItemStatus;
+  nameScore?: number;
+  currentScore?: number;
+  avg?: number;
+  slope?: number;
+  isSpike?: boolean;
+  isPartial?: boolean;
+  trendTimeline?: TrendTimelinePoint[];
+  relatedQueries?: SerpRelatedQueriesData;
+  relatedTopics?: SerpRelatedTopicsData;
 }
 
 export interface CreateKeywordGroupItemsPayload {
   domainId: string;
   items: KeywordItemInput[];
+  aiGen?: boolean;
 }
 
 export interface SuggestByTrendsLivePayload {

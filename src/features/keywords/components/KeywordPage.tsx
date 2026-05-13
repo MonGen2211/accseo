@@ -4,58 +4,65 @@ import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
 import ManageSearchIcon from '@mui/icons-material/ManageSearch';
 import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../../../app/store';
-import { fetchKeywordGroups, deleteKeywordGroup, updateKeywordGroupStatus, setKeywordSortField, setKeywordSortOrder, setKeywordStatusFilter, setKeywordSearchFilter } from '../keywordGroupSlice';
+import {
+	fetchKeywordGroups, deleteKeywordGroup, updateKeywordGroupStatus,
+	setKeywordSortField, setKeywordSortOrder, setKeywordStatusFilter, setKeywordSearchFilter,
+	createKeywordGroupItems,
+	setAiGroupsStreaming, setAiScrapeStreaming,
+	appendAiGroupsLog, appendAiScrapeLog,
+	clearAiGroupsLogs, clearAiScrapeLogs,
+	setAiSuggestionsGroups, setAiSuggestionsScrape,
+	clearAiSuggestionsGroups, clearAiSuggestionsScrape,
+} from '../keywordGroupSlice';
 import { useDebounce } from '../../../hooks/useDebounce';
 import { KeywordGroupTable } from './KeywordGroupTable';
 import { KeywordGroupForm } from './KeywordGroupForm';
 import { KeywordGroupsAiDialog } from './KeywordGroupsAiDialog';
 import { KeywordGroupsStreamDialog } from './KeywordGroupsStreamDialog';
 import { KeywordAiResultDialog } from './KeywordAiResultDialog';
-import type { AiSuggestedKeyword, StreamLogEvent } from '../types';
 import { keywordGroupService } from '../keywordGroupService';
-import { createKeywordGroupItems } from '../keywordGroupSlice';
 import { GscPanel } from './GscPanel';
 import { Ga4Panel } from './Ga4Panel';
-
 import { useToastify } from '../../../components/Toastify';
 import type { TableRowData } from '../../../types/tableRows.types';
 import { useParams, useSearchParams } from 'react-router-dom';
+
+// Module-level refs — survive component unmount/remount
+let groupsAbortCtrl: AbortController | null = null;
+let scrapeAbortCtrl: AbortController | null = null;
 
 export default function KeywordPage() {
 	const { domainId } = useParams<{ domainId: string }>();
 	const [searchParams] = useSearchParams();
 	const dispatch = useAppDispatch();
-	const { items, loading, total, page, limit, deleteLoadingId, statusLoadingId, sortField, sortOrder, statusFilter, searchFilter, summary } = useAppSelector((state) => state.keywordGroups);
+	const {
+		items, loading, total, page, limit, deleteLoadingId, statusLoadingId,
+		sortField, sortOrder, statusFilter, searchFilter, summary,
+		aiGroupsStreaming, aiScrapeStreaming,
+		aiGroupsStreamLogs, aiScrapeStreamLogs,
+		aiSuggestionsGroups, aiSuggestionsScrape,
+	} = useAppSelector((state) => state.keywordGroups);
 	const { showToast } = useToastify();
 
 	const [isFormOpen, setIsFormOpen] = useState(false);
 	const [isAiGroupsDialogOpen, setIsAiGroupsDialogOpen] = useState(false);
 	const [isStreamDialogOpen, setIsStreamDialogOpen] = useState(false);
 	const [isAiResultOpen, setIsAiResultOpen] = useState(false);
-	const [streamLogs, setStreamLogs] = useState<StreamLogEvent[]>([]);
-	const [isStreaming, setIsStreaming] = useState(false);
-	const [aiSuggestions, setAiSuggestions] = useState<AiSuggestedKeyword[]>([]);
 	const [aiSubmitLoading, setAiSubmitLoading] = useState(false);
 	const [lastAiGroupsTimeRange, setLastAiGroupsTimeRange] = useState<string>('3-m');
 	const [lastAiGroupsMinScore, setLastAiGroupsMinScore] = useState<number>(60);
 	const [lastAiGroupsCount, setLastAiGroupsCount] = useState<number>(2);
 
-	const abortRef = useRef<AbortController | null>(null);
-
-	// ── AI Scrape (Puppeteer) state ───────────────────────────────────────────
+	// ── AI Scrape (Puppeteer) ─────────────────────────────────────────────────
 	const [isAiScrapeDialogOpen, setIsAiScrapeDialogOpen] = useState(false);
 	const [isAiScrapeStreamDialogOpen, setIsAiScrapeStreamDialogOpen] = useState(false);
 	const [isAiScrapeResultOpen, setIsAiScrapeResultOpen] = useState(false);
-	const [aiScrapeStreamLogs, setAiScrapeStreamLogs] = useState<StreamLogEvent[]>([]);
-	const [isAiScrapeStreaming, setIsAiScrapeStreaming] = useState(false);
-	const [aiScrapeSuggestions, setAiScrapeSuggestions] = useState<AiSuggestedKeyword[]>([]);
 	const [aiScrapeSubmitLoading, setAiScrapeSubmitLoading] = useState(false);
 	const [lastScrapeTimeRange, setLastScrapeTimeRange] = useState<string>('3-m');
 	const [lastScrapeMinScore, setLastScrapeMinScore] = useState<number>(60);
 	const [lastScrapeCount, setLastScrapeCount] = useState<number>(2);
-	const abortScrapeRef = useRef<AbortController | null>(null);
 
 	const [activeAnalytic, setActiveAnalytic] = useState<'gsc' | 'ga4'>('gsc');
 	const debouncedSearch = useDebounce(searchFilter, 400);
@@ -100,67 +107,80 @@ export default function KeywordPage() {
 		setLastAiGroupsTimeRange(timeRange);
 		setLastAiGroupsMinScore(minScore);
 		setLastAiGroupsCount(count);
-		setStreamLogs([]);
-		setIsStreaming(true);
+		dispatch(clearAiGroupsLogs());
+		dispatch(setAiGroupsStreaming(true));
 		setIsAiGroupsDialogOpen(false);
 		setIsStreamDialogOpen(true);
 
-		const controller = new AbortController();
-		abortRef.current = controller;
+		groupsAbortCtrl = new AbortController();
 
 		try {
 			await keywordGroupService.suggestKeywordsByGroupsStream(
 				{ domainId, timeRange, minScore, count },
-				(log) => setStreamLogs((prev) => [...prev, log]),
+				(log) => dispatch(appendAiGroupsLog(log)),
 				(suggestions) => {
+					dispatch(setAiGroupsStreaming(false));
+					dispatch(setAiSuggestionsGroups(suggestions));
 					setIsStreamDialogOpen(false);
-					setIsStreaming(false);
-					setAiSuggestions(suggestions);
 					setIsAiResultOpen(true);
 					showToast('AI đã tạo xong! Xem kết quả để xác nhận.', 'success');
 				},
 				(errMsg) => {
+					dispatch(setAiGroupsStreaming(false));
 					setIsStreamDialogOpen(false);
-					setIsStreaming(false);
 					showToast(errMsg, 'danger');
 				},
-				controller.signal,
+				groupsAbortCtrl.signal,
 			);
 		} catch (err: unknown) {
 			if ((err as { name?: string }).name === 'AbortError') return;
+			dispatch(setAiGroupsStreaming(false));
 			setIsStreamDialogOpen(false);
-			setIsStreaming(false);
 			showToast('Đã có lỗi xảy ra', 'danger');
 		} finally {
-			abortRef.current = null;
+			groupsAbortCtrl = null;
 		}
 	};
 
 	const handleStreamCancel = () => {
-		abortRef.current?.abort();
-		abortRef.current = null;
+		groupsAbortCtrl?.abort();
+		groupsAbortCtrl = null;
+		dispatch(setAiGroupsStreaming(false));
 		setIsStreamDialogOpen(false);
-		setIsStreaming(false);
-		setStreamLogs([]);
 	};
 
 	const handleAiRetry = (retryTimeRange: string) => {
 		setLastAiGroupsTimeRange(retryTimeRange);
 		setIsAiResultOpen(false);
-		setAiSuggestions([]);
+		dispatch(clearAiSuggestionsGroups());
 		startStream(retryTimeRange, lastAiGroupsMinScore, lastAiGroupsCount);
 	};
 
-	const handleAiConfirmSelected = async (selectedItems: AiSuggestedKeyword[]) => {
+	const handleAiConfirmSelected = async (selectedItems: import('../types').AiSuggestedKeyword[]) => {
 		if (!domainId || selectedItems.length === 0) return;
 		try {
 			setAiSubmitLoading(true);
-			await dispatch(createKeywordGroupItems({ domainId, items: selectedItems.map(item => ({ name: item.name, status: 'pending_approval' as const, ...(item.reason && { reason: item.reason }) })) })).unwrap();
+			await dispatch(createKeywordGroupItems({
+				domainId, aiGen: true, items: selectedItems.map((s) => ({
+					name: s.name,
+					reason: s.reason ?? null,
+					status: 'pending_approval' as const,
+					nameScore: s.nameScore,
+					currentScore: s.currentScore,
+					avg: s.avg,
+					slope: s.slope,
+					isSpike: s.isSpike,
+					isPartial: s.isPartial,
+					trendTimeline: s.trendTimeline,
+					relatedQueries: s.relatedQueries,
+					relatedTopics: s.relatedTopics,
+				}))
+			})).unwrap();
 			await keywordGroupService.clearTrendsLiveCache(domainId);
 			showToast('Tạo keywords từ gợi ý thành công!', 'success');
 			loadData(0, limit);
 			setIsAiResultOpen(false);
-			setAiSuggestions([]);
+			dispatch(clearAiSuggestionsGroups());
 		} catch (err: unknown) {
 			const errorMsg = typeof err === 'string' ? err : 'Đã có lỗi xảy ra';
 			showToast(errorMsg, 'danger');
@@ -171,11 +191,9 @@ export default function KeywordPage() {
 
 	const handleAiExit = async () => {
 		setIsAiResultOpen(false);
-		setAiSuggestions([]);
+		dispatch(clearAiSuggestionsGroups());
 		if (domainId) {
-			try {
-				await keywordGroupService.clearGroupsSuggestCache(domainId);
-			} catch { /* best-effort */ }
+			try { await keywordGroupService.clearGroupsSuggestCache(domainId); } catch { /* best-effort */ }
 		}
 	};
 
@@ -186,67 +204,80 @@ export default function KeywordPage() {
 		setLastScrapeTimeRange(timeRange);
 		setLastScrapeMinScore(minScore);
 		setLastScrapeCount(count);
-		setAiScrapeStreamLogs([]);
-		setIsAiScrapeStreaming(true);
+		dispatch(clearAiScrapeLogs());
+		dispatch(setAiScrapeStreaming(true));
 		setIsAiScrapeDialogOpen(false);
 		setIsAiScrapeStreamDialogOpen(true);
 
-		const controller = new AbortController();
-		abortScrapeRef.current = controller;
+		scrapeAbortCtrl = new AbortController();
 
 		try {
 			await keywordGroupService.suggestKeywordsByGroupsPuppeteerStream(
 				{ domainId, timeRange, minScore, count },
-				(log) => setAiScrapeStreamLogs((prev) => [...prev, log]),
+				(log) => dispatch(appendAiScrapeLog(log)),
 				(suggestions) => {
+					dispatch(setAiScrapeStreaming(false));
+					dispatch(setAiSuggestionsScrape(suggestions));
 					setIsAiScrapeStreamDialogOpen(false);
-					setIsAiScrapeStreaming(false);
-					setAiScrapeSuggestions(suggestions);
 					setIsAiScrapeResultOpen(true);
 					showToast('AI Scrape đã xong! Xem kết quả để xác nhận.', 'success');
 				},
 				(errMsg) => {
+					dispatch(setAiScrapeStreaming(false));
 					setIsAiScrapeStreamDialogOpen(false);
-					setIsAiScrapeStreaming(false);
 					showToast(errMsg, 'danger');
 				},
-				controller.signal,
+				scrapeAbortCtrl.signal,
 			);
 		} catch (err: unknown) {
 			if ((err as { name?: string }).name === 'AbortError') return;
+			dispatch(setAiScrapeStreaming(false));
 			setIsAiScrapeStreamDialogOpen(false);
-			setIsAiScrapeStreaming(false);
 			showToast('Đã có lỗi xảy ra', 'danger');
 		} finally {
-			abortScrapeRef.current = null;
+			scrapeAbortCtrl = null;
 		}
 	};
 
 	const handlePuppeteerStreamCancel = () => {
-		abortScrapeRef.current?.abort();
-		abortScrapeRef.current = null;
+		scrapeAbortCtrl?.abort();
+		scrapeAbortCtrl = null;
+		dispatch(setAiScrapeStreaming(false));
 		setIsAiScrapeStreamDialogOpen(false);
-		setIsAiScrapeStreaming(false);
-		setAiScrapeStreamLogs([]);
 	};
 
 	const handlePuppeteerRetry = (retryTimeRange: string) => {
 		setLastScrapeTimeRange(retryTimeRange);
 		setIsAiScrapeResultOpen(false);
-		setAiScrapeSuggestions([]);
+		dispatch(clearAiSuggestionsScrape());
 		startPuppeteerStream(retryTimeRange, lastScrapeMinScore, lastScrapeCount);
 	};
 
-	const handlePuppeteerConfirmSelected = async (selectedItems: AiSuggestedKeyword[]) => {
+	const handlePuppeteerConfirmSelected = async (selectedItems: import('../types').AiSuggestedKeyword[]) => {
 		if (!domainId || selectedItems.length === 0) return;
 		try {
 			setAiScrapeSubmitLoading(true);
-			await dispatch(createKeywordGroupItems({ domainId, items: selectedItems.map(item => ({ name: item.name, status: 'pending_approval' as const, ...(item.reason && { reason: item.reason }) })) })).unwrap();
+			await dispatch(createKeywordGroupItems({
+				domainId, aiGen: true, items: selectedItems.map((s) => ({
+					name: s.name,
+					reason: s.reason ?? null,
+					status: 'pending_approval' as const,
+					nameScore: s.nameScore,
+					currentScore: s.currentScore,
+					avg: s.avg,
+					slope: s.slope,
+					isSpike: s.isSpike,
+					isPartial: s.isPartial,
+					trendTimeline: s.trendTimeline,
+					relatedQueries: s.relatedQueries,
+					relatedTopics: s.relatedTopics,
+				}))
+			})).unwrap();
 			await keywordGroupService.clearPuppeteerSuggestCache(domainId);
 			showToast('Tạo keywords từ AI Scrape thành công!', 'success');
 			loadData(0, limit);
 			setIsAiScrapeResultOpen(false);
-			setAiScrapeSuggestions([]);
+			dispatch(clearAiSuggestionsScrape());
 		} catch (err: unknown) {
 			const errorMsg = typeof err === 'string' ? err : 'Đã có lỗi xảy ra';
 			showToast(errorMsg, 'danger');
@@ -257,11 +288,9 @@ export default function KeywordPage() {
 
 	const handlePuppeteerExit = async () => {
 		setIsAiScrapeResultOpen(false);
-		setAiScrapeSuggestions([]);
+		dispatch(clearAiSuggestionsScrape());
 		if (domainId) {
-			try {
-				await keywordGroupService.clearPuppeteerSuggestCache(domainId);
-			} catch { /* best-effort */ }
+			try { await keywordGroupService.clearPuppeteerSuggestCache(domainId); } catch { /* best-effort */ }
 		}
 	};
 
@@ -292,7 +321,7 @@ export default function KeywordPage() {
 	};
 
 	return (
-		<Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 3, alignItems: 'stretch', pb: 10, zoom: 0.85 }}>
+		<Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '45fr 55fr' }, gap: 3, alignItems: 'stretch', pb: 10, zoom: 0.85 }}>
 
 			{/* LEFT: 2 card chuyển đổi + panel detail */}
 			<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, overflow: 'hidden' }}>
@@ -392,28 +421,28 @@ export default function KeywordPage() {
 					total={total}
 					page={page - 1}
 					limit={limit}
-					generateAiGroupsLoading={isStreaming}
-					generateAiScrapeLoading={isAiScrapeStreaming}
-					hasAiSuggestions={aiSuggestions.length > 0}
-					hasAiScrapeSuggestions={aiScrapeSuggestions.length > 0}
+					generateAiGroupsLoading={aiGroupsStreaming}
+					generateAiScrapeLoading={aiScrapeStreaming}
+					hasAiSuggestions={aiSuggestionsGroups.length > 0}
+					hasAiScrapeSuggestions={aiSuggestionsScrape.length > 0}
 					deleteLoadingId={deleteLoadingId}
 					statusLoadingId={statusLoadingId}
 					onPageChange={handlePageChange}
 					onRowsPerPageChange={handleRowsPerPageChange}
 					onOpenCreate={() => setIsFormOpen(true)}
 					onAiGenerateByGroups={() => {
-						if (isStreaming) {
+						if (aiGroupsStreaming) {
 							setIsStreamDialogOpen(true);
-						} else if (aiSuggestions.length > 0) {
+						} else if (aiSuggestionsGroups.length > 0) {
 							setIsAiResultOpen(true);
 						} else {
 							setIsAiGroupsDialogOpen(true);
 						}
 					}}
 					onAiScrapeByGroups={() => {
-						if (isAiScrapeStreaming) {
+						if (aiScrapeStreaming) {
 							setIsAiScrapeStreamDialogOpen(true);
-						} else if (aiScrapeSuggestions.length > 0) {
+						} else if (aiSuggestionsScrape.length > 0) {
 							setIsAiScrapeResultOpen(true);
 						} else {
 							setIsAiScrapeDialogOpen(true);
@@ -452,7 +481,7 @@ export default function KeywordPage() {
 
 			<KeywordGroupsStreamDialog
 				open={isStreamDialogOpen}
-				logs={streamLogs}
+				logs={aiGroupsStreamLogs}
 				onCancel={handleStreamCancel}
 				onHide={() => setIsStreamDialogOpen(false)}
 			/>
@@ -462,7 +491,7 @@ export default function KeywordPage() {
 					open={isAiResultOpen}
 					loading={aiSubmitLoading}
 					generateLoading={false}
-					suggestions={aiSuggestions}
+					suggestions={aiSuggestionsGroups}
 					timeRange={lastAiGroupsTimeRange}
 					onClose={() => setIsAiResultOpen(false)}
 					onConfirm={handleAiConfirmSelected}
@@ -493,7 +522,7 @@ export default function KeywordPage() {
 					open={isAiScrapeResultOpen}
 					loading={aiScrapeSubmitLoading}
 					generateLoading={false}
-					suggestions={aiScrapeSuggestions}
+					suggestions={aiSuggestionsScrape}
 					timeRange={lastScrapeTimeRange}
 					hideRelated
 					onClose={() => setIsAiScrapeResultOpen(false)}

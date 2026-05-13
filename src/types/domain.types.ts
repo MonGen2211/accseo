@@ -14,5 +14,8 @@ export interface Domain {
   createdAt: string;
   updatedAt: string;
   owners?: DomainOwner[];
+  scanSchedule?: { enabled: boolean; hour: number };
+  gscSyncSchedule?: { enabled: boolean; hour: number };
+  ga4SyncSchedule?: { enabled: boolean; hour: number };
   __v?: number;
 }

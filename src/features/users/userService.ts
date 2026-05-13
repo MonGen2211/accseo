@@ -145,4 +145,8 @@ export const userService = {
 	async changePassword(currentPassword: string, newPassword: string): Promise<void> {
 		await api.patch('/users/me/password', { currentPassword, newPassword });
 	},
+
+	async resetPassword(id: string, newPassword: string): Promise<void> {
+		await api.patch(`/users/${id}/reset-password`, { newPassword });
+	},
 };

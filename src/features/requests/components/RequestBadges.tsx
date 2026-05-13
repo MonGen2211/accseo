@@ -17,12 +17,12 @@ const PRIORITY_CONFIG: Record<RequestPriority, { label: string; color: string }>
   URGENT: { label: 'Khẩn cấp', color: '#DC2626' },
 };
 
-const STATUS_CONFIG: Record<RequestStatus, { label: string; color: string }> = {
+export const STATUS_CONFIG: Record<RequestStatus, { label: string; color: string }> = {
   PENDING: { label: 'Chờ xử lý', color: '#D97706' },
   IN_PROGRESS: { label: 'Đang xử lý', color: '#2563EB' },
   DONE: { label: 'Hoàn thành', color: '#059669' },
   REJECTED: { label: 'Từ chối', color: '#DC2626' },
-  CANCELLED: { label: 'Đã huỷ', color: '#6B7280' },
+  CANCELLED: { label: 'Đã huỷ', color: '#EF4444' },
 };
 
 const badgeChip = (label: string, color: string, size: 'small' | 'medium' = 'small') => (
@@ -42,12 +42,38 @@ const badgeChip = (label: string, color: string, size: 'small' | 'medium' = 'sma
 
 export const TypeBadge = ({ type }: { type: RequestType }) => {
   const cfg = TYPE_CONFIG[type] ?? { label: type, color: '#6B7280' };
-  return badgeChip(cfg.label, cfg.color);
+  return (
+    <Chip
+      label={cfg.label}
+      size="small"
+      sx={{
+        bgcolor: '#f1f5f9',
+        color: '#475569',
+        fontWeight: 600,
+        fontSize: 11,
+        height: 22,
+        border: '1px solid #cbd5e1',
+      }}
+    />
+  );
 };
 
 export const PriorityBadge = ({ priority }: { priority: RequestPriority }) => {
   const cfg = PRIORITY_CONFIG[priority] ?? { label: priority, color: '#6B7280' };
-  return badgeChip(cfg.label, cfg.color);
+  return (
+    <Chip
+      label={cfg.label}
+      size="small"
+      sx={{
+        bgcolor: '#f1f5f9',
+        color: '#475569',
+        fontWeight: 600,
+        fontSize: 11,
+        height: 22,
+        border: '1px solid #cbd5e1',
+      }}
+    />
+  );
 };
 
 export const StatusBadge = ({ status }: { status: RequestStatus }) => {

@@ -27,7 +27,7 @@ import Box from '@mui/material/Box';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Paper from '@mui/material/Paper';
-import Typography from '@mui/material/Typography';
+
 import PersonAddOutlinedIcon from '@mui/icons-material/PersonAddOutlined';
 import CloseIcon from '@mui/icons-material/Close';
 import { useToastify } from '../../../components/Toastify';
@@ -149,20 +149,33 @@ export default function UserPage() {
 	};
 
 	return (
-		<Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 3 }}>
+		<Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 3, zoom: 0.9 }}>
 			<Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
 				<Box sx={{ px: 3, pt: 3, pb: 0 }}>
-					<Typography sx={{ fontSize: '20px', fontWeight: 700, color: 'text.primary', mb: 2 }}>
-						Quản lý người dùng
-					</Typography>
 					<Tabs
 						value={tab}
 						onChange={(_, v) => setTab(v as TabValue)}
-						sx={{ borderBottom: 1, borderColor: 'divider' }}
+						sx={{ 
+							borderBottom: 1, 
+							borderColor: 'divider',
+							'& .MuiTabs-indicator': { display: 'none' }
+						}}
 					>
-						<Tab label="Danh sách người dùng" value="users" />
-						<Tab label="Tạo phân quyền" value="roles" />
-						<Tab label="Quyền trang theo vai trò" value="permissions" />
+						<Tab 
+							label="Danh sách người dùng" 
+							value="users" 
+							sx={{ '&.Mui-selected': { borderBottom: '2px solid', borderColor: 'primary.main', mb: '-1px' } }} 
+						/>
+						<Tab 
+							label="Tạo phân quyền" 
+							value="roles" 
+							sx={{ '&.Mui-selected': { borderBottom: '2px solid', borderColor: 'primary.main', mb: '-1px' } }} 
+						/>
+						<Tab 
+							label="Phân quyền theo vai trò" 
+							value="permissions" 
+							sx={{ '&.Mui-selected': { borderBottom: '2px solid', borderColor: 'primary.main', mb: '-1px' } }} 
+						/>
 					</Tabs>
 				</Box>
 

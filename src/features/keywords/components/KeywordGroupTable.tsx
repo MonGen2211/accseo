@@ -4,8 +4,11 @@ import {
 	Box, Button, Select, MenuItem, FormControl, InputLabel, Link,
 	TableSortLabel, Collapse, Avatar, Chip, Tooltip, IconButton, CircularProgress,
 	TextField, Dialog, DialogTitle, DialogContent, DialogActions,
-	Typography,
+	Typography, Skeleton,
 } from '@mui/material';
+import { TrendLineChart } from './TrendLineChart';
+import { RelatedQueriesPanel } from './RelatedQueriesPanel';
+import { RelatedTopicsPanel } from './RelatedTopicsPanel';
 import AddIcon from '@mui/icons-material/Add';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import TravelExploreIcon from '@mui/icons-material/TravelExplore';
@@ -17,12 +20,13 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { useAppDispatch, useAppSelector } from '../../../app/store';
 import { approveKeywordGroup, rejectKeywordGroup } from '../keywordGroupSlice';
+import { keywordGroupService } from '../keywordGroupService';
 import { useRole } from '../../../hooks/useRole';
 import { useToastify } from '../../../components/Toastify';
 import { CustomTable } from '../../../components/custom-table/CustomTable';
 import type { TableField } from '../../../types/tableFields.types';
 import type { TableRowData } from '../../../types/tableRows.types';
-import type { KeywordGroup } from '../types';
+import type { KeywordGroup, KeywordGroupTrends } from '../types';
 
 interface KeywordGroupTableProps {
 	data: KeywordGroup[];
@@ -129,12 +133,23 @@ export function KeywordGroupTable({
 	const [expandedId, setExpandedId] = useState<string | null>(null);
 	const [approveDialog, setApproveDialog] = useState<{ group: KeywordGroup; action: 'approve' | 'reject' } | null>(null);
 	const [actionReason, setActionReason] = useState('');
+	const [trendsCache, setTrendsCache] = useState<Record<string, KeywordGroupTrends | null>>({});
+	const [trendsLoading, setTrendsLoading] = useState<Record<string, boolean>>({});
 
 	const getId = (g: KeywordGroup) => (g as { _id?: string })._id || g.id;
 
 	const handleRowClick = (row: TableRowData) => {
 		const id = row._id || row.id;
+		const isExpanding = expandedId !== id;
 		setExpandedId((prev) => (prev === id ? null : id));
+
+		if (isExpanding && !(id in trendsCache)) {
+			setTrendsLoading((prev) => ({ ...prev, [id]: true }));
+			keywordGroupService.getGroupTrends(id)
+				.then((data) => setTrendsCache((prev) => ({ ...prev, [id]: data })))
+				.catch(() => setTrendsCache((prev) => ({ ...prev, [id]: null })))
+				.finally(() => setTrendsLoading((prev) => ({ ...prev, [id]: false })));
+		}
 	};
 
 	const openApproveDialog = (e: React.MouseEvent, group: KeywordGroup, action: 'approve' | 'reject') => {
@@ -272,9 +287,14 @@ export function KeywordGroupTable({
 		const id = row._id || row.id;
 		const isExpanded = expandedId === id;
 		const group = row as unknown as KeywordGroup;
+		const trends = trendsCache[id];
+		const isLoadingTrends = trendsLoading[id];
+
 		return (
 			<Collapse in={isExpanded} unmountOnExit>
-				<Box sx={{ px: 3, py: 2, bgcolor: 'action.hover', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+				<Box sx={{ px: 3, py: 2, bgcolor: 'action.hover', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', flexDirection: 'column', gap: 2 }}>
+
+					{/* ── Lý do đề xuất / từ chối ── */}
 					{group.reason && (
 						<Box>
 							<Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
@@ -295,12 +315,68 @@ export function KeywordGroupTable({
 						</Box>
 					)}
 
-					{!group.reason && (group as { status?: string }).status !== 'rejected' && (
+					{!group.reason && (group as { status?: string }).status !== 'rejected' && !isLoadingTrends && !trends && (
 						<Typography variant="caption" sx={{ color: 'text.disabled' }}>
 							Không có thông tin bổ sung
 						</Typography>
 					)}
 
+					{/* ── Trends section ── */}
+					{isLoadingTrends && (
+						<Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+							<Skeleton variant="rectangular" height={180} sx={{ borderRadius: 2 }} />
+							<Box sx={{ display: 'flex', gap: 1 }}>
+								{[80, 60, 70, 60].map((w, i) => <Skeleton key={i} variant="rounded" width={w} height={24} />)}
+							</Box>
+						</Box>
+					)}
+
+					{!isLoadingTrends && trends && (
+						<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+							{/* Stats chips */}
+							<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+								{[
+									{ label: `Điểm hiện tại: ${trends.currentScore}`, color: '#6366f1' },
+									{ label: `TB: ${trends.avg}`, color: '#0ea5e9' },
+									{ label: `Xu hướng: ${trends.slope > 0 ? '+' : ''}${trends.slope}`, color: trends.slope > 0 ? '#059669' : '#dc2626' },
+									...(trends.isSpike ? [{ label: 'Spike', color: '#d97706' }] : []),
+									...(trends.isPartial ? [{ label: 'Dữ liệu chưa đầy đủ', color: '#9ca3af' }] : []),
+								].map(({ label, color }) => (
+									<Chip
+										key={label}
+										label={label}
+										size="small"
+										sx={{ bgcolor: `${color}18`, color, fontWeight: 600, fontSize: 11, border: `1px solid ${color}40` }}
+									/>
+								))}
+							</Box>
+
+							{/* Biểu đồ xu hướng */}
+							{trends.trendTimeline.length > 0 && (
+								<Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2, bgcolor: 'background.paper' }}>
+									<Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
+										Biểu đồ xu hướng — {group.name}
+									</Typography>
+									<TrendLineChart
+										data={trends.trendTimeline}
+										currentScore={trends.currentScore}
+										height={180}
+										showAxes
+									/>
+								</Box>
+							)}
+
+							{/* Related queries + topics */}
+							{(trends.relatedQueries ?? trends.relatedTopics) && (
+								<Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+									<RelatedQueriesPanel data={trends.relatedQueries} timeRange="3-m" />
+									<RelatedTopicsPanel data={trends.relatedTopics} timeRange="3-m" />
+								</Box>
+							)}
+						</Box>
+					)}
+
+					{/* ── Nút gửi duyệt ── */}
 					{!canApprove
 						&& (group as { status?: string }).status === 'pending_approval'
 						&& group.createdBy?._id === currentUser?.id && (

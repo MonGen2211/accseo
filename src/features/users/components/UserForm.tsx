@@ -12,6 +12,10 @@ import Alert from '@mui/material/Alert';
 import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Typography from '@mui/material/Typography';
+import InputAdornment from '@mui/material/InputAdornment';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import AutorenewIcon from '@mui/icons-material/Autorenew';
 
 // ─── Zod Schema ─────────────────────────────────────────────────────────────
 
@@ -34,7 +38,7 @@ const createSchema = baseSchema.extend({
 	role: z.enum(USER_ROLES),
 	password: z
 		.string()
-		.min(6, 'Mật khẩu phải có ít nhất 6 ký tự')
+		.min(20, 'Mật khẩu phải có ít nhất 20 ký tự')
 		.regex(
 			/^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9])/,
 			'Mật khẩu phải có chữ hoa, chữ thường, số và ký tự đặc biệt'
@@ -55,6 +59,26 @@ interface UserFormProps {
 	onCancel: () => void;
 	loading?: boolean;
 	apiError?: string | null;
+}
+
+function generatePassword(): string {
+	const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+	const lower = 'abcdefghijklmnopqrstuvwxyz';
+	const digits = '0123456789';
+	const special = '!@#$%^&*()_+-=';
+	const all = upper + lower + digits + special;
+	const pool = [
+		upper[Math.floor(Math.random() * upper.length)],
+		upper[Math.floor(Math.random() * upper.length)],
+		lower[Math.floor(Math.random() * lower.length)],
+		lower[Math.floor(Math.random() * lower.length)],
+		digits[Math.floor(Math.random() * digits.length)],
+		digits[Math.floor(Math.random() * digits.length)],
+		special[Math.floor(Math.random() * special.length)],
+		special[Math.floor(Math.random() * special.length)],
+	];
+	while (pool.length < 20) pool.push(all[Math.floor(Math.random() * all.length)]);
+	return pool.sort(() => Math.random() - 0.5).join('');
 }
 
 const EMPTY_FORM: UserFormData = {
@@ -78,7 +102,11 @@ export default function UserForm({
 	apiError,
 }: UserFormProps) {
 	const isEdit = Boolean(initialData);
-	const [form, setForm] = useState<UserFormData>({ ...EMPTY_FORM, ...initialData });
+	const [form, setForm] = useState<UserFormData>(() => ({
+		...EMPTY_FORM,
+		...initialData,
+		password: initialData ? '' : generatePassword(),
+	}));
 	const [errors, setErrors] = useState<FormErrors>({});
 	const schema = useMemo(() => (isEdit ? editSchema : createSchema), [isEdit]);
 	const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
@@ -188,14 +216,29 @@ export default function UserForm({
 			{!isEdit && (
 				<TextField
 					label="Mật khẩu"
-					type="password"
 					value={form.password || ''}
-					onChange={(e) => handleChange('password', e.target.value)}
-					placeholder="Tối thiểu 6 ký tự"
+					slotProps={{
+						input: {
+							readOnly: true,
+							endAdornment: (
+								<InputAdornment position="end">
+									<Tooltip title="Tạo mật khẩu mới">
+										<IconButton
+											size="small"
+											onClick={() => handleChange('password', generatePassword())}
+											edge="end"
+										>
+											<AutorenewIcon fontSize="small" />
+										</IconButton>
+									</Tooltip>
+								</InputAdornment>
+							),
+						},
+					}}
 					error={Boolean(errors.password)}
-					helperText={errors.password}
+					helperText={errors.password || 'Nhấn nút làm mới để tạo mật khẩu khác'}
 					fullWidth
-					sx={{ mb: 3 }}
+					sx={{ mb: 3, '& input': { fontFamily: 'monospace', letterSpacing: 1 } }}
 				/>
 			)}
 

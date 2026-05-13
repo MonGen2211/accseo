@@ -6,7 +6,7 @@ import DomainForm from './DomainForm';
 import DomainEditForm from './DomainEditForm';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
-import Typography from '@mui/material/Typography';
+
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -112,16 +112,13 @@ export default function DomainPage() {
 	return (
 		<Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 3, zoom: 0.9 }}>
 			<Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
-				<Box sx={{ px: 3, pt: 3, pb: 1.5 }}>
-					<Typography sx={{ fontSize: '20px', fontWeight: 700, color: 'text.primary' }}>
-						Danh sách Tên miền
-					</Typography>
-					{error && (
-						<Alert severity="error" sx={{ mt: 2 }}>
+				{error && (
+					<Box sx={{ px: 2, pt: 2 }}>
+						<Alert severity="error">
 							{typeof error === 'string' ? error : JSON.stringify(error)}
 						</Alert>
-					)}
-				</Box>
+					</Box>
+				)}
 
 				<Box sx={{ p: 2 }}>
 					<DomainTable

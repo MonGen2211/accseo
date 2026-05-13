@@ -132,15 +132,13 @@ export default function RequestDetailPage() {
 	};
 
 	return (
-		<Box sx={{ p: 3, pb: 10, maxWidth: 900, mx: 'auto' }}>
+		<Box sx={{ p: 3, pb: 10 }}>
 			<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
 				<IconButton onClick={() => navigate(-1)}><ArrowBackIcon /></IconButton>
 				<Typography variant="h5" sx={{ fontWeight: 700, flex: 1 }}>{current.title}</Typography>
 			</Box>
 
-			<Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
-				{/* Main content */}
-				<Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+			<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
 					{/* Header badges */}
 					<Paper sx={{ p: 2 }}>
 						<Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
@@ -210,6 +208,9 @@ export default function RequestDetailPage() {
 						{current.description && (
 							<>
 								<Divider sx={{ mb: 1.5 }} />
+								<Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.75 }}>
+									Mô tả
+								</Typography>
 								<Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{current.description}</Typography>
 							</>
 						)}
@@ -252,39 +253,38 @@ export default function RequestDetailPage() {
 						</Paper>
 					)}
 
-					{/* Action buttons */}
-					<Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-						{canClaim && (
-							<Button variant="contained" onClick={handleClaim} disabled={actionLoading}>Nhận việc</Button>
-						)}
-						{canResolve && current.type !== 'KEYWORD_APPROVAL' && (
-							<Button variant="contained" color="success" onClick={() => { setResolveAction('DONE'); setResolveNote(''); setResolveOpen(true); }}>
-								Hoàn thành / Từ chối
-							</Button>
-						)}
-						{canReassign && (
-							<Button variant="outlined" onClick={() => { setReassignUser(null); setReassignNote(''); setUserSearch(''); setUserInputValue(''); setReassignOpen(true); }}>
-								Chuyển người
-							</Button>
-						)}
-						{canCancel && !['DONE', 'CANCELLED', 'REJECTED'].includes(current.status) && (
-							<Button variant="outlined" color="error" onClick={() => setCancelOpen(true)}>Huỷ yêu cầu</Button>
-						)}
-					</Box>
+				{/* Action buttons */}
+				<Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+					{canClaim && (
+						<Button variant="contained" onClick={handleClaim} disabled={actionLoading}>Nhận việc</Button>
+					)}
+					{canResolve && current.type !== 'KEYWORD_APPROVAL' && (
+						<Button variant="contained" color="success" onClick={() => { setResolveAction('DONE'); setResolveNote(''); setResolveOpen(true); }}>
+							Hoàn thành / Từ chối
+						</Button>
+					)}
+					{canReassign && (
+						<Button variant="outlined" onClick={() => { setReassignUser(null); setReassignNote(''); setUserSearch(''); setUserInputValue(''); setReassignOpen(true); }}>
+							Chuyển người
+						</Button>
+					)}
+					{canCancel && !['DONE', 'CANCELLED', 'REJECTED'].includes(current.status) && (
+						<Button variant="outlined" color="error" onClick={() => setCancelOpen(true)}>Huỷ yêu cầu</Button>
+					)}
 				</Box>
 
-				{/* Audit log sidebar */}
-				<Box sx={{ width: 280, flexShrink: 0 }}>
-					<Paper sx={{ p: 2 }}>
-						<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-							<HistoryIcon fontSize="small" />
-							<Typography sx={{ fontWeight: 600 }}>Lịch sử</Typography>
-						</Box>
-						{auditLogs.length === 0 && (
-							<Typography variant="caption" sx={{ color: 'text.secondary' }}>Chưa có hoạt động</Typography>
-						)}
+				{/* Audit log */}
+				<Paper sx={{ p: 2 }}>
+					<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+						<HistoryIcon fontSize="small" />
+						<Typography sx={{ fontWeight: 600 }}>Lịch sử</Typography>
+					</Box>
+					{auditLogs.length === 0 && (
+						<Typography variant="caption" sx={{ color: 'text.secondary' }}>Chưa có hoạt động</Typography>
+					)}
+					<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0, columnGap: 4 }}>
 						{auditLogs.map((log, i) => (
-							<Box key={log.id ?? i} sx={{ display: 'flex', gap: 1.5, mb: 2, position: 'relative' }}>
+							<Box key={log.id ?? i} sx={{ display: 'flex', gap: 1.5, mb: 2, position: 'relative', minWidth: 220 }}>
 								{i < auditLogs.length - 1 && (
 									<Box sx={{ position: 'absolute', left: 12, top: 28, bottom: -8, width: 1, bgcolor: 'divider' }} />
 								)}
@@ -299,8 +299,8 @@ export default function RequestDetailPage() {
 								</Box>
 							</Box>
 						))}
-					</Paper>
-				</Box>
+					</Box>
+				</Paper>
 			</Box>
 
 			{/* Resolve Dialog */}

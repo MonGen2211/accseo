@@ -18,6 +18,10 @@ import { requestService } from '../requestService';
 import { useToastify } from '../../../components/Toastify';
 import { useRole } from '../../../hooks/useRole';
 import type { RequestStatus } from '../types';
+import type { KeywordGroupTrends } from '../../keywords/types';
+import { TrendLineChart } from '../../keywords/components/TrendLineChart';
+import { RelatedQueriesPanel } from '../../keywords/components/RelatedQueriesPanel';
+import { RelatedTopicsPanel } from '../../keywords/components/RelatedTopicsPanel';
 
 interface KeywordItem {
   _id: string;
@@ -57,6 +61,7 @@ export default function KeywordGroupReviewPanel({ refId, requestId, requestStatu
   const canReview = useRole(['REVIEWER', 'MAR_SPECIALIST']);
 
   const [group, setGroup] = useState<GroupDetail | null>(null);
+  const [trends, setTrends] = useState<KeywordGroupTrends | null>(null);
   const [keywords, setKeywords] = useState<KeywordItem[]>([]);
   const [keywordTotal, setKeywordTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -67,8 +72,12 @@ export default function KeywordGroupReviewPanel({ refId, requestId, requestStatu
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await keywordGroupService.getGroupById(refId);
+      const [data, trendsData] = await Promise.all([
+        keywordGroupService.getGroupById(refId),
+        keywordGroupService.getGroupTrends(refId),
+      ]);
       setGroup(data.group as unknown as GroupDetail);
+      setTrends(trendsData);
       setKeywords(data.keywords.items);
       setKeywordTotal(data.keywords.total);
     } catch {
@@ -169,6 +178,16 @@ export default function KeywordGroupReviewPanel({ refId, requestId, requestStatu
           </Box>
         </Box>
 
+        {/* Lý do đề xuất */}
+        {group.reason && (
+          <Box sx={{ p: 1.5, bgcolor: 'action.hover', borderRadius: 1.5, mb: 2 }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              Lý do đề xuất
+            </Typography>
+            <Typography variant="body2" sx={{ mt: 0.5 }}>{group.reason}</Typography>
+          </Box>
+        )}
+
         {/* Keyword chips */}
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 2 }}>
           {keywords.map((kw) => (
@@ -178,6 +197,45 @@ export default function KeywordGroupReviewPanel({ refId, requestId, requestStatu
             <Chip label={`+${keywordTotal - keywords.length} từ khoá`} size="small" sx={{ fontSize: 12, color: 'text.secondary' }} />
           )}
         </Box>
+
+        {/* Trends section */}
+        {trends && (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2, pt: 1.5, borderTop: '1px solid', borderColor: 'divider' }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary' }}>
+              Phân tích xu hướng
+            </Typography>
+
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              {[
+                { label: `Điểm hiện tại: ${trends.currentScore}`, color: '#6366f1' },
+                { label: `TB: ${trends.avg}`, color: '#0ea5e9' },
+                { label: `Xu hướng: ${trends.slope > 0 ? '+' : ''}${trends.slope}`, color: trends.slope > 0 ? '#059669' : '#dc2626' },
+                ...(trends.isSpike ? [{ label: 'Spike', color: '#d97706' }] : []),
+                ...(trends.isPartial ? [{ label: 'Dữ liệu chưa đầy đủ', color: '#9ca3af' }] : []),
+              ].map(({ label, color }) => (
+                <Chip key={label} label={label} size="small"
+                  sx={{ bgcolor: `${color}18`, color, fontWeight: 600, fontSize: 11, border: `1px solid ${color}40` }}
+                />
+              ))}
+            </Box>
+
+            {trends.trendTimeline.length > 0 && (
+              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
+                  Biểu đồ xu hướng — {group.name}
+                </Typography>
+                <TrendLineChart data={trends.trendTimeline} currentScore={trends.currentScore} height={180} showAxes />
+              </Box>
+            )}
+
+            {(trends.relatedQueries ?? trends.relatedTopics) && (
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                <RelatedQueriesPanel data={trends.relatedQueries} timeRange="3-m" />
+                <RelatedTopicsPanel data={trends.relatedTopics} timeRange="3-m" />
+              </Box>
+            )}
+          </Box>
+        )}
 
         {/* Rejection reason */}
         {group.status === 'rejected' && group.approvalReason && (

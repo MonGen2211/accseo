@@ -7,6 +7,7 @@ import Chip from '@mui/material/Chip';
 import Avatar from '@mui/material/Avatar';
 import Skeleton from '@mui/material/Skeleton';
 import Link from '@mui/material/Link';
+import Button from '@mui/material/Button';
 import TrendingUpOutlinedIcon from '@mui/icons-material/TrendingUpOutlined';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
@@ -16,7 +17,10 @@ import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
 import WhatshotIcon from '@mui/icons-material/Whatshot';
 import UpdateOutlinedIcon from '@mui/icons-material/UpdateOutlined';
 import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined';
+import CloudSyncOutlinedIcon from '@mui/icons-material/CloudSyncOutlined';
+import CircularProgress from '@mui/material/CircularProgress';
 import { CustomTable } from '../../components/custom-table/CustomTable';
+import { useToastify } from '../../components/Toastify';
 import type { TableField } from '../../types/tableFields.types';
 import type { TableRowData } from '../../types/tableRows.types';
 
@@ -176,6 +180,8 @@ export default function TrendingKeywordsSection() {
 	const [expandedId, setExpandedId] = useState<string | null>(null);
 	const [syncBlockedUntil, setSyncBlockedUntil] = useState<number | null>(null);
 	const [countdown, setCountdown] = useState('');
+	const [isSyncing, setIsSyncing] = useState(false);
+	const { showToast } = useToastify();
 
 	const updateFilter = useCallback((updates: Partial<QP>) => {
 		setQp(prev => ({ ...prev, ...updates, page: 1 }));
@@ -228,6 +234,27 @@ export default function TrendingKeywordsSection() {
 
 	// eslint-disable-next-line react-hooks/set-state-in-effect
 	useEffect(() => { fetchTrending(); }, [fetchTrending]);
+
+	const handleSync = async () => {
+		if (isSyncing || loading) return;
+		setIsSyncing(true);
+		try {
+			showToast('Đang tiến hành lấy dữ liệu mới nhất. Quá trình này có thể mất 1-3 phút...', 'info');
+			const params = { geo: 'VN', hours: qp.hours, hl: 'vi' };
+			const res = await api.post('/serpapi/sync-trending-scrape', null, { params });
+			if (res.data.success) {
+				showToast('Đồng bộ thành công! Đang tải lại dữ liệu...', 'success');
+				fetchTrending();
+			} else {
+				showToast(res.data.message || 'Đồng bộ thất bại', 'danger');
+			}
+		} catch (err: any) {
+			const data = err.response?.data;
+			showToast(data?.message || 'Lỗi kết nối khi đồng bộ', 'danger');
+		} finally {
+			setIsSyncing(false);
+		}
+	};
 
 	const displayItems = data?.items ?? [];
 	const isBlocked = !!syncBlockedUntil;
@@ -324,8 +351,32 @@ export default function TrendingKeywordsSection() {
 							))}
 						</Box>
 
+						{/* Sync Latest */}
+						<Button
+							variant="contained"
+							size="small"
+							disabled={isSyncing || loading}
+							startIcon={isSyncing ? <CircularProgress size={16} color="inherit" /> : <CloudSyncOutlinedIcon fontSize="small" />}
+							onClick={handleSync}
+							sx={{
+								textTransform: 'none',
+								fontWeight: 600,
+								fontSize: '0.78rem',
+								borderRadius: 1.5,
+								boxShadow: '0 2px 6px rgba(239,68,68,0.2)',
+								background: 'linear-gradient(135deg, #ef4444, #f97316)',
+								color: '#fff',
+								'&:hover': { 
+									background: 'linear-gradient(135deg, #dc2626, #ea580c)',
+									boxShadow: '0 4px 12px rgba(239,68,68,0.35)' 
+								}
+							}}
+						>
+							{isSyncing ? 'Đang đồng bộ...' : 'Lấy dữ liệu mới'}
+						</Button>
+
 						{/* Refresh */}
-						<Box onClick={() => { if (!loading && !isBlocked_) fetchTrending(); }}
+						<Box onClick={() => { if (!loading && !isBlocked_ && !isSyncing) fetchTrending(); }}
 							title={isBlocked_ ? 'Đang trong thời gian cooldown' : 'Làm mới'}
 							sx={{ minWidth: 34, height: 34, px: isBlocked_ && countdown ? 1 : 0, borderRadius: 2, border: '1px solid', borderColor: isBlocked_ ? '#fca5a5' : 'divider', bgcolor: isBlocked_ ? '#fff5f5' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, cursor: loading || isBlocked_ ? 'not-allowed' : 'pointer', color: isBlocked_ ? '#ef4444' : 'text.secondary', transition: 'all 0.15s', '&:hover': !loading && !isBlocked_ ? { bgcolor: '#f1f5f9', color: '#ef4444' } : {} }}>
 							<RefreshOutlinedIcon sx={{ fontSize: 18, color: isBlocked_ ? '#ef4444' : 'inherit', animation: loading ? 'spin 1s linear infinite' : 'none', '@keyframes spin': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } } }} />

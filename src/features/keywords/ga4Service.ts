@@ -39,4 +39,26 @@ export const ga4Service = {
     );
     return response.data.data;
   },
+
+  async syncGa4(domainId: string): Promise<{ message: string; status: string }> {
+    const response = await api.post<ApiResponse<{ message: string; status: string }>>(
+      `/ga4/${domainId}/sync`
+    );
+    return response.data.data;
+  },
+
+  async getSyncStatus(domainId: string): Promise<any> {
+    const response = await api.get<ApiResponse<any>>(
+      `/ga4/${domainId}/sync/status`
+    );
+    return response.data.data;
+  },
+
+  async updateSchedule(domainId: string, payload: { enabled: boolean; hour: number }): Promise<{ enabled: boolean; hour: number }> {
+    const response = await api.patch<ApiResponse<{ message: string; ga4SyncSchedule: { enabled: boolean; hour: number } }>>(
+      `/ga4/${domainId}/schedule`,
+      payload
+    );
+    return response.data.data.ga4SyncSchedule;
+  },
 };

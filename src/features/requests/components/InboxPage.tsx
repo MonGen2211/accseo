@@ -5,6 +5,7 @@ import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
+import AvatarGroup from '@mui/material/AvatarGroup';
 import Chip from '@mui/material/Chip';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
@@ -25,10 +26,9 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined';
 import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
-import FilterListOutlinedIcon from '@mui/icons-material/FilterListOutlined';
 import { useAppDispatch, useAppSelector } from '../../../app/store';
 import { fetchInbox, claimRequest, resolveRequest } from '../requestSlice';
-import { TypeBadge, PriorityBadge, StatusBadge, getDueDateInfo } from './RequestBadges';
+import { TypeBadge, PriorityBadge, StatusBadge, getDueDateInfo, STATUS_CONFIG } from './RequestBadges';
 import { useToastify } from '../../../components/Toastify';
 import type { Request } from '../types';
 
@@ -36,9 +36,6 @@ const REQUEST_TYPES = ['KEYWORD_APPROVAL', 'CONTENT_TASK', 'REVIEW', 'DOMAIN_TAS
 const REQUEST_STATUSES = ['PENDING', 'IN_PROGRESS', 'DONE', 'REJECTED', 'CANCELLED'];
 const REQUEST_PRIORITIES = ['LOW', 'NORMAL', 'HIGH', 'URGENT'];
 
-const PRIORITY_COLOR: Record<string, string> = {
-  LOW: '#94a3b8', NORMAL: '#3b82f6', HIGH: '#f97316', URGENT: '#ef4444',
-};
 const TYPE_LABEL: Record<string, string> = {
   KEYWORD_APPROVAL: 'Duyệt từ khoá', CONTENT_TASK: 'Nội dung', REVIEW: 'Review', DOMAIN_TASK: 'Tên miền', GENERAL: 'Chung',
 };
@@ -49,7 +46,7 @@ const PRIORITY_LABEL: Record<string, string> = {
   LOW: 'Thấp', NORMAL: 'Bình thường', HIGH: 'Cao', URGENT: 'Khẩn cấp',
 };
 
-export default function InboxPage() {
+export default function InboxPage({ tabsNode }: { tabsNode?: React.ReactNode }) {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { showToast } = useToastify();
@@ -109,64 +106,48 @@ export default function InboxPage() {
 
   return (
     <Box sx={{ px: 3, pb: 10 }}>
-      {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-        <Box sx={{
-          width: 48, height: 48, borderRadius: 3,
-          background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 4px 14px rgba(124,58,237,0.35)',
-          flexShrink: 0,
-        }}>
-          <InboxOutlinedIcon sx={{ color: '#fff', fontSize: 22 }} />
+      {/* Header Row: Tabs & Filter */}
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 2, mb: 3 }}>
+        <Box sx={{ flexShrink: 0 }}>
+          {tabsNode}
         </Box>
-        <Box sx={{ flex: 1 }}>
-          <Typography sx={{ fontWeight: 800, fontSize: '1.1rem', lineHeight: 1.2 }}>Hộp thư đến</Typography>
-          <Typography sx={{ fontSize: '0.78rem', color: 'text.secondary' }}>
-            Các yêu cầu được gửi đến bạn
-          </Typography>
-        </Box>
-      </Box>
 
-      {/* Filter bar */}
-      <Box sx={{
-        display: 'flex', gap: 1.5, mb: 3, flexWrap: 'wrap', alignItems: 'center',
-        p: 1.5, bgcolor: '#f8fafc', borderRadius: 2.5, border: '1px solid', borderColor: 'divider',
-      }}>
-        <FilterListOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary', ml: 0.5 }} />
-        <FormControl size="small" sx={{ minWidth: 140 }}>
-          <InputLabel>Loại yêu cầu</InputLabel>
-          <Select value={filterType} label="Loại yêu cầu"
-            onChange={(e) => { setFilterType(e.target.value); setPage(1); }}
-            sx={{ borderRadius: 2, bgcolor: '#fff' }}>
-            <MenuItem value="">Tất cả</MenuItem>
-            {REQUEST_TYPES.map((t) => <MenuItem key={t} value={t}>{TYPE_LABEL[t] ?? t}</MenuItem>)}
-          </Select>
-        </FormControl>
-        <FormControl size="small" sx={{ minWidth: 140 }}>
-          <InputLabel>Trạng thái</InputLabel>
-          <Select value={filterStatus} label="Trạng thái"
-            onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
-            sx={{ borderRadius: 2, bgcolor: '#fff' }}>
-            <MenuItem value="">Tất cả</MenuItem>
-            {REQUEST_STATUSES.map((s) => <MenuItem key={s} value={s}>{STATUS_LABEL[s] ?? s}</MenuItem>)}
-          </Select>
-        </FormControl>
-        <FormControl size="small" sx={{ minWidth: 140 }}>
-          <InputLabel>Độ ưu tiên</InputLabel>
-          <Select value={filterPriority} label="Độ ưu tiên"
-            onChange={(e) => { setFilterPriority(e.target.value); setPage(1); }}
-            sx={{ borderRadius: 2, bgcolor: '#fff' }}>
-            <MenuItem value="">Tất cả</MenuItem>
-            {REQUEST_PRIORITIES.map((p) => <MenuItem key={p} value={p}>{PRIORITY_LABEL[p] ?? p}</MenuItem>)}
-          </Select>
-        </FormControl>
-        {hasFilter && (
-          <Button size="small" onClick={() => { setFilterType(''); setFilterStatus(''); setFilterPriority(''); setPage(1); }}
-            sx={{ borderRadius: 2, color: 'text.secondary', fontSize: '0.78rem' }}>
-            Xoá bộ lọc
-          </Button>
-        )}
+        {/* Filter Right */}
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel sx={{ fontSize: '0.85rem' }}>Loại yêu cầu</InputLabel>
+            <Select value={filterType} label="Loại yêu cầu"
+              onChange={(e) => { setFilterType(e.target.value); setPage(1); }}
+              sx={{ borderRadius: 2, bgcolor: '#fff', height: 36, fontSize: '0.85rem' }}>
+              <MenuItem value="" sx={{ fontSize: '0.85rem' }}>Tất cả</MenuItem>
+              {REQUEST_TYPES.map((t) => <MenuItem key={t} value={t} sx={{ fontSize: '0.85rem' }}>{TYPE_LABEL[t] ?? t}</MenuItem>)}
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel sx={{ fontSize: '0.85rem' }}>Trạng thái</InputLabel>
+            <Select value={filterStatus} label="Trạng thái"
+              onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
+              sx={{ borderRadius: 2, bgcolor: '#fff', height: 36, fontSize: '0.85rem' }}>
+              <MenuItem value="" sx={{ fontSize: '0.85rem' }}>Tất cả</MenuItem>
+              {REQUEST_STATUSES.map((s) => <MenuItem key={s} value={s} sx={{ fontSize: '0.85rem' }}>{STATUS_LABEL[s] ?? s}</MenuItem>)}
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel sx={{ fontSize: '0.85rem' }}>Độ ưu tiên</InputLabel>
+            <Select value={filterPriority} label="Độ ưu tiên"
+              onChange={(e) => { setFilterPriority(e.target.value); setPage(1); }}
+              sx={{ borderRadius: 2, bgcolor: '#fff', height: 36, fontSize: '0.85rem' }}>
+              <MenuItem value="" sx={{ fontSize: '0.85rem' }}>Tất cả</MenuItem>
+              {REQUEST_PRIORITIES.map((p) => <MenuItem key={p} value={p} sx={{ fontSize: '0.85rem' }}>{PRIORITY_LABEL[p] ?? p}</MenuItem>)}
+            </Select>
+          </FormControl>
+          {hasFilter && (
+            <Button size="small" onClick={() => { setFilterType(''); setFilterStatus(''); setFilterPriority(''); setPage(1); }}
+              sx={{ borderRadius: 2, color: 'text.secondary', fontSize: '0.78rem', minWidth: 'auto' }}>
+              Xoá lọc
+            </Button>
+          )}
+        </Box>
       </Box>
 
       {/* Loading */}
@@ -192,7 +173,7 @@ export default function InboxPage() {
         <Box sx={{ textAlign: 'center', py: 12 }}>
           <Box sx={{
             width: 80, height: 80, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #ede9fe, #ddd6fe)',
+            background: 'linear-gradient(135deg, #e6f8f4, #cbf2e8)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             mx: 'auto', mb: 2,
           }}>
@@ -218,7 +199,7 @@ export default function InboxPage() {
               ? req.participants.some((p) => p.user.id === currentUser?.id && p.status !== 'DONE' && p.status !== 'REJECTED')
               : req.claimedBy?.id === currentUser?.id
           );
-          const priorityColor = PRIORITY_COLOR[req.priority] ?? '#94a3b8';
+          const statusColor = STATUS_CONFIG[req.status]?.color ?? '#94a3b8';
 
           return (
             <Paper
@@ -229,25 +210,24 @@ export default function InboxPage() {
                 borderRadius: 2.5,
                 border: '1px solid',
                 borderColor: 'divider',
-                borderLeft: `4px solid ${priorityColor}`,
+                borderLeft: `4px solid ${statusColor}`,
                 cursor: 'pointer',
                 overflow: 'hidden',
                 transition: 'all 0.15s',
+                position: 'relative',
                 '&:hover': {
                   boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-                  borderLeftColor: priorityColor,
+                  borderLeftColor: statusColor,
                   bgcolor: '#fafafa',
                   transform: 'translateX(2px)',
                 },
               }}
             >
-              <Box sx={{ p: 2, display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+              <Box sx={{ p: 2, display: 'flex', gap: 2, alignItems: 'stretch' }}>
                 {/* Main content */}
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   {/* Badges row */}
                   <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
-                    <TypeBadge type={req.type} />
-                    <PriorityBadge priority={req.priority} />
                     <StatusBadge status={req.status} />
                     {due && (
                       <Chip
@@ -275,72 +255,95 @@ export default function InboxPage() {
                     {req.title}
                   </Typography>
 
-                  {/* From user */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                    <PersonOutlinedIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
-                    <Avatar src={req.fromUser?.imgAvatar} sx={{ width: 18, height: 18, fontSize: 10 }}>
-                      {req.fromUser?.name?.[0]}
-                    </Avatar>
-                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-                      {req.fromUser?.name}
-                    </Typography>
-                  </Box>
+                  {/* Bottom row: Attributes & From user */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      <TypeBadge type={req.type} />
+                      <PriorityBadge priority={req.priority} />
+                    </Box>
 
-                  {/* Progress (split mode) */}
-                  {req.splitMode && req.participants.length > 0 && (
-                    <Box sx={{ mt: 1.5 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>Tiến độ nhóm</Typography>
-                        <Typography variant="caption" sx={{ fontWeight: 700, color: '#7c3aed' }}>
-                          {doneCount}/{req.participants.length}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, ml: 'auto' }}>
+                      {req.splitMode && req.participants.length > 0 && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+                            {doneCount}/{req.participants.length}
+                          </Typography>
+                          <AvatarGroup max={5} sx={{ '& .MuiAvatar-root': { width: 22, height: 22, fontSize: 10, border: '2px solid #fff' } }}>
+                            {req.participants.map((p) => (
+                              <Avatar key={p.user.id} src={p.user.imgAvatar}>{p.user.name?.[0]}</Avatar>
+                            ))}
+                          </AvatarGroup>
+                          <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
+                        </Box>
+                      )}
+                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.25 }}>
+                        <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.65rem' }}>
+                          {new Date(req.updatedAt || req.createdAt).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                          <PersonOutlinedIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
+                          <Avatar src={req.fromUser?.imgAvatar} sx={{ width: 18, height: 18, fontSize: 10 }}>
+                            {req.fromUser?.name?.[0]}
+                          </Avatar>
+                          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+                            Người gửi: {req.fromUser?.name}
+                          </Typography>
+                        </Box>
                       </Box>
-                      <LinearProgress
-                        variant="determinate"
-                        value={(doneCount / req.participants.length) * 100}
-                        sx={{ borderRadius: 4, height: 5, bgcolor: '#ede9fe', '& .MuiLinearProgress-bar': { bgcolor: '#7c3aed' } }}
-                      />
+                    </Box>
+                  </Box>
+                </Box>
+
+                {/* Actions */}
+                <Box
+                  onClick={(e) => e.stopPropagation()}
+                  sx={{ display: 'flex', flexDirection: 'column', gap: 1, flexShrink: 0, alignItems: 'flex-end', alignSelf: 'stretch' }}
+                >
+                  <Box sx={{ flexGrow: 1 }} />
+
+                  {/* Buttons */}
+                  {(canClaim || canResolve) && (
+                    <Box sx={{ display: 'flex', gap: 0.75, mt: 'auto' }}>
+                      {canClaim && (
+                        <Button
+                          size="small"
+                          onClick={() => handleClaim(req)}
+                          disabled={actionLoading}
+                          sx={{
+                            borderRadius: 1.5, fontWeight: 700, fontSize: '0.72rem', px: 1.5, py: 0.25, minWidth: 0,
+                            background: 'linear-gradient(135deg, #00b894, #00cec9)',
+                            boxShadow: '0 2px 8px rgba(0,184,148,0.3)',
+                            color: '#fff',
+                            whiteSpace: 'nowrap',
+                            '&:hover': { boxShadow: '0 4px 12px rgba(0,184,148,0.4)' },
+                          }}
+                        >
+                          Nhận việc
+                        </Button>
+                      )}
+                      {canResolve && (
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => openResolve(req)}
+                          sx={{ borderRadius: 1.5, fontWeight: 600, fontSize: '0.72rem', px: 1.5, py: 0.25, minWidth: 0, whiteSpace: 'nowrap', color: '#00b894', borderColor: '#a7f3d0', bgcolor: '#ecfdf5', '&:hover': { bgcolor: '#d1fae5', borderColor: '#6ee7b7' } }}
+                        >
+                          Xử lý
+                        </Button>
+                      )}
                     </Box>
                   )}
                 </Box>
-
-                {/* Action buttons */}
-                {(canClaim || canResolve) && (
-                  <Box
-                    onClick={(e) => e.stopPropagation()}
-                    sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, flexShrink: 0, alignSelf: 'center' }}
-                  >
-                    {canClaim && (
-                      <Button
-                        size="small"
-                        variant="contained"
-                        disabled={actionLoading}
-                        onClick={() => handleClaim(req)}
-                        sx={{
-                          borderRadius: 2, fontWeight: 700, fontSize: '0.78rem',
-                          background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
-                          boxShadow: '0 2px 8px rgba(124,58,237,0.3)',
-                          whiteSpace: 'nowrap',
-                          '&:hover': { boxShadow: '0 4px 12px rgba(124,58,237,0.4)' },
-                        }}
-                      >
-                        Nhận việc
-                      </Button>
-                    )}
-                    {canResolve && (
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        color="success"
-                        onClick={() => openResolve(req)}
-                        sx={{ borderRadius: 2, fontWeight: 700, fontSize: '0.78rem', whiteSpace: 'nowrap' }}
-                      >
-                        Xử lý
-                      </Button>
-                    )}
-                  </Box>
-                )}
               </Box>
+
+              {/* Absolute Progress (split mode) */}
+              {req.splitMode && req.participants.length > 0 && (
+                <LinearProgress
+                  variant="determinate"
+                  value={(doneCount / req.participants.length) * 100}
+                  sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, bgcolor: '#f1f5f9', '& .MuiLinearProgress-bar': { bgcolor: '#cbd5e1' } }}
+                />
+              )}
             </Paper>
           );
         })}

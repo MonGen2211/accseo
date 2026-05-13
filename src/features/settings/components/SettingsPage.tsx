@@ -1,106 +1,70 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
-import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
-import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
-import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import { MetaSetupSection, IntegrationsContentGSC, IntegrationsContentGA4 } from './IntegrationsTab';
+import { domainService } from '../../domains/domainService';
+import type { Domain } from '../../../types/domain.types';
 
 export default function SettingsPage() {
-	const [form, setForm] = useState({
-		siteName: 'Hệ Sinh Thái ACCSEO',
-		adminEmail: 'admin@cms.dev',
-		driveApiKey: '',
-		analyticsTrackingId: '',
-	});
+	const [domains, setDomains] = useState<Domain[]>([]);
+	const [selectedDomainId, setSelectedDomainId] = useState<string>('');
 
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		setForm({ ...form, [e.target.name]: e.target.value });
+	const fetchDomains = () => {
+		domainService.getAll(1, 100).then((res) => {
+			setDomains(res.items);
+		});
 	};
 
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		// Fake save action
-		alert('Đã lưu cấu hình thành công!');
-	};
+	useEffect(() => {
+		fetchDomains();
+	}, []);
 
 	return (
-		<Box sx={{ width: '100%' }}>
+		<Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 4 }}>
+			<Box>
+				<Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>Set up</Typography>
+				<Typography variant="body2" color="text.secondary">
+					Cấu hình các lịch scan, đồng bộ và kết nối API
+				</Typography>
+			</Box>
 
-			<Paper variant="outlined" sx={{ borderRadius: 3, p: 4 }}>
-				<Box sx={{ mb: 4 }}>
-					<Typography sx={{ fontSize: '1.25rem', fontWeight: 700, color: 'text.primary' }}>
-						Cài Đặt Hệ Thống
-					</Typography>
-					<Typography sx={{ fontSize: '0.85rem', color: 'text.secondary', mt: 0.5 }}>
-						Quản lý các cấu hình chung và biến môi trường của hệ thống
-					</Typography>
-				</Box>
-				<form onSubmit={handleSubmit}>
-					<Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
-						<Box>
-							<TextField
-								fullWidth
-								label="Tên Website / Hệ thống"
-								name="siteName"
-								value={form.siteName}
-								onChange={handleChange}
-								size="small"
-								variant="outlined"
-							/>
-						</Box>
-						<Box>
-							<TextField
-								fullWidth
-								label="Email Quản trị viên"
-								name="adminEmail"
-								type="email"
-								value={form.adminEmail}
-								onChange={handleChange}
-								size="small"
-								variant="outlined"
-							/>
-						</Box>
-						<Box sx={{ gridColumn: '1 / -1' }}>
-							<TextField
-								fullWidth
-								label="Google Drive API Key"
-								name="driveApiKey"
-								value={form.driveApiKey}
-								onChange={handleChange}
-								size="small"
-								variant="outlined"
-								placeholder="Nhập API key kết nối Google Drive..."
-								type="password"
-							/>
-						</Box>
-						<Box sx={{ gridColumn: '1 / -1' }}>
-							<TextField
-								fullWidth
-								label="Google Analytics Tracking ID"
-								name="analyticsTrackingId"
-								value={form.analyticsTrackingId}
-								onChange={handleChange}
-								size="small"
-								variant="outlined"
-								placeholder="Ví dụ: G-XXXXXXXXXX"
-							/>
-						</Box>
+			<Box sx={{ maxWidth: 400 }}>
+				<FormControl fullWidth size="small">
+					<InputLabel>Chọn Domain cần cấu hình</InputLabel>
+					<Select
+						value={selectedDomainId}
+						label="Chọn Domain cần cấu hình"
+						onChange={(e) => setSelectedDomainId(e.target.value)}
+					>
+						{domains.map((d) => (
+							<MenuItem key={d._id} value={d._id}>{d.domain}</MenuItem>
+						))}
+					</Select>
+				</FormControl>
+			</Box>
 
-						<Box sx={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-							<Button
-								type="submit"
-								variant="contained"
-								startIcon={<SaveOutlinedIcon />}
-								disableElevation
-								sx={{ borderRadius: 2, px: 3, py: 1 }}
-							>
-								Lưu thay đổi
-							</Button>
-						</Box>
+			{selectedDomainId && (
+				<Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, maxWidth: 800 }}>
+					<Box>
+						<Typography variant="h6" sx={{ mb: 2, fontWeight: 700, pb: 1, borderBottom: 1, borderColor: 'divider' }}>1. Cấu hình Meta Description</Typography>
+						<MetaSetupSection domain={domains.find(d => d._id === selectedDomainId)} onUpdate={fetchDomains} />
 					</Box>
-				</form>
-			</Paper>
+
+					<Box>
+						<Typography variant="h6" sx={{ mb: 2, fontWeight: 700, pb: 1, borderBottom: 1, borderColor: 'divider' }}>2. Cấu hình Google Search Console (GSC)</Typography>
+						<IntegrationsContentGSC domain={domains.find(d => d._id === selectedDomainId)} onUpdate={fetchDomains} />
+					</Box>
+
+					<Box>
+						<Typography variant="h6" sx={{ mb: 2, fontWeight: 700, pb: 1, borderBottom: 1, borderColor: 'divider' }}>3. Cấu hình Google Analytics 4 (GA4)</Typography>
+						<IntegrationsContentGA4 domain={domains.find(d => d._id === selectedDomainId)} onUpdate={fetchDomains} />
+					</Box>
+				</Box>
+			)}
 		</Box>
 	);
 }

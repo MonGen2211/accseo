@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { keywordGroupService } from './keywordGroupService';
-import type { KeywordGroup, KeywordGroupDataResponse, CreateKeywordGroupPayload, KeywordGroupSummary } from './types';
+import type { KeywordGroup, KeywordGroupDataResponse, CreateKeywordGroupPayload, KeywordGroupSummary, AiSuggestedKeyword, StreamLogEvent } from './types';
 
 export type KeywordGroupSortField = 'name' | 'status' | 'createdAt' | '';
 
@@ -24,6 +24,13 @@ interface KeywordGroupState {
   sortField: KeywordGroupSortField;
   sortOrder: 'asc' | 'desc';
   statusFilter: string;
+  // AI stream state — persists across navigation
+  aiGroupsStreaming: boolean;
+  aiScrapeStreaming: boolean;
+  aiGroupsStreamLogs: StreamLogEvent[];
+  aiScrapeStreamLogs: StreamLogEvent[];
+  aiSuggestionsGroups: AiSuggestedKeyword[];
+  aiSuggestionsScrape: AiSuggestedKeyword[];
 }
 
 const initialState: KeywordGroupState = {
@@ -45,6 +52,12 @@ const initialState: KeywordGroupState = {
   sortField: '',
   sortOrder: 'desc',
   statusFilter: '',
+  aiGroupsStreaming: false,
+  aiScrapeStreaming: false,
+  aiGroupsStreamLogs: [],
+  aiScrapeStreamLogs: [],
+  aiSuggestionsGroups: [],
+  aiSuggestionsScrape: [],
 };
 
 export const fetchKeywordGroups = createAsyncThunk(
@@ -161,9 +174,17 @@ const keywordGroupSlice = createSlice({
   name: 'keywordGroups',
   initialState,
   reducers: {
-    clearError: (state) => {
-      state.error = null;
-    },
+    clearError: (state) => { state.error = null; },
+    setAiGroupsStreaming: (state, action: PayloadAction<boolean>) => { state.aiGroupsStreaming = action.payload; },
+    setAiScrapeStreaming: (state, action: PayloadAction<boolean>) => { state.aiScrapeStreaming = action.payload; },
+    appendAiGroupsLog: (state, action: PayloadAction<StreamLogEvent>) => { state.aiGroupsStreamLogs.push(action.payload); },
+    appendAiScrapeLog: (state, action: PayloadAction<StreamLogEvent>) => { state.aiScrapeStreamLogs.push(action.payload); },
+    clearAiGroupsLogs: (state) => { state.aiGroupsStreamLogs = []; },
+    clearAiScrapeLogs: (state) => { state.aiScrapeStreamLogs = []; },
+    setAiSuggestionsGroups: (state, action: PayloadAction<AiSuggestedKeyword[]>) => { state.aiSuggestionsGroups = action.payload; },
+    setAiSuggestionsScrape: (state, action: PayloadAction<AiSuggestedKeyword[]>) => { state.aiSuggestionsScrape = action.payload; },
+    clearAiSuggestionsGroups: (state) => { state.aiSuggestionsGroups = []; },
+    clearAiSuggestionsScrape: (state) => { state.aiSuggestionsScrape = []; },
     setKeywordSortField: (state, action: { payload: KeywordGroupSortField }) => {
       state.sortField = action.payload;
     },
@@ -309,5 +330,13 @@ const keywordGroupSlice = createSlice({
   },
 });
 
-export const { clearError, setKeywordSortField, setKeywordSortOrder, setKeywordStatusFilter, setKeywordSearchFilter } = keywordGroupSlice.actions;
+export const {
+  clearError,
+  setAiGroupsStreaming, setAiScrapeStreaming,
+  appendAiGroupsLog, appendAiScrapeLog,
+  clearAiGroupsLogs, clearAiScrapeLogs,
+  setAiSuggestionsGroups, setAiSuggestionsScrape,
+  clearAiSuggestionsGroups, clearAiSuggestionsScrape,
+  setKeywordSortField, setKeywordSortOrder, setKeywordStatusFilter, setKeywordSearchFilter,
+} = keywordGroupSlice.actions;
 export default keywordGroupSlice.reducer;

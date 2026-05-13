@@ -27,9 +27,11 @@ const PAGE_META: Record<string, { title: string; breadcrumb: string[] }> = {
 	'/': { title: 'Tổng quan', breadcrumb: ['Trang chủ', 'Tổng quan'] },
 	'/articles': { title: 'Quản lý Bài viết', breadcrumb: ['Trang chủ', 'Bài viết'] },
 	'/users': { title: 'Quản lý Người dùng', breadcrumb: ['Trang chủ', 'Người dùng'] },
-	'/settings': { title: 'Cài đặt hệ thống', breadcrumb: ['Trang chủ', 'Cài đặt hệ thống'] },
+	'/settings': { title: 'Set up', breadcrumb: ['Trang chủ', 'Set up'] },
 	'/domains': { title: 'Quản lý Tên miền', breadcrumb: ['Trang chủ', 'Tên miền'] },
 	'/profile': { title: 'Hồ sơ cá nhân', breadcrumb: ['Trang chủ', 'Hồ sơ cá nhân'] },
+	'/requests': { title: 'Quản lý Yêu cầu', breadcrumb: ['Trang chủ', 'Yêu cầu'] },
+	'/requests/create': { title: 'Tạo yêu cầu', breadcrumb: ['Trang chủ', 'Yêu cầu', 'Tạo mới'] },
 };
 
 const BREADCRUMB_LINKS: Record<string, string> = {
@@ -37,7 +39,8 @@ const BREADCRUMB_LINKS: Record<string, string> = {
 	'Tên miền': '/domains',
 	'Người dùng': '/users',
 	'Bài viết': '/articles',
-	'Cài đặt hệ thống': '/settings',
+	'Set up': '/settings',
+	'Yêu cầu': '/requests',
 };
 
 export default function Header({ onMenuToggle }: HeaderProps) {
@@ -51,7 +54,10 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 		if (pathname.startsWith('/domains/') && pathname.endsWith('/keywords')) {
 			return { title: 'Chi tiết trang web', breadcrumb: ['Trang chủ', 'Tên miền', 'Chi tiết trang web'] };
 		}
-		return { title: 'Hệ thống', breadcrumb: ['Trang chủ'] };
+		if (pathname.startsWith('/requests/') && pathname !== '/requests/create') {
+			return { title: 'Chi tiết yêu cầu', breadcrumb: ['Trang chủ', 'Yêu cầu', 'Chi tiết'] };
+		}
+		return { title: 'Hệ thống', breadcrumb: ['Trang chủ', 'Chi tiết'] };
 	};
 
 	const meta = getPageMeta(location.pathname);
@@ -244,7 +250,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 					{isAdmin && (
 						<MenuItem onClick={() => handleNavigate(ROUTES.SETTINGS)} sx={{ gap: 1.5, py: 1 }}>
 							<SettingsOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
-							Set up key
+							Set up
 						</MenuItem>
 					)}
 

@@ -84,10 +84,12 @@ export const keywordGroupService = {
 
   async getGroupById(id: string): Promise<{
     group: KeywordGroup;
+    trends: import('./types').KeywordGroupTrends | null;
     keywords: { items: Array<{ _id: string; value: string; status: string; isAiGenerated: boolean }>; total: number; page: number; limit: number; totalPages: number };
   }> {
     const response = await api.get<ApiResponse<{
       group: KeywordGroup;
+      trends: import('./types').KeywordGroupTrends | null;
       keywords: { items: Array<{ _id: string; value: string; status: string; isAiGenerated: boolean }>; total: number; page: number; limit: number; totalPages: number };
     }>>(`/keywords/groups/${id}`);
     return response.data.data;
@@ -103,6 +105,17 @@ export const keywordGroupService = {
     const url = `/keywords/groups/${id}/reject${silent ? '?silent=true' : ''}`;
     const response = await api.post<ApiResponse<{ message: string; group: KeywordGroup }>>(url, reason ? { reason } : {});
     return response.data.data.group;
+  },
+
+  async getGroupTrends(id: string): Promise<import('./types').KeywordGroupTrends | null> {
+    try {
+      const res = await api.get<ApiResponse<import('./types').KeywordGroupTrends>>(`/keywords/groups/${id}/trends`);
+      return res.data.data ?? null;
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 404) return null;
+      throw err;
+    }
   },
 
   async clearGroupsSuggestCache(domainId: string): Promise<void> {

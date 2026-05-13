@@ -72,13 +72,13 @@ export function GscPanel({ domainId }: GscPanelProps) {
 	// Fetch keywords (with sort + pagination)
 	useEffect(() => {
 		if (!domainId) return;
-		dispatch(fetchGscKeywords({ domainId, sort: keywordsSortField, order: keywordsSortOrder, page: keywordsPage, limit: keywordsLimit }));
+		dispatch(fetchGscKeywords({ domainId, sort: keywordsSortField, order: keywordsSortOrder, page: keywordsPage, limit: keywordsLimit, days: dateRange }));
 	}, [domainId, dateRange, keywordsSortField, keywordsSortOrder, keywordsPage, keywordsLimit, dispatch]);
 
 	// Fetch pages (with sort + pagination)
 	useEffect(() => {
 		if (!domainId) return;
-		dispatch(fetchGscPages({ domainId, sort: pagesSortField, order: pagesSortOrder, page: pagesPage, limit: pagesLimit }));
+		dispatch(fetchGscPages({ domainId, sort: pagesSortField, order: pagesSortOrder, page: pagesPage, limit: pagesLimit, days: dateRange }));
 	}, [domainId, dateRange, pagesSortField, pagesSortOrder, pagesPage, pagesLimit, dispatch]);
 
 	const handleDateChange = (_: React.MouseEvent<HTMLElement>, newRange: GscDateRange | null) => {
@@ -99,7 +99,7 @@ export function GscPanel({ domainId }: GscPanelProps) {
 	};
 	const handleKwRowsPerPageChange = (newLimit: number) => {
 		dispatch(setGscKeywordsPage(1));
-		dispatch(fetchGscKeywords({ domainId, sort: keywordsSortField, order: keywordsSortOrder, page: 1, limit: newLimit }));
+		dispatch(fetchGscKeywords({ domainId, sort: keywordsSortField, order: keywordsSortOrder, page: 1, limit: newLimit, days: dateRange }));
 	};
 
 	// Pages pagination
@@ -108,7 +108,7 @@ export function GscPanel({ domainId }: GscPanelProps) {
 	};
 	const handlePgRowsPerPageChange = (newLimit: number) => {
 		dispatch(setGscPagesPage(1));
-		dispatch(fetchGscPages({ domainId, sort: pagesSortField, order: pagesSortOrder, page: 1, limit: newLimit }));
+		dispatch(fetchGscPages({ domainId, sort: pagesSortField, order: pagesSortOrder, page: 1, limit: newLimit, days: dateRange }));
 	};
 
 	// Sort handlers

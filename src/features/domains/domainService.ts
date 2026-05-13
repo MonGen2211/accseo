@@ -58,4 +58,12 @@ async create(payload: { domain: string }): Promise<Domain> {
     const response = await api.put<ApiResponse<{ domain: Domain }>>(`/domains/${id}/owners`, { owners: ownerIds });
     return response.data.data.domain;
   },
+
+  async updateSchedule(domainId: string, payload: { enabled: boolean; hour: number }): Promise<{ enabled: boolean; hour: number }> {
+    const response = await api.patch<ApiResponse<{ message: string; scanSchedule: { enabled: boolean; hour: number } }>>(
+      `/domains/${domainId}/schedule`,
+      payload
+    );
+    return response.data.data.scanSchedule;
+  },
 };
