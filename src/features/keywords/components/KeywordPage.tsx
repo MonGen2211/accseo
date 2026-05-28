@@ -425,24 +425,13 @@ export default function KeywordPage() {
 					total={total}
 					page={page - 1}
 					limit={limit}
-					generateAiGroupsLoading={aiGroupsStreaming}
 					generateAiScrapeLoading={aiScrapeStreaming}
-					hasAiSuggestions={aiSuggestionsGroups.length > 0}
 					hasAiScrapeSuggestions={aiSuggestionsScrape.length > 0}
 					deleteLoadingId={deleteLoadingId}
 					statusLoadingId={statusLoadingId}
 					onPageChange={handlePageChange}
 					onRowsPerPageChange={handleRowsPerPageChange}
 					onOpenCreate={() => setIsFormOpen(true)}
-					onAiGenerateByGroups={() => {
-						if (aiGroupsStreaming) {
-							setIsStreamDialogOpen(true);
-						} else if (aiSuggestionsGroups.length > 0) {
-							setIsAiResultOpen(true);
-						} else {
-							setIsAiGroupsDialogOpen(true);
-						}
-					}}
 					onAiScrapeByGroups={() => {
 						if (aiScrapeStreaming) {
 							setIsAiScrapeStreamDialogOpen(true);
