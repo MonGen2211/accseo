@@ -58,7 +58,7 @@ interface SerpState {
   scanDepth: string;
   location: string;
   language: string;
-  mode: 'fast' | 'slow' | 'apify';
+  mode: 'slow' | 'apify';
   loading: boolean;
   result: any;
   cookieFresh: boolean | null;
@@ -73,7 +73,7 @@ const serpSharedState: SerpState = {
   scanDepth: '10',
   location: 'VN',
   language: 'vi',
-  mode: 'fast',
+  mode: 'slow',
   loading: false,
   result: null,
   cookieFresh: null,
@@ -320,7 +320,7 @@ export default function QuickSerpChecker() {
       keywordsInput: '',
       domain: '',
       competitorsInput: '',
-      mode: 'fast',
+      mode: 'slow',
       result: null
     });
     setResultsSearch('');
@@ -672,25 +672,13 @@ export default function QuickSerpChecker() {
                   '& .Mui-selected': { bgcolor: 'primary.main', color: 'primary.contrastText', '&:hover': { bgcolor: 'primary.dark' } }
                 }}
               >
-                <ToggleButton value="fast">⚡ Fast (Nhanh)</ToggleButton>
                 <ToggleButton value="slow">🐢 Slow (An toàn)</ToggleButton>
                 <ToggleButton value="apify">🚀 Apify (Cao cấp)</ToggleButton>
               </ToggleButtonGroup>
 
               {/* Dynamic comparative help alert */}
               <Box sx={{ mt: 1.5, p: 1.5, bgcolor: 'background.default', borderRadius: 2.5, border: '1px solid', borderColor: 'divider' }}>
-                {state.mode === 'fast' ? (
-                  <>
-                    <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                      ⚡ CHẾ ĐỘ FAST (SONG SONG LOCAL)
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.4, fontSize: '0.72rem' }}>
-                      • <strong>Tốc độ:</strong> Nhanh (10-30s cho 10 từ khóa).<br />
-                      • <strong>Chi phí:</strong> Miễn phí ($0).<br />
-                      • <strong>Lưu ý:</strong> Dễ lỗi đỏ nếu IP server bị Google chặn. Không tự giải Captcha.
-                    </Typography>
-                  </>
-                ) : state.mode === 'slow' ? (
+                {state.mode === 'slow' ? (
                   <>
                     <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: 'warning.main', display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
                       🐢 CHẾ ĐỘ SLOW (AN TOÀN TUẦN TỰ)
@@ -699,7 +687,7 @@ export default function QuickSerpChecker() {
                       • <strong>Tốc độ:</strong> Chậm hơn (1-2 phút cho 10 từ khóa).<br />
                       • <strong>Chi phí:</strong> Miễn phí ($0).<br />
                       • <strong>Giải Captcha:</strong> Tự động giải qua Capsolver.<br />
-                      • <strong>Phù hợp:</strong> Khi IP server bị block ở chế độ Fast.
+                      • <strong>Phù hợp:</strong> Khi cần đảm bảo chạy an toàn, tự động vượt rào cản captcha.
                     </Typography>
                   </>
                 ) : (
@@ -767,16 +755,12 @@ export default function QuickSerpChecker() {
               <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 0.5 }}>
                 {state.mode === 'apify' 
                   ? 'Đang quét xếp hạng siêu tốc qua Apify Cloud...' 
-                  : state.mode === 'slow' 
-                  ? 'Đang quét xếp hạng chế độ AN TOÀN (Slow mode)...' 
-                  : 'Đang cào dữ liệu xếp hạng Google thời gian thực...'}
+                  : 'Đang quét xếp hạng chế độ AN TOÀN (Slow mode)...'}
               </Typography>
               <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 450, lineHeight: 1.5 }}>
                 {state.mode === 'apify'
                   ? `Đang xử lý ${parsedKeywords.length} từ khóa siêu tốc qua máy chủ đám mây của Apify. Độ ổn định 99.9% không lo captcha. Dự kiến hoàn thành chỉ trong 10 - 20 giây. Vui lòng giữ kết nối.`
-                  : state.mode === 'slow'
-                  ? `Đang xử lý ${parsedKeywords.length} từ khóa tuần tự trên Chrome giả lập. Tự động vượt Captcha qua Capsolver và sleep 5-12s ngẫu nhiên để tránh chặn IP. Dự kiến mất khoảng 1 - 3 phút. Vui lòng giữ kết nối.`
-                  : `Đang xử lý ${parsedKeywords.length} từ khóa chéo đối thủ song song. Quá trình cào dự kiến mất khoảng 20s - 45s. Vui lòng giữ kết nối.`}
+                  : `Đang xử lý ${parsedKeywords.length} từ khóa tuần tự trên Chrome giả lập. Tự động vượt Captcha qua Capsolver và sleep 5-12s ngẫu nhiên để tránh chặn IP. Dự kiến mất khoảng 1 - 3 phút. Vui lòng giữ kết nối.`}
               </Typography>
             </Paper>
           ) : stats ? (
