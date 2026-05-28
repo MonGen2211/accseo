@@ -19,7 +19,7 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
 	const value = payload[0]?.payload?.value;
 	if (value === undefined) return null;
 	return (
-		<Box sx={{ bgcolor: 'rgba(30,30,40,0.92)', color: '#fff', px: 1.5, py: 0.75, borderRadius: 1.5, fontSize: 12, lineHeight: 1.6 }}>
+		<Box sx={{ bgcolor: 'rgba(30,30,40,0.92)', color: 'primary.contrastText', px: 1.5, py: 0.75, borderRadius: 1.5, fontSize: 12, lineHeight: 1.6 }}>
 			<div style={{ fontWeight: 600 }}>{label}</div>
 			<div>Điểm: <strong>{value}</strong></div>
 		</Box>

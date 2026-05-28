@@ -36,7 +36,7 @@ const getMsgColor = (msg: string): { bg: string; color: string } => {
 		return { bg: '#eff6ff', color: '#2563eb' };
 	if (m.includes('creat') || m.includes('add') || m.includes('tạo'))
 		return { bg: '#f5f3ff', color: '#7c3aed' };
-	return { bg: '#f8fafc', color: '#475569' };
+	return { bg: 'background.default', color: 'text.secondary' };
 };
 
 const getAvatarColor = (name: string | null | undefined): string => {
@@ -85,10 +85,10 @@ export default function ActivitySection({ onViewAll }: ActivitySectionProps) {
 			<Paper elevation={0} sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider', overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', height: '100%' }}>
 
 				{/* ── Header ── */}
-				<Box sx={{ px: 3, pt: 2.5, pb: 2, background: 'linear-gradient(135deg, #f0f9ff 0%, #ffffff 70%)', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+				<Box sx={{ px: 3, pt: 2.5, pb: 2, background: (theme) => theme.palette.mode === 'dark' ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, transparent 70%)' : 'linear-gradient(135deg, #f0f9ff 0%, #ffffff 70%)', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 					<Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
 						<Box sx={{ width: 42, height: 42, borderRadius: 2.5, background: 'linear-gradient(135deg, #3b82f6, #6366f1)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(99,102,241,0.3)', flexShrink: 0 }}>
-							<HistoryOutlinedIcon sx={{ color: '#fff', fontSize: 22 }} />
+							<HistoryOutlinedIcon sx={{ color: 'primary.contrastText', fontSize: 22 }} />
 						</Box>
 						<Box>
 							<Typography sx={{ fontWeight: 800, fontSize: '1.05rem', lineHeight: 1.2 }}>
@@ -99,7 +99,7 @@ export default function ActivitySection({ onViewAll }: ActivitySectionProps) {
 							</Typography>
 						</Box>
 					</Box>
-					<Chip label="LIVE" size="small" sx={{ fontSize: 9, height: 16, bgcolor: '#3b82f6', color: '#fff', fontWeight: 800, letterSpacing: 0.5, px: 0.25 }} />
+					<Chip label="LIVE" size="small" sx={{ fontSize: 9, height: 16, bgcolor: '#3b82f6', color: 'primary.contrastText', fontWeight: 800, letterSpacing: 0.5, px: 0.25 }} />
 				</Box>
 
 				{/* ── List ── */}
@@ -149,7 +149,7 @@ export default function ActivitySection({ onViewAll }: ActivitySectionProps) {
 										</Avatar>
 
 										<Box sx={{ flex: 1, minWidth: 0 }}>
-											<Typography sx={{ fontSize: '0.875rem', lineHeight: 1.45, color: '#1e293b' }}>
+											<Typography sx={{ fontSize: '0.875rem', lineHeight: 1.45, color: 'text.primary' }}>
 												<Box component="span" sx={{ fontWeight: 800, color: '#0f172a', mr: 0.5 }}>
 													{item.name}
 												</Box>
@@ -187,7 +187,7 @@ export default function ActivitySection({ onViewAll }: ActivitySectionProps) {
 						display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5,
 						cursor: onViewAll ? 'pointer' : 'default',
 						bgcolor: '#fafbfc',
-						'&:hover': onViewAll ? { bgcolor: '#f1f5f9' } : {},
+						'&:hover': onViewAll ? { bgcolor: 'action.hover' } : {},
 						transition: 'background 0.15s',
 					}}
 				>

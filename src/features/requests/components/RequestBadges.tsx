@@ -7,11 +7,11 @@ const TYPE_CONFIG: Record<RequestType, { label: string; color: string }> = {
   CONTENT_TASK: { label: 'Nội dung', color: '#0D9488' },
   REVIEW: { label: 'Review', color: '#4338CA' },
   DOMAIN_TASK: { label: 'Tên miền', color: '#0891B2' },
-  GENERAL: { label: 'Chung', color: '#6B7280' },
+  GENERAL: { label: 'Chung', color: 'text.secondary' },
 };
 
 const PRIORITY_CONFIG: Record<RequestPriority, { label: string; color: string }> = {
-  LOW: { label: 'Thấp', color: '#6B7280' },
+  LOW: { label: 'Thấp', color: 'text.secondary' },
   NORMAL: { label: 'Bình thường', color: '#2563EB' },
   HIGH: { label: 'Cao', color: '#EA580C' },
   URGENT: { label: 'Khẩn cấp', color: '#DC2626' },
@@ -41,43 +41,43 @@ const badgeChip = (label: string, color: string, size: 'small' | 'medium' = 'sma
 );
 
 export const TypeBadge = ({ type }: { type: RequestType }) => {
-  const cfg = TYPE_CONFIG[type] ?? { label: type, color: '#6B7280' };
+  const cfg = TYPE_CONFIG[type] ?? { label: type, color: 'text.secondary' };
   return (
     <Chip
       label={cfg.label}
       size="small"
       sx={{
-        bgcolor: '#f1f5f9',
-        color: '#475569',
+        bgcolor: 'action.hover',
+        color: 'text.secondary',
         fontWeight: 600,
         fontSize: 11,
         height: 22,
-        border: '1px solid #cbd5e1',
+        border: '1px solid', borderColor: 'divider',
       }}
     />
   );
 };
 
 export const PriorityBadge = ({ priority }: { priority: RequestPriority }) => {
-  const cfg = PRIORITY_CONFIG[priority] ?? { label: priority, color: '#6B7280' };
+  const cfg = PRIORITY_CONFIG[priority] ?? { label: priority, color: 'text.secondary' };
   return (
     <Chip
       label={cfg.label}
       size="small"
       sx={{
-        bgcolor: '#f1f5f9',
-        color: '#475569',
+        bgcolor: 'action.hover',
+        color: 'text.secondary',
         fontWeight: 600,
         fontSize: 11,
         height: 22,
-        border: '1px solid #cbd5e1',
+        border: '1px solid', borderColor: 'divider',
       }}
     />
   );
 };
 
 export const StatusBadge = ({ status }: { status: RequestStatus }) => {
-  const cfg = STATUS_CONFIG[status] ?? { label: status, color: '#6B7280' };
+  const cfg = STATUS_CONFIG[status] ?? { label: status, color: 'text.secondary' };
   return badgeChip(cfg.label, cfg.color);
 };
 

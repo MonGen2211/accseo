@@ -118,7 +118,7 @@ export default function InboxPage({ tabsNode }: { tabsNode?: React.ReactNode }) 
             <InputLabel sx={{ fontSize: '0.85rem' }}>Loại yêu cầu</InputLabel>
             <Select value={filterType} label="Loại yêu cầu"
               onChange={(e) => { setFilterType(e.target.value); setPage(1); }}
-              sx={{ borderRadius: 2, bgcolor: '#fff', height: 36, fontSize: '0.85rem' }}>
+              sx={{ borderRadius: 2, bgcolor: 'background.paper', height: 36, fontSize: '0.85rem' }}>
               <MenuItem value="" sx={{ fontSize: '0.85rem' }}>Tất cả</MenuItem>
               {REQUEST_TYPES.map((t) => <MenuItem key={t} value={t} sx={{ fontSize: '0.85rem' }}>{TYPE_LABEL[t] ?? t}</MenuItem>)}
             </Select>
@@ -127,7 +127,7 @@ export default function InboxPage({ tabsNode }: { tabsNode?: React.ReactNode }) 
             <InputLabel sx={{ fontSize: '0.85rem' }}>Trạng thái</InputLabel>
             <Select value={filterStatus} label="Trạng thái"
               onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
-              sx={{ borderRadius: 2, bgcolor: '#fff', height: 36, fontSize: '0.85rem' }}>
+              sx={{ borderRadius: 2, bgcolor: 'background.paper', height: 36, fontSize: '0.85rem' }}>
               <MenuItem value="" sx={{ fontSize: '0.85rem' }}>Tất cả</MenuItem>
               {REQUEST_STATUSES.map((s) => <MenuItem key={s} value={s} sx={{ fontSize: '0.85rem' }}>{STATUS_LABEL[s] ?? s}</MenuItem>)}
             </Select>
@@ -136,7 +136,7 @@ export default function InboxPage({ tabsNode }: { tabsNode?: React.ReactNode }) 
             <InputLabel sx={{ fontSize: '0.85rem' }}>Độ ưu tiên</InputLabel>
             <Select value={filterPriority} label="Độ ưu tiên"
               onChange={(e) => { setFilterPriority(e.target.value); setPage(1); }}
-              sx={{ borderRadius: 2, bgcolor: '#fff', height: 36, fontSize: '0.85rem' }}>
+              sx={{ borderRadius: 2, bgcolor: 'background.paper', height: 36, fontSize: '0.85rem' }}>
               <MenuItem value="" sx={{ fontSize: '0.85rem' }}>Tất cả</MenuItem>
               {REQUEST_PRIORITIES.map((p) => <MenuItem key={p} value={p} sx={{ fontSize: '0.85rem' }}>{PRIORITY_LABEL[p] ?? p}</MenuItem>)}
             </Select>
@@ -313,7 +313,7 @@ export default function InboxPage({ tabsNode }: { tabsNode?: React.ReactNode }) 
                             borderRadius: 1.5, fontWeight: 700, fontSize: '0.72rem', px: 1.5, py: 0.25, minWidth: 0,
                             background: 'linear-gradient(135deg, #00b894, #00cec9)',
                             boxShadow: '0 2px 8px rgba(0,184,148,0.3)',
-                            color: '#fff',
+                            color: 'primary.contrastText',
                             whiteSpace: 'nowrap',
                             '&:hover': { boxShadow: '0 4px 12px rgba(0,184,148,0.4)' },
                           }}
@@ -341,7 +341,7 @@ export default function InboxPage({ tabsNode }: { tabsNode?: React.ReactNode }) 
                 <LinearProgress
                   variant="determinate"
                   value={(doneCount / req.participants.length) * 100}
-                  sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, bgcolor: '#f1f5f9', '& .MuiLinearProgress-bar': { bgcolor: '#cbd5e1' } }}
+                  sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, bgcolor: 'action.hover', '& .MuiLinearProgress-bar': { bgcolor: '#cbd5e1' } }}
                 />
               )}
             </Paper>

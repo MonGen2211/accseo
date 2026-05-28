@@ -233,4 +233,34 @@ export const keywordGroupService = {
       }
     }
   },
+
+  async getKeywordIdeas(keyword: string, page = 1, limit = 10, filters?: import('./types').KeywordFilters): Promise<import('./types').GoogleAdsKeywordResponse> {
+    let url = `/keywords/ideas?keyword=${encodeURIComponent(keyword)}&page=${page}&limit=${limit}`;
+    if (filters?.minVolume !== undefined) url += `&minVolume=${filters.minVolume}`;
+    if (filters?.maxVolume !== undefined) url += `&maxVolume=${filters.maxVolume}`;
+    if (filters?.competition && filters.competition.length > 0) {
+      filters.competition.forEach(c => url += `&competition=${c}`);
+    }
+    if (filters?.location) url += `&location=${filters.location}`;
+    if (filters?.language) url += `&language=${filters.language}`;
+    if (filters?.sortBy) url += `&sortBy=${filters.sortBy}`;
+    if (filters?.sortOrder) url += `&sortOrder=${filters.sortOrder}`;
+    const response = await api.get<ApiResponse<import('./types').GoogleAdsKeywordResponse>>(url);
+    return response.data.data;
+  },
+
+  async getKeywordIdeasByDomain(domainUrl: string, page = 1, limit = 10, filters?: import('./types').KeywordFilters): Promise<import('./types').GoogleAdsKeywordResponse> {
+    let url = `/keywords/domain?url=${encodeURIComponent(domainUrl)}&page=${page}&limit=${limit}`;
+    if (filters?.minVolume !== undefined) url += `&minVolume=${filters.minVolume}`;
+    if (filters?.maxVolume !== undefined) url += `&maxVolume=${filters.maxVolume}`;
+    if (filters?.competition && filters.competition.length > 0) {
+      filters.competition.forEach(c => url += `&competition=${c}`);
+    }
+    if (filters?.location) url += `&location=${filters.location}`;
+    if (filters?.language) url += `&language=${filters.language}`;
+    if (filters?.sortBy) url += `&sortBy=${filters.sortBy}`;
+    if (filters?.sortOrder) url += `&sortOrder=${filters.sortOrder}`;
+    const response = await api.get<ApiResponse<import('./types').GoogleAdsKeywordResponse>>(url);
+    return response.data.data;
+  },
 };

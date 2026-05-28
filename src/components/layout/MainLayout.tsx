@@ -30,7 +30,7 @@ export default function MainLayout() {
 	}
 
 	return (
-		<Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: '#f0f2f5' }}>
+		<Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: 'background.default' }}>
 			<Header onMenuToggle={() => { }} />
 			<Box
 				component="main"

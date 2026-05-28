@@ -70,7 +70,7 @@ export default function DomainTable({
 			renderCell: (row) => (
 				<Typography variant="body2">
 					{row.metaDescription == null
-						? <span style={{ color: '#94a3b8' }}>N/A</span>
+						? <span style={{ color: 'text.secondary' }}>N/A</span>
 						: row.metaDescription === ''
 							? <span style={{ color: '#e17055' }}>Không lấy được dữ liệu</span>
 							: row.metaDescription}
@@ -93,7 +93,7 @@ export default function DomainTable({
 			width: 200,
 			renderCell: (row) => {
 				const owners = (row.owners as unknown as DomainOwner[]) || [];
-				if (owners.length === 0) return <span style={{ color: '#94a3b8' }}>Chưa gán</span>;
+				if (owners.length === 0) return <span style={{ color: 'text.secondary' }}>Chưa gán</span>;
 				return (
 					<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
 						{owners.map((o) => (

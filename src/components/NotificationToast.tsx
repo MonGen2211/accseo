@@ -98,13 +98,14 @@ function SingleToast({
 					display: 'flex',
 					alignItems: 'flex-start',
 					gap: 1.5,
-					bgcolor: '#ffffff',
-					color: '#1e293b',
+					bgcolor: 'background.paper',
+					color: 'text.primary',
 					borderRadius: '14px',
 					px: 2,
 					py: 1.5,
 					boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)',
-					border: '1px solid #e2e8f0',
+					border: '1px solid',
+					borderColor: 'divider',
 					minWidth: 300,
 					maxWidth: 380,
 				}}
@@ -117,18 +118,18 @@ function SingleToast({
 						flexShrink: 0, mt: 0.3,
 					}}
 				>
-					<NotificationsActiveOutlinedIcon sx={{ fontSize: 18, color: '#00b894' }} />
+					<NotificationsActiveOutlinedIcon sx={{ fontSize: 18, color: 'primary.main' }} />
 				</Box>
 
 				<Box sx={{ flex: 1, minWidth: 0 }}>
 					<Typography
-						sx={{ fontSize: '0.82rem', fontWeight: 700, lineHeight: 1.3, color: '#1e293b', mb: 0.3 }}
+						sx={{ fontSize: '0.82rem', fontWeight: 700, lineHeight: 1.3, color: 'text.primary', mb: 0.3 }}
 					>
 						{notification.title}
 					</Typography>
 					<Typography
 						sx={{
-							fontSize: '0.75rem', color: '#64748b', lineHeight: 1.4,
+							fontSize: '0.75rem', color: 'text.secondary', lineHeight: 1.4,
 							overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
 						}}
 					>
@@ -140,8 +141,8 @@ function SingleToast({
 					size="small"
 					onClick={() => { setVisible(false); setTimeout(onClose, 300); }}
 					sx={{
-						color: '#94a3b8', p: 0.5, mt: -0.3, mr: -0.5,
-						'&:hover': { color: '#64748b', bgcolor: '#f1f5f9' },
+						color: 'text.secondary', p: 0.5, mt: -0.3, mr: -0.5,
+						'&:hover': { color: 'text.primary', bgcolor: 'action.hover' },
 					}}
 				>
 					<CloseIcon sx={{ fontSize: 16 }} />

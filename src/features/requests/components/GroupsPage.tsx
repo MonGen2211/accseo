@@ -92,7 +92,7 @@ export default function GroupsPage({ tabsNode }: { tabsNode?: React.ReactNode })
 								),
 							},
 						}}
-						sx={{ width: 180, '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: '#fff', height: 36, fontSize: '0.85rem' } }}
+						sx={{ width: 180, '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'background.paper', height: 36, fontSize: '0.85rem' } }}
 					/>
 					<ToggleButtonGroup
 						size="small"
@@ -108,7 +108,7 @@ export default function GroupsPage({ tabsNode }: { tabsNode?: React.ReactNode })
 								px: 1.5,
 								border: '1px solid',
 								borderColor: 'divider',
-								'&.Mui-selected': { bgcolor: '#f1f5f9', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.05)' },
+								'&.Mui-selected': { bgcolor: 'action.hover', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.05)' },
 							},
 						}}
 					>
@@ -208,10 +208,10 @@ export default function GroupsPage({ tabsNode }: { tabsNode?: React.ReactNode })
 											display: 'flex', alignItems: 'center', justifyContent: 'center',
 											flexShrink: 0,
 										}}>
-											<GroupsOutlinedIcon sx={{ color: '#fff', fontSize: 22 }} />
+											<GroupsOutlinedIcon sx={{ color: 'primary.contrastText', fontSize: 22 }} />
 										</Box>
 										<Box sx={{ minWidth: 0 }}>
-											<Typography sx={{ fontWeight: 700, color: '#fff', fontSize: '0.95rem', lineHeight: 1.3 }} noWrap>
+											<Typography sx={{ fontWeight: 700, color: 'primary.contrastText', fontSize: '0.95rem', lineHeight: 1.3 }} noWrap>
 												{group.name}
 											</Typography>
 											<Chip
@@ -219,7 +219,7 @@ export default function GroupsPage({ tabsNode }: { tabsNode?: React.ReactNode })
 												size="small"
 												sx={{
 													bgcolor: 'rgba(255,255,255,0.25)',
-													color: '#fff',
+													color: 'primary.contrastText',
 													fontWeight: 700,
 													fontSize: 10,
 													height: 20,
@@ -235,14 +235,14 @@ export default function GroupsPage({ tabsNode }: { tabsNode?: React.ReactNode })
 											<IconButton
 												size="small"
 												onClick={() => navigate(`/groups/${group.id}/edit`)}
-												sx={{ color: 'rgba(255,255,255,0.85)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)', color: '#fff' }, width: 30, height: 30 }}
+												sx={{ color: 'rgba(255,255,255,0.85)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)', color: 'primary.contrastText' }, width: 30, height: 30 }}
 											>
 												<EditOutlinedIcon sx={{ fontSize: 15 }} />
 											</IconButton>
 											<IconButton
 												size="small"
 												onClick={() => setDeleteTarget(group)}
-												sx={{ color: 'rgba(255,255,255,0.85)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)', color: '#fff' }, width: 30, height: 30 }}
+												sx={{ color: 'rgba(255,255,255,0.85)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)', color: 'primary.contrastText' }, width: 30, height: 30 }}
 											>
 												<DeleteOutlinedIcon sx={{ fontSize: 15 }} />
 											</IconButton>
@@ -326,10 +326,10 @@ export default function GroupsPage({ tabsNode }: { tabsNode?: React.ReactNode })
 						display: 'flex', alignItems: 'center', gap: 1.5,
 					}}>
 						<Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-							<GroupsOutlinedIcon sx={{ color: '#fff', fontSize: 20 }} />
+							<GroupsOutlinedIcon sx={{ color: 'primary.contrastText', fontSize: 20 }} />
 						</Box>
 						<Box>
-							<Typography sx={{ fontWeight: 700, color: '#fff', fontSize: '1rem' }}>{expandedGroup.name}</Typography>
+							<Typography sx={{ fontWeight: 700, color: 'primary.contrastText', fontSize: '1rem' }}>{expandedGroup.name}</Typography>
 							<Typography sx={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.78rem' }}>
 								{expandedGroup.members.length} thành viên
 							</Typography>
@@ -345,7 +345,7 @@ export default function GroupsPage({ tabsNode }: { tabsNode?: React.ReactNode })
 								px: 3, py: 1.5,
 								borderBottom: i < (expandedGroup.members.length - 1) ? '1px solid' : 'none',
 								borderColor: 'divider',
-								'&:hover': { bgcolor: '#f8fafc' },
+								'&:hover': { bgcolor: 'background.default' },
 							}}
 						>
 							<Avatar src={m.imgAvatar} sx={{ width: 38, height: 38, boxShadow: '0 2px 6px rgba(0,0,0,0.1)' }}>
@@ -357,7 +357,7 @@ export default function GroupsPage({ tabsNode }: { tabsNode?: React.ReactNode })
 							</Box>
 							<Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
 								<Chip label={m.role} size="small" variant="outlined" sx={{ fontSize: 11 }} />
-								{!m.isActive && <Chip label="Tắt" size="small" sx={{ bgcolor: '#f1f5f9', fontSize: 11 }} />}
+								{!m.isActive && <Chip label="Tắt" size="small" sx={{ bgcolor: 'action.hover', fontSize: 11 }} />}
 							</Box>
 						</Box>
 					))}

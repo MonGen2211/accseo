@@ -258,7 +258,7 @@ export default function ProfilePage() {
 									height: 140,
 									border: '4px solid #fff',
 									boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-									bgcolor: '#f1f5f9',
+									bgcolor: 'action.hover',
 									fontSize: 48,
 								}}
 							/>
@@ -269,7 +269,7 @@ export default function ProfilePage() {
 									bottom: 6,
 									right: 6,
 									backgroundColor: 'primary.main',
-									color: '#fff',
+									color: 'primary.contrastText',
 									width: 36,
 									height: 36,
 									boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
@@ -286,7 +286,7 @@ export default function ProfilePage() {
 						</Typography>
 						<Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap', justifyContent: 'center' }}>
 							{profile.roles && profile.roles.length > 0 ? profile.roles.map(r => (
-								<Chip key={r} label={r} size="small" sx={{ fontSize: '0.75rem', fontWeight: 600, bgcolor: 'primary.main', color: '#fff', letterSpacing: 0.5 }} />
+								<Chip key={r} label={r} size="small" sx={{ fontSize: '0.75rem', fontWeight: 600, bgcolor: 'primary.main', color: 'primary.contrastText', letterSpacing: 0.5 }} />
 							)) : (
 								<Typography sx={{ fontSize: '0.78rem', color: 'text.secondary', fontWeight: 600 }}>—</Typography>
 							)}
@@ -482,7 +482,7 @@ export default function ProfilePage() {
 							/>
 						</Box>
 
-						<Box sx={{ mt: 4, p: 2.5, borderRadius: 2, bgcolor: '#f8fafc', border: '1px solid', borderColor: 'divider' }}>
+						<Box sx={{ mt: 4, p: 2.5, borderRadius: 2, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider' }}>
 							<Typography sx={{ fontSize: '0.78rem', color: 'text.secondary', lineHeight: 1.6 }}>
 								Các thông tin trên được quản lý bởi Admin. Liên hệ Admin để cập nhật.
 							</Typography>
@@ -500,7 +500,7 @@ export default function ProfilePage() {
 										display: 'flex', alignItems: 'center', justifyContent: 'center',
 										boxShadow: '0 4px 12px rgba(25,118,210,0.3)',
 									}}>
-										<LockOutlinedIcon sx={{ color: '#fff', fontSize: 18 }} />
+										<LockOutlinedIcon sx={{ color: 'primary.contrastText', fontSize: 18 }} />
 									</Box>
 									<Box>
 										<Typography sx={{ fontWeight: 700, fontSize: '0.95rem', lineHeight: 1.2 }}>
@@ -599,7 +599,7 @@ export default function ProfilePage() {
 								{pwForm.newPassword && (
 									<Box sx={{
 										p: 2, borderRadius: 2,
-										bgcolor: '#f8fafc',
+										bgcolor: 'background.default',
 										border: '1px solid', borderColor: 'divider',
 										display: 'flex', flexDirection: 'column', gap: 0.75,
 									}}>

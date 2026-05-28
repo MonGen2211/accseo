@@ -54,6 +54,7 @@ export default function KeywordPage() {
 	const [lastAiGroupsTimeRange, setLastAiGroupsTimeRange] = useState<string>('3-m');
 	const [lastAiGroupsMinScore, setLastAiGroupsMinScore] = useState<number>(60);
 	const [lastAiGroupsCount, setLastAiGroupsCount] = useState<number>(2);
+	const [lastAiGroupsKeywordHot, setLastAiGroupsKeywordHot] = useState<boolean>(true);
 
 	// ── AI Scrape (Puppeteer) ─────────────────────────────────────────────────
 	const [isAiScrapeDialogOpen, setIsAiScrapeDialogOpen] = useState(false);
@@ -63,6 +64,7 @@ export default function KeywordPage() {
 	const [lastScrapeTimeRange, setLastScrapeTimeRange] = useState<string>('3-m');
 	const [lastScrapeMinScore, setLastScrapeMinScore] = useState<number>(60);
 	const [lastScrapeCount, setLastScrapeCount] = useState<number>(2);
+	const [lastScrapeKeywordHot, setLastScrapeKeywordHot] = useState<boolean>(true);
 
 	const [activeAnalytic, setActiveAnalytic] = useState<'gsc' | 'ga4'>('gsc');
 	const debouncedSearch = useDebounce(searchFilter, 400);
@@ -101,12 +103,13 @@ export default function KeywordPage() {
 
 	const handleFormSuccess = () => loadData(0, limit);
 
-	const startStream = async (timeRange: string, minScore: number, count: number) => {
+	const startStream = async (timeRange: string, minScore: number, count: number, keywordHot: boolean) => {
 		if (!domainId) return;
 
 		setLastAiGroupsTimeRange(timeRange);
 		setLastAiGroupsMinScore(minScore);
 		setLastAiGroupsCount(count);
+		setLastAiGroupsKeywordHot(keywordHot);
 		dispatch(clearAiGroupsLogs());
 		dispatch(setAiGroupsStreaming(true));
 		setIsAiGroupsDialogOpen(false);
@@ -116,7 +119,7 @@ export default function KeywordPage() {
 
 		try {
 			await keywordGroupService.suggestKeywordsByGroupsStream(
-				{ domainId, timeRange, minScore, count },
+				{ domainId, timeRange, minScore, count, keywordHot },
 				(log) => dispatch(appendAiGroupsLog(log)),
 				(suggestions) => {
 					dispatch(setAiGroupsStreaming(false));
@@ -153,7 +156,7 @@ export default function KeywordPage() {
 		setLastAiGroupsTimeRange(retryTimeRange);
 		setIsAiResultOpen(false);
 		dispatch(clearAiSuggestionsGroups());
-		startStream(retryTimeRange, lastAiGroupsMinScore, lastAiGroupsCount);
+		startStream(retryTimeRange, lastAiGroupsMinScore, lastAiGroupsCount, lastAiGroupsKeywordHot);
 	};
 
 	const handleAiConfirmSelected = async (selectedItems: import('../types').AiSuggestedKeyword[]) => {
@@ -198,12 +201,13 @@ export default function KeywordPage() {
 	};
 
 	// ── AI Scrape (Puppeteer) handlers ────────────────────────────────────────
-	const startPuppeteerStream = async (timeRange: string, minScore: number, count: number) => {
+	const startPuppeteerStream = async (timeRange: string, minScore: number, count: number, keywordHot: boolean) => {
 		if (!domainId) return;
 
 		setLastScrapeTimeRange(timeRange);
 		setLastScrapeMinScore(minScore);
 		setLastScrapeCount(count);
+		setLastScrapeKeywordHot(keywordHot);
 		dispatch(clearAiScrapeLogs());
 		dispatch(setAiScrapeStreaming(true));
 		setIsAiScrapeDialogOpen(false);
@@ -213,7 +217,7 @@ export default function KeywordPage() {
 
 		try {
 			await keywordGroupService.suggestKeywordsByGroupsPuppeteerStream(
-				{ domainId, timeRange, minScore, count },
+				{ domainId, timeRange, minScore, count, keywordHot },
 				(log) => dispatch(appendAiScrapeLog(log)),
 				(suggestions) => {
 					dispatch(setAiScrapeStreaming(false));
@@ -250,7 +254,7 @@ export default function KeywordPage() {
 		setLastScrapeTimeRange(retryTimeRange);
 		setIsAiScrapeResultOpen(false);
 		dispatch(clearAiSuggestionsScrape());
-		startPuppeteerStream(retryTimeRange, lastScrapeMinScore, lastScrapeCount);
+		startPuppeteerStream(retryTimeRange, lastScrapeMinScore, lastScrapeCount, lastScrapeKeywordHot);
 	};
 
 	const handlePuppeteerConfirmSelected = async (selectedItems: import('../types').AiSuggestedKeyword[]) => {
@@ -338,18 +342,18 @@ export default function KeywordPage() {
 							borderColor: activeAnalytic === 'gsc' ? '#4285F4' : 'divider',
 							boxShadow: activeAnalytic === 'gsc' ? '0 4px 20px rgba(66,133,244,0.2)' : '0 2px 8px rgba(0,0,0,0.04)',
 							transition: 'all 0.2s',
-							'&:hover': { transform: 'translateY(-2px)', boxShadow: '0 6px 20px rgba(66,133,244,0.15)' },
+							'&:hover': { boxShadow: '0 6px 20px rgba(66,133,244,0.15)' },
 							display: 'flex', alignItems: 'center', gap: 1.5,
 						}}
 					>
-						<Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: '#EBF1FB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+						<Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(66, 133, 244, 0.15)' : '#EBF1FB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
 							<ManageSearchIcon sx={{ color: '#4285F4', fontSize: 22 }} />
 						</Box>
 						<Box sx={{ minWidth: 0 }}>
 							<Typography sx={{ fontWeight: 700, fontSize: '0.82rem', color: 'text.primary', lineHeight: 1.2 }}>Search Console</Typography>
 							<Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', mt: 0.3 }}>Clicks · Impressions</Typography>
 						</Box>
-						{activeAnalytic === 'gsc' && <Chip label="Đang xem" size="small" sx={{ ml: 'auto', fontSize: 10, height: 18, bgcolor: '#EBF1FB', color: '#4285F4', flexShrink: 0 }} />}
+						{activeAnalytic === 'gsc' && <Chip label="Đang xem" size="small" sx={{ ml: 'auto', fontSize: 10, height: 18, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(66, 133, 244, 0.15)' : '#EBF1FB', color: '#4285F4', flexShrink: 0 }} />}
 					</Paper>
 
 					{/* GA4 card */}
@@ -362,18 +366,18 @@ export default function KeywordPage() {
 							borderColor: activeAnalytic === 'ga4' ? '#E37400' : 'divider',
 							boxShadow: activeAnalytic === 'ga4' ? '0 4px 20px rgba(227,116,0,0.2)' : '0 2px 8px rgba(0,0,0,0.04)',
 							transition: 'all 0.2s',
-							'&:hover': { transform: 'translateY(-2px)', boxShadow: '0 6px 20px rgba(227,116,0,0.15)' },
+							'&:hover': { boxShadow: '0 6px 20px rgba(227,116,0,0.15)' },
 							display: 'flex', alignItems: 'center', gap: 1.5,
 						}}
 					>
-						<Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: '#FEF3E2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+						<Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(227, 116, 0, 0.15)' : '#FEF3E2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
 							<BarChartOutlinedIcon sx={{ color: '#E37400', fontSize: 22 }} />
 						</Box>
 						<Box sx={{ minWidth: 0 }}>
 							<Typography sx={{ fontWeight: 700, fontSize: '0.82rem', color: 'text.primary', lineHeight: 1.2 }}>Analytics 4</Typography>
 							<Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', mt: 0.3 }}>Views · Sessions</Typography>
 						</Box>
-						{activeAnalytic === 'ga4' && <Chip label="Đang xem" size="small" sx={{ ml: 'auto', fontSize: 10, height: 18, bgcolor: '#FEF3E2', color: '#E37400', flexShrink: 0 }} />}
+						{activeAnalytic === 'ga4' && <Chip label="Đang xem" size="small" sx={{ ml: 'auto', fontSize: 10, height: 18, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(227, 116, 0, 0.15)' : '#FEF3E2', color: '#E37400', flexShrink: 0 }} />}
 					</Paper>
 				</Box>
 
@@ -397,9 +401,9 @@ export default function KeywordPage() {
 					{summary && (
 						<Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
 							{[
-								{ label: 'Tổng', value: summary.total, color: '#6B7280' },
+								{ label: 'Tổng', value: summary.total, color: 'text.secondary' },
 								{ label: 'Chờ duyệt', value: summary.pending_approval, color: '#D97706' },
-								{ label: 'Chưa triển khai', value: summary.not_started, color: '#9CA3AF' },
+								{ label: 'Chưa triển khai', value: summary.not_started, color: 'text.secondary' },
 								{ label: 'Đang triển khai', value: summary.in_progress, color: '#2563EB' },
 								{ label: 'Đã triển khai', value: summary.deployed, color: '#059669' },
 								{ label: 'Từ chối', value: summary.rejected, color: '#DC2626' },
@@ -475,7 +479,7 @@ export default function KeywordPage() {
 					open={isAiGroupsDialogOpen}
 					loading={false}
 					onClose={() => setIsAiGroupsDialogOpen(false)}
-					onConfirm={(timeRange, minScore, count) => startStream(timeRange, minScore, count)}
+					onConfirm={(timeRange, minScore, count, keywordHot) => startStream(timeRange, minScore, count, keywordHot)}
 				/>
 			)}
 
@@ -506,7 +510,7 @@ export default function KeywordPage() {
 					open={isAiScrapeDialogOpen}
 					loading={false}
 					onClose={() => setIsAiScrapeDialogOpen(false)}
-					onConfirm={(timeRange, minScore, count) => startPuppeteerStream(timeRange, minScore, count)}
+					onConfirm={(timeRange, minScore, count, keywordHot) => startPuppeteerStream(timeRange, minScore, count, keywordHot)}
 				/>
 			)}
 

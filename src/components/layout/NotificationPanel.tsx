@@ -60,11 +60,11 @@ function NotifIcon({ type, title }: { type: NotificationType; title?: string }) 
   }
 
   const map: Partial<Record<NotificationType, { icon: React.ReactElement; color: string }>> = {
-    article:  { icon: <ArticleOutlinedIcon sx={{ fontSize: 20 }} />, color: '#00b894' },
-    schedule: { icon: <CalendarTodayOutlinedIcon sx={{ fontSize: 20 }} />, color: '#0984e3' },
-    system:   { icon: <CheckCircleOutlinedIcon sx={{ fontSize: 20 }} />, color: '#636e72' },
-    sync:     { icon: <SyncOutlinedIcon sx={{ fontSize: 20 }} />, color: '#fdcb6e' },
-    change:   { icon: <EditOutlinedIcon sx={{ fontSize: 20 }} />, color: '#e17055' },
+    article:  { icon: <ArticleOutlinedIcon sx={{ fontSize: 20 }} />, color: 'primary.main' },
+    schedule: { icon: <CalendarTodayOutlinedIcon sx={{ fontSize: 20 }} />, color: 'info.main' },
+    system:   { icon: <CheckCircleOutlinedIcon sx={{ fontSize: 20 }} />, color: 'text.secondary' },
+    sync:     { icon: <SyncOutlinedIcon sx={{ fontSize: 20 }} />, color: 'warning.main' },
+    change:   { icon: <EditOutlinedIcon sx={{ fontSize: 20 }} />, color: 'error.main' },
   };
   const { icon, color } = map[type] ?? map.system!;
   return (
@@ -113,8 +113,8 @@ export default function NotificationPanel() {
         size="small"
         onClick={(e) => setAnchorEl(e.currentTarget)}
         sx={{
-          color: unreadCount > 0 ? '#F59E0B' : '#64748b',
-          '&:hover': { color: '#F59E0B', bgcolor: '#FEF3C720' },
+          color: unreadCount > 0 ? 'warning.main' : 'text.secondary',
+          '&:hover': { color: 'warning.main', bgcolor: 'action.hover' },
           transition: 'color 0.2s',
         }}
       >
@@ -156,7 +156,7 @@ export default function NotificationPanel() {
             size="small"
             onClick={handleMarkAllRead}
             disabled={unreadCount === 0}
-            sx={{ fontSize: '0.75rem', textTransform: 'none', color: '#00b894', fontWeight: 600, gap: 0.5 }}
+            sx={{ fontSize: '0.75rem', textTransform: 'none', color: 'primary.main', fontWeight: 600, gap: 0.5 }}
           >
             Đánh dấu đã đọc
           </Button>
@@ -171,8 +171,8 @@ export default function NotificationPanel() {
           sx={{
             px: 1.5, minHeight: 36,
             '& .MuiTab-root': { fontSize: '0.78rem', minHeight: 36, textTransform: 'none', fontWeight: 500, px: 1.5 },
-            '& .Mui-selected': { color: '#00b894 !important', fontWeight: 700 },
-            '& .MuiTabs-indicator': { bgcolor: '#00b894' },
+            '& .Mui-selected': { color: 'primary.main', fontWeight: 700 },
+            '& .MuiTabs-indicator': { bgcolor: 'primary.main' },
           }}
         >
           {TAB_LABELS.map((label) => <Tab key={label} label={label} />)}
@@ -183,7 +183,7 @@ export default function NotificationPanel() {
         <Box sx={{ overflowY: 'auto', flex: 1 }}>
           {loading ? (
             <Box sx={{ py: 6, textAlign: 'center' }}>
-              <CircularProgress size={28} sx={{ color: '#00b894' }} />
+              <CircularProgress size={28} sx={{ color: 'primary.main' }} />
             </Box>
           ) : filtered.length === 0 ? (
             <Box sx={{ py: 6, textAlign: 'center', color: 'text.disabled' }}>
@@ -199,7 +199,8 @@ export default function NotificationPanel() {
                   display: 'flex', alignItems: 'flex-start', gap: 1.5,
                   px: 2.5, py: 1.5, cursor: 'pointer',
                   bgcolor: notif.isRead ? 'transparent' : 'rgba(0, 184, 148, 0.05)',
-                  borderLeft: notif.isRead ? '3px solid transparent' : '3px solid #00b894',
+                  borderLeft: notif.isRead ? '3px solid transparent' : '3px solid',
+                  borderLeftColor: notif.isRead ? 'transparent' : 'primary.main',
                   '&:hover': { bgcolor: 'action.hover' },
                   transition: 'background 0.15s',
                 }}
@@ -211,7 +212,7 @@ export default function NotificationPanel() {
                       {notif.title}
                     </Typography>
                     {!notif.isRead && (
-                      <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: '#00b894', flexShrink: 0 }} />
+                      <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: 'primary.main', flexShrink: 0 }} />
                     )}
                   </Box>
                   <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary', mt: 0.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -222,7 +223,7 @@ export default function NotificationPanel() {
                       🕐 {formatTime(notif.createdAt)}
                     </Typography>
                     {notif.data?.requestId && (
-                      <Typography sx={{ fontSize: '0.68rem', color: '#00b894', fontWeight: 600 }}>
+                      <Typography sx={{ fontSize: '0.68rem', color: 'primary.main', fontWeight: 600 }}>
                         → Xem yêu cầu
                       </Typography>
                     )}

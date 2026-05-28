@@ -39,7 +39,7 @@ function StatCard({ icon, label, value, sub, subColor }: {
 					{label}
 				</Typography>
 			</Box>
-			<Typography sx={{ fontSize: '1.7rem', fontWeight: 800, color: '#fff', lineHeight: 1.1 }}>{value}</Typography>
+			<Typography sx={{ fontSize: '1.7rem', fontWeight: 800, color: 'primary.contrastText', lineHeight: 1.1 }}>{value}</Typography>
 			<Typography sx={{ fontSize: '0.72rem', color: subColor || '#34d399', mt: 0.4, fontWeight: 500 }}>{sub}</Typography>
 		</Box>
 	);
@@ -71,7 +71,7 @@ export default function LoginPage() {
 		'& .MuiOutlinedInput-root': {
 			bgcolor: 'rgba(255,255,255,0.05)',
 			borderRadius: 1.5,
-			color: '#fff',
+			color: 'primary.contrastText',
 			'& fieldset': { borderColor: 'rgba(255,255,255,0.12)' },
 			'&:hover fieldset': { borderColor: 'rgba(255,255,255,0.25)' },
 			'&.Mui-focused fieldset': { borderColor: '#3b82f6' },
@@ -80,10 +80,10 @@ export default function LoginPage() {
 		'& .MuiInputLabel-root.Mui-focused': { color: '#3b82f6' },
 		'& .MuiInputAdornment-root svg': { color: 'rgba(255,255,255,0.3)', fontSize: 18 },
 		'& input': {
-			color: '#fff',
+			color: 'primary.contrastText',
 			fontSize: '0.9rem',
 			'&:-webkit-autofill': {
-				WebkitTextFillColor: '#fff',
+				WebkitTextFillColor: 'primary.contrastText',
 				transition: 'background-color 9999s ease-in-out 0s',
 			}
 		},
@@ -129,7 +129,7 @@ export default function LoginPage() {
 				</Box>
 
 				{/* Headline */}
-				<Typography sx={{ fontSize: { md: '2.5rem', lg: '3rem' }, fontWeight: 800, color: '#fff', lineHeight: 1.15, mb: 2 }}>
+				<Typography sx={{ fontSize: { md: '2.5rem', lg: '3rem' }, fontWeight: 800, color: 'primary.contrastText', lineHeight: 1.15, mb: 2 }}>
 					Tối Ưu Hoá<br />Công Việc SEO
 				</Typography>
 				<Typography sx={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.45)', maxWidth: 380, lineHeight: 1.7, mb: 5 }}>
@@ -164,7 +164,7 @@ export default function LoginPage() {
 							<SmartToyOutlinedIcon sx={{ fontSize: 18, color: '#34d399' }} />
 						</Box>
 						<Box>
-							<Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#fff' }}>AI Crawler Đang Phân Tích</Typography>
+							<Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: 'primary.contrastText' }}>AI Crawler Đang Phân Tích</Typography>
 							<Typography sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>Quét 3,420 liên kết...</Typography>
 						</Box>
 					</Box>
@@ -200,7 +200,7 @@ export default function LoginPage() {
 						}}>
 							<img src={LogoImage} alt="ACCSEO Logo" style={{ width: 28, height: 28, objectFit: 'contain' }} />
 						</Box>
-						<Typography sx={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff', mb: 0.5 }}>
+						<Typography sx={{ fontSize: '1.1rem', fontWeight: 700, color: 'primary.contrastText', mb: 0.5 }}>
 							Hệ Sinh Thái ACCSEO
 						</Typography>
 						<Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)' }}>

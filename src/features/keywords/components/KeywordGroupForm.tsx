@@ -29,7 +29,7 @@ interface KeywordGroupFormProps {
 
 const STATUS_OPTIONS: { value: KeywordItemStatus; label: string; color: string }[] = [
 	{ value: KeywordItemStatus.PENDING_APPROVAL, label: 'Chờ duyệt', color: '#f59e0b' },
-	{ value: KeywordItemStatus.NOT_STARTED, label: 'Chưa triển khai', color: '#6b7280' },
+	{ value: KeywordItemStatus.NOT_STARTED, label: 'Chưa triển khai', color: 'text.secondary' },
 	{ value: KeywordItemStatus.IN_PROGRESS, label: 'Đang triển khai', color: '#3b82f6' },
 	{ value: KeywordItemStatus.DEPLOYED, label: 'Đã triển khai', color: '#10b981' },
 ];

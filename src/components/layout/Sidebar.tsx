@@ -35,8 +35,8 @@ const DockBtn = ({ label, icon, path, end }: { label: string; icon: React.ReactN
 				'&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
 				'&.active': {
 					bgcolor: 'primary.main',
-					color: '#fff',
-					'& svg': { color: '#fff' },
+					color: 'primary.contrastText',
+					'& svg': { color: 'primary.contrastText' },
 					'&:hover': { bgcolor: 'primary.dark' },
 				},
 				'& svg': { fontSize: 22 },

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../app/store';
 import { logoutUser } from '../../features/auth/authSlice';
@@ -18,7 +18,9 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import PersonAddOutlinedIcon from '@mui/icons-material/PersonAddOutlined';
-
+import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
+import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
+import { ThemeContext } from '../../contexts/ThemeContext';
 interface HeaderProps {
 	onMenuToggle: () => void;
 }
@@ -48,6 +50,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 	const navigate = useNavigate();
 	const dispatch = useAppDispatch();
 	const { user } = useAppSelector((state) => state.auth);
+	const { mode, toggleColorMode } = useContext(ThemeContext);
 
 	const getPageMeta = (pathname: string) => {
 		if (PAGE_META[pathname]) return PAGE_META[pathname];
@@ -97,9 +100,10 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 					justifyContent: 'flex-end',
 					px: 3,
 					gap: 2,
-					bgcolor: '#ffffff',
+					bgcolor: 'background.paper',
 					borderRadius: '16px',
-					border: '1px solid #e5e7eb',
+					border: '1px solid',
+					borderColor: 'divider',
 					boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
 				}}
 			>
@@ -117,7 +121,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 										to={linkPath}
 										style={{
 											fontSize: '0.85rem',
-											color: '#6b7280',
+											color: 'text.secondary',
 											textDecoration: 'none',
 										}}
 									>
@@ -131,7 +135,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 									key={crumb}
 									sx={{
 										fontSize: '0.85rem',
-										color: isLast ? '#111827' : '#6b7280',
+										color: isLast ? 'text.primary' : 'text.secondary',
 										fontWeight: isLast ? 600 : 400,
 									}}
 								>
@@ -148,12 +152,17 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 					size="small"
 					sx={{
 						display: 'none',
-						color: '#374151',
+						color: 'text.primary',
 						position: 'absolute',
 						left: 12,
 					}}
 				>
 					<MenuIcon />
+				</IconButton>
+
+				{/* Theme Toggle */}
+				<IconButton onClick={toggleColorMode} size="small" sx={{ color: 'text.secondary', '&:hover': { bgcolor: 'action.hover' } }}>
+					{mode === 'dark' ? <LightModeOutlinedIcon fontSize="small" /> : <DarkModeOutlinedIcon fontSize="small" />}
 				</IconButton>
 
 				{/* Right side: notification + user */}
@@ -169,7 +178,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 						px: 1,
 						py: 0.5,
 						borderRadius: '10px',
-						'&:hover': { bgcolor: '#f3f4f6' },
+						'&:hover': { bgcolor: 'action.hover' },
 					}}
 				>
 					<Avatar
@@ -185,14 +194,14 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 						{user?.name?.charAt(0) || 'U'}
 					</Avatar>
 					<Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-						<Typography sx={{ color: '#111827', fontSize: '0.82rem', fontWeight: 600, lineHeight: 1.2 }}>
+						<Typography sx={{ color: 'text.primary', fontSize: '0.82rem', fontWeight: 600, lineHeight: 1.2 }}>
 							{user?.name}
 						</Typography>
-						<Typography sx={{ color: '#6b7280', fontSize: '0.68rem', textTransform: 'capitalize' }}>
+						<Typography sx={{ color: 'text.secondary', fontSize: '0.68rem', textTransform: 'capitalize' }}>
 							{user?.roles?.join(', ')}
 						</Typography>
 					</Box>
-					<ExpandMoreIcon sx={{ fontSize: 16, color: '#9ca3af', display: { xs: 'none', sm: 'block' }, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+					<ExpandMoreIcon sx={{ fontSize: 16, color: 'text.secondary', display: { xs: 'none', sm: 'block' }, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
 				</Box>
 
 				<Menu

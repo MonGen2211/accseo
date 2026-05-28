@@ -1,10 +1,16 @@
 import TrendingKeywordsSection from './TrendingKeywordsSection';
 import ActivitySection from './ActivitySection';
+import QuickSerpChecker from './QuickSerpChecker';
+import GoogleIndexChecker from './GoogleIndexChecker';
+import KeywordPlannerSection from './KeywordPlannerSection';
+import VbplSuggestionsSection from './components/vbpl/VbplSuggestionsSection';
+import ScraperSection from '../scraper/components/ScraperSection';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
 import Avatar from '@mui/material/Avatar';
+import Divider from '@mui/material/Divider';
 import PublicIcon from '@mui/icons-material/Public';
 import DraftsOutlinedIcon from '@mui/icons-material/DraftsOutlined';
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
@@ -18,6 +24,14 @@ import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
 import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 import CloudDoneOutlinedIcon from '@mui/icons-material/CloudDoneOutlined';
 import CloudOffOutlinedIcon from '@mui/icons-material/CloudOffOutlined';
+import Tooltip from '@mui/material/Tooltip';
+import IconButton from '@mui/material/IconButton';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import SearchIcon from '@mui/icons-material/Search';
+import SpaceDashboardIcon from '@mui/icons-material/SpaceDashboard';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Select from '@mui/material/Select';
@@ -58,7 +72,7 @@ function StatCard({ title, value, icon, bgColor, iconBgColor, activeColor = '#25
       elevation={0}
       onClick={onClick}
       sx={{
-        p: 1.75, borderRadius: 3, bgcolor: '#fff',
+        p: 1.75, borderRadius: 3, bgcolor: 'background.paper',
         display: 'flex', flexDirection: 'column', gap: 1.25,
         minHeight: 100, height: '100%',
         position: 'relative', overflow: 'hidden',
@@ -76,7 +90,7 @@ function StatCard({ title, value, icon, bgColor, iconBgColor, activeColor = '#25
       <Box sx={{
         position: 'absolute', top: -20, right: -20,
         width: 90, height: 90, borderRadius: '50%',
-        background: `linear-gradient(135deg, ${bgColor} 0%, rgba(255,255,255,0) 100%)`,
+        background: (theme) => `linear-gradient(135deg, ${bgColor} 0%, ${theme.palette.mode === 'dark' ? 'rgba(0,0,0,0)' : 'rgba(255,255,255,0)'} 100%)`,
         opacity: 0.7, zIndex: 0,
         transition: 'transform 0.4s ease',
         '.MuiPaper-root:hover &': { transform: 'scale(1.2)' },
@@ -131,7 +145,7 @@ function KeywordPanel({ groups, loading, title, domains, selectedDomainId, onDom
             value={selectedDomainId}
             onChange={(e) => onDomainChange(e.target.value)}
             displayEmpty
-            sx={{ fontSize: '0.85rem', minWidth: 160, borderRadius: 2, bgcolor: '#f8fafc' }}
+            sx={{ fontSize: '0.85rem', minWidth: 160, borderRadius: 2, bgcolor: 'background.default' }}
           >
             <MenuItem value="" disabled>Chọn Domain</MenuItem>
             {domains.map(d => <MenuItem key={d._id} value={d._id}>{d.domain}</MenuItem>)}
@@ -248,13 +262,13 @@ function Ga4Panel({ domains, selectedDomainId, onDomainChange, selectedDays, onD
           </Typography>
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
             <FormControl size="small">
-              <Select value={selectedDomainId} onChange={(e) => onDomainChange(e.target.value)} displayEmpty sx={{ fontSize: '0.85rem', minWidth: 160, borderRadius: 2, bgcolor: '#f8fafc' }}>
+              <Select value={selectedDomainId} onChange={(e) => onDomainChange(e.target.value)} displayEmpty sx={{ fontSize: '0.85rem', minWidth: 160, borderRadius: 2, bgcolor: 'background.default' }}>
                 <MenuItem value="" disabled>Chọn Domain</MenuItem>
                 {domains.map(d => <MenuItem key={d._id} value={d._id}>{d.domain}</MenuItem>)}
               </Select>
             </FormControl>
             <FormControl size="small">
-              <Select value={selectedDays} onChange={(e) => onDaysChange(Number(e.target.value))} sx={{ fontSize: '0.85rem', minWidth: 120, borderRadius: 2, bgcolor: '#f8fafc' }}>
+              <Select value={selectedDays} onChange={(e) => onDaysChange(Number(e.target.value))} sx={{ fontSize: '0.85rem', minWidth: 120, borderRadius: 2, bgcolor: 'background.default' }}>
                 <MenuItem value={7}>7 ngày</MenuItem>
                 <MenuItem value={28}>28 ngày</MenuItem>
                 <MenuItem value={90}>90 ngày</MenuItem>
@@ -441,11 +455,164 @@ export default function DashboardPage() {
 
   const unreadNotifs = notifItems.filter(n => !n.isRead).slice(0, 2);
 
+  const [activeSection, setActiveSection] = useState('section-stats');
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    const sections = ['section-stats', 'section-vbpl', 'section-planner', 'section-serp', 'section-index-checker', 'section-scraper', 'section-analytics'];
+    
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY + 200; // Offset for better viewport detection
+      
+      for (const section of sections) {
+        const el = document.getElementById(section);
+        if (el) {
+          const top = el.offsetTop;
+          const height = el.offsetHeight;
+          if (scrollPosition >= top && scrollPosition < top + height) {
+            setActiveSection(section);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const dockItems = [
+    { id: 'section-stats', label: 'Lời chào & Thống kê', icon: <SpaceDashboardIcon sx={{ fontSize: 20 }} /> },
+    { id: 'section-vbpl', label: 'Gợi ý SEO & Google Trends', icon: <AutoAwesomeIcon sx={{ fontSize: 20 }} /> },
+    { id: 'section-planner', label: 'Keyword Planner', icon: <SearchIcon sx={{ fontSize: 20 }} /> },
+    { id: 'section-serp', label: 'SERP Rank Checker', icon: <EmojiEventsIcon sx={{ fontSize: 20 }} /> },
+    { id: 'section-index-checker', label: 'Google Index Checker', icon: <CloudDoneOutlinedIcon sx={{ fontSize: 20 }} /> },
+    { id: 'section-scraper', label: 'Thu thập báo chí', icon: <ArticleOutlinedIcon sx={{ fontSize: 20 }} /> },
+    { id: 'section-analytics', label: 'GA4 & Yêu cầu công việc', icon: <PublicIcon sx={{ fontSize: 20 }} /> },
+  ];
+
   return (
-    <Box sx={{ maxWidth: 1400, mx: 'auto', display: 'flex', flexDirection: 'column', gap: 4, zoom: 0.95 }}>
+    <Box sx={{ maxWidth: 1400, mx: 'auto', display: 'flex', flexDirection: 'column', gap: 4, zoom: 0.95, position: 'relative' }}>
+
+      {/* Floating Apple-style Navigation Dock */}
+      {isMinimized && !isHovered ? (
+        <Paper
+          elevation={0}
+          onMouseEnter={() => setIsHovered(true)}
+          onClick={() => setIsMinimized(false)}
+          sx={{
+            position: 'fixed',
+            right: 16,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            zIndex: 1100,
+            width: 44,
+            height: 44,
+            borderRadius: '50%',
+            display: { xs: 'none', lg: 'flex' },
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: '1px solid',
+            borderColor: 'divider',
+            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.7)' : 'rgba(255, 255, 255, 0.85)',
+            backdropFilter: 'blur(20px)',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.08)',
+            cursor: 'pointer',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            '&:hover': {
+              transform: 'translateY(-50%) scale(1.1)',
+              borderColor: 'primary.main',
+              boxShadow: '0 6px 20px rgba(37, 99, 235, 0.3)'
+            }
+          }}
+        >
+          <ChevronLeftIcon sx={{ color: 'primary.main', fontSize: 22 }} />
+        </Paper>
+      ) : (
+        <Paper
+          elevation={0}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          sx={{
+            position: 'fixed',
+            right: 24,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            zIndex: 1100,
+            display: { xs: 'none', lg: 'flex' },
+            flexDirection: 'column',
+            gap: 1.5,
+            p: 1.2,
+            borderRadius: '24px',
+            border: '1px solid',
+            borderColor: 'divider',
+            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.65)' : 'rgba(255, 255, 255, 0.75)',
+            backdropFilter: 'blur(20px)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            '&:hover': {
+              boxShadow: '0 15px 40px rgba(0,0,0,0.15)',
+              borderColor: 'action.focus'
+            }
+          }}
+        >
+          {dockItems.map((item) => {
+            const isActive = activeSection === item.id;
+            return (
+              <Tooltip key={item.id} title={item.label} placement="left" arrow>
+                <IconButton
+                  onClick={() => scrollToSection(item.id)}
+                  size="medium"
+                  sx={{
+                    color: isActive ? '#fff' : 'text.secondary',
+                    bgcolor: isActive ? 'primary.main' : 'transparent',
+                    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                    boxShadow: isActive ? '0 4px 12px rgba(37, 99, 235, 0.35)' : 'none',
+                    '&:hover': {
+                      bgcolor: isActive ? 'primary.dark' : 'action.hover',
+                      transform: 'scale(1.1)'
+                    },
+                    '&:active': {
+                      transform: 'scale(0.95)'
+                    }
+                  }}
+                >
+                  {item.icon}
+                </IconButton>
+              </Tooltip>
+            );
+          })}
+          <Divider sx={{ my: 0.5 }} />
+          <Tooltip title={isMinimized ? "Ghim thanh điều hướng" : "Ẩn thanh nhanh"} placement="left" arrow>
+            <IconButton
+              onClick={() => setIsMinimized(prev => !prev)}
+              size="medium"
+              sx={{
+                color: 'text.secondary',
+                transition: 'all 0.2s',
+                '&:hover': {
+                  color: 'primary.main',
+                  bgcolor: 'action.hover',
+                  transform: 'scale(1.1)'
+                }
+              }}
+            >
+              {isMinimized ? <ChevronLeftIcon sx={{ fontSize: 20 }} /> : <ChevronRightIcon sx={{ fontSize: 20 }} />}
+            </IconButton>
+          </Tooltip>
+        </Paper>
+      )}
 
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <Box id="section-stats" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', scrollMarginTop: 100 }}>
         <Box>
           <Typography variant="h4" sx={{ letterSpacing: '-0.5px', fontWeight: 800, mb: 1 }}>
             Xin chào, {user?.name || 'Admin'}! 👋
@@ -471,8 +638,33 @@ export default function DashboardPage() {
         </Box>
       </Box>
 
+      {/* VBPL Suggestions Section */}
+      <Box id="section-vbpl" sx={{ mt: 5, scrollMarginTop: 100 }}>
+        <VbplSuggestionsSection />
+      </Box>
+
+      {/* Keyword Planner Section */}
+      <Box id="section-planner" sx={{ mt: 4, scrollMarginTop: 100 }}>
+        <KeywordPlannerSection />
+      </Box>
+
+      {/* SERP Rank Checker Section */}
+      <Box id="section-serp" sx={{ mt: 4, scrollMarginTop: 100 }}>
+        <QuickSerpChecker />
+      </Box>
+
+      {/* Google Index Checker Section */}
+      <Box id="section-index-checker" sx={{ mt: 4, scrollMarginTop: 100 }}>
+        <GoogleIndexChecker />
+      </Box>
+
+      {/* Scraper Section (Thu thập bài) */}
+      <Box id="section-scraper" sx={{ mt: 4, mb: 6, scrollMarginTop: 100 }}>
+        <ScraperSection />
+      </Box>
+
       {/* Cards + Panel */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 4, alignItems: 'start' }}>
+      <Box id="section-analytics" sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 4, alignItems: 'start', scrollMarginTop: 100 }}>
 
         {/* Left: stat cards */}
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 2 }}>
@@ -579,8 +771,8 @@ export default function DashboardPage() {
         </Paper>
       </Box>
 
-      {/* Bottom row: Trending (50%) + Activity (50%) */}
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'stretch', height: { xs: 'auto', md: 660 } }}>
+      {/* Bottom section: Trending then Activity */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         <TrendingKeywordsSection />
         <ActivitySection />
       </Box>

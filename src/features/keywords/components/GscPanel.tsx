@@ -158,7 +158,7 @@ export function GscPanel({ domainId }: GscPanelProps) {
 							borderColor: 'divider',
 							'&.Mui-selected': {
 								backgroundColor: 'primary.main',
-								color: '#fff',
+								color: 'primary.contrastText',
 								'&:hover': { backgroundColor: 'primary.dark' },
 							},
 						},

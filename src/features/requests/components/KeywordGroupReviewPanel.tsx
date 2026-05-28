@@ -50,7 +50,7 @@ interface Props {
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   pending_approval: { label: 'Chờ duyệt',      color: '#D97706' },
-  not_started:      { label: 'Chưa triển khai', color: '#6B7280' },
+  not_started:      { label: 'Chưa triển khai', color: 'text.secondary' },
   in_progress:      { label: 'Đang triển khai', color: '#2563EB' },
   deployed:         { label: 'Đã triển khai',   color: '#059669' },
   rejected:         { label: 'Bị từ chối',      color: '#DC2626' },
@@ -133,7 +133,7 @@ export default function KeywordGroupReviewPanel({ refId, requestId, requestStatu
 
   if (!group) return null;
 
-  const statusCfg = STATUS_MAP[group.status] ?? { label: group.status, color: '#6B7280' };
+  const statusCfg = STATUS_MAP[group.status] ?? { label: group.status, color: 'text.secondary' };
   const isGroupPending = group.status === 'pending_approval';
   const isRequestActive = !['DONE', 'REJECTED', 'CANCELLED'].includes(requestStatus);
   const canAct = canReview && isGroupPending && isRequestActive;
@@ -211,7 +211,7 @@ export default function KeywordGroupReviewPanel({ refId, requestId, requestStatu
                 { label: `TB: ${trends.avg}`, color: '#0ea5e9' },
                 { label: `Xu hướng: ${trends.slope > 0 ? '+' : ''}${trends.slope}`, color: trends.slope > 0 ? '#059669' : '#dc2626' },
                 ...(trends.isSpike ? [{ label: 'Spike', color: '#d97706' }] : []),
-                ...(trends.isPartial ? [{ label: 'Dữ liệu chưa đầy đủ', color: '#9ca3af' }] : []),
+                ...(trends.isPartial ? [{ label: 'Dữ liệu chưa đầy đủ', color: 'text.secondary' }] : []),
               ].map(({ label, color }) => (
                 <Chip key={label} label={label} size="small"
                   sx={{ bgcolor: `${color}18`, color, fontWeight: 600, fontSize: 11, border: `1px solid ${color}40` }}

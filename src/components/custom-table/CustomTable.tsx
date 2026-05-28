@@ -19,6 +19,7 @@ import {
 	TextField,
 	InputAdornment,
 	CircularProgress,
+	Collapse,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -235,7 +236,7 @@ export function CustomTable({
 	return (
 		<Paper sx={{ mx: 3, mb: 3, minWidth: 0, overflow: 'hidden' }} variant="outlined">
 			{(onSearchChange || extraFilters || headerActions) && (
-				<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, borderBottom: '1px solid #f1f5f9', gap: 2, flexWrap: 'wrap' }}>
+				<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, borderBottom: '1px solid', borderColor: 'divider', gap: 2, flexWrap: 'wrap' }}>
 					<Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1, flexWrap: 'wrap' }}>
 						{onSearchChange && (
 							<TextField
@@ -247,17 +248,17 @@ export function CustomTable({
 									minWidth: 260,
 									'& .MuiOutlinedInput-root': {
 										borderRadius: 2,
-										bgcolor: '#fff',
+										bgcolor: 'background.paper',
 										height: 40,
-										'& fieldset': { borderColor: '#e2e8f0' },
-										'&:hover fieldset': { borderColor: '#cbd5e1' },
+										'& fieldset': { borderColor: 'divider' },
+										'&:hover fieldset': { borderColor: 'action.hover' },
 									}
 								}}
 								slotProps={{
 									input: {
 										startAdornment: (
 											<InputAdornment position="start">
-												<SearchIcon sx={{ color: '#94a3b8', fontSize: 20 }} />
+												<SearchIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
 											</InputAdornment>
 										),
 									}
@@ -273,9 +274,9 @@ export function CustomTable({
 				sx={{
 					overflowX: 'auto',
 					'&::-webkit-scrollbar': { height: 8 },
-					'&::-webkit-scrollbar-track': { backgroundColor: '#f1f5f9', borderRadius: 4 },
-					'&::-webkit-scrollbar-thumb': { backgroundColor: '#cbd5e1', borderRadius: 4 },
-					'&::-webkit-scrollbar-thumb:hover': { backgroundColor: '#94a3b8' }
+					'&::-webkit-scrollbar-track': { backgroundColor: 'background.default', borderRadius: 4 },
+					'&::-webkit-scrollbar-thumb': { backgroundColor: 'divider', borderRadius: 4 },
+					'&::-webkit-scrollbar-thumb:hover': { backgroundColor: 'text.disabled' }
 				}}
 			>
 				<Table stickyHeader size="small" sx={{ minWidth: tableMinWidth, tableLayout: 'fixed' }}>
@@ -293,14 +294,15 @@ export function CustomTable({
 											minWidth: field.width,
 											maxWidth: field.width,
 											fontWeight: 600,
-											backgroundColor: '#f8fafc',
-											color: '#334155',
+											backgroundColor: 'background.default',
+											color: 'text.primary',
 											whiteSpace: 'normal',
 											wordBreak: 'break-word',
-											borderBottom: '2px solid #e2e8f0',
+											borderBottom: '2px solid',
+											borderColor: 'divider',
 											cursor: isSortable ? 'pointer' : 'default',
 											userSelect: isSortable ? 'none' : undefined,
-											'&:hover': isSortable ? { backgroundColor: '#eef2f7' } : {},
+											'&:hover': isSortable ? { backgroundColor: 'action.hover' } : {},
 										}}
 										onClick={isSortable ? () => onSort(field.name) : undefined}
 									>
@@ -369,7 +371,9 @@ export function CustomTable({
 									{renderExpandedRow && (
 										<TableRow key={`${rowId}-expand`}>
 											<TableCell colSpan={visibleFields.length} sx={{ p: 0, border: 0 }}>
-												{renderExpandedRow(row)}
+												<Collapse in={isExpanded} timeout="auto" unmountOnExit>
+													{renderExpandedRow(row)}
+												</Collapse>
 											</TableCell>
 										</TableRow>
 									)}
@@ -382,13 +386,13 @@ export function CustomTable({
 			</TableContainer>
 			{enablePagination && totalCount > 0 && (
 				<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, flexWrap: 'wrap', gap: 2 }}>
-					<Typography sx={{ color: '#64748b', fontSize: '14px', fontWeight: 500 }}>
+					<Typography sx={{ color: 'text.secondary', fontSize: '14px', fontWeight: 500 }}>
 						Showing {displayedData.length} data out of {totalCount}
 					</Typography>
 
 					<Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
 						<Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-							<Typography sx={{ color: '#64748b', fontSize: '14px' }}>Display:</Typography>
+							<Typography sx={{ color: 'text.secondary', fontSize: '14px' }}>Display:</Typography>
 							<Select
 								size="small"
 								value={rowsPerPage}
@@ -396,10 +400,10 @@ export function CustomTable({
 								sx={{
 									height: 36,
 									borderRadius: 2,
-									bgcolor: '#fff',
-									color: '#334155',
-									'& .MuiOutlinedInput-notchedOutline': { borderColor: '#e2e8f0' },
-									'&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#cbd5e1' },
+									bgcolor: 'background.paper',
+									color: 'text.primary',
+									'& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
+									'&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'action.hover' },
 									fontSize: '14px'
 								}}
 							>
@@ -419,22 +423,22 @@ export function CustomTable({
 									{...item}
 									sx={{
 										margin: '0 2px',
-										color: '#64748b',
-										borderColor: '#e2e8f0',
+										color: 'text.secondary',
+										borderColor: 'divider',
 										border: '1px solid',
-										backgroundColor: '#fff',
+										backgroundColor: 'background.paper',
 										width: 36,
 										height: 36,
 										fontWeight: 500,
 										display: (item.type === 'previous' || item.type === 'next') ? 'flex' : 'inline-flex',
 										'&.Mui-selected': {
-											backgroundColor: '#f0fdfa !important',
-											color: '#0d9488',
-											borderColor: '#14b8a6',
+											backgroundColor: 'action.selected !important',
+											color: 'primary.main',
+											borderColor: 'primary.main',
 											fontWeight: 600,
 										},
 										'&:hover': {
-											backgroundColor: '#f8fafc',
+											backgroundColor: 'background.default',
 										}
 									}}
 								/>

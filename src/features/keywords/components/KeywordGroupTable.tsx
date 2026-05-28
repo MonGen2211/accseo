@@ -58,14 +58,14 @@ interface KeywordGroupTableProps {
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
 	pending_approval: { label: 'Chờ duyệt', color: '#D97706' },
-	not_started: { label: 'Chưa triển khai', color: '#6B7280' },
+	not_started: { label: 'Chưa triển khai', color: 'text.secondary' },
 	in_progress: { label: 'Đang triển khai', color: '#2563EB' },
 	deployed: { label: 'Đã triển khai', color: '#059669' },
 	rejected: { label: 'Bị từ chối', color: '#DC2626' },
 };
 
 function StatusChip({ status }: { status: string }) {
-	const cfg = STATUS_CONFIG[status] ?? { label: status, color: '#6B7280' };
+	const cfg = STATUS_CONFIG[status] ?? { label: status, color: 'text.secondary' };
 	return (
 		<Chip
 			label={cfg.label}
@@ -340,7 +340,7 @@ export function KeywordGroupTable({
 									{ label: `TB: ${trends.avg}`, color: '#0ea5e9' },
 									{ label: `Xu hướng: ${trends.slope > 0 ? '+' : ''}${trends.slope}`, color: trends.slope > 0 ? '#059669' : '#dc2626' },
 									...(trends.isSpike ? [{ label: 'Spike', color: '#d97706' }] : []),
-									...(trends.isPartial ? [{ label: 'Dữ liệu chưa đầy đủ', color: '#9ca3af' }] : []),
+									...(trends.isPartial ? [{ label: 'Dữ liệu chưa đầy đủ', color: 'text.secondary' }] : []),
 								].map(({ label, color }) => (
 									<Chip
 										key={label}
@@ -405,7 +405,7 @@ export function KeywordGroupTable({
 				label="Trạng thái"
 				value={statusFilter || ''}
 				onChange={(e) => onStatusFilterChange(e.target.value)}
-				sx={{ bgcolor: '#fff', borderRadius: 2, height: 40, '& .MuiSelect-select': { py: 1, fontSize: 14 } }}
+				sx={{ bgcolor: 'background.paper', borderRadius: 2, height: 40, '& .MuiSelect-select': { py: 1, fontSize: 14 } }}
 			>
 				{statusOptions.map((o) => (
 					<MenuItem key={o.value} value={o.value} sx={{ fontSize: 14 }}>{o.label}</MenuItem>

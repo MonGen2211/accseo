@@ -218,7 +218,7 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 			align: 'center' as const,
 			renderCell: (row: TableRowData) => {
 				const timeline = row.trendTimeline as import('../types').TrendTimelinePoint[] | undefined;
-				if (!timeline || timeline.length === 0) return <span style={{ color: '#94a3b8', fontSize: 12 }}>—</span>;
+				if (!timeline || timeline.length === 0) return <span style={{ color: 'text.secondary', fontSize: 12 }}>—</span>;
 				const score = row.currentScore !== undefined ? Number(row.currentScore) : undefined;
 				return (
 					<Box sx={{ width: 150, height: 48 }}>
@@ -258,7 +258,7 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 					<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
 
 						{/* Giỏ chứa từ khoá đã chọn (Cherry-picks) */}
-						<Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 2, border: '1px dashed #cbd5e1' }}>
+						<Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, border: '1px dashed #cbd5e1' }}>
 							<Typography variant="body2" color="primary.main" sx={{ fontWeight: 600, mb: 1.5 }}>
 								Giỏ chứa bộ từ khoá sẽ tạo ({selected.length})
 							</Typography>
@@ -335,7 +335,7 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 										return (
 											<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
 												{activeSuggestion?.trendTimeline && activeSuggestion.trendTimeline.length > 0 && (
-													<Box sx={{ border: '1px solid #e2e8f0', borderRadius: 2, p: 2 }}>
+													<Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2 }}>
 														<Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
 															Biểu đồ xu hướng — {activeKeyword}
 														</Typography>

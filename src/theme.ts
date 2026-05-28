@@ -1,40 +1,63 @@
-import { createTheme } from '@mui/material/styles';
+import type { PaletteMode } from '@mui/material';
 
-const theme = createTheme({
+export const getDesignTokens = (mode: PaletteMode) => ({
   palette: {
-    mode: 'light',
-    primary: {
-      main: '#00b894',
-      light: '#3dd6a0',
-      dark: '#009975',
-      contrastText: '#fff',
-    },
-    secondary: {
-      main: '#636e72',
-      light: '#b2bec3',
-      dark: '#2d3436',
-    },
-    background: {
-      default: '#f5f6fa',
-      paper: '#ffffff',
-    },
-    text: {
-      primary: '#2d3436',
-      secondary: '#636e72',
-    },
-    error: {
-      main: '#e74c3c',
-    },
-    warning: {
-      main: '#f39c12',
-    },
-    info: {
-      main: '#3498db',
-    },
-    success: {
-      main: '#00b894',
-    },
-    divider: '#e0e3eb',
+    mode,
+    ...(mode === 'light'
+      ? {
+          // Light Mode Colors
+          primary: {
+            main: '#00b894',
+            light: '#3dd6a0',
+            dark: '#009975',
+            contrastText: '#fff',
+          },
+          secondary: {
+            main: '#636e72',
+            light: '#b2bec3',
+            dark: '#2d3436',
+          },
+          background: {
+            default: '#f5f6fa',
+            paper: '#ffffff',
+          },
+          text: {
+            primary: '#2d3436',
+            secondary: '#636e72',
+          },
+          divider: '#e0e3eb',
+        }
+      : {
+          // Dark Mode Colors
+          primary: {
+            main: '#00b894',
+            light: '#3dd6a0',
+            dark: '#009975',
+            contrastText: '#fff',
+          },
+          secondary: {
+            main: '#a0aec0',
+            light: '#cbd5e1',
+            dark: '#64748b',
+          },
+          background: {
+            default: '#0f172a', // slate-900
+            paper: '#1e293b',   // slate-800
+          },
+          text: {
+            primary: '#f8fafc', // slate-50
+            secondary: '#94a3b8', // slate-400
+          },
+          divider: 'rgba(255, 255, 255, 0.12)',
+          action: {
+            hover: 'rgba(255, 255, 255, 0.08)',
+            selected: 'rgba(255, 255, 255, 0.16)',
+          },
+        }),
+    error: { main: '#e74c3c' },
+    warning: { main: '#f39c12' },
+    info: { main: '#3498db' },
+    success: { main: '#00b894' },
   },
   typography: {
     fontFamily: '"Inter", "system-ui", "-apple-system", sans-serif',
@@ -44,7 +67,7 @@ const theme = createTheme({
     h4: { fontWeight: 600 },
     h5: { fontWeight: 600 },
     h6: { fontWeight: 600 },
-    button: { textTransform: 'none', fontWeight: 600 },
+    button: { textTransform: 'none' as const, fontWeight: 600 },
   },
   shape: {
     borderRadius: 8,
@@ -65,7 +88,8 @@ const theme = createTheme({
     MuiPaper: {
       styleOverrides: {
         root: {
-          boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)',
+          backgroundImage: 'none',
+          boxShadow: mode === 'light' ? '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)' : '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
         },
       },
     },
@@ -75,10 +99,10 @@ const theme = createTheme({
           '& .MuiTableCell-head': {
             fontWeight: 600,
             fontSize: '0.78rem',
-            textTransform: 'uppercase',
+            textTransform: 'uppercase' as const,
             letterSpacing: '0.04em',
-            color: '#636e72',
-            backgroundColor: '#f8f9fb',
+            color: mode === 'light' ? '#636e72' : '#94a3b8',
+            backgroundColor: mode === 'light' ? '#f8f9fb' : '#0f172a',
           },
         },
       },
@@ -86,53 +110,22 @@ const theme = createTheme({
     MuiTableCell: {
       styleOverrides: {
         root: {
-          borderColor: '#e0e3eb',
+          borderColor: mode === 'light' ? '#e0e3eb' : 'rgba(255, 255, 255, 0.12)',
           padding: '12px 16px',
         },
       },
     },
     MuiTextField: {
-      defaultProps: {
-        size: 'small',
-        variant: 'outlined',
-      },
+      defaultProps: { size: 'small' as const, variant: 'outlined' as const },
     },
     MuiDialog: {
-      defaultProps: {
-        disableScrollLock: true,
-      },
-      styleOverrides: {
-        paper: {
-          borderRadius: 12,
-        },
-      },
+      defaultProps: { disableScrollLock: true },
+      styleOverrides: { paper: { borderRadius: 12 } },
     },
-    MuiPopover: {
-      defaultProps: {
-        disableScrollLock: true,
-      },
-    },
-    MuiMenu: {
-      defaultProps: {
-        disableScrollLock: true,
-      },
-    },
-    MuiChip: {
-      styleOverrides: {
-        root: {
-          fontWeight: 600,
-          fontSize: '0.78rem',
-        },
-      },
-    },
-    MuiDrawer: {
-      styleOverrides: {
-        paper: {
-          border: 'none',
-        },
-      },
-    },
+    MuiPopover: { defaultProps: { disableScrollLock: true } },
+    MuiMenu: { defaultProps: { disableScrollLock: true } },
+    MuiChip: { styleOverrides: { root: { fontWeight: 600, fontSize: '0.78rem' } } },
+    MuiDrawer: { styleOverrides: { paper: { border: 'none' } } },
   },
 });
 
-export default theme;

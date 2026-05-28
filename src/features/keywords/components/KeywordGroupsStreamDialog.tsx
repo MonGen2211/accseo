@@ -24,11 +24,17 @@ const STEP_ICON: Record<string, string> = {
 	candidate_pass: '✅',
 	candidate_fail: '❌',
 	enrich_start: '📊',
+	trending_fetch: '📈',
+	trending_done: '🔥',
+	trending_skip: '⏭️',
 };
 
 const STEP_COLOR: Record<string, string> = {
 	candidate_pass: '#4ade80',
 	candidate_fail: '#f87171',
+	trending_done: '#f59e0b',
+	trending_skip: '#64748b',
+	trending_fetch: '#38bdf8',
 };
 
 function LogLine({ log }: { log: StreamLogEvent }) {
@@ -38,26 +44,35 @@ function LogLine({ log }: { log: StreamLogEvent }) {
 	return (
 		<Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start', py: 0.5 }}>
 			<span style={{ fontSize: 14, lineHeight: '20px', flexShrink: 0 }}>{icon}</span>
-			<Typography
-				variant="body2"
-				sx={{ fontSize: 13, lineHeight: '20px', color: color ?? '#e2e8f0', fontFamily: 'monospace' }}
-			>
-				{log.message}
-			</Typography>
+			<Box>
+				<Typography
+					variant="body2"
+					sx={{ fontSize: 13, lineHeight: '20px', color: color ?? '#e2e8f0', fontFamily: 'monospace' }}
+				>
+					{log.message}
+				</Typography>
+				{log.step === 'trending_done' && log.keywords && log.keywords.length > 0 && (
+					<Typography variant="caption" sx={{ color: '#94a3b8', mt: 0.5, display: 'block', wordBreak: 'break-word', fontFamily: 'monospace' }}>
+						Keywords: {log.keywords.join(', ')}
+					</Typography>
+				)}
+			</Box>
 		</Box>
 	);
 }
 
 export function KeywordGroupsStreamDialog({ open, logs, onCancel, onHide }: KeywordGroupsStreamDialogProps) {
-	const bottomRef = useRef<HTMLDivElement>(null);
+	const containerRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
-		bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+		if (containerRef.current) {
+			containerRef.current.scrollTop = containerRef.current.scrollHeight;
+		}
 	}, [logs]);
 
 	return (
 		<Dialog open={open} maxWidth="sm" fullWidth onClose={() => { }}>
-			<DialogTitle sx={{ fontWeight: 600, pb: 1, bgcolor: '#ffffff', color: '#000000' }}>
+			<DialogTitle sx={{ fontWeight: 600, pb: 1, bgcolor: 'background.paper', color: '#000000' }}>
 				<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
 					<Box
 						sx={{
@@ -72,6 +87,7 @@ export function KeywordGroupsStreamDialog({ open, logs, onCancel, onHide }: Keyw
 
 			<DialogContent dividers sx={{ p: 0 }}>
 				<Box
+					ref={containerRef}
 					sx={{
 						height: 340,
 						overflowY: 'auto',
@@ -82,14 +98,13 @@ export function KeywordGroupsStreamDialog({ open, logs, onCancel, onHide }: Keyw
 					}}
 				>
 					{logs.length === 0 && (
-						<Typography variant="caption" sx={{ color: '#94a3b8' }}>
+						<Typography variant="caption" sx={{ color: 'text.secondary' }}>
 							Đang kết nối...
 						</Typography>
 					)}
 					{logs.map((log, i) => (
 						<LogLine key={i} log={log} />
 					))}
-					<div ref={bottomRef} />
 				</Box>
 			</DialogContent>
 

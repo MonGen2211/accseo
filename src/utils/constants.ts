@@ -22,6 +22,7 @@ export const ROUTES = {
   REQUESTS: '/requests',
   REQUESTS_CREATE: '/requests/create',
   GROUPS_CREATE: '/groups/create',
+  TRENDING_SCHEDULES: '/trending-schedules',
 };
 
 export const PAGINATION_DEFAULT = {

@@ -160,7 +160,8 @@ export type StreamLogStep =
   | 'llm_start' | 'llm_done'
   | 'serp_start'
   | 'candidate_pass' | 'candidate_fail'
-  | 'enrich_start';
+  | 'enrich_start'
+  | 'trending_fetch' | 'trending_done' | 'trending_skip';
 
 export interface StreamLogEvent {
   step: StreamLogStep;
@@ -173,6 +174,7 @@ export interface StreamLogEvent {
   reasons?: string[];
   candidates?: string[];
   count?: number;
+  keywords?: string[];
 }
 
 export interface SuggestByGroupsPayload {
@@ -180,4 +182,39 @@ export interface SuggestByGroupsPayload {
   timeRange: string;
   minScore?: number;
   count?: number;
+  keywordHot?: boolean;
+}
+
+export interface GoogleAdsMonthlyVolume {
+  year: number;
+  month: number;
+  volume: number;
+}
+
+export interface GoogleAdsKeyword {
+  keyword: string;
+  avgMonthlySearches: number;
+  monthlySearchVolumes: GoogleAdsMonthlyVolume[];
+  competition: 'LOW' | 'MEDIUM' | 'HIGH' | 'UNKNOWN';
+  competitionIndex: number;
+  bidLow: number | null;
+  bidHigh: number | null;
+}
+
+export interface GoogleAdsKeywordResponse {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  keywords: GoogleAdsKeyword[];
+}
+
+export interface KeywordFilters {
+  minVolume?: number;
+  maxVolume?: number;
+  competition?: string[];
+  location?: string;
+  language?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }

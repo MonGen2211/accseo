@@ -13,6 +13,8 @@ import {
 	InputLabel,
 	LinearProgress,
 	TextField,
+	FormControlLabel,
+	Checkbox,
 } from '@mui/material';
 import { useAiProgress } from '../hooks/useAiProgress';
 
@@ -25,7 +27,7 @@ interface KeywordGroupsAiDialogProps {
 	open: boolean;
 	loading: boolean;
 	onClose: () => void;
-	onConfirm: (timeRange: string, minScore: number, count: number) => void;
+	onConfirm: (timeRange: string, minScore: number, count: number, keywordHot: boolean) => void;
 }
 
 export function KeywordGroupsAiDialog({ open, loading, onClose, onConfirm }: KeywordGroupsAiDialogProps) {
@@ -34,6 +36,7 @@ export function KeywordGroupsAiDialog({ open, loading, onClose, onConfirm }: Key
 	const [minScoreError, setMinScoreError] = React.useState<string | null>(null);
 	const [count, setCount] = React.useState(2);
 	const [countError, setCountError] = React.useState<string | null>(null);
+	const [keywordHot, setKeywordHot] = React.useState(true);
 	const progress = useAiProgress(loading);
 
 	const handleSubmit = (e: React.FormEvent) => {
@@ -48,7 +51,7 @@ export function KeywordGroupsAiDialog({ open, loading, onClose, onConfirm }: Key
 		}
 		setMinScoreError(null);
 		setCountError(null);
-		onConfirm(timeRange, minScore, count);
+		onConfirm(timeRange, minScore, count, keywordHot);
 	};
 
 	return (
@@ -117,6 +120,22 @@ export function KeywordGroupsAiDialog({ open, loading, onClose, onConfirm }: Key
 							error={!!countError}
 							helperText={countError ?? 'Số lượng từ khóa AI sẽ gợi ý (mặc định: 2)'}
 							slotProps={{ htmlInput: { min: 1 } }}
+						/>
+						<FormControlLabel
+							control={
+								<Checkbox
+									checked={keywordHot}
+									onChange={(e) => setKeywordHot(e.target.checked)}
+									size="small"
+								/>
+							}
+							label={
+								<Box>
+									<Typography variant="body2" sx={{ fontWeight: 500 }}>Ưu tiên từ khoá Hot / Trending</Typography>
+									<Typography variant="caption" color="text.secondary">Lấy top 30 trending để bổ sung cho AI phân tích</Typography>
+								</Box>
+							}
+							sx={{ ml: 0, alignItems: 'flex-start' }}
 						/>
 					</Box>
 				</DialogContent>

@@ -118,7 +118,7 @@ export function Ga4Panel({ domainId }: Ga4PanelProps) {
 							borderColor: 'divider',
 							'&.Mui-selected': {
 								backgroundColor: 'primary.main',
-								color: '#fff',
+								color: 'primary.contrastText',
 								'&:hover': { backgroundColor: 'primary.dark' },
 							},
 						},

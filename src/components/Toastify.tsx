@@ -54,10 +54,10 @@ const iconMap = {
 };
 
 const colorMap = {
-	success: '#10B981',
-	danger: '#EF4444',
-	warning: '#F59E0B',
-	info: '#3B82F6',
+	success: 'success.main',
+	danger: 'error.main',
+	warning: 'warning.main',
+	info: 'info.main',
 };
 
 const titleMap = {
@@ -115,7 +115,7 @@ export function ToastifyProvider({ children }: { children: ReactNode }) {
 						<Typography
 							sx={{
 								fontWeight: 600,
-								color: '#ffffff',
+								color: 'white',
 								fontSize: '14px',
 								marginBottom: '4px',
 								lineHeight: 1.2,
@@ -125,7 +125,7 @@ export function ToastifyProvider({ children }: { children: ReactNode }) {
 						</Typography>
 						<Typography
 							sx={{
-								color: '#ffffff',
+								color: 'white',
 								fontSize: '14px',
 								opacity: 0.9,
 								lineHeight: 1.4,

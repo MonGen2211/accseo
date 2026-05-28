@@ -28,6 +28,7 @@ const CONFIGURABLE_PAGES: { key: string; label: string; description?: string }[]
   { key: 'requests', label: 'Yêu cầu', description: 'Hộp thư đến và tạo yêu cầu' },
   { key: 'users', label: 'Quản lý người dùng', description: 'Chỉ ADMIN mới nên có quyền này' },
   { key: 'settings', label: 'Cài đặt', description: 'Cài đặt hệ thống' },
+  { key: 'trending-schedules', label: 'Lịch sync trending', description: 'Cấu hình lịch tự động sync Google Trending' },
 ];
 
 const METHOD_COLORS: Record<string, string> = {
@@ -413,7 +414,7 @@ export default function RolePermissionsTab() {
                                         fontWeight: 700,
                                         fontFamily: 'monospace',
                                         bgcolor: METHOD_COLORS[method] ?? 'grey.500',
-                                        color: '#fff',
+                                        color: 'primary.contrastText',
                                         borderRadius: 1,
                                       }}
                                     />

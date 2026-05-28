@@ -6,6 +6,7 @@ import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import { MetaSetupSection, IntegrationsContentGSC, IntegrationsContentGA4 } from './IntegrationsTab';
+import TrendingSchedulesPage from './TrendingSchedulesPage';
 import { domainService } from '../../domains/domainService';
 import type { Domain } from '../../../types/domain.types';
 
@@ -65,6 +66,16 @@ export default function SettingsPage() {
 					</Box>
 				</Box>
 			)}
+
+			{/* Global System Settings */}
+			<Box sx={{ borderTop: 1, borderColor: 'divider', pt: 4, mt: selectedDomainId ? 2 : 0 }}>
+				<Typography variant="h6" sx={{ mb: 3, fontWeight: 700, pb: 1, borderBottom: 1, borderColor: 'divider' }}>
+					4. Cấu hình Lịch đồng bộ Google Trending hệ thống
+				</Typography>
+				<Box sx={{ width: '100%' }}>
+					<TrendingSchedulesPage />
+				</Box>
+			</Box>
 		</Box>
 	);
 }

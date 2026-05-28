@@ -42,7 +42,7 @@ export default function RequestsPage() {
 			display: 'inline-flex',
 			gap: 0.75,
 			p: 0.75,
-			bgcolor: '#f1f5f9',
+			bgcolor: 'action.hover',
 			borderRadius: '14px',
 			boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)',
 		}}>
@@ -64,7 +64,7 @@ export default function RequestsPage() {
 						color: tab === i ? '#fff' : '#64748b',
 						userSelect: 'none',
 						'&:hover': tab !== i
-							? { bgcolor: 'rgba(255,255,255,0.7)', color: '#334155' }
+							? { bgcolor: 'rgba(255,255,255,0.7)', color: 'text.primary' }
 							: {},
 					}}
 				>
