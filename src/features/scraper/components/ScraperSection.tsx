@@ -105,13 +105,20 @@ export default function ScraperSection() {
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 
   // --- AI Keyword Generator State ---
-  const [aiLoading, setAiLoading] = useState(false);
+  const [aiLoadingId, setAiLoadingId] = useState<string | null>(null);
   const [aiLoadingText, setAiLoadingText] = useState('');
   const [selectedArticleForAi, setSelectedArticleForAi] = useState<ScraperArticle | null>(null);
   const [openAiDialog, setOpenAiDialog] = useState(false);
   const [openAiConfirmDialog, setOpenAiConfirmDialog] = useState(false);
   const [copiedKeyword, setCopiedKeyword] = useState<string | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
+  const [activeTopicIdx, setActiveTopicIdx] = useState(0);
+
+  useEffect(() => {
+    if (openAiDialog) {
+      setActiveTopicIdx(0);
+    }
+  }, [openAiDialog]);
 
   // --- Schedule State ---
   const [schedule, setSchedule] = useState<ScraperSchedule | null>(null);
@@ -287,7 +294,7 @@ export default function ScraperSection() {
     setSelectedArticleForAi(article);
 
     if (!article.aiGenerated) {
-      setAiLoading(true);
+      setAiLoadingId(article._id);
       setAiLoadingText('AI đang nghiên cứu từ khóa SEO...');
       try {
         const res = await scraperService.aiGenerate(article._id);
@@ -302,11 +309,11 @@ export default function ScraperSection() {
       } catch (err: any) {
         handleAiError(err);
       } finally {
-        setAiLoading(false);
+        setAiLoadingId(null);
       }
     } else {
       if (!article.aiResult) {
-        setAiLoading(true);
+        setAiLoadingId(article._id);
         setAiLoadingText('Đang tải dữ liệu từ cache...');
         try {
           const result = await scraperService.getAiResult(article._id);
@@ -320,7 +327,7 @@ export default function ScraperSection() {
         } catch (err: any) {
           handleAiError(err);
         } finally {
-          setAiLoading(false);
+          setAiLoadingId(null);
         }
       } else {
         setOpenAiDialog(true);
@@ -332,7 +339,7 @@ export default function ScraperSection() {
     if (!selectedArticleForAi) return;
     setOpenAiConfirmDialog(false);
     
-    setAiLoading(true);
+    setAiLoadingId(selectedArticleForAi._id);
     setAiLoadingText('AI đang tạo lại từ khóa SEO...');
     try {
       const res = await scraperService.aiGenerate(selectedArticleForAi._id, true);
@@ -347,7 +354,7 @@ export default function ScraperSection() {
     } catch (err: any) {
       handleAiError(err);
     } finally {
-      setAiLoading(false);
+      setAiLoadingId(null);
     }
   };
 
@@ -474,6 +481,7 @@ export default function ScraperSection() {
                       e.stopPropagation();
                       handleAiClick(item);
                     }}
+                    disabled={aiLoadingId !== null}
                     sx={{
                       p: 0.5,
                       borderRadius: 1.5,
@@ -490,12 +498,16 @@ export default function ScraperSection() {
                       }
                     }}
                   >
-                    <PsychologyIcon
-                      sx={{
-                        fontSize: 16,
-                        color: item.aiGenerated ? '#a855f7' : 'text.secondary',
-                      }}
-                    />
+                    {aiLoadingId === item._id ? (
+                      <CircularProgress size={16} sx={{ color: '#a855f7' }} />
+                    ) : (
+                      <PsychologyIcon
+                        sx={{
+                          fontSize: 16,
+                          color: item.aiGenerated ? '#a855f7' : 'text.secondary',
+                        }}
+                      />
+                    )}
                   </IconButton>
                 </Tooltip>
               )}
@@ -1049,30 +1061,6 @@ export default function ScraperSection() {
         </DialogActions>
       </Dialog>
 
-      {/* AI Loading Overlay Dialog */}
-      <Dialog 
-        open={aiLoading} 
-        PaperProps={{
-          sx: {
-            p: 4, 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            borderRadius: 4,
-            maxWidth: 320
-          }
-        }}
-      >
-        <CircularProgress size={48} thickness={4.5} sx={{ color: '#a855f7', mb: 2 }} />
-        <Typography variant="body1" sx={{ fontWeight: 800, textAlign: 'center', mb: 0.5 }}>
-          {aiLoadingText}
-        </Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center' }}>
-          Quá trình phân tích Gemini AI có thể mất 5 - 15 giây. Vui lòng giữ kết nối.
-        </Typography>
-      </Dialog>
-
       {/* AI Keywords Results Dialog */}
       <Dialog 
         open={openAiDialog} 
@@ -1117,52 +1105,113 @@ export default function ScraperSection() {
           </Box>
         </DialogTitle>
 
-        <DialogContent dividers sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {selectedArticleForAi?.aiResult?.topics && selectedArticleForAi.aiResult.topics.length > 0 ? (
-            selectedArticleForAi.aiResult.topics.map((topic, tIdx) => (
-              <Accordion 
-                key={tIdx} 
-                defaultExpanded={tIdx === 0}
-                sx={{
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  borderRadius: 3,
-                  overflow: 'hidden',
-                  '&:before': { display: 'none' },
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
-                  mb: 1
-                }}
-              >
-                <AccordionSummary 
-                  expandIcon={<ExpandMoreIcon />}
-                  sx={{ bgcolor: 'action.hover', borderBottom: '1px solid', borderColor: 'divider' }}
+        <DialogContent 
+          dividers 
+          sx={{ 
+            p: 0, 
+            display: 'flex', 
+            height: '60vh', 
+            maxHeight: 600,
+            minHeight: 400,
+            overflow: 'hidden' 
+          }}
+        >
+          {/* LEFT SIDEBAR: SLEEK TOPIC TABS */}
+          <Box 
+            sx={{ 
+              width: '32%', 
+              borderRight: '1px solid', 
+              borderColor: 'divider', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              overflowY: 'auto',
+              bgcolor: 'background.default',
+              p: 2,
+              gap: 1.5
+            }}
+          >
+            <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.8, px: 1, mb: 0.5 }}>
+              Danh sách chủ đề ({selectedArticleForAi?.aiResult?.topics?.length || 0})
+            </Typography>
+            
+            {selectedArticleForAi?.aiResult?.topics?.map((topic, idx) => {
+              const isActive = activeTopicIdx === idx;
+              return (
+                <Box
+                  key={idx}
+                  onClick={() => setActiveTopicIdx(idx)}
+                  sx={{
+                    p: 2,
+                    borderRadius: 3,
+                    cursor: 'pointer',
+                    bgcolor: isActive ? 'primary.main' : 'background.paper',
+                    color: isActive ? 'primary.contrastText' : 'text.primary',
+                    border: '1px solid',
+                    borderColor: isActive ? 'primary.main' : 'divider',
+                    transition: 'all 0.2s',
+                    boxShadow: isActive ? '0 4px 12px rgba(124, 58, 237, 0.15)' : '0 2px 4px rgba(0,0,0,0.02)',
+                    '&:hover': {
+                      transform: 'translateY(-1px)',
+                      borderColor: isActive ? 'primary.main' : 'primary.light',
+                      bgcolor: isActive ? 'primary.main' : 'action.hover'
+                    }
+                  }}
                 >
+                  <Typography sx={{ fontWeight: 700, fontSize: '0.82rem', lineHeight: 1.3, mb: 0.5 }}>
+                    {topic.name}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: isActive ? 'rgba(255,255,255,0.75)' : 'text.secondary', fontSize: '0.72rem', display: 'block', fontWeight: 500 }}>
+                    🎯 {topic.targetAudience}
+                  </Typography>
+                </Box>
+              );
+            })}
+          </Box>
+
+          {/* RIGHT VIEW: DETAILED TOPIC CONTENT */}
+          <Box 
+            sx={{ 
+              width: '68%', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              overflowY: 'auto',
+              p: 3,
+              gap: 2.5
+            }}
+          >
+            {selectedArticleForAi?.aiResult?.topics?.[activeTopicIdx] ? (() => {
+              const topic = selectedArticleForAi.aiResult.topics[activeTopicIdx];
+              return (
+                <>
+                  {/* Topic Title & Audience */}
                   <Box>
-                    <Typography sx={{ fontWeight: 800, fontSize: '0.92rem', color: 'text.primary' }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 900, color: 'text.primary', mb: 0.5, lineHeight: 1.3 }}>
                       {topic.name}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25, fontWeight: 600 }}>
-                      🎯 Đối tượng mục tiêu: {topic.targetAudience}
-                    </Typography>
-                  </Box>
-                </AccordionSummary>
-                <AccordionDetails sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Box 
-                    sx={{ 
-                      p: 2, 
-                      borderRadius: 2, 
-                      bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(168, 85, 247, 0.05)' : '#faf5ff', 
-                      borderLeft: '4px solid #a855f7' 
-                    }}
-                  >
-                    <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.primary', lineHeight: 1.5 }}>
-                      💡 <strong>Nhu cầu/Insight:</strong> {topic.insight}
+                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                      🎯 <strong>Đối tượng mục tiêu:</strong> {topic.targetAudience}
                     </Typography>
                   </Box>
 
+                  {/* Insight Card */}
+                  <Box 
+                    sx={{ 
+                      p: 2, 
+                      borderRadius: 3, 
+                      bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(168, 85, 247, 0.06)' : '#fcfaff', 
+                      borderLeft: '4px solid #a855f7',
+                      boxShadow: '0 2px 6px rgba(168, 85, 247, 0.02)'
+                    }}
+                  >
+                    <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.primary', lineHeight: 1.5, fontSize: '0.85rem' }}>
+                      💡 <strong>Nhu cầu / Insight:</strong> {topic.insight}
+                    </Typography>
+                  </Box>
+
+                  {/* Keywords Grid */}
                   <Box>
-                    <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                      Danh sách từ khóa đề xuất ({topic.keywords.length}):
+                    <Typography variant="caption" sx={{ fontWeight: 800, mb: 1, display: 'block', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                      Từ khóa đề xuất cho chủ đề này ({topic.keywords.length})
                     </Typography>
                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.5 }}>
                       {topic.keywords.map((kw, kwIdx) => (
@@ -1170,18 +1219,23 @@ export default function ScraperSection() {
                           key={kwIdx}
                           variant="outlined"
                           sx={{
-                            p: 1.5,
+                            p: 1.2,
                             pl: 2,
                             borderRadius: 2.5,
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
-                            bgcolor: 'background.default',
-                            transition: 'border-color 0.2s',
-                            '&:hover': { borderColor: 'primary.main' }
+                            bgcolor: 'background.paper',
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            transition: 'all 0.2s',
+                            '&:hover': { 
+                              borderColor: 'primary.main',
+                              boxShadow: '0 2px 8px rgba(124, 58, 237, 0.05)'
+                            }
                           }}
                         >
-                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', fontSize: '0.85rem' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', fontSize: '0.82rem', pr: 1 }}>
                             {kw}
                           </Typography>
                           <Tooltip title={copiedKeyword === kw ? 'Đã copy!' : 'Copy từ khóa'}>
@@ -1197,14 +1251,14 @@ export default function ScraperSection() {
                       ))}
                     </Box>
                   </Box>
-                </AccordionDetails>
-              </Accordion>
-            ))
-          ) : (
-            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-              Không có dữ liệu chủ đề AI.
-            </Typography>
-          )}
+                </>
+              );
+            })() : (
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                <Typography color="text.secondary">Vui lòng chọn một chủ đề để xem chi tiết.</Typography>
+              </Box>
+            )}
+          </Box>
         </DialogContent>
 
         <DialogActions sx={{ p: 2.5, justifyContent: 'space-between' }}>
