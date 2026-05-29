@@ -1273,30 +1273,27 @@ export default function ScraperSection() {
 
                         {/* Phân loại hệ thống (Bị ẩn khỏi bảng chính của VBPL) */}
                         {activeSite === 'vbpl' && (
-                          <Box sx={{ p: 2.5, mt: 1, borderRadius: 2.5, bgcolor: 'rgba(59, 130, 246, 0.03)', border: '1px solid rgba(59, 130, 246, 0.08)', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                            <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.main', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid', borderColor: 'divider', pb: 0.75 }}>
-                              Thuộc tính phân loại hệ thống
-                            </Typography>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>Mục:</Typography>
-                              <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>{item.section || '-'}</Typography>
+                          <>
+                            <Box sx={{ mt: 1.5 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5, color: 'text.secondary', fontSize: '0.75rem' }}>Mục:</Typography>
+                              <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary' }}>{item.section || '-'}</Typography>
                             </Box>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>Chủ đề:</Typography>
-                              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                            <Box sx={{ mt: 1.5 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5, color: 'text.secondary', fontSize: '0.75rem' }}>Chủ đề:</Typography>
+                              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                                 {item.category?.map((c, idx) => (
-                                  <Chip key={`exp-cat-${idx}`} label={c} size="small" variant="outlined" color="primary" sx={{ fontSize: 10, height: 18, fontWeight: 600 }} />
+                                  <Chip key={`exp-cat-${idx}`} label={c} size="small" variant="outlined" color="primary" sx={{ fontSize: 11, height: 22 }} />
                                 ))}
                                 {!item.category?.length && <Typography variant="body2" sx={{ color: 'text.secondary' }}>-</Typography>}
                               </Box>
                             </Box>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>Thời gian cào bài:</Typography>
-                              <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                            <Box sx={{ mt: 1.5 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5, color: 'text.secondary', fontSize: '0.75rem' }}>Thời gian cào bài:</Typography>
+                              <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary' }}>
                                 {safeFormat(item.createdAt, 'dd/MM/yyyy HH:mm')}
                               </Typography>
                             </Box>
-                          </Box>
+                          </>
                         )}
                       </Box>
 
