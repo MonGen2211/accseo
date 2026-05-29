@@ -35,6 +35,14 @@ import PsychologyIcon from '@mui/icons-material/Psychology';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import LibraryAddCheckIcon from '@mui/icons-material/LibraryAddCheck';
+import BusinessIcon from '@mui/icons-material/Business';
+import PersonIcon from '@mui/icons-material/Person';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import LinkIcon from '@mui/icons-material/Link';
+import GavelIcon from '@mui/icons-material/Gavel';
+
 
 import CustomTable from '../../../components/custom-table/CustomTable';
 import type { TableField } from '../../../types/tableFields.types';
@@ -72,6 +80,30 @@ const SITE_SOURCES = [
   { id: 'rss', name: 'Các tờ báo', desc: 'Tin tức báo chí', color: '#4f46e5', bg: '#e0e7ff' },
 ];
 
+const LEGAL_SECTORS = [
+  'Tài chính', 'Tư pháp', 'Nội vụ', 'Thông tin và Truyền thông', 'Công thương', 
+  'Y tế', 'Giáo dục và Đào tạo', 'Giao thông vận tải', 'Xây dựng', 
+  'Tài nguyên và Môi trường', 'Nông nghiệp và Phát triển nông thôn', 
+  'Lao động - Thương binh và Xã hội', 'Văn hóa, Thể thao và Du lịch', 
+  'Công an', 'Quốc phòng', 'Ngoại giao'
+];
+
+const LEGAL_DOMAINS = [
+  'Kế toán', 'Thuế - Phí - Lệ phí', 'Đất đai', 'Doanh nghiệp', 'Lao động - Tiền lương',
+  'Hành chính', 'Hình sự', 'Dân sự', 'Bất động sản', 'Đầu tư', 'Thương mại'
+];
+
+const DOC_TYPES = [
+  { code: 'TT', label: 'Thông tư (TT)' },
+  { code: 'QĐ', label: 'Quyết định (QĐ)' },
+  { code: 'NĐ', label: 'Nghị định (NĐ)' },
+  { code: 'CV', label: 'Công văn (CV)' },
+  { code: 'NQ', label: 'Nghị quyết (NQ)' },
+  { code: 'L', label: 'Luật (L)' },
+  { code: 'PL', label: 'Pháp lệnh (PL)' },
+  { code: 'CH', label: 'Chỉ thị (CH)' }
+];
+
 export default function ScraperSection() {
   const { showToast } = useToastify();
 
@@ -90,6 +122,9 @@ export default function ScraperSection() {
   const [onlyNew, setOnlyNew] = useState(false);
   const [scope, setScope] = useState('');
   const [effStatusCode, setEffStatusCode] = useState('');
+  const [nganh, setNganh] = useState('');
+  const [linhVuc, setLinhVuc] = useState('');
+  const [docTypeCode, setDocTypeCode] = useState('');
   const [tagsList, setTagsList] = useState<string[]>([]);
   const [categoriesList, setCategoriesList] = useState<string[]>([]);
   const debouncedQ = useDebounce(q, 500);
@@ -138,6 +173,9 @@ export default function ScraperSection() {
   const [downloadQ, setDownloadQ] = useState('');
   const [downloadScope, setDownloadScope] = useState('');
   const [downloadEffStatusCode, setDownloadEffStatusCode] = useState('');
+  const [downloadNganh, setDownloadNganh] = useState('');
+  const [downloadLinhVuc, setDownloadLinhVuc] = useState('');
+  const [downloadDocTypeCode, setDownloadDocTypeCode] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
 
   const handleOpenDownloadDialog = () => {
@@ -149,6 +187,9 @@ export default function ScraperSection() {
     setDownloadQ(q);
     setDownloadScope(scope);
     setDownloadEffStatusCode(effStatusCode);
+    setDownloadNganh(nganh);
+    setDownloadLinhVuc(linhVuc);
+    setDownloadDocTypeCode(docTypeCode);
     setOpenDownloadDialog(true);
   };
 
@@ -166,6 +207,9 @@ export default function ScraperSection() {
         endDate: downloadAllTime ? undefined : (downloadEndDate || undefined),
         scope: activeSite === 'vbpl' && downloadScope ? downloadScope : undefined,
         effStatusCode: activeSite === 'vbpl' && downloadEffStatusCode ? downloadEffStatusCode : undefined,
+        nganh: activeSite === 'vbpl' && downloadNganh ? downloadNganh : undefined,
+        linhVuc: activeSite === 'vbpl' && downloadLinhVuc ? downloadLinhVuc : undefined,
+        docTypeCode: activeSite === 'vbpl' && downloadDocTypeCode ? downloadDocTypeCode : undefined,
         page: 1,
         limit: 10000
       });
@@ -202,7 +246,16 @@ export default function ScraperSection() {
           'Ngày hiệu lực',
           'Tình trạng hiệu lực',
           'Lĩnh vực',
-          'Phạm vi'
+          'Phạm vi',
+          'Ngành',
+          'Loại văn bản',
+          'Ngày hết hiệu lực',
+          'Ngày công khai',
+          'Ngày cập nhật cuối',
+          'Người ký',
+          'Chức danh người ký',
+          'Tổ chức',
+          'Lượt xem'
         );
       }
 
@@ -226,7 +279,16 @@ export default function ScraperSection() {
             item.metadata?.effectiveDate ? (item.metadata.effectiveDate.includes('T') ? safeFormat(item.metadata.effectiveDate, 'dd/MM/yyyy') : item.metadata.effectiveDate) : '',
             item.metadata?.effStatus || '',
             item.metadata?.linhVuc || '',
-            item.metadata?.scope === 'TW' ? 'Trung ương' : item.metadata?.scope === 'DP' ? 'Địa phương' : item.metadata?.scope || ''
+            item.metadata?.scope === 'TW' ? 'Trung ương' : item.metadata?.scope === 'DP' ? 'Địa phương' : item.metadata?.scope || '',
+            item.metadata?.nganh || '',
+            item.metadata?.docType || '',
+            item.metadata?.expiredDate ? (item.metadata.expiredDate.includes('T') ? safeFormat(item.metadata.expiredDate, 'dd/MM/yyyy') : item.metadata.expiredDate) : '',
+            item.metadata?.publicDate ? (item.metadata.publicDate.includes('T') ? safeFormat(item.metadata.publicDate, 'dd/MM/yyyy') : item.metadata.publicDate) : '',
+            item.metadata?.updatedDate ? (item.metadata.updatedDate.includes('T') ? safeFormat(item.metadata.updatedDate, 'dd/MM/yyyy HH:mm') : item.metadata.updatedDate) : '',
+            item.metadata?.signer || '',
+            item.metadata?.signerTitle || '',
+            item.metadata?.organizationName || '',
+            item.metadata?.viewCount !== undefined ? String(item.metadata.viewCount) : ''
           );
         }
 
@@ -307,6 +369,9 @@ export default function ScraperSection() {
         onlyNew,
         scope: activeSite === 'vbpl' && scope ? scope : undefined,
         effStatusCode: activeSite === 'vbpl' && effStatusCode ? effStatusCode : undefined,
+        nganh: activeSite === 'vbpl' && nganh ? nganh : undefined,
+        linhVuc: activeSite === 'vbpl' && linhVuc ? linhVuc : undefined,
+        docTypeCode: activeSite === 'vbpl' && docTypeCode ? docTypeCode : undefined,
         page: p + 1,
         limit: l
       });
@@ -327,6 +392,9 @@ export default function ScraperSection() {
     setOnlyNew(false);
     setScope('');
     setEffStatusCode('');
+    setNganh('');
+    setLinhVuc('');
+    setDocTypeCode('');
     loadTags();
     loadSchedule();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -337,7 +405,7 @@ export default function ScraperSection() {
     loadArticles(0, limit);
     setPage(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSite, section, tag, date, debouncedQ, onlyNew, scope, effStatusCode]);
+  }, [activeSite, section, tag, date, debouncedQ, onlyNew, scope, effStatusCode, nganh, linhVuc, docTypeCode]);
 
   // --- Handlers ---
   const handlePageChange = (newPage: number) => {
@@ -1179,6 +1247,18 @@ export default function ScraperSection() {
                   <MenuItem value="HHL">Hết hiệu lực toàn bộ</MenuItem>
                   <MenuItem value="NHL">Ngưng hiệu lực</MenuItem>
                 </Select>
+                <Select size="small" value={nganh} onChange={(e) => setNganh(e.target.value)} displayEmpty sx={{ minWidth: 150 }}>
+                  <MenuItem value="">Tất cả Ngành</MenuItem>
+                  {LEGAL_SECTORS.map(n => <MenuItem key={n} value={n}>{n}</MenuItem>)}
+                </Select>
+                <Select size="small" value={linhVuc} onChange={(e) => setLinhVuc(e.target.value)} displayEmpty sx={{ minWidth: 150 }}>
+                  <MenuItem value="">Tất cả Lĩnh vực</MenuItem>
+                  {LEGAL_DOMAINS.map(l => <MenuItem key={l} value={l}>{l}</MenuItem>)}
+                </Select>
+                <Select size="small" value={docTypeCode} onChange={(e) => setDocTypeCode(e.target.value)} displayEmpty sx={{ minWidth: 150 }}>
+                  <MenuItem value="">Tất cả Loại VB</MenuItem>
+                  {DOC_TYPES.map(t => <MenuItem key={t.code} value={t.code}>{t.label}</MenuItem>)}
+                </Select>
               </>
             )}
             <FormControlLabel
@@ -1197,8 +1277,8 @@ export default function ScraperSection() {
               }
               sx={{ ml: 1, mr: 0 }}
             />
-            {(section || tag || date || q || onlyNew || scope || effStatusCode) && (
-              <Button size="small" color="error" onClick={() => { setSection(''); setTag(''); setDate(''); setQ(''); setOnlyNew(false); setScope(''); setEffStatusCode(''); }}>
+            {(section || tag || date || q || onlyNew || scope || effStatusCode || nganh || linhVuc || docTypeCode) && (
+              <Button size="small" color="error" onClick={() => { setSection(''); setTag(''); setDate(''); setQ(''); setOnlyNew(false); setScope(''); setEffStatusCode(''); setNganh(''); setLinhVuc(''); setDocTypeCode(''); }}>
                 Xóa lọc
               </Button>
             )}
@@ -1223,6 +1303,206 @@ export default function ScraperSection() {
               }}
               renderExpandedRow={(row) => {
                 const item = row as unknown as ScraperArticle;
+
+                if (activeSite === 'vbpl') {
+                  const meta = item.metadata || {};
+                  
+                  // Helper function to render a detail row if value exists
+                  const renderDetailItem = (label: string, value: React.ReactNode) => {
+                    if (value === undefined || value === null || value === '') return null;
+                    return (
+                      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, borderBottom: '1px solid', borderColor: 'divider', py: 1, gap: 0.5 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', minWidth: 140 }}>
+                          {label}
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', textAlign: { sm: 'right' } }}>
+                          {value}
+                        </Typography>
+                      </Box>
+                    );
+                  };
+
+                  return (
+                    <Box sx={{ p: 3, pl: { xs: 2, md: 5 }, bgcolor: 'background.default', borderBottom: '1px solid', borderColor: 'divider' }}>
+                      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: '1fr 1fr 1fr' }, gap: 3 }}>
+                        
+                        {/* Block 1: Phân loại & Tổ chức */}
+                        <Paper sx={{ p: 2.5, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', boxShadow: 'none', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+                            <BusinessIcon sx={{ color: 'primary.main', fontSize: 20 }} />
+                            <Typography variant="body2" sx={{ fontWeight: 800, color: 'text.primary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                              Phân loại & Tổ chức
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                            {renderDetailItem('Số hiệu', meta.docNumber)}
+                            {renderDetailItem('Ngành', meta.nganh)}
+                            {meta.nganhs && meta.nganhs.length > 1 && renderDetailItem('Các ngành khác', meta.nganhs.slice(1).join(', '))}
+                            {renderDetailItem('Loại văn bản', meta.docType ? `${meta.docType} (${meta.docTypeCode || ''})` : null)}
+                            {renderDetailItem('Tổ chức', meta.organizationName)}
+                            {renderDetailItem('Cấp tổ chức', meta.organizationType === '0' ? 'Trung ương' : meta.organizationType === '1' ? 'Địa phương' : meta.organizationType)}
+                            {renderDetailItem('Ngôn ngữ', meta.language === 'VN' ? 'Tiếng Việt' : meta.language)}
+                            {renderDetailItem('Mục hệ thống', item.section)}
+                            {item.category && item.category.length > 0 && renderDetailItem('Chủ đề', (
+                              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', justifyContent: 'flex-end', mt: 0.5 }}>
+                                {item.category.map((c, idx) => (
+                                  <Chip key={idx} label={c} size="small" variant="outlined" color="primary" sx={{ fontSize: 9, height: 16, fontWeight: 500 }} />
+                                ))}
+                              </Box>
+                            ))}
+                          </Box>
+                        </Paper>
+
+                        {/* Block 2: Người ký */}
+                        <Paper sx={{ p: 2.5, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', boxShadow: 'none', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+                            <PersonIcon sx={{ color: 'secondary.main', fontSize: 20 }} />
+                            <Typography variant="body2" sx={{ fontWeight: 800, color: 'text.primary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                              Người ký văn bản
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                            {renderDetailItem('Người ký chính', meta.signer)}
+                            {renderDetailItem('Chức danh', meta.signerTitle)}
+                            
+                            {meta.signers && meta.signers.length > 1 && (
+                              <Box sx={{ mt: 1.5 }}>
+                                <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', display: 'block', mb: 1 }}>
+                                  Danh sách tất cả người ký ({meta.signers.length}):
+                                </Typography>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                  {meta.signers.map((s, idx) => (
+                                    <Box key={idx} sx={{ p: 1, borderRadius: 1.5, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider' }}>
+                                      <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>{s.name}</Typography>
+                                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                        {s.title} {s.agency ? `· ${s.agency}` : ''}
+                                      </Typography>
+                                    </Box>
+                                  ))}
+                                </Box>
+                              </Box>
+                            )}
+                          </Box>
+                        </Paper>
+
+                        {/* Block 3: Thời gian & Tài liệu */}
+                        <Paper sx={{ p: 2.5, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', boxShadow: 'none', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+                            <CalendarTodayIcon sx={{ color: 'warning.main', fontSize: 20 }} />
+                            <Typography variant="body2" sx={{ fontWeight: 800, color: 'text.primary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                              Thời gian & Tài liệu
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                            {renderDetailItem('Ngày công khai', meta.publicDate ? (meta.publicDate.includes('T') ? safeFormat(meta.publicDate, 'dd/MM/yyyy') : meta.publicDate) : null)}
+                            {renderDetailItem('Ngày hết hiệu lực', meta.expiredDate ? (meta.expiredDate.includes('T') ? safeFormat(meta.expiredDate, 'dd/MM/yyyy') : meta.expiredDate) : null)}
+                            {renderDetailItem('Cập nhật trên nguồn', meta.updatedDate ? (meta.updatedDate.includes('T') ? safeFormat(meta.updatedDate, 'dd/MM/yyyy HH:mm') : meta.updatedDate) : null)}
+                            {renderDetailItem('Thời gian cào bài', safeFormat(item.createdAt, 'dd/MM/yyyy HH:mm'))}
+                            {renderDetailItem('Trạng thái VBPL', meta.publishStatus)}
+                            
+                            {meta.pdfFileName ? renderDetailItem('File PDF gốc', (
+                              <Link 
+                                href={`${window.location.origin}/uploads/pdfs/${meta.pdfFileName}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'error.main', fontWeight: 700, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                              >
+                                <PictureAsPdfIcon fontSize="small" />
+                                Tải PDF gốc
+                              </Link>
+                            )) : null}
+
+                            {meta.viewCount !== undefined ? renderDetailItem('Lượt xem VBPL', (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'info.main', fontWeight: 700 }}>
+                                <VisibilityIcon fontSize="small" />
+                                {meta.viewCount} lượt xem
+                              </Box>
+                            )) : null}
+                          </Box>
+                        </Paper>
+
+                        {/* Block 4: Thuộc tính & Liên kết */}
+                        <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2', lg: 'span 3' }, display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' }, gap: 3 }}>
+                          
+                          {/* Flags Box */}
+                          <Paper sx={{ p: 2.5, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', boxShadow: 'none', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+                              <GavelIcon sx={{ color: 'success.main', fontSize: 20 }} />
+                              <Typography variant="body2" sx={{ fontWeight: 800, color: 'text.primary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                Thuộc tính & Trạng thái xử lý
+                              </Typography>
+                            </Box>
+                            
+                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', py: 1 }}>
+                              {[
+                                { label: 'Văn bản hành chính', val: meta.isAdministrative },
+                                { label: 'Văn bản hợp nhất', val: meta.isConsolidated },
+                                { label: 'Hiến pháp', val: meta.isConstitutional },
+                                { label: 'Hiệu lực toàn bộ', val: meta.isEffectAll },
+                                { label: 'Văn bản QPPL chính thức', val: meta.isLegalDoc },
+                                { label: 'Văn bản cũ', val: meta.isOld },
+                                { label: 'Bản dịch', val: meta.isTranslation },
+                                { label: 'Có nội dung', val: meta.hasContent },
+                                { label: 'Đã xử lý AI', val: meta.hasAIProcessed }
+                              ].map((flag, idx) => {
+                                if (!flag.val) return null;
+                                return (
+                                  <Chip
+                                    key={idx}
+                                    label={flag.label}
+                                    color="success"
+                                    size="small"
+                                    sx={{ 
+                                      fontSize: '0.75rem', 
+                                      fontWeight: 600, 
+                                      height: 24,
+                                      bgcolor: 'rgba(16, 185, 129, 0.12)',
+                                      color: '#10b981',
+                                      border: '1px solid rgba(16, 185, 129, 0.3)'
+                                    }}
+                                  />
+                                );
+                              })}
+                            </Box>
+                          </Paper>
+
+                          {/* Related URLs Box */}
+                          <Paper sx={{ p: 2.5, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', boxShadow: 'none', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+                              <LinkIcon sx={{ color: 'info.main', fontSize: 20 }} />
+                              <Typography variant="body2" sx={{ fontWeight: 800, color: 'text.primary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                Bài viết liên quan
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                              {item.relatedUrls && item.relatedUrls.length > 0 ? (
+                                <>
+                                  {item.relatedUrls.slice(0, 5).map((url, idx) => (
+                                    <Link key={idx} href={url} target="_blank" rel="noopener noreferrer" sx={{ fontSize: '0.8rem', color: 'primary.main', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontWeight: 500, '&:hover': { textDecoration: 'underline' } }}>
+                                      {url}
+                                    </Link>
+                                  ))}
+                                  {item.relatedUrls.length > 5 && (
+                                    <Typography variant="caption" color="text.disabled" sx={{ fontStyle: 'italic' }}>
+                                      +{item.relatedUrls.length - 5} liên kết khác...
+                                    </Typography>
+                                  )}
+                                </>
+                              ) : (
+                                <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>
+                                  Không có văn bản liên quan.
+                                </Typography>
+                              )}
+                            </Box>
+                          </Paper>
+
+                        </Box>
+
+                      </Box>
+                    </Box>
+                  );
+                }
+
                 return (
                   <Box sx={{ p: 3, pl: { xs: 2, md: 5 }, bgcolor: 'background.default', borderBottom: '1px solid', borderColor: 'divider' }}>
                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' }, gap: 4 }}>
@@ -1641,6 +1921,51 @@ export default function ScraperSection() {
                       <MenuItem value="CCHL">Sắp có hiệu lực</MenuItem>
                       <MenuItem value="HHL">Hết hiệu lực toàn bộ</MenuItem>
                       <MenuItem value="NHL">Ngưng hiệu lực</MenuItem>
+                    </Select>
+                  </Box>
+
+                  <Box>
+                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.5 }}>Ngành</Typography>
+                    <Select
+                      fullWidth
+                      size="small"
+                      value={downloadNganh}
+                      onChange={(e) => setDownloadNganh(e.target.value)}
+                      displayEmpty
+                      disabled={isDownloading}
+                    >
+                      <MenuItem value="">Tất cả ngành</MenuItem>
+                      {LEGAL_SECTORS.map(n => <MenuItem key={n} value={n}>{n}</MenuItem>)}
+                    </Select>
+                  </Box>
+
+                  <Box>
+                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.5 }}>Lĩnh vực</Typography>
+                    <Select
+                      fullWidth
+                      size="small"
+                      value={downloadLinhVuc}
+                      onChange={(e) => setDownloadLinhVuc(e.target.value)}
+                      displayEmpty
+                      disabled={isDownloading}
+                    >
+                      <MenuItem value="">Tất cả lĩnh vực</MenuItem>
+                      {LEGAL_DOMAINS.map(l => <MenuItem key={l} value={l}>{l}</MenuItem>)}
+                    </Select>
+                  </Box>
+
+                  <Box sx={{ gridColumn: 'span 2' }}>
+                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.5 }}>Loại văn bản</Typography>
+                    <Select
+                      fullWidth
+                      size="small"
+                      value={downloadDocTypeCode}
+                      onChange={(e) => setDownloadDocTypeCode(e.target.value)}
+                      displayEmpty
+                      disabled={isDownloading}
+                    >
+                      <MenuItem value="">Tất cả loại văn bản</MenuItem>
+                      {DOC_TYPES.map(t => <MenuItem key={t.code} value={t.code}>{t.label}</MenuItem>)}
                     </Select>
                   </Box>
                 </>

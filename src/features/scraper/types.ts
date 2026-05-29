@@ -23,6 +23,33 @@ export interface ScraperArticle {
     scope?: string | null;
     effStatus?: string | null;
     effStatusCode?: string | null;
+    nganh?: string;
+    nganhs?: string[];
+    linhVucs?: string[];
+    docType?: string;
+    docTypeCode?: string;
+    expiredDate?: string | null;
+    publicDate?: string | null;
+    updatedDate?: string;
+    signer?: string;
+    signerTitle?: string;
+    signers?: { name: string; title: string; agency?: string }[];
+    organizationName?: string;
+    organizationType?: string;
+    pdfFileName?: string | null;
+    language?: string;
+    viewCount?: number;
+    publishStatus?: string;
+    isAdministrative?: boolean;
+    isConsolidated?: boolean;
+    isConstitutional?: boolean;
+    isEffectAll?: boolean;
+    isLegalDoc?: boolean;
+    isOld?: boolean;
+    isTranslation?: boolean;
+    hasContent?: boolean;
+    hasOriginalPdf?: boolean | null;
+    hasAIProcessed?: boolean;
   } | null;
   relatedUrls?: string[] | null;
   firstSeenAt?: string | null;
@@ -57,6 +84,9 @@ export interface GetArticlesParams {
   effStatusCode?: string;
   startDate?: string;
   endDate?: string;
+  nganh?: string;
+  linhVuc?: string;
+  docTypeCode?: string;
 }
 
 export interface GetArticlesResponse {

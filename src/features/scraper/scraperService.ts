@@ -26,6 +26,9 @@ export const scraperService = {
     if (params.effStatusCode) query.append('effStatusCode', params.effStatusCode);
     if (params.startDate) query.append('startDate', params.startDate);
     if (params.endDate) query.append('endDate', params.endDate);
+    if (params.nganh) query.append('nganh', params.nganh);
+    if (params.linhVuc) query.append('linhVuc', params.linhVuc);
+    if (params.docTypeCode) query.append('docTypeCode', params.docTypeCode);
     if (params.page) query.append('page', params.page.toString());
     if (params.limit) query.append('limit', params.limit.toString());
 

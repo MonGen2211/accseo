@@ -477,7 +477,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <Box sx={{ maxWidth: 1400, mx: 'auto', display: 'flex', flexDirection: 'column', gap: 4, zoom: 0.95, position: 'relative' }}>
+    <Box sx={{ maxWidth: 1400, mx: 'auto', display: 'flex', flexDirection: 'column', gap: 4, zoom: 0.8, position: 'relative' }}>
 
       {/* Floating Apple-style Navigation Dock */}
       {isMinimized && !isHovered ? (
