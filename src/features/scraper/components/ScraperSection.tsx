@@ -537,6 +537,12 @@ export default function ScraperSection() {
         const article = items.find(item => item._id === id);
         if (!article) continue;
 
+        // Bỏ qua nếu đã có sheetUrl
+        if (article.sheetUrl) {
+          successCount++;
+          continue;
+        }
+
         showToast(`[Batch AI] Đang xử lý bài ${i + 1}/${totalCount}...`, 'info');
         setAiLoadingId(article._id);
         
@@ -749,63 +755,29 @@ export default function ScraperSection() {
 
     if (sheetUrl) {
       return (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }} onClick={(e) => e.stopPropagation()}>
-          {/* Green Google Sheets Icon Button */}
-          <Tooltip title={`Đã push Sheet (Batch #${sheetLastBatch || 1}) · Click để mở Google Sheet`}>
-            <IconButton
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open(sheetUrl, '_blank', 'noopener,noreferrer');
-              }}
-              sx={{
-                p: 0.5,
-                borderRadius: '50%',
-                border: '1px solid #10b981',
-                bgcolor: 'rgba(16, 185, 129, 0.08)',
-                transition: 'all 0.2s',
-                '&:hover': {
-                  bgcolor: 'rgba(16, 185, 129, 0.15)',
-                  borderColor: '#059669',
-                  transform: 'scale(1.1)',
-                }
-              }}
-            >
-              <GridOnIcon sx={{ fontSize: 14, color: '#10b981' }} />
-            </IconButton>
-          </Tooltip>
-
-          {/* Purple Sparkle/Regenerate Icon Button */}
-          <Tooltip title="Gen lại AI (Đẩy đè lên Google Sheet)">
-            <IconButton
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedArticleForAi(item);
-                setOpenAiConfirmDialog(true);
-              }}
-              disabled={aiLoadingId !== null}
-              sx={{
-                p: 0.5,
-                borderRadius: '50%',
-                border: '1px solid rgba(168, 85, 247, 0.4)',
-                bgcolor: 'rgba(168, 85, 247, 0.05)',
-                transition: 'all 0.2s',
-                '&:hover': {
-                  bgcolor: 'rgba(168, 85, 247, 0.12)',
-                  borderColor: '#a855f7',
-                  transform: 'scale(1.1)',
-                },
-                '&.Mui-disabled': {
-                  border: '1px solid rgba(168, 85, 247, 0.15)',
-                  bgcolor: 'rgba(168, 85, 247, 0.02)',
-                }
-              }}
-            >
-              <AutoAwesomeIcon sx={{ fontSize: 12, color: '#a855f7' }} />
-            </IconButton>
-          </Tooltip>
-        </Box>
+        <Tooltip title={`Đã push Sheet (Batch #${sheetLastBatch || 1}) · Click để mở Google Sheet`} onClick={(e) => e.stopPropagation()}>
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              window.open(sheetUrl, '_blank', 'noopener,noreferrer');
+            }}
+            sx={{
+              p: 0.5,
+              borderRadius: '50%',
+              border: '1px solid #10b981',
+              bgcolor: 'rgba(16, 185, 129, 0.08)',
+              transition: 'all 0.2s',
+              '&:hover': {
+                bgcolor: 'rgba(16, 185, 129, 0.15)',
+                borderColor: '#059669',
+                transform: 'scale(1.1)',
+              }
+            }}
+          >
+            <GridOnIcon sx={{ fontSize: 14, color: '#10b981' }} />
+          </IconButton>
+        </Tooltip>
       );
     }
 
@@ -850,11 +822,18 @@ export default function ScraperSection() {
       label: (
         <Checkbox
           size="small"
-          checked={items.length > 0 && selectedIds.length === items.length}
-          indeterminate={selectedIds.length > 0 && selectedIds.length < items.length}
+          checked={
+            items.length > 0 && 
+            items.filter(item => !item.sheetUrl).length > 0 && 
+            selectedIds.length === items.filter(item => !item.sheetUrl).length
+          }
+          indeterminate={
+            selectedIds.length > 0 && 
+            selectedIds.length < items.filter(item => !item.sheetUrl).length
+          }
           onChange={(e) => {
             if (e.target.checked) {
-              setSelectedIds(items.map(item => String(item._id)));
+              setSelectedIds(items.filter(item => !item.sheetUrl).map(item => String(item._id)));
             } else {
               setSelectedIds([]);
             }
@@ -870,6 +849,12 @@ export default function ScraperSection() {
       width: 50,
       renderCell: (row: TableRowData) => {
         const item = row as unknown as ScraperArticle;
+        
+        // Hide checkbox if already generated & pushed to Google Sheet
+        if (item.sheetUrl) {
+          return null;
+        }
+
         const isChecked = selectedIds.includes(String(item._id));
         return (
           <Checkbox
