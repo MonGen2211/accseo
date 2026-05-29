@@ -78,6 +78,8 @@ export default function ScraperSection() {
   const [date, setDate] = useState('');
   const [q, setQ] = useState('');
   const [onlyNew, setOnlyNew] = useState(false);
+  const [scope, setScope] = useState('');
+  const [effStatusCode, setEffStatusCode] = useState('');
   const [tagsList, setTagsList] = useState<string[]>([]);
   const [categoriesList, setCategoriesList] = useState<string[]>([]);
   const debouncedQ = useDebounce(q, 500);
@@ -147,6 +149,8 @@ export default function ScraperSection() {
         date,
         q: debouncedQ,
         onlyNew,
+        scope: activeSite === 'vbpl' && scope ? scope : undefined,
+        effStatusCode: activeSite === 'vbpl' && effStatusCode ? effStatusCode : undefined,
         page: p + 1,
         limit: l
       });
@@ -165,6 +169,8 @@ export default function ScraperSection() {
     setDate('');
     setQ('');
     setOnlyNew(false);
+    setScope('');
+    setEffStatusCode('');
     loadTags();
     loadSchedule();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -175,7 +181,7 @@ export default function ScraperSection() {
     loadArticles(0, limit);
     setPage(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSite, section, tag, date, debouncedQ, onlyNew]);
+  }, [activeSite, section, tag, date, debouncedQ, onlyNew, scope, effStatusCode]);
 
   // --- Handlers ---
   const handlePageChange = (newPage: number) => {
@@ -288,6 +294,55 @@ export default function ScraperSection() {
                   }}
                 />
               )}
+
+              {/* Scope Badge */}
+              {item.metadata?.scope && (
+                <Chip
+                  label={item.metadata.scope === 'TW' ? 'Trung ương' : item.metadata.scope === 'DP' ? 'Địa phương' : item.metadata.scope}
+                  size="small"
+                  sx={{
+                    height: 18,
+                    fontSize: '0.675rem',
+                    fontWeight: 700,
+                    borderRadius: 1,
+                    bgcolor: item.metadata.scope === 'TW' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                    color: item.metadata.scope === 'TW' ? '#3b82f6' : '#10b981',
+                    border: '1px solid',
+                    borderColor: item.metadata.scope === 'TW' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(16, 185, 129, 0.3)',
+                  }}
+                />
+              )}
+
+              {/* Status Badge */}
+              {item.metadata?.effStatus && (
+                <Chip
+                  label={item.metadata.effStatus}
+                  size="small"
+                  sx={{
+                    height: 18,
+                    fontSize: '0.675rem',
+                    fontWeight: 700,
+                    borderRadius: 1,
+                    bgcolor: 
+                      item.metadata.effStatusCode === 'CCHL' ? 'rgba(245, 158, 11, 0.15)' : 
+                      item.metadata.effStatusCode === 'CHL' ? 'rgba(16, 185, 129, 0.15)' : 
+                      item.metadata.effStatusCode === 'HHL' ? 'rgba(107, 114, 128, 0.15)' : 
+                      'rgba(107, 114, 128, 0.12)',
+                    color: 
+                      item.metadata.effStatusCode === 'CCHL' ? '#f59e0b' : 
+                      item.metadata.effStatusCode === 'CHL' ? '#10b981' : 
+                      item.metadata.effStatusCode === 'HHL' ? '#6b7280' : 
+                      '#6b7280',
+                    border: '1px solid',
+                    borderColor: 
+                      item.metadata.effStatusCode === 'CCHL' ? 'rgba(245, 158, 11, 0.3)' : 
+                      item.metadata.effStatusCode === 'CHL' ? 'rgba(16, 185, 129, 0.3)' : 
+                      item.metadata.effStatusCode === 'HHL' ? 'rgba(107, 114, 128, 0.3)' : 
+                      'rgba(107, 114, 128, 0.2)',
+                  }}
+                />
+              )}
+
               <Link href={item.url} target="_blank" rel="noopener noreferrer" sx={{ color: 'primary.main', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
                 {item.title}
               </Link>
@@ -557,6 +612,22 @@ export default function ScraperSection() {
               onChange={(e) => setDate(e.target.value)}
               sx={{ width: 140 }}
             />
+            {activeSite === 'vbpl' && (
+              <>
+                <Select size="small" value={scope} onChange={(e) => setScope(e.target.value)} displayEmpty sx={{ minWidth: 150 }}>
+                  <MenuItem value="">Tất cả Phạm vi</MenuItem>
+                  <MenuItem value="TW">Trung ương (TW)</MenuItem>
+                  <MenuItem value="DP">Địa phương (DP)</MenuItem>
+                </Select>
+                <Select size="small" value={effStatusCode} onChange={(e) => setEffStatusCode(e.target.value)} displayEmpty sx={{ minWidth: 160 }}>
+                  <MenuItem value="">Tất cả Hiệu lực</MenuItem>
+                  <MenuItem value="CHL">Còn hiệu lực</MenuItem>
+                  <MenuItem value="CCHL">Sắp có hiệu lực</MenuItem>
+                  <MenuItem value="HHL">Hết hiệu lực toàn bộ</MenuItem>
+                  <MenuItem value="NHL">Ngưng hiệu lực</MenuItem>
+                </Select>
+              </>
+            )}
             <FormControlLabel
               control={
                 <Switch
@@ -573,8 +644,8 @@ export default function ScraperSection() {
               }
               sx={{ ml: 1, mr: 0 }}
             />
-            {(section || tag || date || q || onlyNew) && (
-              <Button size="small" color="error" onClick={() => { setSection(''); setTag(''); setDate(''); setQ(''); setOnlyNew(false); }}>
+            {(section || tag || date || q || onlyNew || scope || effStatusCode) && (
+              <Button size="small" color="error" onClick={() => { setSection(''); setTag(''); setDate(''); setQ(''); setOnlyNew(false); setScope(''); setEffStatusCode(''); }}>
                 Xóa lọc
               </Button>
             )}
@@ -683,6 +754,31 @@ export default function ScraperSection() {
                               )}
                               {item.metadata.linhVuc && (
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}><Typography variant="caption" color="text.secondary">Lĩnh vực:</Typography><Typography variant="body2" sx={{ fontWeight: 600 }}>{item.metadata.linhVuc}</Typography></Box>
+                              )}
+                              {item.metadata.scope && (
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                  <Typography variant="caption" color="text.secondary">Phạm vi:</Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 600, color: item.metadata.scope === 'TW' ? 'primary.main' : 'success.main' }}>
+                                    {item.metadata.scope === 'TW' ? 'Trung ương (TW)' : 'Địa phương (DP)'}
+                                  </Typography>
+                                </Box>
+                              )}
+                              {item.metadata.effStatus && (
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                  <Typography variant="caption" color="text.secondary">Tình trạng hiệu lực:</Typography>
+                                  <Typography 
+                                    variant="body2" 
+                                    sx={{ 
+                                      fontWeight: 600,
+                                      color: 
+                                        item.metadata.effStatusCode === 'CCHL' ? 'warning.main' : 
+                                        item.metadata.effStatusCode === 'CHL' ? 'success.main' : 
+                                        'text.secondary'
+                                    }}
+                                  >
+                                    {item.metadata.effStatus}
+                                  </Typography>
+                                </Box>
                               )}
                             </Box>
                           </Box>

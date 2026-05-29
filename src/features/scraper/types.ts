@@ -20,6 +20,9 @@ export interface ScraperArticle {
     issuingAgency?: string;
     effectiveDate?: string;
     linhVuc?: string;
+    scope?: string | null;
+    effStatus?: string | null;
+    effStatusCode?: string | null;
   } | null;
   relatedUrls?: string[] | null;
   firstSeenAt?: string | null;
@@ -35,6 +38,8 @@ export interface GetArticlesParams {
   onlyNew?: boolean;
   page?: number;
   limit?: number;
+  scope?: string;
+  effStatusCode?: string;
 }
 
 export interface GetArticlesResponse {
