@@ -2340,7 +2340,7 @@ export default function VbplSuggestionsSection() {
             <Tab 
               icon={<GavelIcon sx={{ fontSize: 18 }} />} 
               iconPosition="start" 
-              label="Gợi ý SEO từ VBPL" 
+              label="VBPL" 
               id="suggestions-tab-2"
             />
             <Tab 
