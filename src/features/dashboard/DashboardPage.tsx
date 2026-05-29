@@ -455,48 +455,25 @@ export default function DashboardPage() {
 
   const unreadNotifs = notifItems.filter(n => !n.isRead).slice(0, 2);
 
-  const [activeSection, setActiveSection] = useState('section-stats');
+  const [activeTab, setActiveTab] = useState(() => {
+    return sessionStorage.getItem('dashboard_active_tab') || 'overview';
+  });
   const [isMinimized, setIsMinimized] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
-  useEffect(() => {
-    const sections = ['section-stats', 'section-vbpl', 'section-planner', 'section-serp', 'section-index-checker', 'section-scraper', 'section-analytics'];
-    
-    const handleScroll = () => {
-      const scrollPosition = window.scrollY + 200; // Offset for better viewport detection
-      
-      for (const section of sections) {
-        const el = document.getElementById(section);
-        if (el) {
-          const top = el.offsetTop;
-          const height = el.offsetHeight;
-          if (scrollPosition >= top && scrollPosition < top + height) {
-            setActiveSection(section);
-            break;
-          }
-        }
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    sessionStorage.setItem('dashboard_active_tab', tabId);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const dockItems = [
-    { id: 'section-stats', label: 'Lời chào & Thống kê', icon: <SpaceDashboardIcon sx={{ fontSize: 20 }} /> },
-    { id: 'section-vbpl', label: 'Gợi ý SEO & Google Trends', icon: <AutoAwesomeIcon sx={{ fontSize: 20 }} /> },
-    { id: 'section-planner', label: 'Keyword Planner', icon: <SearchIcon sx={{ fontSize: 20 }} /> },
-    { id: 'section-serp', label: 'SERP Rank Checker', icon: <EmojiEventsIcon sx={{ fontSize: 20 }} /> },
-    { id: 'section-index-checker', label: 'Google Index Checker', icon: <CloudDoneOutlinedIcon sx={{ fontSize: 20 }} /> },
-    { id: 'section-scraper', label: 'Thu thập báo chí', icon: <ArticleOutlinedIcon sx={{ fontSize: 20 }} /> },
-    { id: 'section-analytics', label: 'GA4 & Yêu cầu công việc', icon: <PublicIcon sx={{ fontSize: 20 }} /> },
+    { id: 'overview', label: 'Tổng quan & Báo cáo', icon: <SpaceDashboardIcon sx={{ fontSize: 20 }} /> },
+    { id: 'vbpl', label: 'Gợi ý SEO & VBPL', icon: <AutoAwesomeIcon sx={{ fontSize: 20 }} /> },
+    { id: 'planner', label: 'Keyword Planner', icon: <SearchIcon sx={{ fontSize: 20 }} /> },
+    { id: 'serp', label: 'Thứ hạng SERP', icon: <EmojiEventsIcon sx={{ fontSize: 20 }} /> },
+    { id: 'index-checker', label: 'Google Index Checker', icon: <CloudDoneOutlinedIcon sx={{ fontSize: 20 }} /> },
+    { id: 'scraper', label: 'Thu thập báo chí', icon: <ArticleOutlinedIcon sx={{ fontSize: 20 }} /> },
   ];
 
   return (
@@ -565,11 +542,11 @@ export default function DashboardPage() {
           }}
         >
           {dockItems.map((item) => {
-            const isActive = activeSection === item.id;
+            const isActive = activeTab === item.id;
             return (
               <Tooltip key={item.id} title={item.label} placement="left" arrow>
                 <IconButton
-                  onClick={() => scrollToSection(item.id)}
+                  onClick={() => handleTabChange(item.id)}
                   size="medium"
                   sx={{
                     color: isActive ? '#fff' : 'text.secondary',
@@ -611,171 +588,240 @@ export default function DashboardPage() {
         </Paper>
       )}
 
-      {/* Header */}
-      <Box id="section-stats" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', scrollMarginTop: 100 }}>
-        <Box>
-          <Typography variant="h4" sx={{ letterSpacing: '-0.5px', fontWeight: 800, mb: 1 }}>
-            Xin chào, {user?.name || 'Admin'}! 👋
-          </Typography>
-
-          {unreadNotifs.length > 0 ? (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
-              {unreadNotifs.map(n => (
-                <Box key={n._id} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <NotificationsNoneOutlinedIcon sx={{ fontSize: 16, color: '#00b894' }} />
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }} noWrap>{n.title}</Typography>
-                  <Typography variant="caption" sx={{ color: 'text.disabled', flexShrink: 0 }}>
-                    {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: vi })}
-                  </Typography>
-                </Box>
-              ))}
+      {/* Premium Segmented Tab Control */}
+      <Paper
+        elevation={0}
+        sx={{
+          p: 0.75,
+          borderRadius: 4,
+          border: '1px solid',
+          borderColor: 'divider',
+          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.4)' : 'rgba(241, 245, 249, 0.6)',
+          backdropFilter: 'blur(20px)',
+          display: 'flex',
+          gap: 1,
+          overflowX: 'auto',
+          mb: 1,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.02)',
+          '::-webkit-scrollbar': { display: 'none' },
+          msOverflowStyle: 'none',
+          scrollbarWidth: 'none',
+        }}
+      >
+        {dockItems.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <Box
+              key={tab.id}
+              onClick={() => handleTabChange(tab.id)}
+              sx={{
+                flex: { xs: 'none', md: 1 },
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 1.25,
+                py: 1.5,
+                px: 3,
+                borderRadius: 3.2,
+                cursor: 'pointer',
+                color: isActive ? '#ffffff' : 'text.secondary',
+                background: isActive ? 'linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)' : 'transparent',
+                boxShadow: isActive ? '0 4px 15px rgba(124, 58, 237, 0.25)' : 'none',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                fontWeight: isActive ? 800 : 600,
+                fontSize: '0.92rem',
+                whiteSpace: 'nowrap',
+                '&:hover': {
+                  color: isActive ? '#ffffff' : 'text.primary',
+                  bgcolor: isActive ? null : 'action.hover',
+                  transform: isActive ? 'scale(1.02)' : 'none'
+                },
+                '&:active': {
+                  transform: 'scale(0.98)'
+                }
+              }}
+            >
+              {tab.icon}
+              <Typography sx={{ fontSize: 'inherit', fontWeight: 'inherit', color: 'inherit' }}>
+                {tab.label}
+              </Typography>
             </Box>
-          ) : (
-            <Typography variant="body1" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-              Không có thông báo mới
-            </Typography>
-          )}
+          );
+        })}
+      </Paper>
+
+      {/* Tab Content Panels */}
+      {activeTab === 'overview' && (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {/* Header */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <Box>
+              <Typography variant="h4" sx={{ letterSpacing: '-0.5px', fontWeight: 800, mb: 1 }}>
+                Xin chào, {user?.name || 'Admin'}! 👋
+              </Typography>
+
+              {unreadNotifs.length > 0 ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
+                  {unreadNotifs.map(n => (
+                    <Box key={n._id} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <NotificationsNoneOutlinedIcon sx={{ fontSize: 16, color: '#00b894' }} />
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }} noWrap>{n.title}</Typography>
+                      <Typography variant="caption" sx={{ color: 'text.disabled', flexShrink: 0 }}>
+                        {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: vi })}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              ) : (
+                <Typography variant="body1" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+                  Không có thông báo mới
+                </Typography>
+              )}
+            </Box>
+          </Box>
+
+          {/* Cards + Panel */}
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 4, alignItems: 'start' }}>
+            {/* Left: stat cards */}
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 2 }}>
+              <StatCard
+                title="DOMAIN QUẢN LÝ"
+                value={stats.domains}
+                icon={<PublicIcon sx={{ color: '#2563eb', fontSize: 22 }} />}
+                bgColor="#bfdbfe" iconBgColor="#dbeafe"
+                activeColor="#2563EB"
+                active={activePanel === 'ga4'}
+                onClick={() => setActivePanel('ga4')}
+              />
+              <StatCard
+                title="YÊU CẦU CẦN XỬ LÝ"
+                value={stats.pendingRequests}
+                icon={<InboxOutlinedIcon sx={{ color: '#7c3aed', fontSize: 22 }} />}
+                bgColor="#ede9fe" iconBgColor="#f5f3ff"
+                activeColor="#7C3AED"
+                active={activePanel === 'requests'}
+                onClick={() => handleCardClick('requests')}
+              />
+              <StatCard
+                title="BỘ TỪ KHOÁ TRIỂN KHAI"
+                value={stats.deployedKeywords}
+                icon={<DraftsOutlinedIcon sx={{ color: '#059669', fontSize: 22 }} />}
+                bgColor="#a7f3d0" iconBgColor="#d1fae5"
+                activeColor="#059669"
+                active={activePanel === 'deployed'}
+                onClick={() => handleCardClick('deployed')}
+              />
+              <StatCard
+                title="BỘ TỪ KHOÁ CHỜ PHÊ DUYỆT"
+                value={stats.pendingKeywords}
+                icon={<PendingActionsIcon sx={{ color: '#D97706', fontSize: 22 }} />}
+                bgColor="#fde68a" iconBgColor="#fef3c7"
+                activeColor="#D97706"
+                active={activePanel === 'pending'}
+                onClick={() => handleCardClick('pending')}
+              />
+              <StatCard
+                title="TỪ KHOÁ PHÂN TÁCH CHỜ DUYỆT"
+                value={stats.pendingKeywordSegments}
+                icon={<CallSplitOutlinedIcon sx={{ color: '#EA580C', fontSize: 22 }} />}
+                bgColor="#fed7aa" iconBgColor="#ffedd5"
+                activeColor="#EA580C"
+              />
+              <StatCard
+                title="BÀI VIẾT CHỜ DUYỆT"
+                value={stats.pendingArticles}
+                icon={<ArticleOutlinedIcon sx={{ color: '#DB2777', fontSize: 22 }} />}
+                bgColor="#fbcfe8" iconBgColor="#fce7f3"
+                activeColor="#DB2777"
+              />
+              <StatCard
+                title="BÀI VIẾT TỐI ƯU CHỜ DUYỆT"
+                value={stats.pendingOptimizedArticles}
+                icon={<TuneOutlinedIcon sx={{ color: '#0D9488', fontSize: 22 }} />}
+                bgColor="#99f6e4" iconBgColor="#ccfbf1"
+                activeColor="#0D9488"
+              />
+              <StatCard
+                title="BÀI VIẾT ĐÃ INDEX"
+                value={stats.indexedArticles}
+                icon={<CloudDoneOutlinedIcon sx={{ color: '#16A34A', fontSize: 22 }} />}
+                bgColor="#bbf7d0" iconBgColor="#dcfce7"
+                activeColor="#16A34A"
+              />
+              <StatCard
+                title="BÀI VIẾT CHƯA INDEX"
+                value={stats.notIndexedArticles}
+                icon={<CloudOffOutlinedIcon sx={{ color: '#6B7280', fontSize: 22 }} />}
+                bgColor="#e5e7eb" iconBgColor="#f3f4f6"
+                activeColor="#6B7280"
+              />
+            </Box>
+
+            {/* Right: dynamic panel */}
+            <Paper elevation={0} sx={{ borderRadius: 4, p: 3, display: 'flex', flexDirection: 'column', height: 400, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', border: '1px solid', borderColor: 'divider' }}>
+              {activePanel === 'ga4' && (
+                <Ga4Panel
+                  domains={domains}
+                  selectedDomainId={selectedDomainId}
+                  onDomainChange={setSelectedDomainId}
+                  selectedDays={selectedDays}
+                  onDaysChange={setSelectedDays}
+                  ga4Data={ga4Data}
+                  loadingGa4={loadingGa4}
+                />
+              )}
+              {activePanel === 'requests' && (
+                <RequestsPanel requests={inboxRequests} loading={loadingRequests} navigate={navigate} />
+              )}
+              {(activePanel === 'deployed' || activePanel === 'pending') && (
+                <KeywordPanel
+                  groups={panelGroups}
+                  loading={loadingPanel}
+                  title={activePanel === 'deployed' ? 'Từ khoá đã triển khai' : 'Từ khoá chờ phê duyệt'}
+                  domains={domains}
+                  selectedDomainId={panelDomainId}
+                  onDomainChange={setPanelDomainId}
+                  navigate={navigate}
+                />
+              )}
+            </Paper>
+          </Box>
+
+          {/* Bottom section: Trending then Activity */}
+          <TrendingKeywordsSection />
+          <ActivitySection />
         </Box>
-      </Box>
+      )}
 
-      {/* VBPL Suggestions Section */}
-      <Box id="section-vbpl" sx={{ mt: 5, scrollMarginTop: 100 }}>
-        <VbplSuggestionsSection />
-      </Box>
-
-      {/* Keyword Planner Section */}
-      <Box id="section-planner" sx={{ mt: 4, scrollMarginTop: 100 }}>
-        <KeywordPlannerSection />
-      </Box>
-
-      {/* SERP Rank Checker Section */}
-      <Box id="section-serp" sx={{ mt: 4, scrollMarginTop: 100 }}>
-        <QuickSerpChecker />
-      </Box>
-
-      {/* Google Index Checker Section */}
-      <Box id="section-index-checker" sx={{ mt: 4, scrollMarginTop: 100 }}>
-        <GoogleIndexChecker />
-      </Box>
-
-      {/* Scraper Section (Thu thập bài) */}
-      <Box id="section-scraper" sx={{ mt: 4, mb: 6, scrollMarginTop: 100 }}>
-        <ScraperSection />
-      </Box>
-
-      {/* Cards + Panel */}
-      <Box id="section-analytics" sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 4, alignItems: 'start', scrollMarginTop: 100 }}>
-
-        {/* Left: stat cards */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 2 }}>
-          <StatCard
-            title="DOMAIN QUẢN LÝ"
-            value={stats.domains}
-            icon={<PublicIcon sx={{ color: '#2563eb', fontSize: 22 }} />}
-            bgColor="#bfdbfe" iconBgColor="#dbeafe"
-            activeColor="#2563EB"
-            active={activePanel === 'ga4'}
-            onClick={() => setActivePanel('ga4')}
-          />
-          <StatCard
-            title="YÊU CẦU CẦN XỬ LÝ"
-            value={stats.pendingRequests}
-            icon={<InboxOutlinedIcon sx={{ color: '#7c3aed', fontSize: 22 }} />}
-            bgColor="#ede9fe" iconBgColor="#f5f3ff"
-            activeColor="#7C3AED"
-            active={activePanel === 'requests'}
-            onClick={() => handleCardClick('requests')}
-          />
-          <StatCard
-            title="BỘ TỪ KHOÁ TRIỂN KHAI"
-            value={stats.deployedKeywords}
-            icon={<DraftsOutlinedIcon sx={{ color: '#059669', fontSize: 22 }} />}
-            bgColor="#a7f3d0" iconBgColor="#d1fae5"
-            activeColor="#059669"
-            active={activePanel === 'deployed'}
-            onClick={() => handleCardClick('deployed')}
-          />
-          <StatCard
-            title="BỘ TỪ KHOÁ CHỜ PHÊ DUYỆT"
-            value={stats.pendingKeywords}
-            icon={<PendingActionsIcon sx={{ color: '#D97706', fontSize: 22 }} />}
-            bgColor="#fde68a" iconBgColor="#fef3c7"
-            activeColor="#D97706"
-            active={activePanel === 'pending'}
-            onClick={() => handleCardClick('pending')}
-          />
-          <StatCard
-            title="TỪ KHOÁ PHÂN TÁCH CHỜ DUYỆT"
-            value={stats.pendingKeywordSegments}
-            icon={<CallSplitOutlinedIcon sx={{ color: '#EA580C', fontSize: 22 }} />}
-            bgColor="#fed7aa" iconBgColor="#ffedd5"
-            activeColor="#EA580C"
-          />
-          <StatCard
-            title="BÀI VIẾT CHỜ DUYỆT"
-            value={stats.pendingArticles}
-            icon={<ArticleOutlinedIcon sx={{ color: '#DB2777', fontSize: 22 }} />}
-            bgColor="#fbcfe8" iconBgColor="#fce7f3"
-            activeColor="#DB2777"
-          />
-          <StatCard
-            title="BÀI VIẾT TỐI ƯU CHỜ DUYỆT"
-            value={stats.pendingOptimizedArticles}
-            icon={<TuneOutlinedIcon sx={{ color: '#0D9488', fontSize: 22 }} />}
-            bgColor="#99f6e4" iconBgColor="#ccfbf1"
-            activeColor="#0D9488"
-          />
-          <StatCard
-            title="BÀI VIẾT ĐÃ INDEX"
-            value={stats.indexedArticles}
-            icon={<CloudDoneOutlinedIcon sx={{ color: '#16A34A', fontSize: 22 }} />}
-            bgColor="#bbf7d0" iconBgColor="#dcfce7"
-            activeColor="#16A34A"
-          />
-          <StatCard
-            title="BÀI VIẾT CHƯA INDEX"
-            value={stats.notIndexedArticles}
-            icon={<CloudOffOutlinedIcon sx={{ color: '#6B7280', fontSize: 22 }} />}
-            bgColor="#e5e7eb" iconBgColor="#f3f4f6"
-            activeColor="#6B7280"
-          />
+      {activeTab === 'vbpl' && (
+        <Box sx={{ mt: 1 }}>
+          <VbplSuggestionsSection />
         </Box>
+      )}
 
-        {/* Right: dynamic panel — chiều cao cố định = 2 hàng card bên trái (≈ 324px) */}
-        <Paper elevation={0} sx={{ borderRadius: 4, p: 3, display: 'flex', flexDirection: 'column', height: 400, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', border: '1px solid', borderColor: 'divider' }}>
-          {activePanel === 'ga4' && (
-            <Ga4Panel
-              domains={domains}
-              selectedDomainId={selectedDomainId}
-              onDomainChange={setSelectedDomainId}
-              selectedDays={selectedDays}
-              onDaysChange={setSelectedDays}
-              ga4Data={ga4Data}
-              loadingGa4={loadingGa4}
-            />
-          )}
-          {activePanel === 'requests' && (
-            <RequestsPanel requests={inboxRequests} loading={loadingRequests} navigate={navigate} />
-          )}
-          {(activePanel === 'deployed' || activePanel === 'pending') && (
-            <KeywordPanel
-              groups={panelGroups}
-              loading={loadingPanel}
-              title={activePanel === 'deployed' ? 'Từ khoá đã triển khai' : 'Từ khoá chờ phê duyệt'}
-              domains={domains}
-              selectedDomainId={panelDomainId}
-              onDomainChange={setPanelDomainId}
-              navigate={navigate}
-            />
-          )}
-        </Paper>
-      </Box>
+      {activeTab === 'planner' && (
+        <Box sx={{ mt: 1 }}>
+          <KeywordPlannerSection />
+        </Box>
+      )}
 
-      {/* Bottom section: Trending then Activity */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <TrendingKeywordsSection />
-        <ActivitySection />
-      </Box>
+      {activeTab === 'serp' && (
+        <Box sx={{ mt: 1 }}>
+          <QuickSerpChecker />
+        </Box>
+      )}
+
+      {activeTab === 'index-checker' && (
+        <Box sx={{ mt: 1 }}>
+          <GoogleIndexChecker />
+        </Box>
+      )}
+
+      {activeTab === 'scraper' && (
+        <Box sx={{ mt: 1 }}>
+          <ScraperSection />
+        </Box>
+      )}
 
     </Box>
   );
