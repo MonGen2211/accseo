@@ -289,8 +289,6 @@ export default function ScraperSection() {
   };
 
   const handleAiClick = async (article: ScraperArticle) => {
-    if (article.source !== 'vbpl') return;
-
     setSelectedArticleForAi(article);
 
     if (!article.aiGenerated) {
@@ -473,44 +471,42 @@ export default function ScraperSection() {
               )}
 
               {/* AI Suggestion Icon Button */}
-              {item.source === 'vbpl' && (
-                <Tooltip title={item.aiGenerated ? 'Xem từ khóa AI' : 'Tạo từ khóa AI'}>
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleAiClick(item);
-                    }}
-                    disabled={aiLoadingId !== null}
-                    sx={{
-                      p: 0.5,
-                      borderRadius: 1.5,
-                      border: '1px solid',
-                      borderColor: item.aiGenerated ? 'rgba(168, 85, 247, 0.4)' : 'rgba(168, 85, 247, 0.15)',
-                      bgcolor: item.aiGenerated ? 'rgba(168, 85, 247, 0.08)' : 'rgba(168, 85, 247, 0.03)',
-                      transition: 'all 0.2s',
-                      opacity: item.aiGenerated ? 1 : 0.4,
-                      '&:hover': {
-                        opacity: 1,
-                        bgcolor: 'rgba(168, 85, 247, 0.15)',
-                        borderColor: '#a855f7',
-                        transform: 'scale(1.1)',
-                      }
-                    }}
-                  >
-                    {aiLoadingId === item._id ? (
-                      <CircularProgress size={16} sx={{ color: '#a855f7' }} />
-                    ) : (
-                      <PsychologyIcon
-                        sx={{
-                          fontSize: 16,
-                          color: item.aiGenerated ? '#a855f7' : 'text.secondary',
-                        }}
-                      />
-                    )}
-                  </IconButton>
-                </Tooltip>
-              )}
+              <Tooltip title={item.aiGenerated ? 'Xem từ khóa AI' : 'Tạo từ khóa AI'}>
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAiClick(item);
+                  }}
+                  disabled={aiLoadingId !== null}
+                  sx={{
+                    p: 0.5,
+                    borderRadius: 1.5,
+                    border: '1px solid',
+                    borderColor: item.aiGenerated ? 'rgba(168, 85, 247, 0.4)' : 'rgba(168, 85, 247, 0.15)',
+                    bgcolor: item.aiGenerated ? 'rgba(168, 85, 247, 0.08)' : 'rgba(168, 85, 247, 0.03)',
+                    transition: 'all 0.2s',
+                    opacity: item.aiGenerated ? 1 : 0.4,
+                    '&:hover': {
+                      opacity: 1,
+                      bgcolor: 'rgba(168, 85, 247, 0.15)',
+                      borderColor: '#a855f7',
+                      transform: 'scale(1.1)',
+                    }
+                  }}
+                >
+                  {aiLoadingId === item._id ? (
+                    <CircularProgress size={16} sx={{ color: '#a855f7' }} />
+                  ) : (
+                    <PsychologyIcon
+                      sx={{
+                        fontSize: 16,
+                        color: item.aiGenerated ? '#a855f7' : 'text.secondary',
+                      }}
+                    />
+                  )}
+                </IconButton>
+              </Tooltip>
 
               <Link href={item.url} target="_blank" rel="noopener noreferrer" sx={{ color: 'primary.main', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
                 {item.title}
@@ -1089,7 +1085,14 @@ export default function ScraperSection() {
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Chip label="VBPL" color="primary" size="medium" sx={{ fontWeight: 800, height: 26, borderRadius: 1, fontSize: '0.85rem' }} />
+            {selectedArticleForAi?.source && (
+              <Chip 
+                label={SITE_SOURCES.find(s => s.id === selectedArticleForAi.source)?.name || selectedArticleForAi.source.toUpperCase()} 
+                color="primary" 
+                size="medium" 
+                sx={{ fontWeight: 800, height: 26, borderRadius: 1, fontSize: '0.85rem' }} 
+              />
+            )}
             <Button
               variant="outlined"
               color="warning"
