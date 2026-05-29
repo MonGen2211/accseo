@@ -58,6 +58,28 @@ export interface ScraperArticle {
   aiResult?: AiResultSchema | null;
   aiGeneratedAt?: string | null;
   aiModel?: string | null;
+  sheetUrl?: string | null;
+  sheetPushedAt?: string | null;
+  sheetLastBatch?: number | null;
+}
+
+export interface AiGenerateResultData {
+  sheetUrl: string;
+  sheetPushedAt: string;
+  batchNumber: number;
+  keywordCount: number;
+}
+
+export interface AiGenerateResponseData {
+  message: string;
+  cached: boolean;
+  data: AiGenerateResultData;
+}
+
+export interface AiResultResponseData {
+  sheetUrl: string | null;
+  sheetPushedAt: string | null;
+  sheetLastBatch: number | null;
 }
 
 export interface AiResultTopic {

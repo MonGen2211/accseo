@@ -1,5 +1,5 @@
 import api from '../../utils/api';
-import type { GetArticlesParams, GetArticlesResponse, ScraperSummary, TriggerScrapeResponse, ScraperSchedule, ScheduleUpdateResponse } from './types';
+import type { GetArticlesParams, GetArticlesResponse, ScraperSummary, TriggerScrapeResponse, ScraperSchedule, ScheduleUpdateResponse, AiGenerateResponseData, AiResultResponseData } from './types';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -68,15 +68,15 @@ export const scraperService = {
     return response.data.data;
   },
 
-  aiGenerate: async (id: string, force = false): Promise<{ message: string; cached: boolean; data: any }> => {
-    const response = await api.post<ApiResponse<{ message: string; cached: boolean; data: any }>>(
-      `/scraper/articles/${id}/ai-generate${force ? '?force=true' : ''}`
+  aiGenerate: async (id: string, force = false): Promise<AiGenerateResponseData> => {
+    const response = await api.post<ApiResponse<AiGenerateResponseData>>(
+      `/scraper/articles/${id}/ai-generate?force=${force}`
     );
     return response.data.data;
   },
 
-  getAiResult: async (id: string): Promise<any | null> => {
-    const response = await api.get<ApiResponse<any | null>>(`/scraper/articles/${id}/ai-result`);
-    return response.data.data;
+  getAiResult: async (id: string): Promise<AiResultResponseData | null> => {
+    const response = await api.get<ApiResponse<{ data: AiResultResponseData | null }>>(`/scraper/articles/${id}/ai-result`);
+    return response.data.data.data;
   }
 };
