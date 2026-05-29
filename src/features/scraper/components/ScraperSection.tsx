@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
@@ -25,6 +25,7 @@ import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
 import Switch from '@mui/material/Switch';
 import FormControlLabel from '@mui/material/FormControlLabel';
+import Checkbox from '@mui/material/Checkbox';
 import Tooltip from '@mui/material/Tooltip';
 import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
@@ -126,6 +127,136 @@ export default function ScraperSection() {
   const [cronInput, setCronInput] = useState('0 */6 * * *');
   const [cronPreset, setCronPreset] = useState('0 */6 * * *');
   const [isUpdatingSchedule, setIsUpdatingSchedule] = useState(false);
+
+  // --- Export Excel Dialog State ---
+  const [openDownloadDialog, setOpenDownloadDialog] = useState(false);
+  const [downloadAllTime, setDownloadAllTime] = useState(true);
+  const [downloadStartDate, setDownloadStartDate] = useState('');
+  const [downloadEndDate, setDownloadEndDate] = useState('');
+  const [downloadSection, setDownloadSection] = useState('');
+  const [downloadTag, setDownloadTag] = useState('');
+  const [downloadQ, setDownloadQ] = useState('');
+  const [downloadScope, setDownloadScope] = useState('');
+  const [downloadEffStatusCode, setDownloadEffStatusCode] = useState('');
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleOpenDownloadDialog = () => {
+    setDownloadStartDate('');
+    setDownloadEndDate('');
+    setDownloadAllTime(true);
+    setDownloadSection(section);
+    setDownloadTag(tag);
+    setDownloadQ(q);
+    setDownloadScope(scope);
+    setDownloadEffStatusCode(effStatusCode);
+    setOpenDownloadDialog(true);
+  };
+
+  const handleDownloadExcel = async () => {
+    setIsDownloading(true);
+    try {
+      showToast('Đang tải dữ liệu và chuẩn bị file Excel, vui lòng đợi...', 'info');
+      
+      const data = await scraperService.getArticles({
+        source: activeSite,
+        section: downloadSection || undefined,
+        tag: downloadTag || undefined,
+        q: downloadQ || undefined,
+        startDate: downloadAllTime ? undefined : (downloadStartDate || undefined),
+        endDate: downloadAllTime ? undefined : (downloadEndDate || undefined),
+        scope: activeSite === 'vbpl' && downloadScope ? downloadScope : undefined,
+        effStatusCode: activeSite === 'vbpl' && downloadEffStatusCode ? downloadEffStatusCode : undefined,
+        page: 1,
+        limit: 10000
+      });
+
+      if (!data.items || data.items.length === 0) {
+        showToast('Không tìm thấy dữ liệu phù hợp với bộ lọc đã chọn!', 'warning');
+        setIsDownloading(false);
+        return;
+      }
+
+      const siteName = SITE_SOURCES.find(s => s.id === activeSite)?.name || activeSite;
+      const cleanSiteName = siteName.replace(/\s+/g, '_');
+      const dateSuffix = downloadAllTime
+        ? 'ToanBo'
+        : `${downloadStartDate || 'Dau'}_den_${downloadEndDate || 'Cuoi'}`;
+      const filename = `${cleanSiteName}_Export_${dateSuffix}.csv`;
+
+      const headers = [
+        'Tiêu đề',
+        'Đường dẫn',
+        'Nguồn',
+        'Mục',
+        'Chủ đề/Từ khóa',
+        'Thời gian',
+        'Ảnh đại diện',
+        'Mô tả/Tóm tắt',
+      ];
+
+      if (activeSite === 'vbpl') {
+        headers.push(
+          'Số hiệu',
+          'Cơ quan ban hành',
+          'Ngày ban hành',
+          'Ngày hiệu lực',
+          'Tình trạng hiệu lực',
+          'Lĩnh vực',
+          'Phạm vi'
+        );
+      }
+
+      const rows = data.items.map(item => {
+        const row = [
+          item.title || '',
+          item.url || '',
+          SITE_SOURCES.find(s => s.id === item.source)?.name || item.source || '',
+          item.section || '',
+          item.category?.join(', ') || '',
+          item.dateStr || (item.publishedAt ? safeFormat(item.publishedAt, 'dd/MM/yyyy HH:mm') : ''),
+          item.thumbnailUrl || '',
+          item.description || item.excerpt || '',
+        ];
+
+        if (activeSite === 'vbpl') {
+          row.push(
+            item.metadata?.docNumber || '',
+            item.metadata?.issuingAgency || '',
+            item.metadata?.issuedDate ? (item.metadata.issuedDate.includes('T') ? safeFormat(item.metadata.issuedDate, 'dd/MM/yyyy') : item.metadata.issuedDate) : '',
+            item.metadata?.effectiveDate ? (item.metadata.effectiveDate.includes('T') ? safeFormat(item.metadata.effectiveDate, 'dd/MM/yyyy') : item.metadata.effectiveDate) : '',
+            item.metadata?.effStatus || '',
+            item.metadata?.linhVuc || '',
+            item.metadata?.scope === 'TW' ? 'Trung ương' : item.metadata?.scope === 'DP' ? 'Địa phương' : item.metadata?.scope || ''
+          );
+        }
+
+        return row.map(val => {
+          const cleanVal = String(val).replace(/"/g, '""');
+          return `"${cleanVal}"`;
+        }).join(',');
+      });
+
+      const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
+      
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      showToast(`Đã tải xuống thành công ${data.items.length} dòng dữ liệu!`, 'success');
+      setOpenDownloadDialog(false);
+    } catch (err: any) {
+      console.error(err);
+      showToast('Đã xảy ra lỗi khi chuẩn bị file tải xuống', 'danger');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   // --- Load Data ---
   const loadSummary = async () => {
@@ -372,194 +503,432 @@ export default function ScraperSection() {
   };
 
   // --- Columns ---
-  const columns: TableField[] = [
-    {
-      id: 'title',
-      name: 'title',
-      label: 'Tiêu đề',
-      width: 550,
-      renderCell: (row: TableRowData) => {
-        const item = row as unknown as ScraperArticle;
-        return (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            {item.thumbnailUrl && (
-              <Box
-                component="img"
-                src={item.thumbnailUrl}
-                alt={item.title}
-                sx={{
-                  width: 64,
-                  height: 48,
-                  objectFit: 'cover',
-                  borderRadius: 1,
-                  flexShrink: 0,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  bgcolor: 'background.default'
-                }}
-              />
-            )}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-              {item.isNew && (
-                <Chip
-                  label="MỚI"
-                  size="small"
-                  color="error"
-                  sx={{
-                    height: 18,
-                    fontSize: '0.675rem',
-                    fontWeight: 800,
-                    px: 0.5,
-                    borderRadius: 1,
-                    background: 'linear-gradient(45deg, #ef4444, #f87171)',
-                    boxShadow: '0 0 8px rgba(239, 68, 68, 0.4)',
-                    animation: 'pulse 1.8s infinite alternate',
-                    '@keyframes pulse': {
-                      '0%': { transform: 'scale(1)', boxShadow: '0 0 4px rgba(239, 68, 68, 0.4)' },
-                      '100%': { transform: 'scale(1.05)', boxShadow: '0 0 12px rgba(239, 68, 68, 0.8)' }
-                    }
-                  }}
-                />
-              )}
-
-              {/* Scope Badge */}
-              {item.metadata?.scope && (
-                <Chip
-                  label={item.metadata.scope === 'TW' ? 'Trung ương' : item.metadata.scope === 'DP' ? 'Địa phương' : item.metadata.scope}
-                  size="small"
-                  sx={{
-                    height: 18,
-                    fontSize: '0.675rem',
-                    fontWeight: 700,
-                    borderRadius: 1,
-                    bgcolor: item.metadata.scope === 'TW' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(16, 185, 129, 0.15)',
-                    color: item.metadata.scope === 'TW' ? '#3b82f6' : '#10b981',
-                    border: '1px solid',
-                    borderColor: item.metadata.scope === 'TW' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(16, 185, 129, 0.3)',
-                  }}
-                />
-              )}
-
-              {/* Status Badge */}
-              {item.metadata?.effStatus && (
-                <Chip
-                  label={item.metadata.effStatus}
-                  size="small"
-                  sx={{
-                    height: 18,
-                    fontSize: '0.675rem',
-                    fontWeight: 700,
-                    borderRadius: 1,
-                    bgcolor: 
-                      item.metadata.effStatusCode === 'CCHL' ? 'rgba(245, 158, 11, 0.15)' : 
-                      item.metadata.effStatusCode === 'CHL' ? 'rgba(16, 185, 129, 0.15)' : 
-                      item.metadata.effStatusCode === 'HHL' ? 'rgba(107, 114, 128, 0.15)' : 
-                      'rgba(107, 114, 128, 0.12)',
-                    color: 
-                      item.metadata.effStatusCode === 'CCHL' ? '#f59e0b' : 
-                      item.metadata.effStatusCode === 'CHL' ? '#10b981' : 
-                      item.metadata.effStatusCode === 'HHL' ? '#6b7280' : 
-                      '#6b7280',
-                    border: '1px solid',
-                    borderColor: 
-                      item.metadata.effStatusCode === 'CCHL' ? 'rgba(245, 158, 11, 0.3)' : 
-                      item.metadata.effStatusCode === 'CHL' ? 'rgba(16, 185, 129, 0.3)' : 
-                      item.metadata.effStatusCode === 'HHL' ? 'rgba(107, 114, 128, 0.3)' : 
-                      'rgba(107, 114, 128, 0.2)',
-                  }}
-                />
-              )}
-
-              {/* AI Suggestion Icon Button */}
-              <Tooltip title={item.aiGenerated ? 'Xem từ khóa AI' : 'Tạo từ khóa AI'}>
-                <IconButton
-                  size="small"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAiClick(item);
-                  }}
-                  disabled={aiLoadingId !== null}
-                  sx={{
-                    p: 0.5,
-                    borderRadius: 1.5,
-                    border: '1px solid',
-                    borderColor: item.aiGenerated ? 'rgba(168, 85, 247, 0.4)' : 'rgba(168, 85, 247, 0.15)',
-                    bgcolor: item.aiGenerated ? 'rgba(168, 85, 247, 0.08)' : 'rgba(168, 85, 247, 0.03)',
-                    transition: 'all 0.2s',
-                    opacity: item.aiGenerated ? 1 : 0.4,
-                    '&:hover': {
-                      opacity: 1,
-                      bgcolor: 'rgba(168, 85, 247, 0.15)',
-                      borderColor: '#a855f7',
-                      transform: 'scale(1.1)',
-                    }
-                  }}
-                >
-                  {aiLoadingId === item._id ? (
-                    <CircularProgress size={16} sx={{ color: '#a855f7' }} />
-                  ) : (
-                    <PsychologyIcon
+  const columns = useMemo<TableField[]>(() => {
+    if (activeSite === 'vbpl') {
+      return [
+        {
+          id: 'title',
+          name: 'title',
+          label: 'Tiêu đề',
+          width: '35%',
+          wrapText: true,
+          renderCell: (row: TableRowData) => {
+            const item = row as unknown as ScraperArticle;
+            return (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, py: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                  {item.isNew && (
+                    <Chip
+                      label="MỚI"
+                      size="small"
+                      color="error"
                       sx={{
-                        fontSize: 16,
-                        color: item.aiGenerated ? '#a855f7' : 'text.secondary',
+                        height: 18,
+                        fontSize: '0.675rem',
+                        fontWeight: 800,
+                        px: 0.5,
+                        borderRadius: 1,
+                        background: 'linear-gradient(45deg, #ef4444, #f87171)',
+                        boxShadow: '0 0 8px rgba(239, 68, 68, 0.4)',
+                        animation: 'pulse 1.8s infinite alternate',
+                        '@keyframes pulse': {
+                          '0%': { transform: 'scale(1)', boxShadow: '0 0 4px rgba(239, 68, 68, 0.4)' },
+                          '100%': { transform: 'scale(1.05)', boxShadow: '0 0 12px rgba(239, 68, 68, 0.8)' }
+                        }
                       }}
                     />
                   )}
-                </IconButton>
-              </Tooltip>
 
-              <Link href={item.url} target="_blank" rel="noopener noreferrer" sx={{ color: 'primary.main', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
-                {item.title}
-              </Link>
-            </Box>
-          </Box>
-        );
-      }
-    },
-    {
-      id: 'section',
-      name: 'section',
-      label: 'Mục',
-      width: 150,
-      renderCell: (row: TableRowData) => {
-        const item = row as unknown as ScraperArticle;
-        return <Typography variant="body2">{item.section || '-'}</Typography>;
-      }
-    },
-    {
-      id: 'category',
-      name: 'category',
-      label: 'Chủ đề',
-      width: 180,
-      renderCell: (row: TableRowData) => {
-        const item = row as unknown as ScraperArticle;
-        return (
-          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-            {item.category?.map((t, idx) => (
-              <Chip key={`f-${idx}`} label={t} size="small" variant="outlined" color="primary" sx={{ fontSize: 11 }} />
-            ))}
-            {!item.category?.length && <Typography variant="caption" color="text.secondary">-</Typography>}
-          </Box>
-        );
-      }
-    },
+                  {/* Scope Badge */}
+                  {item.metadata?.scope && (
+                    <Chip
+                      label={item.metadata.scope === 'TW' ? 'Trung ương' : item.metadata.scope === 'DP' ? 'Địa phương' : item.metadata.scope}
+                      size="small"
+                      sx={{
+                        height: 18,
+                        fontSize: '0.675rem',
+                        fontWeight: 700,
+                        borderRadius: 1,
+                        bgcolor: item.metadata.scope === 'TW' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                        color: item.metadata.scope === 'TW' ? '#3b82f6' : '#10b981',
+                        border: '1px solid',
+                        borderColor: item.metadata.scope === 'TW' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(16, 185, 129, 0.3)',
+                      }}
+                    />
+                  )}
 
-    {
-      id: 'publishedAt',
-      name: 'publishedAt',
-      label: 'Thời gian',
-      width: 130,
-      renderCell: (row: TableRowData) => {
-        const item = row as unknown as ScraperArticle;
-        const d = item.publishedAt || item.createdAt;
-        return (
-          <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 500 }}>
-            {item.dateStr || safeFormat(d, 'dd/MM/yyyy HH:mm')}
-          </Typography>
-        );
-      }
+                  {/* Status Badge */}
+                  {item.metadata?.effStatus && (
+                    <Chip
+                      label={item.metadata.effStatus}
+                      size="small"
+                      sx={{
+                        height: 18,
+                        fontSize: '0.675rem',
+                        fontWeight: 700,
+                        borderRadius: 1,
+                        bgcolor: 
+                          item.metadata.effStatusCode === 'CCHL' ? 'rgba(245, 158, 11, 0.15)' : 
+                          item.metadata.effStatusCode === 'CHL' ? 'rgba(16, 185, 129, 0.15)' : 
+                          item.metadata.effStatusCode === 'HHL' ? 'rgba(107, 114, 128, 0.15)' : 
+                          'rgba(107, 114, 128, 0.12)',
+                        color: 
+                          item.metadata.effStatusCode === 'CCHL' ? '#f59e0b' : 
+                          item.metadata.effStatusCode === 'CHL' ? '#10b981' : 
+                          item.metadata.effStatusCode === 'HHL' ? '#6b7280' : 
+                          '#6b7280',
+                        border: '1px solid',
+                        borderColor: 
+                          item.metadata.effStatusCode === 'CCHL' ? 'rgba(245, 158, 11, 0.3)' : 
+                          item.metadata.effStatusCode === 'CHL' ? 'rgba(16, 185, 129, 0.3)' : 
+                          item.metadata.effStatusCode === 'HHL' ? 'rgba(107, 114, 128, 0.3)' : 
+                          'rgba(107, 114, 128, 0.2)',
+                      }}
+                    />
+                  )}
+
+                  {/* AI Suggestion Icon Button */}
+                  <Tooltip title={item.aiGenerated ? 'Xem từ khóa AI' : 'Tạo từ khóa AI'}>
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAiClick(item);
+                      }}
+                      disabled={aiLoadingId !== null}
+                      sx={{
+                        p: 0.5,
+                        borderRadius: 1.5,
+                        border: '1px solid',
+                        borderColor: item.aiGenerated ? 'rgba(168, 85, 247, 0.4)' : 'rgba(168, 85, 247, 0.15)',
+                        bgcolor: item.aiGenerated ? 'rgba(168, 85, 247, 0.08)' : 'rgba(168, 85, 247, 0.03)',
+                        transition: 'all 0.2s',
+                        opacity: item.aiGenerated ? 1 : 0.4,
+                        '&:hover': {
+                          opacity: 1,
+                          bgcolor: 'rgba(168, 85, 247, 0.15)',
+                          borderColor: '#a855f7',
+                          transform: 'scale(1.1)',
+                        }
+                      }}
+                    >
+                      {aiLoadingId === item._id ? (
+                        <CircularProgress size={16} sx={{ color: '#a855f7' }} />
+                      ) : (
+                        <PsychologyIcon
+                          sx={{
+                            fontSize: 16,
+                            color: item.aiGenerated ? '#a855f7' : 'text.secondary',
+                          }}
+                        />
+                      )}
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+
+                <Link 
+                  href={item.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  sx={{ 
+                    color: 'primary.main', 
+                    fontWeight: 600, 
+                    textDecoration: 'none', 
+                    lineHeight: 1.4,
+                    fontSize: '0.9rem',
+                    '&:hover': { textDecoration: 'underline' } 
+                  }}
+                >
+                  {item.title}
+                </Link>
+              </Box>
+            );
+          }
+        },
+        {
+          id: 'issuingAgency',
+          name: 'issuingAgency',
+          label: 'Cơ quan ban hành',
+          width: 180,
+          renderCell: (row: TableRowData) => {
+            const item = row as unknown as ScraperArticle;
+            return (
+              <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                {item.metadata?.issuingAgency || '-'}
+              </Typography>
+            );
+          }
+        },
+        {
+          id: 'linhVuc',
+          name: 'linhVuc',
+          label: 'Lĩnh vực',
+          width: 160,
+          renderCell: (row: TableRowData) => {
+            const item = row as unknown as ScraperArticle;
+            return (
+              <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary' }}>
+                {item.metadata?.linhVuc || '-'}
+              </Typography>
+            );
+          }
+        },
+        {
+          id: 'effStatus',
+          name: 'effStatus',
+          label: 'Hiệu lực',
+          width: 150,
+          renderCell: (row: TableRowData) => {
+            const item = row as unknown as ScraperArticle;
+            const code = item.metadata?.effStatusCode;
+            return (
+              <Chip
+                label={item.metadata?.effStatus || '-'}
+                size="small"
+                sx={{
+                  height: 22,
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  borderRadius: 1.5,
+                  bgcolor: 
+                    code === 'CHL' ? 'rgba(16, 185, 129, 0.12)' : 
+                    code === 'CCHL' ? 'rgba(245, 158, 11, 0.12)' : 
+                    code === 'HHL' ? 'rgba(107, 114, 128, 0.12)' : 
+                    'rgba(107, 114, 128, 0.08)',
+                  color: 
+                    code === 'CHL' ? '#10b981' : 
+                    code === 'CCHL' ? '#f59e0b' : 
+                    code === 'HHL' ? '#6b7280' : 
+                    '#6b7280',
+                  border: '1px solid',
+                  borderColor: 
+                    code === 'CHL' ? 'rgba(16, 185, 129, 0.2)' : 
+                    code === 'CCHL' ? 'rgba(245, 158, 11, 0.2)' : 
+                    code === 'HHL' ? 'rgba(107, 114, 128, 0.2)' : 
+                    'rgba(107, 114, 128, 0.15)',
+                }}
+              />
+            );
+          }
+        },
+        {
+          id: 'dates',
+          name: 'dates',
+          label: 'Ngày ban hành / hiệu lực',
+          width: 200,
+          renderCell: (row: TableRowData) => {
+            const item = row as unknown as ScraperArticle;
+            const issued = item.metadata?.issuedDate;
+            const effective = item.metadata?.effectiveDate;
+            
+            const formatVal = (val: string | undefined) => {
+              if (!val) return '-';
+              return val.includes('T') ? safeFormat(val, 'dd/MM/yyyy') : val;
+            };
+
+            return (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                  Ban hành: <strong style={{ color: '#1e293b' }}>{formatVal(issued)}</strong>
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                  Hiệu lực: <strong style={{ color: '#1e293b' }}>{formatVal(effective)}</strong>
+                </Typography>
+              </Box>
+            );
+          }
+        }
+      ];
+    } else {
+      return [
+        {
+          id: 'title',
+          name: 'title',
+          label: 'Tiêu đề',
+          width: 550,
+          renderCell: (row: TableRowData) => {
+            const item = row as unknown as ScraperArticle;
+            return (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                {item.thumbnailUrl && (
+                  <Box
+                    component="img"
+                    src={item.thumbnailUrl}
+                    alt={item.title}
+                    sx={{
+                      width: 64,
+                      height: 48,
+                      objectFit: 'cover',
+                      borderRadius: 1,
+                      flexShrink: 0,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      bgcolor: 'background.default'
+                    }}
+                  />
+                )}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                  {item.isNew && (
+                    <Chip
+                      label="MỚI"
+                      size="small"
+                      color="error"
+                      sx={{
+                        height: 18,
+                        fontSize: '0.675rem',
+                        fontWeight: 800,
+                        px: 0.5,
+                        borderRadius: 1,
+                        background: 'linear-gradient(45deg, #ef4444, #f87171)',
+                        boxShadow: '0 0 8px rgba(239, 68, 68, 0.4)',
+                        animation: 'pulse 1.8s infinite alternate',
+                        '@keyframes pulse': {
+                          '0%': { transform: 'scale(1)', boxShadow: '0 0 4px rgba(239, 68, 68, 0.4)' },
+                          '100%': { transform: 'scale(1.05)', boxShadow: '0 0 12px rgba(239, 68, 68, 0.8)' }
+                        }
+                      }}
+                    />
+                  )}
+
+                  {/* Scope Badge */}
+                  {item.metadata?.scope && (
+                    <Chip
+                      label={item.metadata.scope === 'TW' ? 'Trung ương' : item.metadata.scope === 'DP' ? 'Địa phương' : item.metadata.scope}
+                      size="small"
+                      sx={{
+                        height: 18,
+                        fontSize: '0.675rem',
+                        fontWeight: 700,
+                        borderRadius: 1,
+                        bgcolor: item.metadata.scope === 'TW' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                        color: item.metadata.scope === 'TW' ? '#3b82f6' : '#10b981',
+                        border: '1px solid',
+                        borderColor: item.metadata.scope === 'TW' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(16, 185, 129, 0.3)',
+                      }}
+                    />
+                  )}
+
+                  {/* Status Badge */}
+                  {item.metadata?.effStatus && (
+                    <Chip
+                      label={item.metadata.effStatus}
+                      size="small"
+                      sx={{
+                        height: 18,
+                        fontSize: '0.675rem',
+                        fontWeight: 700,
+                        borderRadius: 1,
+                        bgcolor: 
+                          item.metadata.effStatusCode === 'CCHL' ? 'rgba(245, 158, 11, 0.15)' : 
+                          item.metadata.effStatusCode === 'CHL' ? 'rgba(16, 185, 129, 0.15)' : 
+                          item.metadata.effStatusCode === 'HHL' ? 'rgba(107, 114, 128, 0.15)' : 
+                          'rgba(107, 114, 128, 0.12)',
+                        color: 
+                          item.metadata.effStatusCode === 'CCHL' ? '#f59e0b' : 
+                          item.metadata.effStatusCode === 'CHL' ? '#10b981' : 
+                          item.metadata.effStatusCode === 'HHL' ? '#6b7280' : 
+                          '#6b7280',
+                        border: '1px solid',
+                        borderColor: 
+                          item.metadata.effStatusCode === 'CCHL' ? 'rgba(245, 158, 11, 0.3)' : 
+                          item.metadata.effStatusCode === 'CHL' ? 'rgba(16, 185, 129, 0.3)' : 
+                          item.metadata.effStatusCode === 'HHL' ? 'rgba(107, 114, 128, 0.3)' : 
+                          'rgba(107, 114, 128, 0.2)',
+                      }}
+                    />
+                  )}
+
+                  {/* AI Suggestion Icon Button */}
+                  <Tooltip title={item.aiGenerated ? 'Xem từ khóa AI' : 'Tạo từ khóa AI'}>
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAiClick(item);
+                      }}
+                      disabled={aiLoadingId !== null}
+                      sx={{
+                        p: 0.5,
+                        borderRadius: 1.5,
+                        border: '1px solid',
+                        borderColor: item.aiGenerated ? 'rgba(168, 85, 247, 0.4)' : 'rgba(168, 85, 247, 0.15)',
+                        bgcolor: item.aiGenerated ? 'rgba(168, 85, 247, 0.08)' : 'rgba(168, 85, 247, 0.03)',
+                        transition: 'all 0.2s',
+                        opacity: item.aiGenerated ? 1 : 0.4,
+                        '&:hover': {
+                          opacity: 1,
+                          bgcolor: 'rgba(168, 85, 247, 0.15)',
+                          borderColor: '#a855f7',
+                          transform: 'scale(1.1)',
+                        }
+                      }}
+                    >
+                      {aiLoadingId === item._id ? (
+                        <CircularProgress size={16} sx={{ color: '#a855f7' }} />
+                      ) : (
+                        <PsychologyIcon
+                          sx={{
+                            fontSize: 16,
+                            color: item.aiGenerated ? '#a855f7' : 'text.secondary',
+                          }}
+                        />
+                      )}
+                    </IconButton>
+                  </Tooltip>
+
+                  <Link href={item.url} target="_blank" rel="noopener noreferrer" sx={{ color: 'primary.main', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
+                    {item.title}
+                  </Link>
+                </Box>
+              </Box>
+            );
+          }
+        },
+        {
+          id: 'section',
+          name: 'section',
+          label: 'Mục',
+          width: 150,
+          renderCell: (row: TableRowData) => {
+            const item = row as unknown as ScraperArticle;
+            return <Typography variant="body2">{item.section || '-'}</Typography>;
+          }
+        },
+        {
+          id: 'category',
+          name: 'category',
+          label: 'Chủ đề',
+          width: 180,
+          renderCell: (row: TableRowData) => {
+            const item = row as unknown as ScraperArticle;
+            return (
+              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                {item.category?.map((t, idx) => (
+                  <Chip key={`f-${idx}`} label={t} size="small" variant="outlined" color="primary" sx={{ fontSize: 11 }} />
+                ))}
+                {!item.category?.length && <Typography variant="caption" color="text.secondary">-</Typography>}
+              </Box>
+            );
+          }
+        },
+        {
+          id: 'publishedAt',
+          name: 'publishedAt',
+          label: 'Thời gian',
+          width: 130,
+          renderCell: (row: TableRowData) => {
+            const item = row as unknown as ScraperArticle;
+            const d = item.publishedAt || item.createdAt;
+            return (
+              <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 500 }}>
+                {item.dateStr || safeFormat(d, 'dd/MM/yyyy HH:mm')}
+              </Typography>
+            );
+          }
+        }
+      ];
     }
-  ];
+  }, [activeSite, aiLoadingId]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, mb: 4 }}>
@@ -634,6 +1003,25 @@ export default function ScraperSection() {
                 sx={{ borderRadius: 2, fontWeight: 600, textTransform: 'none' }}
               >
                 Cấu hình lịch
+              </Button>
+              <Button
+                variant="outlined"
+                color="success"
+                onClick={handleOpenDownloadDialog}
+                startIcon={<CloudDownloadOutlinedIcon />}
+                sx={{
+                  borderRadius: 2,
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  borderColor: 'rgba(16, 185, 129, 0.4)',
+                  color: '#10b981',
+                  '&:hover': {
+                    borderColor: '#10b981',
+                    bgcolor: 'rgba(16, 185, 129, 0.04)',
+                  }
+                }}
+              >
+                Xuất Excel
               </Button>
               <Button
                 variant="contained"
@@ -882,6 +1270,34 @@ export default function ScraperSection() {
                             {!item.tags?.length && <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>Không có từ khóa nào được gắn từ website.</Typography>}
                           </Box>
                         </Box>
+
+                        {/* Phân loại hệ thống (Bị ẩn khỏi bảng chính của VBPL) */}
+                        {activeSite === 'vbpl' && (
+                          <Box sx={{ p: 2.5, mt: 1, borderRadius: 2.5, bgcolor: 'rgba(59, 130, 246, 0.03)', border: '1px solid rgba(59, 130, 246, 0.08)', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                            <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.main', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid', borderColor: 'divider', pb: 0.75 }}>
+                              Thuộc tính phân loại hệ thống
+                            </Typography>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>Mục:</Typography>
+                              <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>{item.section || '-'}</Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>Chủ đề:</Typography>
+                              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                                {item.category?.map((c, idx) => (
+                                  <Chip key={`exp-cat-${idx}`} label={c} size="small" variant="outlined" color="primary" sx={{ fontSize: 10, height: 18, fontWeight: 600 }} />
+                                ))}
+                                {!item.category?.length && <Typography variant="body2" sx={{ color: 'text.secondary' }}>-</Typography>}
+                              </Box>
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>Thời gian cào bài:</Typography>
+                              <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                                {safeFormat(item.createdAt, 'dd/MM/yyyy HH:mm')}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        )}
                       </Box>
 
                       {/* Cột phải: Metadata & Links */}
@@ -1053,6 +1469,215 @@ export default function ScraperSection() {
             sx={{ borderRadius: 2 }}
           >
             Lưu thay đổi
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Excel Download Dialog */}
+      <Dialog 
+        open={openDownloadDialog} 
+        onClose={() => !isDownloading && setOpenDownloadDialog(false)} 
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{
+          sx: { 
+            borderRadius: 4, 
+            bgcolor: 'background.paper',
+            backgroundImage: 'none',
+            boxShadow: '0 24px 64px rgba(0,0,0,0.4)',
+            border: '1px solid rgba(255,255,255,0.06)'
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: -0.5 }}>
+            Tải xuống dữ liệu Excel
+          </Typography>
+          <IconButton 
+            onClick={() => setOpenDownloadDialog(false)} 
+            disabled={isDownloading} 
+            size="small"
+            sx={{ '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.08)', color: '#f87171' } }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
+          
+          {/* Nguồn cào */}
+          <Box>
+            <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.secondary', mb: 0.5 }}>Nguồn dữ liệu</Typography>
+            <Typography variant="body1" sx={{ fontWeight: 700, color: 'primary.main' }}>
+              {SITE_SOURCES.find(s => s.id === activeSite)?.name || activeSite}
+            </Typography>
+          </Box>
+
+          {/* Thời gian */}
+          <Box sx={{ p: 2, borderRadius: 2.5, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider' }}>
+            <FormControlLabel
+              control={
+                <Checkbox 
+                  checked={downloadAllTime} 
+                  onChange={(e) => setDownloadAllTime(e.target.checked)} 
+                  disabled={isDownloading}
+                  color="primary"
+                />
+              }
+              label={<Typography variant="body2" sx={{ fontWeight: 700 }}>Tải toàn bộ thời gian</Typography>}
+              sx={{ mb: downloadAllTime ? 0 : 2 }}
+            />
+            
+            <Collapse in={!downloadAllTime}>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.5 }}>Từ ngày</Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    type="date"
+                    value={downloadStartDate}
+                    onChange={(e) => setDownloadStartDate(e.target.value)}
+                    disabled={isDownloading}
+                    slotProps={{ inputLabel: { shrink: true } }}
+                  />
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.5 }}>Đến ngày</Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    type="date"
+                    value={downloadEndDate}
+                    onChange={(e) => setDownloadEndDate(e.target.value)}
+                    disabled={isDownloading}
+                    slotProps={{ inputLabel: { shrink: true } }}
+                  />
+                </Box>
+              </Box>
+            </Collapse>
+          </Box>
+
+          {/* Bộ lọc động */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+            <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.secondary', borderBottom: '1px solid', borderColor: 'divider', pb: 0.5 }}>
+              Bộ lọc dữ liệu
+            </Typography>
+
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+              
+              <Box sx={{ gridColumn: 'span 2' }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.5 }}>Từ khóa tìm kiếm</Typography>
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="Tìm kiếm tiêu đề, từ khóa..."
+                  value={downloadQ}
+                  onChange={(e) => setDownloadQ(e.target.value)}
+                  disabled={isDownloading}
+                />
+              </Box>
+
+              <Box>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.5 }}>Mục</Typography>
+                <Select
+                  fullWidth
+                  size="small"
+                  value={downloadSection}
+                  onChange={(e) => setDownloadSection(e.target.value)}
+                  displayEmpty
+                  disabled={isDownloading}
+                >
+                  <MenuItem value="">Tất cả mục</MenuItem>
+                  {Object.keys(summary?.bySection || {}).map(sec => (
+                    <MenuItem key={sec} value={sec}>{sec}</MenuItem>
+                  ))}
+                </Select>
+              </Box>
+
+              <Box>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.5 }}>Chủ đề / Từ khóa</Typography>
+                <Select
+                  fullWidth
+                  size="small"
+                  value={downloadTag}
+                  onChange={(e) => setDownloadTag(e.target.value)}
+                  displayEmpty
+                  disabled={isDownloading}
+                >
+                  <MenuItem value="">Tất cả chủ đề</MenuItem>
+                  {[...new Set([...categoriesList, ...tagsList])].map((t, idx) => (
+                    <MenuItem key={idx} value={t}>{t}</MenuItem>
+                  ))}
+                </Select>
+              </Box>
+
+              {activeSite === 'vbpl' && (
+                <>
+                  <Box>
+                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.5 }}>Phạm vi</Typography>
+                    <Select
+                      fullWidth
+                      size="small"
+                      value={downloadScope}
+                      onChange={(e) => setDownloadScope(e.target.value)}
+                      displayEmpty
+                      disabled={isDownloading}
+                    >
+                      <MenuItem value="">Tất cả phạm vi</MenuItem>
+                      <MenuItem value="TW">Trung ương (TW)</MenuItem>
+                      <MenuItem value="DP">Địa phương (DP)</MenuItem>
+                    </Select>
+                  </Box>
+
+                  <Box>
+                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.5 }}>Tình trạng hiệu lực</Typography>
+                    <Select
+                      fullWidth
+                      size="small"
+                      value={downloadEffStatusCode}
+                      onChange={(e) => setDownloadEffStatusCode(e.target.value)}
+                      displayEmpty
+                      disabled={isDownloading}
+                    >
+                      <MenuItem value="">Tất cả hiệu lực</MenuItem>
+                      <MenuItem value="CHL">Còn hiệu lực</MenuItem>
+                      <MenuItem value="CCHL">Sắp có hiệu lực</MenuItem>
+                      <MenuItem value="HHL">Hết hiệu lực toàn bộ</MenuItem>
+                      <MenuItem value="NHL">Ngưng hiệu lực</MenuItem>
+                    </Select>
+                  </Box>
+                </>
+              )}
+            </Box>
+          </Box>
+
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, gap: 1.5 }}>
+          <Button 
+            onClick={() => setOpenDownloadDialog(false)} 
+            variant="outlined" 
+            disabled={isDownloading}
+            sx={{ borderRadius: 2.5, fontWeight: 700, textTransform: 'none', px: 3 }}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleDownloadExcel}
+            variant="contained"
+            color="success"
+            disabled={isDownloading}
+            startIcon={isDownloading ? <CircularProgress size={18} color="inherit" /> : <CloudDownloadOutlinedIcon />}
+            sx={{ 
+              borderRadius: 2.5, 
+              fontWeight: 700, 
+              textTransform: 'none', 
+              px: 4,
+              boxShadow: 'none',
+              bgcolor: '#10b981',
+              '&:hover': { bgcolor: '#059669', boxShadow: 'none' }
+            }}
+          >
+            {isDownloading ? 'Đang xuất file...' : 'Xác nhận & Tải xuống'}
           </Button>
         </DialogActions>
       </Dialog>

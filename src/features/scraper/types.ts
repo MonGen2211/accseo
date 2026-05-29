@@ -55,6 +55,8 @@ export interface GetArticlesParams {
   limit?: number;
   scope?: string;
   effStatusCode?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface GetArticlesResponse {

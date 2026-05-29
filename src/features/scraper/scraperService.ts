@@ -24,6 +24,8 @@ export const scraperService = {
     if (params.onlyNew) query.append('onlyNew', 'true');
     if (params.scope) query.append('scope', params.scope);
     if (params.effStatusCode) query.append('effStatusCode', params.effStatusCode);
+    if (params.startDate) query.append('startDate', params.startDate);
+    if (params.endDate) query.append('endDate', params.endDate);
     if (params.page) query.append('page', params.page.toString());
     if (params.limit) query.append('limit', params.limit.toString());
 
