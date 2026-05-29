@@ -1274,21 +1274,21 @@ export default function ScraperSection() {
                         {/* Phân loại hệ thống (Bị ẩn khỏi bảng chính của VBPL) */}
                         {activeSite === 'vbpl' && (
                           <>
-                            <Box sx={{ mt: 1.5 }}>
-                              <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5, color: 'text.secondary', fontSize: '0.75rem' }}>Mục:</Typography>
+                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 1.5 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.secondary', fontSize: '0.8rem' }}>Mục:</Typography>
                               <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary' }}>{item.section || '-'}</Typography>
                             </Box>
-                            <Box sx={{ mt: 1.5 }}>
-                              <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5, color: 'text.secondary', fontSize: '0.75rem' }}>Chủ đề:</Typography>
+                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 1.5 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.secondary', fontSize: '0.8rem' }}>Chủ đề:</Typography>
                               <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                                 {item.category?.map((c, idx) => (
-                                  <Chip key={`exp-cat-${idx}`} label={c} size="small" variant="outlined" color="primary" sx={{ fontSize: 11, height: 22 }} />
+                                  <Chip key={`exp-cat-${idx}`} label={c} size="small" variant="outlined" color="primary" sx={{ fontSize: 10, height: 18, fontWeight: 500 }} />
                                 ))}
                                 {!item.category?.length && <Typography variant="body2" sx={{ color: 'text.secondary' }}>-</Typography>}
                               </Box>
                             </Box>
-                            <Box sx={{ mt: 1.5 }}>
-                              <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5, color: 'text.secondary', fontSize: '0.75rem' }}>Thời gian cào bài:</Typography>
+                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 1.5 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.secondary', fontSize: '0.8rem' }}>Thời gian cào bài:</Typography>
                               <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary' }}>
                                 {safeFormat(item.createdAt, 'dd/MM/yyyy HH:mm')}
                               </Typography>
