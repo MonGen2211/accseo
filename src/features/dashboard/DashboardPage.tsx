@@ -651,7 +651,7 @@ export default function DashboardPage() {
       </Paper>
 
       {/* Tab Content Panels */}
-      {activeTab === 'overview' && (
+      <Box sx={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {/* Header */}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -703,6 +703,34 @@ export default function DashboardPage() {
                 onClick={() => handleCardClick('requests')}
               />
               <StatCard
+                title="BÀI VIẾT ĐÃ INDEX"
+                value={stats.indexedArticles}
+                icon={<CloudDoneOutlinedIcon sx={{ color: '#16A34A', fontSize: 22 }} />}
+                bgColor="#bbf7d0" iconBgColor="#dcfce7"
+                activeColor="#16A34A"
+              />
+              <StatCard
+                title="BÀI VIẾT CHƯA INDEX"
+                value={stats.notIndexedArticles}
+                icon={<CloudOffOutlinedIcon sx={{ color: '#6B7280', fontSize: 22 }} />}
+                bgColor="#e5e7eb" iconBgColor="#f3f4f6"
+                activeColor="#6B7280"
+              />
+              <StatCard
+                title="BÀI VIẾT TỐI ƯU CHỜ DUYỆT"
+                value={stats.pendingOptimizedArticles}
+                icon={<TuneOutlinedIcon sx={{ color: '#0D9488', fontSize: 22 }} />}
+                bgColor="#99f6e4" iconBgColor="#ccfbf1"
+                activeColor="#0D9488"
+              />
+              <StatCard
+                title="BÀI VIẾT CHỜ DUYỆT"
+                value={stats.pendingArticles}
+                icon={<ArticleOutlinedIcon sx={{ color: '#DB2777', fontSize: 22 }} />}
+                bgColor="#fbcfe8" iconBgColor="#fce7f3"
+                activeColor="#DB2777"
+              />
+              <StatCard
                 title="BỘ TỪ KHOÁ TRIỂN KHAI"
                 value={stats.deployedKeywords}
                 icon={<DraftsOutlinedIcon sx={{ color: '#059669', fontSize: 22 }} />}
@@ -726,34 +754,6 @@ export default function DashboardPage() {
                 icon={<CallSplitOutlinedIcon sx={{ color: '#EA580C', fontSize: 22 }} />}
                 bgColor="#fed7aa" iconBgColor="#ffedd5"
                 activeColor="#EA580C"
-              />
-              <StatCard
-                title="BÀI VIẾT CHỜ DUYỆT"
-                value={stats.pendingArticles}
-                icon={<ArticleOutlinedIcon sx={{ color: '#DB2777', fontSize: 22 }} />}
-                bgColor="#fbcfe8" iconBgColor="#fce7f3"
-                activeColor="#DB2777"
-              />
-              <StatCard
-                title="BÀI VIẾT TỐI ƯU CHỜ DUYỆT"
-                value={stats.pendingOptimizedArticles}
-                icon={<TuneOutlinedIcon sx={{ color: '#0D9488', fontSize: 22 }} />}
-                bgColor="#99f6e4" iconBgColor="#ccfbf1"
-                activeColor="#0D9488"
-              />
-              <StatCard
-                title="BÀI VIẾT ĐÃ INDEX"
-                value={stats.indexedArticles}
-                icon={<CloudDoneOutlinedIcon sx={{ color: '#16A34A', fontSize: 22 }} />}
-                bgColor="#bbf7d0" iconBgColor="#dcfce7"
-                activeColor="#16A34A"
-              />
-              <StatCard
-                title="BÀI VIẾT CHƯA INDEX"
-                value={stats.notIndexedArticles}
-                icon={<CloudOffOutlinedIcon sx={{ color: '#6B7280', fontSize: 22 }} />}
-                bgColor="#e5e7eb" iconBgColor="#f3f4f6"
-                activeColor="#6B7280"
               />
             </Box>
 
@@ -791,37 +791,27 @@ export default function DashboardPage() {
           <TrendingKeywordsSection />
           <ActivitySection />
         </Box>
-      )}
+      </Box>
 
-      {activeTab === 'vbpl' && (
-        <Box sx={{ mt: 1 }}>
-          <VbplSuggestionsSection />
-        </Box>
-      )}
+      <Box sx={{ display: activeTab === 'vbpl' ? 'block' : 'none', mt: 1 }}>
+        <VbplSuggestionsSection />
+      </Box>
 
-      {activeTab === 'planner' && (
-        <Box sx={{ mt: 1 }}>
-          <KeywordPlannerSection />
-        </Box>
-      )}
+      <Box sx={{ display: activeTab === 'planner' ? 'block' : 'none', mt: 1 }}>
+        <KeywordPlannerSection />
+      </Box>
 
-      {activeTab === 'serp' && (
-        <Box sx={{ mt: 1 }}>
-          <QuickSerpChecker />
-        </Box>
-      )}
+      <Box sx={{ display: activeTab === 'serp' ? 'block' : 'none', mt: 1 }}>
+        <QuickSerpChecker />
+      </Box>
 
-      {activeTab === 'index-checker' && (
-        <Box sx={{ mt: 1 }}>
-          <GoogleIndexChecker />
-        </Box>
-      )}
+      <Box sx={{ display: activeTab === 'index-checker' ? 'block' : 'none', mt: 1 }}>
+        <GoogleIndexChecker />
+      </Box>
 
-      {activeTab === 'scraper' && (
-        <Box sx={{ mt: 1 }}>
-          <ScraperSection />
-        </Box>
-      )}
+      <Box sx={{ display: activeTab === 'scraper' ? 'block' : 'none', mt: 1 }}>
+        <ScraperSection />
+      </Box>
 
     </Box>
   );
