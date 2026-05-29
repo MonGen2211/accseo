@@ -1245,7 +1245,7 @@ export default function ScraperSection() {
                         )}
 
                         {/* Description & Excerpt */}
-                        {(item.description || item.excerpt) && (
+                        {activeSite !== 'vbpl' && (item.description || item.excerpt) && (
                           <Box>
                             {item.description && (
                               <Typography variant="body2" sx={{ mb: item.excerpt ? 1 : 0, color: 'text.primary', fontWeight: 500, fontStyle: 'italic' }}>
