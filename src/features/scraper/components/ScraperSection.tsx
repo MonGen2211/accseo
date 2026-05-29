@@ -25,6 +25,15 @@ import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
 import Switch from '@mui/material/Switch';
 import FormControlLabel from '@mui/material/FormControlLabel';
+import Tooltip from '@mui/material/Tooltip';
+import Accordion from '@mui/material/Accordion';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import PsychologyIcon from '@mui/icons-material/Psychology';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import LibraryAddCheckIcon from '@mui/icons-material/LibraryAddCheck';
 
 import CustomTable from '../../../components/custom-table/CustomTable';
 import type { TableField } from '../../../types/tableFields.types';
@@ -94,6 +103,15 @@ export default function ScraperSection() {
   // --- Manual Trigger State ---
   const [isTriggering, setIsTriggering] = useState(false);
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+
+  // --- AI Keyword Generator State ---
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiLoadingText, setAiLoadingText] = useState('');
+  const [selectedArticleForAi, setSelectedArticleForAi] = useState<ScraperArticle | null>(null);
+  const [openAiDialog, setOpenAiDialog] = useState(false);
+  const [openAiConfirmDialog, setOpenAiConfirmDialog] = useState(false);
+  const [copiedKeyword, setCopiedKeyword] = useState<string | null>(null);
+  const [copiedAll, setCopiedAll] = useState(false);
 
   // --- Schedule State ---
   const [schedule, setSchedule] = useState<ScraperSchedule | null>(null);
@@ -244,6 +262,110 @@ export default function ScraperSection() {
     }
   };
 
+  // --- AI Keyword Generator Handlers ---
+  const handleAiError = (err: any) => {
+    const errorData = err.response?.data;
+    const code = errorData?.code || '';
+    const message = errorData?.message || err.message || 'Lỗi không xác định';
+
+    if (code === 'AI_GENERATE_LOCKED') {
+      showToast('Đang xử lý, đợi 5s và thử lại', 'warning');
+    } else if (code === 'AI_RATE_LIMIT') {
+      showToast('Quota AI hết, thử lại sau', 'danger');
+    } else if (code === 'AI_INVALID_RESPONSE') {
+      showToast('AI lỗi, vui lòng thử lại', 'danger');
+    } else if (code === 'AI_GENERATE_FAILED') {
+      showToast(message, 'danger');
+    } else {
+      showToast(message, 'danger');
+    }
+  };
+
+  const handleAiClick = async (article: ScraperArticle) => {
+    if (article.source !== 'vbpl') return;
+
+    setSelectedArticleForAi(article);
+
+    if (!article.aiGenerated) {
+      setAiLoading(true);
+      setAiLoadingText('AI đang nghiên cứu từ khóa SEO...');
+      try {
+        const res = await scraperService.aiGenerate(article._id);
+        const updatedArticle = {
+          ...article,
+          aiGenerated: true,
+          aiResult: res.data
+        };
+        setItems(prev => prev.map(item => item._id === article._id ? updatedArticle : item));
+        setSelectedArticleForAi(updatedArticle);
+        setOpenAiDialog(true);
+      } catch (err: any) {
+        handleAiError(err);
+      } finally {
+        setAiLoading(false);
+      }
+    } else {
+      if (!article.aiResult) {
+        setAiLoading(true);
+        setAiLoadingText('Đang tải dữ liệu từ cache...');
+        try {
+          const result = await scraperService.getAiResult(article._id);
+          const updatedArticle = {
+            ...article,
+            aiResult: result
+          };
+          setItems(prev => prev.map(item => item._id === article._id ? updatedArticle : item));
+          setSelectedArticleForAi(updatedArticle);
+          setOpenAiDialog(true);
+        } catch (err: any) {
+          handleAiError(err);
+        } finally {
+          setAiLoading(false);
+        }
+      } else {
+        setOpenAiDialog(true);
+      }
+    }
+  };
+
+  const handleAiForceGenerate = async () => {
+    if (!selectedArticleForAi) return;
+    setOpenAiConfirmDialog(false);
+    
+    setAiLoading(true);
+    setAiLoadingText('AI đang tạo lại từ khóa SEO...');
+    try {
+      const res = await scraperService.aiGenerate(selectedArticleForAi._id, true);
+      const updatedArticle = {
+        ...selectedArticleForAi,
+        aiGenerated: true,
+        aiResult: res.data
+      };
+      setItems(prev => prev.map(item => item._id === selectedArticleForAi._id ? updatedArticle : item));
+      setSelectedArticleForAi(updatedArticle);
+      showToast('Tạo lại từ khóa AI thành công!', 'success');
+    } catch (err: any) {
+      handleAiError(err);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleCopyKeyword = (kw: string) => {
+    navigator.clipboard.writeText(kw);
+    setCopiedKeyword(kw);
+    setTimeout(() => setCopiedKeyword(null), 2000);
+  };
+
+  const handleCopyAllKeywords = () => {
+    if (!selectedArticleForAi?.aiResult?.topics) return;
+    const allKws = selectedArticleForAi.aiResult.topics.flatMap(t => t.keywords).join('\n');
+    navigator.clipboard.writeText(allKws);
+    setCopiedAll(true);
+    showToast('Đã copy toàn bộ từ khóa vào Clipboard!', 'success');
+    setTimeout(() => setCopiedAll(false), 2000);
+  };
+
   // --- Columns ---
   const columns: TableField[] = [
     {
@@ -341,6 +463,41 @@ export default function ScraperSection() {
                       'rgba(107, 114, 128, 0.2)',
                   }}
                 />
+              )}
+
+              {/* AI Suggestion Icon Button */}
+              {item.source === 'vbpl' && (
+                <Tooltip title={item.aiGenerated ? 'Xem từ khóa AI' : 'Tạo từ khóa AI'}>
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAiClick(item);
+                    }}
+                    sx={{
+                      p: 0.5,
+                      borderRadius: 1.5,
+                      border: '1px solid',
+                      borderColor: item.aiGenerated ? 'rgba(168, 85, 247, 0.4)' : 'rgba(168, 85, 247, 0.15)',
+                      bgcolor: item.aiGenerated ? 'rgba(168, 85, 247, 0.08)' : 'rgba(168, 85, 247, 0.03)',
+                      transition: 'all 0.2s',
+                      opacity: item.aiGenerated ? 1 : 0.4,
+                      '&:hover': {
+                        opacity: 1,
+                        bgcolor: 'rgba(168, 85, 247, 0.15)',
+                        borderColor: '#a855f7',
+                        transform: 'scale(1.1)',
+                      }
+                    }}
+                  >
+                    <PsychologyIcon
+                      sx={{
+                        fontSize: 16,
+                        color: item.aiGenerated ? '#a855f7' : 'text.secondary',
+                      }}
+                    />
+                  </IconButton>
+                </Tooltip>
               )}
 
               <Link href={item.url} target="_blank" rel="noopener noreferrer" sx={{ color: 'primary.main', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
@@ -888,6 +1045,232 @@ export default function ScraperSection() {
             sx={{ borderRadius: 2 }}
           >
             Lưu thay đổi
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* AI Loading Overlay Dialog */}
+      <Dialog 
+        open={aiLoading} 
+        PaperProps={{
+          sx: {
+            p: 4, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            borderRadius: 4,
+            maxWidth: 320
+          }
+        }}
+      >
+        <CircularProgress size={48} thickness={4.5} sx={{ color: '#a855f7', mb: 2 }} />
+        <Typography variant="body1" sx={{ fontWeight: 800, textAlign: 'center', mb: 0.5 }}>
+          {aiLoadingText}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center' }}>
+          Quá trình phân tích Gemini AI có thể mất 5 - 15 giây. Vui lòng giữ kết nối.
+        </Typography>
+      </Dialog>
+
+      {/* AI Keywords Results Dialog */}
+      <Dialog 
+        open={openAiDialog} 
+        onClose={() => setOpenAiDialog(false)} 
+        maxWidth="md" 
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 4, bgcolor: 'background.paper' }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pr: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, maxWidth: '75%' }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <PsychologyIcon sx={{ color: '#a855f7' }} />
+              Từ khóa & Chủ đề đề xuất bởi AI
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ 
+              display: '-webkit-box', 
+              WebkitLineClamp: 1, 
+              WebkitBoxOrient: 'vertical', 
+              overflow: 'hidden',
+              fontSize: '0.78rem'
+            }}>
+              {selectedArticleForAi?.title}
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Chip label="VBPL" color="primary" size="small" sx={{ fontWeight: 800, height: 20, borderRadius: 1 }} />
+            <Button
+              variant="outlined"
+              color="warning"
+              size="small"
+              onClick={() => setOpenAiConfirmDialog(true)}
+              startIcon={<AutoAwesomeIcon />}
+              sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+            >
+              Tạo lại
+            </Button>
+            <IconButton onClick={() => setOpenAiDialog(false)} size="small">
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+
+        <DialogContent dividers sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {selectedArticleForAi?.aiResult?.topics && selectedArticleForAi.aiResult.topics.length > 0 ? (
+            selectedArticleForAi.aiResult.topics.map((topic, tIdx) => (
+              <Accordion 
+                key={tIdx} 
+                defaultExpanded={tIdx === 0}
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 3,
+                  overflow: 'hidden',
+                  '&:before': { display: 'none' },
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                  mb: 1
+                }}
+              >
+                <AccordionSummary 
+                  expandIcon={<ExpandMoreIcon />}
+                  sx={{ bgcolor: 'action.hover', borderBottom: '1px solid', borderColor: 'divider' }}
+                >
+                  <Box>
+                    <Typography sx={{ fontWeight: 800, fontSize: '0.92rem', color: 'text.primary' }}>
+                      {topic.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25, fontWeight: 600 }}>
+                      🎯 Đối tượng mục tiêu: {topic.targetAudience}
+                    </Typography>
+                  </Box>
+                </AccordionSummary>
+                <AccordionDetails sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <Box 
+                    sx={{ 
+                      p: 2, 
+                      borderRadius: 2, 
+                      bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(168, 85, 247, 0.05)' : '#faf5ff', 
+                      borderLeft: '4px solid #a855f7' 
+                    }}
+                  >
+                    <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.primary', lineHeight: 1.5 }}>
+                      💡 <strong>Nhu cầu/Insight:</strong> {topic.insight}
+                    </Typography>
+                  </Box>
+
+                  <Box>
+                    <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                      Danh sách từ khóa đề xuất ({topic.keywords.length}):
+                    </Typography>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.5 }}>
+                      {topic.keywords.map((kw, kwIdx) => (
+                        <Paper
+                          key={kwIdx}
+                          variant="outlined"
+                          sx={{
+                            p: 1.5,
+                            pl: 2,
+                            borderRadius: 2.5,
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            bgcolor: 'background.default',
+                            transition: 'border-color 0.2s',
+                            '&:hover': { borderColor: 'primary.main' }
+                          }}
+                        >
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', fontSize: '0.85rem' }}>
+                            {kw}
+                          </Typography>
+                          <Tooltip title={copiedKeyword === kw ? 'Đã copy!' : 'Copy từ khóa'}>
+                            <IconButton 
+                              size="small" 
+                              onClick={() => handleCopyKeyword(kw)}
+                              color={copiedKeyword === kw ? 'success' : 'default'}
+                            >
+                              {copiedKeyword === kw ? <LibraryAddCheckIcon fontSize="small" /> : <ContentCopyIcon fontSize="small" />}
+                            </IconButton>
+                          </Tooltip>
+                        </Paper>
+                      ))}
+                    </Box>
+                  </Box>
+                </AccordionDetails>
+              </Accordion>
+            ))
+          ) : (
+            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+              Không có dữ liệu chủ đề AI.
+            </Typography>
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ p: 2.5, justifyContent: 'space-between' }}>
+          <Typography variant="caption" color="text.secondary">
+            Mô hình sử dụng: <strong>{selectedArticleForAi?.aiModel || 'Gemini 2.5 Flash'}</strong>
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1.5 }}>
+            <Button 
+              variant="outlined" 
+              onClick={() => setOpenAiDialog(false)}
+              sx={{ borderRadius: 2.5, px: 3, textTransform: 'none', fontWeight: 600 }}
+            >
+              Đóng
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleCopyAllKeywords}
+              startIcon={copiedAll ? <LibraryAddCheckIcon /> : <ContentCopyIcon />}
+              sx={{ 
+                borderRadius: 2.5, 
+                px: 3, 
+                textTransform: 'none', 
+                fontWeight: 800,
+                background: 'linear-gradient(45deg, #a855f7 30%, #7c3aed 90%)',
+                boxShadow: '0 4px 12px rgba(124, 58, 237, 0.2)',
+                '&:hover': {
+                  background: 'linear-gradient(45deg, #7c3aed 30%, #a855f7 90%)'
+                }
+              }}
+            >
+              {copiedAll ? 'Đã copy tất cả!' : 'Copy tất cả keyword'}
+            </Button>
+          </Box>
+        </DialogActions>
+      </Dialog>
+
+      {/* AI Force Regenerate Confirmation Dialog */}
+      <Dialog 
+        open={openAiConfirmDialog} 
+        onClose={() => setOpenAiConfirmDialog(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3.5 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800 }}>⚠️ Xác nhận tạo lại từ khóa</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.primary" sx={{ lineHeight: 1.5 }}>
+            Việc tạo lại từ khóa mới sẽ tốn thêm hạn ngạch (quota) của AI. Bạn có chắc chắn muốn tiến hành nghiên cứu lại cho văn bản này không?
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button 
+            variant="outlined" 
+            onClick={() => setOpenAiConfirmDialog(false)}
+            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+          >
+            Hủy
+          </Button>
+          <Button 
+            variant="contained" 
+            color="warning" 
+            onClick={handleAiForceGenerate}
+            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 800 }}
+          >
+            Đồng ý, tạo lại
           </Button>
         </DialogActions>
       </Dialog>

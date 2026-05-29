@@ -27,6 +27,21 @@ export interface ScraperArticle {
   relatedUrls?: string[] | null;
   firstSeenAt?: string | null;
   isNew?: boolean;
+  aiGenerated?: boolean;
+  aiResult?: AiResultSchema | null;
+  aiGeneratedAt?: string | null;
+  aiModel?: string | null;
+}
+
+export interface AiResultTopic {
+  name: string;
+  targetAudience: string;
+  insight: string;
+  keywords: string[];
+}
+
+export interface AiResultSchema {
+  topics: AiResultTopic[];
 }
 
 export interface GetArticlesParams {
