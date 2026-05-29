@@ -1064,13 +1064,36 @@ export default function ScraperSection() {
         maxWidth="lg" 
         fullWidth
         PaperProps={{
-          sx: { borderRadius: 4, bgcolor: 'background.paper' }
+          sx: { 
+            borderRadius: 5, 
+            bgcolor: 'background.paper',
+            backgroundImage: 'none',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
+            border: '1px solid rgba(255,255,255,0.06)'
+          }
         }}
       >
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pr: 2, py: 2.5 }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, maxWidth: '75%' }}>
-            <Typography sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1.5, fontSize: '1.45rem', lineHeight: 1.2 }}>
-              <PsychologyIcon sx={{ color: '#a855f7', fontSize: 32 }} />
+        <DialogTitle sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          pr: 3, 
+          pl: 3.5, 
+          py: 3,
+          borderBottom: '1px solid',
+          borderColor: 'divider'
+        }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, maxWidth: '70%' }}>
+            <Typography sx={{ fontWeight: 900, display: 'flex', alignItems: 'center', gap: 1.5, fontSize: '1.45rem', lineHeight: 1.2, letterSpacing: -0.5 }}>
+              <PsychologyIcon sx={{ 
+                color: '#a855f7', 
+                fontSize: 34,
+                animation: 'pulseIcon 2s infinite alternate',
+                '@keyframes pulseIcon': {
+                  '0%': { transform: 'scale(1)', filter: 'drop-shadow(0 0 2px rgba(168, 85, 247, 0.4))' },
+                  '100%': { transform: 'scale(1.08)', filter: 'drop-shadow(0 0 10px rgba(168, 85, 247, 0.8))' }
+                }
+              }} />
               Từ khóa & Chủ đề đề xuất bởi AI
             </Typography>
             <Typography color="text.secondary" sx={{ 
@@ -1078,19 +1101,27 @@ export default function ScraperSection() {
               WebkitLineClamp: 1, 
               WebkitBoxOrient: 'vertical', 
               overflow: 'hidden',
-              fontSize: '0.95rem',
+              fontSize: '0.92rem',
               fontWeight: 500
             }}>
               {selectedArticleForAi?.title}
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             {selectedArticleForAi?.source && (
               <Chip 
                 label={SITE_SOURCES.find(s => s.id === selectedArticleForAi.source)?.name || selectedArticleForAi.source.toUpperCase()} 
                 color="primary" 
                 size="medium" 
-                sx={{ fontWeight: 800, height: 26, borderRadius: 1, fontSize: '0.85rem' }} 
+                sx={{ 
+                  fontWeight: 800, 
+                  height: 28, 
+                  borderRadius: 1.5, 
+                  fontSize: '0.85rem',
+                  px: 1,
+                  background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                  boxShadow: '0 2px 8px rgba(3, 105, 161, 0.2)'
+                }} 
               />
             )}
             <Button
@@ -1098,12 +1129,35 @@ export default function ScraperSection() {
               color="warning"
               onClick={() => setOpenAiConfirmDialog(true)}
               startIcon={<AutoAwesomeIcon sx={{ fontSize: 18 }} />}
-              sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 800, fontSize: '0.95rem', px: 2, py: 0.5 }}
+              sx={{ 
+                borderRadius: 2.5, 
+                textTransform: 'none', 
+                fontWeight: 800, 
+                fontSize: '0.92rem', 
+                px: 2.5, 
+                py: 0.75,
+                borderColor: 'rgba(245, 158, 11, 0.5)',
+                '&:hover': {
+                  borderColor: '#f59e0b',
+                  bgcolor: 'rgba(245, 158, 11, 0.08)',
+                  boxShadow: '0 0 12px rgba(245, 158, 11, 0.2)'
+                }
+              }}
             >
               Tạo lại
             </Button>
-            <IconButton onClick={() => setOpenAiDialog(false)} size="medium">
-              <CloseIcon />
+            <IconButton 
+              onClick={() => setOpenAiDialog(false)} 
+              size="medium"
+              sx={{ 
+                bgcolor: 'rgba(255,255,255,0.03)',
+                '&:hover': {
+                  bgcolor: 'rgba(239, 68, 68, 0.1)',
+                  color: '#ef4444'
+                }
+              }}
+            >
+              <CloseIcon sx={{ fontSize: 20 }} />
             </IconButton>
           </Box>
         </DialogTitle>
@@ -1116,7 +1170,8 @@ export default function ScraperSection() {
             height: '75vh', 
             maxHeight: 850,
             minHeight: 600,
-            overflow: 'hidden' 
+            overflow: 'hidden',
+            borderColor: 'divider'
           }}
         >
           {/* LEFT SIDEBAR: SLEEK TOPIC TABS */}
@@ -1133,7 +1188,15 @@ export default function ScraperSection() {
               gap: 2
             }}
           >
-            <Typography sx={{ fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1, px: 1, mb: 0.5, fontSize: '0.9rem' }}>
+            <Typography sx={{ 
+              fontWeight: 800, 
+              color: 'text.secondary', 
+              textTransform: 'uppercase', 
+              letterSpacing: 1.2, 
+              px: 1, 
+              mb: 0.5, 
+              fontSize: '0.85rem' 
+            }}>
               Danh sách chủ đề ({selectedArticleForAi?.aiResult?.topics?.length || 0})
             </Typography>
             
@@ -1144,26 +1207,76 @@ export default function ScraperSection() {
                   key={idx}
                   onClick={() => setActiveTopicIdx(idx)}
                   sx={{
-                    p: 2.5,
-                    borderRadius: 3.5,
+                    p: 2.2,
+                    borderRadius: 3,
                     cursor: 'pointer',
-                    bgcolor: isActive ? 'primary.main' : 'background.paper',
-                    color: isActive ? 'primary.contrastText' : 'text.primary',
+                    bgcolor: isActive ? 'rgba(168, 85, 247, 0.12)' : 'rgba(255, 255, 255, 0.02)',
+                    color: isActive ? '#e9d5ff' : 'text.primary',
                     border: '1px solid',
-                    borderColor: isActive ? 'primary.main' : 'divider',
-                    transition: 'all 0.2s',
-                    boxShadow: isActive ? '0 4px 12px rgba(124, 58, 237, 0.15)' : '0 2px 4px rgba(0,0,0,0.02)',
+                    borderColor: isActive ? 'rgba(168, 85, 247, 0.5)' : 'rgba(255, 255, 255, 0.08)',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    boxShadow: isActive ? '0 4px 20px rgba(168, 85, 247, 0.15)' : '0 2px 4px rgba(0,0,0,0.02)',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    '&::before': isActive ? {
+                      content: '""',
+                      position: 'absolute',
+                      left: 0,
+                      top: 0,
+                      bottom: 0,
+                      width: 4,
+                      bgcolor: '#a855f7',
+                      borderRadius: '0 4px 4px 0',
+                    } : null,
                     '&:hover': {
-                      transform: 'translateY(-1px)',
-                      borderColor: isActive ? 'primary.main' : 'primary.light',
-                      bgcolor: isActive ? 'primary.main' : 'action.hover'
+                      transform: 'translateX(4px)',
+                      borderColor: isActive ? 'rgba(168, 85, 247, 0.6)' : 'rgba(168, 85, 247, 0.3)',
+                      bgcolor: isActive ? 'rgba(168, 85, 247, 0.16)' : 'rgba(255, 255, 255, 0.05)',
                     }
                   }}
                 >
-                  <Typography sx={{ fontWeight: 800, fontSize: '1.05rem', lineHeight: 1.3, mb: 0.75 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                    <Typography sx={{ 
+                      fontSize: '0.75rem', 
+                      fontWeight: 800, 
+                      color: isActive ? '#c084fc' : 'text.secondary',
+                      textTransform: 'uppercase',
+                      letterSpacing: 1
+                    }}>
+                      Chủ đề {String(idx + 1).padStart(2, '0')}
+                    </Typography>
+                    {isActive && (
+                      <Box sx={{ 
+                        width: 6, 
+                        height: 6, 
+                        borderRadius: '50%', 
+                        bgcolor: '#a855f7',
+                        boxShadow: '0 0 8px #a855f7'
+                      }} />
+                    )}
+                  </Box>
+                  <Typography sx={{ 
+                    fontWeight: 700, 
+                    fontSize: '0.98rem', 
+                    lineHeight: 1.4, 
+                    mb: 1,
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                    color: isActive ? '#ffffff' : 'text.primary'
+                  }}>
                     {topic.name}
                   </Typography>
-                  <Typography sx={{ color: isActive ? 'rgba(255,255,255,0.85)' : 'text.secondary', fontSize: '0.85rem', display: 'block', fontWeight: 600 }}>
+                  <Typography sx={{ 
+                    color: isActive ? 'rgba(255,255,255,0.6)' : 'text.secondary', 
+                    fontSize: '0.82rem', 
+                    display: '-webkit-box',
+                    WebkitLineClamp: 1,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                    fontWeight: 500
+                  }}>
                     🎯 {topic.targetAudience}
                   </Typography>
                 </Box>
@@ -1179,7 +1292,8 @@ export default function ScraperSection() {
               flexDirection: 'column', 
               overflowY: 'auto',
               p: 4,
-              gap: 3.5
+              gap: 3.5,
+              bgcolor: 'background.paper'
             }}
           >
             {selectedArticleForAi?.aiResult?.topics?.[activeTopicIdx] ? (() => {
@@ -1187,13 +1301,49 @@ export default function ScraperSection() {
               return (
                 <>
                   {/* Topic Title & Audience */}
-                  <Box>
-                    <Typography sx={{ fontWeight: 900, color: 'text.primary', mb: 1, lineHeight: 1.3, fontSize: '1.6rem' }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Typography sx={{ 
+                      fontWeight: 900, 
+                      color: 'text.primary', 
+                      lineHeight: 1.3, 
+                      fontSize: '1.5rem',
+                      letterSpacing: -0.5
+                    }}>
                       {topic.name}
                     </Typography>
-                    <Typography color="text.secondary" sx={{ fontWeight: 600, fontSize: '1.05rem' }}>
-                      🎯 <strong>Đối tượng mục tiêu:</strong> {topic.targetAudience}
-                    </Typography>
+                    
+                    {/* Audience Box */}
+                    <Box sx={{ 
+                      p: 2, 
+                      borderRadius: 3, 
+                      bgcolor: 'background.default', 
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 2
+                    }}>
+                      <Box sx={{ 
+                        p: 1, 
+                        borderRadius: 2, 
+                        bgcolor: 'rgba(16, 185, 129, 0.1)', 
+                        color: '#10b981',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        mt: 0.25
+                      }}>
+                        <AutoAwesomeIcon sx={{ fontSize: 20 }} />
+                      </Box>
+                      <Box>
+                        <Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.8, mb: 0.5 }}>
+                          🎯 Đối tượng mục tiêu phục vụ Content
+                        </Typography>
+                        <Typography sx={{ color: 'text.primary', fontSize: '0.95rem', fontWeight: 500, lineHeight: 1.5 }}>
+                          {topic.targetAudience}
+                        </Typography>
+                      </Box>
+                    </Box>
                   </Box>
 
                   {/* Insight Card */}
@@ -1201,20 +1351,39 @@ export default function ScraperSection() {
                     sx={{ 
                       p: 2.5, 
                       borderRadius: 3.5, 
-                      bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(168, 85, 247, 0.06)' : '#fcfaff', 
+                      bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(168, 85, 247, 0.05)' : '#fbf8ff', 
                       borderLeft: '5px solid #a855f7',
-                      boxShadow: '0 2px 6px rgba(168, 85, 247, 0.02)'
+                      borderTop: '1px solid rgba(168, 85, 247, 0.1)',
+                      borderRight: '1px solid rgba(168, 85, 247, 0.1)',
+                      borderBottom: '1px solid rgba(168, 85, 247, 0.1)',
+                      boxShadow: '0 4px 20px rgba(168, 85, 247, 0.02)',
+                      display: 'flex',
+                      gap: 2
                     }}
                   >
-                    <Typography sx={{ fontStyle: 'italic', color: 'text.primary', lineHeight: 1.6, fontSize: '1.05rem' }}>
-                      💡 <strong>Nhu cầu / Insight:</strong> {topic.insight}
-                    </Typography>
+                    <Box sx={{ 
+                      fontSize: '1.5rem', 
+                      lineHeight: 1,
+                      animation: 'pulse 2s infinite alternate',
+                      '@keyframes pulse': {
+                        '0%': { transform: 'scale(1)' },
+                        '100%': { transform: 'scale(1.15)' }
+                      }
+                    }}>💡</Box>
+                    <Box>
+                      <Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: '#a855f7', textTransform: 'uppercase', letterSpacing: 0.8, mb: 0.5 }}>
+                        Nhu cầu & Tâm lý người đọc (Insight)
+                      </Typography>
+                      <Typography sx={{ fontStyle: 'italic', color: 'text.primary', lineHeight: 1.6, fontSize: '0.95rem', fontWeight: 500 }}>
+                        {topic.insight}
+                      </Typography>
+                    </Box>
                   </Box>
 
                   {/* Keywords Grid */}
                   <Box>
-                    <Typography sx={{ fontWeight: 800, mb: 1.5, display: 'block', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.95rem' }}>
-                      Từ khóa đề xuất cho chủ đề này ({topic.keywords.length})
+                    <Typography sx={{ fontWeight: 800, mb: 2, display: 'block', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.85rem' }}>
+                      Danh sách từ khóa thực chiến ({topic.keywords.length})
                     </Typography>
                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
                       {topic.keywords.map((kw, kwIdx) => (
@@ -1222,32 +1391,44 @@ export default function ScraperSection() {
                           key={kwIdx}
                           variant="outlined"
                           sx={{
-                            p: 1.5,
+                            p: 1.8,
                             pl: 2.5,
                             borderRadius: 3,
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
-                            bgcolor: 'background.paper',
+                            bgcolor: 'background.default',
                             border: '1px solid',
                             borderColor: 'divider',
-                            transition: 'all 0.2s',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                             '&:hover': { 
-                              borderColor: 'primary.main',
-                              boxShadow: '0 2px 8px rgba(124, 58, 237, 0.05)'
+                              borderColor: 'rgba(168, 85, 247, 0.5)',
+                              bgcolor: 'rgba(168, 85, 247, 0.02)',
+                              transform: 'translateY(-2px)',
+                              boxShadow: '0 4px 12px rgba(168, 85, 247, 0.08)'
                             }
                           }}
                         >
-                          <Typography sx={{ fontWeight: 700, color: 'text.primary', fontSize: '1.05rem', pr: 1.5 }}>
+                          <Typography sx={{ fontWeight: 600, color: 'text.primary', fontSize: '0.95rem', pr: 1.5 }}>
                             {kw}
                           </Typography>
                           <Tooltip title={copiedKeyword === kw ? 'Đã copy!' : 'Copy từ khóa'}>
                             <IconButton 
-                              size="medium" 
+                              size="small" 
                               onClick={() => handleCopyKeyword(kw)}
                               color={copiedKeyword === kw ? 'success' : 'default'}
+                              sx={{
+                                bgcolor: copiedKeyword === kw ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255, 255, 255, 0.03)',
+                                border: '1px solid',
+                                borderColor: copiedKeyword === kw ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+                                transition: 'all 0.2s',
+                                '&:hover': {
+                                  bgcolor: copiedKeyword === kw ? 'rgba(16, 185, 129, 0.15)' : 'rgba(168, 85, 247, 0.15)',
+                                  borderColor: copiedKeyword === kw ? '#10b981' : '#a855f7',
+                                }
+                              }}
                             >
-                              {copiedKeyword === kw ? <LibraryAddCheckIcon fontSize="medium" /> : <ContentCopyIcon fontSize="medium" />}
+                              {copiedKeyword === kw ? <LibraryAddCheckIcon fontSize="small" /> : <ContentCopyIcon fontSize="small" />}
                             </IconButton>
                           </Tooltip>
                         </Paper>
@@ -1264,15 +1445,33 @@ export default function ScraperSection() {
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ p: 3, justifyContent: 'space-between' }}>
-          <Typography color="text.secondary" sx={{ fontSize: '0.9rem' }}>
+        <DialogActions sx={{ 
+          p: 3, 
+          justifyContent: 'space-between',
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.default'
+        }}>
+          <Typography color="text.secondary" sx={{ fontSize: '0.9rem', pl: 1 }}>
             Mô hình sử dụng: <strong>{selectedArticleForAi?.aiModel || 'Gemini 2.5 Flash'}</strong>
           </Typography>
-          <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ display: 'flex', gap: 2, pr: 1 }}>
             <Button 
               variant="outlined" 
               onClick={() => setOpenAiDialog(false)}
-              sx={{ borderRadius: 2.5, px: 4, py: 1, textTransform: 'none', fontWeight: 700, fontSize: '1rem' }}
+              sx={{ 
+                borderRadius: 2.5, 
+                px: 4, 
+                py: 1, 
+                textTransform: 'none', 
+                fontWeight: 700, 
+                fontSize: '1rem',
+                borderColor: 'divider',
+                '&:hover': {
+                  bgcolor: 'action.hover',
+                  borderColor: 'text.secondary'
+                }
+              }}
             >
               Đóng
             </Button>
@@ -1288,10 +1487,13 @@ export default function ScraperSection() {
                 textTransform: 'none', 
                 fontWeight: 800,
                 fontSize: '1rem',
-                background: 'linear-gradient(45deg, #a855f7 30%, #7c3aed 90%)',
-                boxShadow: '0 4px 12px rgba(124, 58, 237, 0.2)',
+                background: 'linear-gradient(45deg, #a855f7 0%, #7c3aed 50%, #6366f1 100%)',
+                boxShadow: '0 4px 15px rgba(124, 58, 237, 0.3)',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 '&:hover': {
-                  background: 'linear-gradient(45deg, #7c3aed 30%, #a855f7 90%)'
+                  background: 'linear-gradient(45deg, #7c3aed 0%, #a855f7 50%, #7c3aed 100%)',
+                  boxShadow: '0 6px 20px rgba(124, 58, 237, 0.5)',
+                  transform: 'translateY(-1px)'
                 }
               }}
             >
