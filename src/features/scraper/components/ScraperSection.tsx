@@ -127,6 +127,7 @@ export default function ScraperSection() {
   const [nganh, setNganh] = useState('');
   const [linhVuc, setLinhVuc] = useState('');
   const [docTypeCode, setDocTypeCode] = useState('');
+  const [aiStatus, setAiStatus] = useState('');
   const [tagsList, setTagsList] = useState<string[]>([]);
   const [categoriesList, setCategoriesList] = useState<string[]>([]);
   const debouncedQ = useDebounce(q, 500);
@@ -365,6 +366,7 @@ export default function ScraperSection() {
         nganh: activeSite === 'vbpl' && nganh ? nganh : undefined,
         linhVuc: activeSite === 'vbpl' && linhVuc ? linhVuc : undefined,
         docTypeCode: activeSite === 'vbpl' && docTypeCode ? docTypeCode : undefined,
+        aiStatus: aiStatus || undefined,
         page: p + 1,
         limit: l
       });
@@ -388,6 +390,7 @@ export default function ScraperSection() {
     setNganh('');
     setLinhVuc('');
     setDocTypeCode('');
+    setAiStatus('');
     loadTags();
     loadSchedule();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -398,7 +401,7 @@ export default function ScraperSection() {
     loadArticles(0, limit);
     setPage(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSite, section, tag, date, debouncedQ, onlyNew, scope, effStatusCode, nganh, linhVuc, docTypeCode]);
+  }, [activeSite, section, tag, date, debouncedQ, onlyNew, scope, effStatusCode, nganh, linhVuc, docTypeCode, aiStatus]);
 
   // --- Handlers ---
   const handlePageChange = (newPage: number) => {
@@ -1471,6 +1474,17 @@ export default function ScraperSection() {
               onChange={(e) => setDate(e.target.value)}
               sx={{ width: 140 }}
             />
+            <Select 
+              size="small" 
+              value={aiStatus} 
+              onChange={(e) => setAiStatus(e.target.value)} 
+              displayEmpty 
+              sx={{ minWidth: 150 }}
+            >
+              <MenuItem value="">Tất cả Trạng thái Sheet</MenuItem>
+              <MenuItem value="generated">Đã push Sheet</MenuItem>
+              <MenuItem value="pending">Chưa push Sheet</MenuItem>
+            </Select>
             {activeSite === 'vbpl' && (
               <>
                 <Select size="small" value={scope} onChange={(e) => setScope(e.target.value)} displayEmpty sx={{ minWidth: 150 }}>
@@ -1515,8 +1529,8 @@ export default function ScraperSection() {
               }
               sx={{ ml: 1, mr: 0 }}
             />
-            {(section || tag || date || q || onlyNew || scope || effStatusCode || nganh || linhVuc || docTypeCode) && (
-              <Button size="small" color="error" onClick={() => { setSection(''); setTag(''); setDate(''); setQ(''); setOnlyNew(false); setScope(''); setEffStatusCode(''); setNganh(''); setLinhVuc(''); setDocTypeCode(''); }}>
+            {(section || tag || date || q || onlyNew || scope || effStatusCode || nganh || linhVuc || docTypeCode || aiStatus) && (
+              <Button size="small" color="error" onClick={() => { setSection(''); setTag(''); setDate(''); setQ(''); setOnlyNew(false); setScope(''); setEffStatusCode(''); setNganh(''); setLinhVuc(''); setDocTypeCode(''); setAiStatus(''); }}>
                 Xóa lọc
               </Button>
             )}
