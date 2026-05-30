@@ -127,7 +127,7 @@ export default function ScraperSection() {
   const [nganh, setNganh] = useState('');
   const [linhVuc, setLinhVuc] = useState('');
   const [docTypeCode, setDocTypeCode] = useState('');
-  const [aiStatus, setAiStatus] = useState('');
+  const [sheetStatus, setSheetStatus] = useState('all');
   const [tagsList, setTagsList] = useState<string[]>([]);
   const [categoriesList, setCategoriesList] = useState<string[]>([]);
   const debouncedQ = useDebounce(q, 500);
@@ -366,7 +366,7 @@ export default function ScraperSection() {
         nganh: activeSite === 'vbpl' && nganh ? nganh : undefined,
         linhVuc: activeSite === 'vbpl' && linhVuc ? linhVuc : undefined,
         docTypeCode: activeSite === 'vbpl' && docTypeCode ? docTypeCode : undefined,
-        aiStatus: aiStatus || undefined,
+        sheetStatus: sheetStatus || undefined,
         page: p + 1,
         limit: l
       });
@@ -390,7 +390,7 @@ export default function ScraperSection() {
     setNganh('');
     setLinhVuc('');
     setDocTypeCode('');
-    setAiStatus('');
+    setSheetStatus('all');
     loadTags();
     loadSchedule();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -401,7 +401,7 @@ export default function ScraperSection() {
     loadArticles(0, limit);
     setPage(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSite, section, tag, date, debouncedQ, onlyNew, scope, effStatusCode, nganh, linhVuc, docTypeCode, aiStatus]);
+  }, [activeSite, section, tag, date, debouncedQ, onlyNew, scope, effStatusCode, nganh, linhVuc, docTypeCode, sheetStatus]);
 
   // --- Handlers ---
   const handlePageChange = (newPage: number) => {
@@ -1476,14 +1476,14 @@ export default function ScraperSection() {
             />
             <Select 
               size="small" 
-              value={aiStatus} 
-              onChange={(e) => setAiStatus(e.target.value)} 
+              value={sheetStatus} 
+              onChange={(e) => setSheetStatus(e.target.value)} 
               displayEmpty 
               sx={{ minWidth: 150 }}
             >
-              <MenuItem value="">Tất cả Trạng thái Sheet</MenuItem>
-              <MenuItem value="generated">Đã push Sheet</MenuItem>
-              <MenuItem value="pending">Chưa push Sheet</MenuItem>
+              <MenuItem value="all">Tất cả Trạng thái Sheet</MenuItem>
+              <MenuItem value="pushed">Đã push Sheet</MenuItem>
+              <MenuItem value="notpushed">Chưa push Sheet</MenuItem>
             </Select>
             {activeSite === 'vbpl' && (
               <>
@@ -1529,8 +1529,8 @@ export default function ScraperSection() {
               }
               sx={{ ml: 1, mr: 0 }}
             />
-            {(section || tag || date || q || onlyNew || scope || effStatusCode || nganh || linhVuc || docTypeCode || aiStatus) && (
-              <Button size="small" color="error" onClick={() => { setSection(''); setTag(''); setDate(''); setQ(''); setOnlyNew(false); setScope(''); setEffStatusCode(''); setNganh(''); setLinhVuc(''); setDocTypeCode(''); setAiStatus(''); }}>
+            {(section || tag || date || q || onlyNew || scope || effStatusCode || nganh || linhVuc || docTypeCode || sheetStatus !== 'all') && (
+              <Button size="small" color="error" onClick={() => { setSection(''); setTag(''); setDate(''); setQ(''); setOnlyNew(false); setScope(''); setEffStatusCode(''); setNganh(''); setLinhVuc(''); setDocTypeCode(''); setSheetStatus('all'); }}>
                 Xóa lọc
               </Button>
             )}

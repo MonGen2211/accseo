@@ -109,6 +109,7 @@ export interface GetArticlesParams {
   nganh?: string;
   linhVuc?: string;
   docTypeCode?: string;
+  sheetStatus?: string;
 }
 
 export interface GetArticlesResponse {

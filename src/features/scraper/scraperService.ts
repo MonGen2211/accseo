@@ -29,6 +29,7 @@ export const scraperService = {
     if (params.nganh) query.append('nganh', params.nganh);
     if (params.linhVuc) query.append('linhVuc', params.linhVuc);
     if (params.docTypeCode) query.append('docTypeCode', params.docTypeCode);
+    if (params.sheetStatus) query.append('sheetStatus', params.sheetStatus);
     if (params.page) query.append('page', params.page.toString());
     if (params.limit) query.append('limit', params.limit.toString());
 
