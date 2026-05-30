@@ -79,5 +79,15 @@ export const scraperService = {
   getAiResult: async (id: string): Promise<AiResultResponseData | null> => {
     const response = await api.get<ApiResponse<{ data: AiResultResponseData | null }>>(`/scraper/articles/${id}/ai-result`);
     return response.data.data.data;
+  },
+
+  resetAiState: async (source?: string, articleId?: string): Promise<{ message: string; matched: number; modified: number }> => {
+    const query = new URLSearchParams();
+    if (source) query.append('source', source);
+    if (articleId) query.append('articleId', articleId);
+    const response = await api.delete<ApiResponse<{ message: string; matched: number; modified: number }>>(
+      `/scraper/articles/ai-state?${query.toString()}`
+    );
+    return response.data.data;
   }
 };

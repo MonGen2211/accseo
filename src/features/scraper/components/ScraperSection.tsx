@@ -43,8 +43,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import LinkIcon from '@mui/icons-material/Link';
 import GavelIcon from '@mui/icons-material/Gavel';
 import GridOnIcon from '@mui/icons-material/GridOn';
-
-
+import { useAppSelector } from '../../../app/store';
 
 import CustomTable from '../../../components/custom-table/CustomTable';
 import type { TableField } from '../../../types/tableFields.types';
@@ -108,6 +107,8 @@ const DOC_TYPES = [
 
 export default function ScraperSection() {
   const { showToast } = useToastify();
+  const user = useAppSelector((state) => state.auth.user);
+  const isAdmin = user?.roles?.includes('ADMIN') || user?.role === 'ADMIN';
 
   // --- Active Site ---
   const [activeSite, setActiveSite] = useState<string>('thuvienphapluat');
@@ -526,6 +527,47 @@ export default function ScraperSection() {
     }
   };
 
+  const handleResetArticleAiState = async (article: ScraperArticle) => {
+    if (!window.confirm('Bạn có chắc chắn muốn reset trạng thái AI/Sheet cho bài viết này về "chưa gen"?')) {
+      return;
+    }
+    setAiLoadingId(article._id);
+    try {
+      await scraperService.resetAiState(undefined, article._id);
+      
+      const updatedArticle = {
+        ...article,
+        sheetUrl: null,
+        sheetPushedAt: null,
+        sheetLastBatch: 0
+      };
+      
+      setItems(prev => prev.map(item => item._id === article._id ? updatedArticle : item));
+      showToast('Đã reset trạng thái AI/Sheet cho bài viết này!', 'success');
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Lỗi khi reset trạng thái AI', 'danger');
+    } finally {
+      setAiLoadingId(null);
+    }
+  };
+
+  const handleResetSourceAiState = async (source: string) => {
+    const siteName = SITE_SOURCES.find(s => s.id === source)?.name || source;
+    if (!window.confirm(`CẢNH BÁO: Bạn có chắc chắn muốn reset trạng thái AI/Sheet cho TOÀN BỘ bài viết thuộc nguồn "${siteName}"? Hành động này không thể hoàn tác.`)) {
+      return;
+    }
+    setLoadingTable(true);
+    try {
+      const res = await scraperService.resetAiState(source);
+      showToast(res.message || `Đã reset trạng thái cho toàn bộ bài viết nguồn ${siteName}!`, 'success');
+      loadArticles(0, limit);
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Lỗi khi reset trạng thái nguồn', 'danger');
+    } finally {
+      setLoadingTable(false);
+    }
+  };
+
   const handleBatchGenerate = async () => {
     if (selectedIds.length === 0) return;
     setIsBatchGenerating(true);
@@ -650,48 +692,74 @@ export default function ScraperSection() {
               </Box>
             </Box>
 
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                variant="contained"
-                color="success"
-                onClick={() => window.open(sheetUrl, '_blank', 'noopener,noreferrer')}
-                startIcon={<GridOnIcon sx={{ fontSize: 14 }} />}
-                fullWidth
-                size="small"
-                sx={{ 
-                  borderRadius: 1.5, 
-                  textTransform: 'none', 
-                  fontWeight: 700, 
-                  fontSize: '0.75rem',
-                  bgcolor: '#10b981',
-                  boxShadow: 'none',
-                  '&:hover': { bgcolor: '#059669', boxShadow: 'none' }
-                }}
-              >
-                Mở Sheet
-              </Button>
-              <Button
-                variant="outlined"
-                color="secondary"
-                onClick={() => {
-                  setSelectedArticleForAi(item);
-                  setOpenAiConfirmDialog(true);
-                }}
-                startIcon={<AutoAwesomeIcon sx={{ fontSize: 14 }} />}
-                fullWidth
-                size="small"
-                sx={{ 
-                  borderRadius: 1.5, 
-                  textTransform: 'none', 
-                  fontWeight: 700, 
-                  fontSize: '0.75rem',
-                  borderColor: 'divider',
-                  color: 'text.primary',
-                  '&:hover': { bgcolor: 'action.hover', borderColor: 'text.primary' }
-                }}
-              >
-                Gen lại AI
-              </Button>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={() => window.open(sheetUrl, '_blank', 'noopener,noreferrer')}
+                  startIcon={<GridOnIcon sx={{ fontSize: 14 }} />}
+                  fullWidth
+                  size="small"
+                  sx={{ 
+                    borderRadius: 1.5, 
+                    textTransform: 'none', 
+                    fontWeight: 700, 
+                    fontSize: '0.75rem',
+                    bgcolor: '#10b981',
+                    boxShadow: 'none',
+                    '&:hover': { bgcolor: '#059669', boxShadow: 'none' }
+                  }}
+                >
+                  Mở Sheet
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  onClick={() => {
+                    setSelectedArticleForAi(item);
+                    setOpenAiConfirmDialog(true);
+                  }}
+                  startIcon={<AutoAwesomeIcon sx={{ fontSize: 14 }} />}
+                  fullWidth
+                  size="small"
+                  sx={{ 
+                    borderRadius: 1.5, 
+                    textTransform: 'none', 
+                    fontWeight: 700, 
+                    fontSize: '0.75rem',
+                    borderColor: 'divider',
+                    color: 'text.primary',
+                    '&:hover': { bgcolor: 'action.hover', borderColor: 'text.primary' }
+                  }}
+                >
+                  Gen lại AI
+                </Button>
+              </Box>
+
+              {isAdmin && (
+                <Button
+                  variant="outlined"
+                  color="error"
+                  onClick={() => handleResetArticleAiState(item)}
+                  fullWidth
+                  size="small"
+                  sx={{ 
+                    borderRadius: 1.5, 
+                    textTransform: 'none', 
+                    fontWeight: 700, 
+                    fontSize: '0.75rem',
+                    borderColor: 'rgba(239, 68, 68, 0.4)',
+                    color: '#ef4444',
+                    '&:hover': {
+                      borderColor: '#ef4444',
+                      bgcolor: 'rgba(239, 68, 68, 0.04)',
+                    }
+                  }}
+                >
+                  Reset AI State (Admin)
+                </Button>
+              )}
             </Box>
           </Box>
         ) : (
@@ -1341,6 +1409,26 @@ export default function ScraperSection() {
               >
                 {isTriggering ? 'Đang chạy...' : 'Cào bài ngay'}
               </Button>
+              {isAdmin && (
+                <Button
+                  variant="outlined"
+                  color="error"
+                  onClick={() => handleResetSourceAiState(activeSite)}
+                  sx={{ 
+                    borderRadius: 2, 
+                    fontWeight: 600, 
+                    textTransform: 'none',
+                    borderColor: 'rgba(239, 68, 68, 0.4)',
+                    color: '#ef4444',
+                    '&:hover': {
+                      borderColor: '#ef4444',
+                      bgcolor: 'rgba(239, 68, 68, 0.04)',
+                    }
+                  }}
+                >
+                  Reset AI Nguồn
+                </Button>
+              )}
             </Box>
           </Box>
 
