@@ -395,39 +395,82 @@ export default function ForceIndexPage() {
           value={activeTab}
           onChange={(_, val) => setActiveTab(val)}
           variant="fullWidth"
+          TabIndicatorProps={{ style: { display: 'none' } }}
           sx={{
             minHeight: 48,
-            '& .MuiTabs-indicator': {
-              height: '100%',
-              borderRadius: 3,
-              bgcolor: 'action.selected',
-              zIndex: 0,
-            },
           }}
         >
           <Tab
             label="1. Ép Index (Submit)"
             icon={<SendIcon sx={{ fontSize: 18 }} />}
             iconPosition="start"
-            sx={{ fontWeight: 700, textTransform: 'none', zIndex: 1, minHeight: 48 }}
+            sx={{
+              fontWeight: 700,
+              textTransform: 'none',
+              zIndex: 1,
+              minHeight: 48,
+              borderRadius: 3,
+              mx: 0.5,
+              transition: 'all 0.2s',
+              '&.Mui-selected': {
+                bgcolor: 'action.selected',
+                color: 'primary.main',
+              }
+            }}
           />
           <Tab
             label="2. Thống kê (Stats)"
             icon={<AssessmentOutlinedIcon sx={{ fontSize: 18 }} />}
             iconPosition="start"
-            sx={{ fontWeight: 700, textTransform: 'none', zIndex: 1, minHeight: 48 }}
+            sx={{
+              fontWeight: 700,
+              textTransform: 'none',
+              zIndex: 1,
+              minHeight: 48,
+              borderRadius: 3,
+              mx: 0.5,
+              transition: 'all 0.2s',
+              '&.Mui-selected': {
+                bgcolor: 'action.selected',
+                color: 'primary.main',
+              }
+            }}
           />
           <Tab
             label="3. Nhật ký Googlebot (Visits)"
             icon={<HistoryIcon sx={{ fontSize: 18 }} />}
             iconPosition="start"
-            sx={{ fontWeight: 700, textTransform: 'none', zIndex: 1, minHeight: 48 }}
+            sx={{
+              fontWeight: 700,
+              textTransform: 'none',
+              zIndex: 1,
+              minHeight: 48,
+              borderRadius: 3,
+              mx: 0.5,
+              transition: 'all 0.2s',
+              '&.Mui-selected': {
+                bgcolor: 'action.selected',
+                color: 'primary.main',
+              }
+            }}
           />
           <Tab
             label="4. Danh sách URL (Mappings)"
             icon={<ListIcon sx={{ fontSize: 18 }} />}
             iconPosition="start"
-            sx={{ fontWeight: 700, textTransform: 'none', zIndex: 1, minHeight: 48 }}
+            sx={{
+              fontWeight: 700,
+              textTransform: 'none',
+              zIndex: 1,
+              minHeight: 48,
+              borderRadius: 3,
+              mx: 0.5,
+              transition: 'all 0.2s',
+              '&.Mui-selected': {
+                bgcolor: 'action.selected',
+                color: 'primary.main',
+              }
+            }}
           />
         </Tabs>
       </Paper>
@@ -690,13 +733,13 @@ export default function ForceIndexPage() {
             </Box>
           ) : !stats ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5 }}>
-              <Grid container spacing={2.5}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }, gap: 2.5 }}>
                 {[...Array(4)].map((_, i) => (
-                  <Grid item xs={12} sm={6} md={3} key={i}>
+                  <Box key={i}>
                     <Skeleton variant="rectangular" height={100} sx={{ borderRadius: 3.5 }} />
-                  </Grid>
+                  </Box>
                 ))}
-              </Grid>
+              </Box>
               <Skeleton variant="rectangular" height={320} sx={{ borderRadius: 4 }} />
             </Box>
           ) : isEmptyState ? (
@@ -711,8 +754,8 @@ export default function ForceIndexPage() {
             <Fade in={!!stats}>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5 }}>
                 {/* Stats Cards Row */}
-                <Grid container spacing={2.5}>
-                  <Grid item xs={12} sm={6} md={3}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }, gap: 2.5 }}>
+                  <Box sx={{ minWidth: 0 }}>
                     <Card elevation={0} sx={{
                       borderRadius: 3.5,
                       border: '1px solid',
@@ -739,9 +782,9 @@ export default function ForceIndexPage() {
                         </Box>
                       </CardContent>
                     </Card>
-                  </Grid>
+                  </Box>
 
-                  <Grid item xs={12} sm={6} md={3}>
+                  <Box sx={{ minWidth: 0 }}>
                     <Card elevation={0} sx={{
                       borderRadius: 3.5,
                       border: '1px solid',
@@ -768,9 +811,9 @@ export default function ForceIndexPage() {
                         </Box>
                       </CardContent>
                     </Card>
-                  </Grid>
+                  </Box>
 
-                  <Grid item xs={12} sm={6} md={3}>
+                  <Box sx={{ minWidth: 0 }}>
                     <Card elevation={0} sx={{
                       borderRadius: 3.5,
                       border: '1px solid',
@@ -797,9 +840,9 @@ export default function ForceIndexPage() {
                         </Box>
                       </CardContent>
                     </Card>
-                  </Grid>
+                  </Box>
 
-                  <Grid item xs={12} sm={6} md={3}>
+                  <Box sx={{ minWidth: 0 }}>
                     <Card elevation={0} sx={{
                       borderRadius: 3.5,
                       border: '1px solid',
@@ -826,8 +869,8 @@ export default function ForceIndexPage() {
                         </Box>
                       </CardContent>
                     </Card>
-                  </Grid>
-                </Grid>
+                  </Box>
+                </Box>
 
                 {/* Chart & Top URL Mapping layout */}
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1.2fr 1fr' }, gap: 3.5, alignItems: 'stretch' }}>
@@ -961,8 +1004,15 @@ export default function ForceIndexPage() {
               <Typography sx={{ fontWeight: 800, fontSize: '0.95rem' }}>Bộ lọc tìm kiếm</Typography>
             </Box>
 
-            <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} sm={6} md={3}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr) auto' },
+                gap: 2,
+                alignItems: 'center',
+              }}
+            >
+              <Box sx={{ minWidth: 0 }}>
                 <TextField
                   label="Lọc theo Hash ID"
                   placeholder="ví dụ: a1b2c3"
@@ -972,9 +1022,9 @@ export default function ForceIndexPage() {
                   onChange={(e) => setFilterHashId(e.target.value)}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2.5 } }}
                 />
-              </Grid>
+              </Box>
 
-              <Grid item xs={12} sm={6} md={3}>
+              <Box sx={{ minWidth: 0 }}>
                 <FormControl size="small" fullWidth>
                   <InputLabel id="is-googlebot-label">Loại truy cập</InputLabel>
                   <Select
@@ -989,9 +1039,9 @@ export default function ForceIndexPage() {
                     <MenuItem value="false">👤 Chỉ User</MenuItem>
                   </Select>
                 </FormControl>
-              </Grid>
+              </Box>
 
-              <Grid item xs={12} sm={6} md={2.5}>
+              <Box sx={{ minWidth: 0 }}>
                 <TextField
                   label="Từ ngày"
                   type="date"
@@ -1002,9 +1052,9 @@ export default function ForceIndexPage() {
                   onChange={(e) => setFilterFrom(e.target.value)}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2.5 } }}
                 />
-              </Grid>
+              </Box>
 
-              <Grid item xs={12} sm={6} md={2.5}>
+              <Box sx={{ minWidth: 0 }}>
                 <TextField
                   label="Đến ngày"
                   type="date"
@@ -1015,9 +1065,9 @@ export default function ForceIndexPage() {
                   onChange={(e) => setFilterTo(e.target.value)}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2.5 } }}
                 />
-              </Grid>
+              </Box>
 
-              <Grid item xs={12} md={1} sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', width: '100%' }}>
+              <Box sx={{ display: 'flex', gap: 1.5, justifyContent: { xs: 'stretch', sm: 'flex-end' }, width: '100%' }}>
                 <Button
                   variant="contained"
                   onClick={handleApplyVisitsFilters}
@@ -1027,6 +1077,7 @@ export default function ForceIndexPage() {
                     textTransform: 'none',
                     py: 1,
                     minWidth: 80,
+                    flex: { xs: 1, sm: 'none' },
                   }}
                 >
                   Lọc
@@ -1042,12 +1093,13 @@ export default function ForceIndexPage() {
                     minWidth: 80,
                     borderColor: 'divider',
                     color: 'text.secondary',
+                    flex: { xs: 1, sm: 'none' },
                   }}
                 >
                   Xóa
                 </Button>
-              </Grid>
-            </Grid>
+              </Box>
+            </Box>
           </Paper>
 
           {/* Visits Table */}
@@ -1181,8 +1233,8 @@ export default function ForceIndexPage() {
               bgcolor: 'background.paper',
             }}
           >
-            <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} sm={8} md={6}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '2fr 1fr', md: '1.2fr 1fr' }, gap: 2, alignItems: 'center' }}>
+              <Box sx={{ minWidth: 0 }}>
                 <TextField
                   label="Tìm kiếm theo Target URL hoặc Hash ID"
                   placeholder="ví dụ: luatvietnam hoặc a1b2c3"
@@ -1195,8 +1247,8 @@ export default function ForceIndexPage() {
                   }}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2.5 } }}
                 />
-              </Grid>
-              <Grid item xs={12} sm={4} md={6} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <Button
                   variant="outlined"
                   startIcon={<RefreshIcon />}
@@ -1205,8 +1257,8 @@ export default function ForceIndexPage() {
                 >
                   Làm mới
                 </Button>
-              </Grid>
-            </Grid>
+              </Box>
+            </Box>
           </Paper>
 
           {/* Mappings Table list */}
