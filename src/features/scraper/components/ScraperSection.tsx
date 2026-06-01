@@ -129,6 +129,9 @@ export default function ScraperSection() {
   const [linhVuc, setLinhVuc] = useState('');
   const [docTypeCode, setDocTypeCode] = useState('');
   const [sheetStatus, setSheetStatus] = useState('all');
+  const [showSectionDetails, setShowSectionDetails] = useState(false);
+  const [showCategoryDetails, setShowCategoryDetails] = useState(false);
+  const [showTagDetails, setShowTagDetails] = useState(false);
   const [tagsList, setTagsList] = useState<string[]>([]);
   const [categoriesList, setCategoriesList] = useState<string[]>([]);
   const debouncedQ = useDebounce(q, 500);
@@ -392,6 +395,9 @@ export default function ScraperSection() {
     setLinhVuc('');
     setDocTypeCode('');
     setSheetStatus('all');
+    setShowSectionDetails(false);
+    setShowCategoryDetails(false);
+    setShowTagDetails(false);
     loadTags();
     loadSchedule();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1434,7 +1440,7 @@ export default function ScraperSection() {
 
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '300px 1fr' }, gap: 3, mb: 4 }}>
             {/* Summary Box */}
-            <Box sx={{ p: 2, borderRadius: 3, bgcolor: 'background.default', border: '1px dashed', borderColor: 'divider' }}>
+            <Box sx={{ p: 2, borderRadius: 3, bgcolor: 'background.default', border: '1px dashed', borderColor: 'divider', height: 'fit-content' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
                 <AnalyticsOutlinedIcon color="primary" />
                 <Typography sx={{ fontWeight: 700 }}>Tổng quan (Hiện có)</Typography>
@@ -1443,17 +1449,33 @@ export default function ScraperSection() {
                 <CircularProgress size={24} />
               ) : summary ? (
                 <Box>
-                  <Typography sx={{ fontSize: '2rem', fontWeight: 800, color: 'primary.main', lineHeight: 1, mb: 1 }}>
-                    {summary.total}
+                  <Typography sx={{ fontSize: '2rem', fontWeight: 800, color: 'primary.main', lineHeight: 1, mb: 0.5 }}>
+                    {summary.total} <Typography component="span" variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>bài viết</Typography>
                   </Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    {Object.entries(summary.bySection || {}).map(([sec, count]) => (
-                      <Box key={sec} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>{sec}</Typography>
-                        <Chip label={count} size="small" sx={{ height: 20, fontSize: 11 }} />
-                      </Box>
-                    ))}
-                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, mb: 1.5 }}>
+                    {Object.keys(summary.bySection || {}).length} chuyên mục
+                  </Typography>
+                  
+                  <Button 
+                    size="small" 
+                    variant="text" 
+                    onClick={() => setShowSectionDetails(!showSectionDetails)}
+                    endIcon={<ExpandMoreIcon sx={{ transform: showSectionDetails ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />}
+                    sx={{ textTransform: 'none', fontWeight: 700, p: 0, minWidth: 0, color: 'primary.main', mb: 1 }}
+                  >
+                    {showSectionDetails ? 'Thu gọn chuyên mục' : 'Xem chi tiết chuyên mục'}
+                  </Button>
+
+                  <Collapse in={showSectionDetails}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1, maxHeight: 300, overflowY: 'auto', pr: 0.5 }}>
+                      {Object.entries(summary.bySection || {}).map(([sec, count]) => (
+                        <Box key={sec} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>{sec}</Typography>
+                          <Chip label={count} size="small" sx={{ height: 20, fontSize: 11 }} />
+                        </Box>
+                      ))}
+                    </Box>
+                  </Collapse>
                 </Box>
               ) : (
                 <Typography variant="body2" color="text.secondary">Chưa có dữ liệu</Typography>
@@ -1463,7 +1485,8 @@ export default function ScraperSection() {
             {/* Top Keywords Grid */}
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
               
-              <Box sx={{ p: 2, borderRadius: 3, bgcolor: 'background.default', border: '1px dashed', borderColor: 'divider', display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {/* Top Categories */}
+              <Box sx={{ p: 2, borderRadius: 3, bgcolor: 'background.default', border: '1px dashed', borderColor: 'divider', display: 'flex', flexDirection: 'column', gap: 1, height: 'fit-content' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
                   <FormatListBulletedIcon color="primary" />
                   <Typography sx={{ fontWeight: 700 }}>Danh mục / Loại văn bản</Typography>
@@ -1471,30 +1494,69 @@ export default function ScraperSection() {
                 {loadingSummary ? (
                   <CircularProgress size={24} />
                 ) : summary?.topCategories?.length ? (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {summary.topCategories.map((t, idx) => (
-                      <Chip
-                        key={`f-${idx}`}
-                        label={`${t.name} (${t.count})`}
-                        onClick={() => setTag(t.name)}
-                        sx={{ 
-                          bgcolor: tag === t.name ? 'primary.main' : 'background.paper',
-                          color: tag === t.name ? 'primary.contrastText' : 'text.primary',
-                          fontWeight: 500,
-                          cursor: 'pointer',
-                          border: '1px solid',
-                          borderColor: tag === t.name ? 'primary.main' : 'divider',
-                          '&:hover': { bgcolor: tag === t.name ? 'primary.dark' : 'action.hover' }
-                        }}
-                      />
-                    ))}
+                  <Box>
+                    {/* Default preview of first 5 categories */}
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: summary.topCategories.length > 5 ? 1 : 0 }}>
+                      {summary.topCategories.slice(0, 5).map((t, idx) => (
+                        <Chip
+                          key={`f-preview-${idx}`}
+                          label={`${t.name} (${t.count})`}
+                          onClick={() => setTag(t.name)}
+                          sx={{ 
+                            bgcolor: tag === t.name ? 'primary.main' : 'background.paper',
+                            color: tag === t.name ? 'primary.contrastText' : 'text.primary',
+                            fontWeight: 500,
+                            cursor: 'pointer',
+                            border: '1px solid',
+                            borderColor: tag === t.name ? 'primary.main' : 'divider',
+                            '&:hover': { bgcolor: tag === t.name ? 'primary.dark' : 'action.hover' }
+                          }}
+                        />
+                      ))}
+                    </Box>
+
+                    {summary.topCategories.length > 5 && (
+                      <Box>
+                        <Collapse in={showCategoryDetails}>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1, mb: 1, maxHeight: 250, overflowY: 'auto', py: 0.5 }}>
+                            {summary.topCategories.slice(5).map((t, idx) => (
+                              <Chip
+                                key={`f-expand-${idx}`}
+                                label={`${t.name} (${t.count})`}
+                                onClick={() => setTag(t.name)}
+                                sx={{ 
+                                  bgcolor: tag === t.name ? 'primary.main' : 'background.paper',
+                                  color: tag === t.name ? 'primary.contrastText' : 'text.primary',
+                                  fontWeight: 500,
+                                  cursor: 'pointer',
+                                  border: '1px solid',
+                                  borderColor: tag === t.name ? 'primary.main' : 'divider',
+                                  '&:hover': { bgcolor: tag === t.name ? 'primary.dark' : 'action.hover' }
+                                }}
+                              />
+                            ))}
+                          </Box>
+                        </Collapse>
+                        
+                        <Button
+                          size="small"
+                          variant="text"
+                          onClick={() => setShowCategoryDetails(!showCategoryDetails)}
+                          endIcon={<ExpandMoreIcon sx={{ transform: showCategoryDetails ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />}
+                          sx={{ textTransform: 'none', fontWeight: 700, p: 0, minWidth: 0, color: 'primary.main', mt: 0.5 }}
+                        >
+                          {showCategoryDetails ? 'Thu gọn danh mục' : `Xem thêm danh mục (${summary.topCategories.length - 5})`}
+                        </Button>
+                      </Box>
+                    )}
                   </Box>
                 ) : (
                   <Typography variant="body2" color="text.secondary">Không có dữ liệu</Typography>
                 )}
               </Box>
 
-              <Box sx={{ p: 2, borderRadius: 3, bgcolor: 'background.default', border: '1px dashed', borderColor: 'divider', display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {/* Top Tags */}
+              <Box sx={{ p: 2, borderRadius: 3, bgcolor: 'background.default', border: '1px dashed', borderColor: 'divider', display: 'flex', flexDirection: 'column', gap: 1, height: 'fit-content' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
                   <FormatListBulletedIcon color="secondary" />
                   <Typography sx={{ fontWeight: 700 }}>Từ khóa nổi bật</Typography>
@@ -1502,24 +1564,64 @@ export default function ScraperSection() {
                 {loadingSummary ? (
                   <CircularProgress size={24} />
                 ) : summary?.topTags?.length ? (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {summary.topTags.map((t, idx) => (
-                      <Chip
-                        key={`r-${idx}`}
-                        label={`${t.name} (${t.count})`}
-                        onClick={() => setTag(t.name)}
-                        size="small"
-                        sx={{ 
-                          bgcolor: tag === t.name ? 'secondary.main' : 'background.paper',
-                          color: tag === t.name ? 'secondary.contrastText' : 'text.secondary',
-                          fontWeight: 500,
-                          cursor: 'pointer',
-                          border: '1px solid',
-                          borderColor: tag === t.name ? 'secondary.main' : 'divider',
-                          '&:hover': { bgcolor: tag === t.name ? 'secondary.dark' : 'action.hover' }
-                        }}
-                      />
-                    ))}
+                  <Box>
+                    {/* Default preview of first 5 tags */}
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: summary.topTags.length > 5 ? 1 : 0 }}>
+                      {summary.topTags.slice(0, 5).map((t, idx) => (
+                        <Chip
+                          key={`r-preview-${idx}`}
+                          label={`${t.name} (${t.count})`}
+                          onClick={() => setTag(t.name)}
+                          size="small"
+                          sx={{ 
+                            bgcolor: tag === t.name ? 'secondary.main' : 'background.paper',
+                            color: tag === t.name ? 'secondary.contrastText' : 'text.secondary',
+                            fontWeight: 500,
+                            cursor: 'pointer',
+                            border: '1px solid',
+                            borderColor: tag === t.name ? 'secondary.main' : 'divider',
+                            '&:hover': { bgcolor: tag === t.name ? 'secondary.dark' : 'action.hover' }
+                          }}
+                        />
+                      ))}
+                    </Box>
+
+                    {summary.topTags.length > 5 && (
+                      <Box>
+                        <Collapse in={showTagDetails}>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1, mb: 1, maxHeight: 250, overflowY: 'auto', py: 0.5 }}>
+                            {summary.topTags.slice(5).map((t, idx) => (
+                              <Chip
+                                key={`r-expand-${idx}`}
+                                label={`${t.name} (${t.count})`}
+                                onClick={() => setTag(t.name)}
+                                size="small"
+                                sx={{ 
+                                  bgcolor: tag === t.name ? 'secondary.main' : 'background.paper',
+                                  color: tag === t.name ? 'secondary.contrastText' : 'text.secondary',
+                                  fontWeight: 500,
+                                  cursor: 'pointer',
+                                  border: '1px solid',
+                                  borderColor: tag === t.name ? 'secondary.main' : 'divider',
+                                  '&:hover': { bgcolor: tag === t.name ? 'secondary.dark' : 'action.hover' }
+                                }}
+                              />
+                            ))}
+                          </Box>
+                        </Collapse>
+
+                        <Button
+                          size="small"
+                          variant="text"
+                          color="secondary"
+                          onClick={() => setShowTagDetails(!showTagDetails)}
+                          endIcon={<ExpandMoreIcon sx={{ transform: showTagDetails ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />}
+                          sx={{ textTransform: 'none', fontWeight: 700, p: 0, minWidth: 0, mt: 0.5 }}
+                        >
+                          {showTagDetails ? 'Thu gọn từ khóa' : `Xem thêm từ khóa (${summary.topTags.length - 5})`}
+                        </Button>
+                      </Box>
+                    )}
                   </Box>
                 ) : (
                   <Typography variant="body2" color="text.secondary">Không có dữ liệu</Typography>
