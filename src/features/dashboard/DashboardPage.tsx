@@ -5,8 +5,8 @@ import GoogleIndexChecker from './GoogleIndexChecker';
 import KeywordPlannerSection from './KeywordPlannerSection';
 import VbplSuggestionsSection from './components/vbpl/VbplSuggestionsSection';
 import ScraperSection from '../scraper/components/ScraperSection';
-import IndexingToolSection from './components/IndexingToolSection';
-import SendIcon from '@mui/icons-material/Send';
+import ForceIndexPage from '../force-index/components/ForceIndexPage';
+import AndroidIcon from '@mui/icons-material/Android';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
@@ -476,7 +476,7 @@ export default function DashboardPage() {
     { id: 'serp', label: 'Thứ hạng SERP', icon: <EmojiEventsIcon sx={{ fontSize: 20 }} /> },
     { id: 'index-checker', label: 'Google Index Checker', icon: <CloudDoneOutlinedIcon sx={{ fontSize: 20 }} /> },
     { id: 'scraper', label: 'Thu thập báo chí', icon: <ArticleOutlinedIcon sx={{ fontSize: 20 }} /> },
-    { id: 'indexed', label: 'Index URL', icon: <SendIcon sx={{ fontSize: 20, transform: 'rotate(-45deg)' }} /> },
+    { id: 'indexed', label: 'Ép Index', icon: <AndroidIcon sx={{ fontSize: 20 }} /> },
   ];
 
   return (
@@ -817,7 +817,7 @@ export default function DashboardPage() {
       </Box>
 
       <Box sx={{ display: activeTab === 'indexed' ? 'block' : 'none', mt: 1 }}>
-        <IndexingToolSection />
+        <ForceIndexPage />
       </Box>
 
     </Box>
