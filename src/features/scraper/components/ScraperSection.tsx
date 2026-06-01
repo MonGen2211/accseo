@@ -5,6 +5,8 @@ import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
 import TextField from '@mui/material/TextField';
 import Chip from '@mui/material/Chip';
 import Link from '@mui/material/Link';
@@ -132,6 +134,7 @@ export default function ScraperSection() {
   const [showSectionDetails, setShowSectionDetails] = useState(false);
   const [showCategoryDetails, setShowCategoryDetails] = useState(false);
   const [showTagDetails, setShowTagDetails] = useState(false);
+  const [articleType, setArticleType] = useState<'all' | 'news' | 'document'>('all');
   const [tagsList, setTagsList] = useState<string[]>([]);
   const [categoriesList, setCategoriesList] = useState<string[]>([]);
   const debouncedQ = useDebounce(q, 500);
@@ -322,7 +325,11 @@ export default function ScraperSection() {
   const loadSummary = async () => {
     setLoadingSummary(true);
     try {
-      const data = await scraperService.getSummary({ source: activeSite, date });
+      const data = await scraperService.getSummary({ 
+        source: activeSite, 
+        date,
+        articleType: activeSite === 'luatvietnam' && articleType !== 'all' ? articleType : undefined
+      });
       setSummary(data);
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Lỗi tải thống kê', 'danger');
@@ -371,6 +378,7 @@ export default function ScraperSection() {
         linhVuc: activeSite === 'vbpl' && linhVuc ? linhVuc : undefined,
         docTypeCode: activeSite === 'vbpl' && docTypeCode ? docTypeCode : undefined,
         sheetStatus: sheetStatus || undefined,
+        articleType: activeSite === 'luatvietnam' && articleType !== 'all' ? articleType : undefined,
         page: p + 1,
         limit: l
       });
@@ -395,6 +403,7 @@ export default function ScraperSection() {
     setLinhVuc('');
     setDocTypeCode('');
     setSheetStatus('all');
+    setArticleType('all');
     setShowSectionDetails(false);
     setShowCategoryDetails(false);
     setShowTagDetails(false);
@@ -408,7 +417,7 @@ export default function ScraperSection() {
     loadArticles(0, limit);
     setPage(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSite, section, tag, date, debouncedQ, onlyNew, scope, effStatusCode, nganh, linhVuc, docTypeCode, sheetStatus]);
+  }, [activeSite, section, tag, date, debouncedQ, onlyNew, scope, effStatusCode, nganh, linhVuc, docTypeCode, sheetStatus, articleType]);
 
   // --- Handlers ---
   const handlePageChange = (newPage: number) => {
@@ -1259,9 +1268,36 @@ export default function ScraperSection() {
                   {/* AI Google Sheets / Generate Inline Controls */}
                   {renderInlineAiKeywords(item)}
 
+                  {/* Article Type Badge (News/Document) */}
+                  {item.articleType && (
+                    <Chip
+                      label={item.articleType === 'news' ? 'Tin' : item.articleType === 'document' ? 'Văn bản' : item.articleType}
+                      size="small"
+                      sx={{
+                        height: 18,
+                        fontSize: '0.675rem',
+                        fontWeight: 800,
+                        borderRadius: 1,
+                        bgcolor: item.articleType === 'news' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                        color: item.articleType === 'news' ? '#3b82f6' : '#10b981',
+                        border: '1px solid',
+                        borderColor: item.articleType === 'news' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(16, 185, 129, 0.3)',
+                      }}
+                    />
+                  )}
+                </Box>
+
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 0.5 }}>
                   <Link href={item.url} target="_blank" rel="noopener noreferrer" sx={{ color: 'primary.main', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
                     {item.title}
                   </Link>
+                  {item.category && item.category.length > 0 && (
+                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.25 }}>
+                      {item.category.map((cat, idx) => (
+                        <Chip key={idx} label={cat} size="small" variant="outlined" sx={{ height: 16, fontSize: '0.65rem', color: 'text.secondary', borderColor: 'divider' }} />
+                      ))}
+                    </Box>
+                  )}
                 </Box>
               </Box>
             );
@@ -1312,6 +1348,11 @@ export default function ScraperSection() {
       ];
     }
   }, [activeSite, aiLoadingId, selectedIds, items]);
+
+  const displayedItems = useMemo(() => {
+    if (activeSite !== 'luatvietnam' || articleType === 'all') return items;
+    return items.filter(item => item.articleType === articleType);
+  }, [items, activeSite, articleType]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, mb: 4 }}>
@@ -1631,6 +1672,90 @@ export default function ScraperSection() {
             </Box>
           </Box>
 
+          {activeSite === 'luatvietnam' && (
+            <Box sx={{ borderBottom: '1px solid', borderColor: 'divider', mb: 3 }}>
+              <Tabs
+                value={articleType}
+                onChange={(_, newValue) => setArticleType(newValue)}
+                indicatorColor="primary"
+                textColor="primary"
+                sx={{
+                  minHeight: 40,
+                  '& .MuiTab-root': {
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    fontSize: '0.875rem',
+                    minHeight: 40,
+                    px: 3,
+                    py: 1,
+                    color: 'text.secondary',
+                    '&.Mui-selected': {
+                      color: 'primary.main',
+                    }
+                  }
+                }}
+              >
+                <Tab
+                  value="all"
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      Tất cả
+                      <Chip
+                        label={summary?.total || 0}
+                        size="small"
+                        sx={{ 
+                          height: 18, 
+                          fontSize: '0.675rem', 
+                          fontWeight: 700, 
+                          bgcolor: articleType === 'all' ? 'primary.main' : 'action.selected', 
+                          color: articleType === 'all' ? 'primary.contrastText' : 'text.secondary' 
+                        }}
+                      />
+                    </Box>
+                  }
+                />
+                <Tab
+                  value="news"
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      Tin tức
+                      <Chip
+                        label={(summary?.total || 0) - (summary?.bySection?.['Văn bản pháp luật'] || 0)}
+                        size="small"
+                        sx={{ 
+                          height: 18, 
+                          fontSize: '0.675rem', 
+                          fontWeight: 700, 
+                          bgcolor: articleType === 'news' ? 'primary.main' : 'action.selected', 
+                          color: articleType === 'news' ? 'primary.contrastText' : 'text.secondary' 
+                        }}
+                      />
+                    </Box>
+                  }
+                />
+                <Tab
+                  value="document"
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      Văn bản pháp luật
+                      <Chip
+                        label={summary?.bySection?.['Văn bản pháp luật'] || 0}
+                        size="small"
+                        sx={{ 
+                          height: 18, 
+                          fontSize: '0.675rem', 
+                          fontWeight: 700, 
+                          bgcolor: articleType === 'document' ? 'primary.main' : 'action.selected', 
+                          color: articleType === 'document' ? 'primary.contrastText' : 'text.secondary' 
+                        }}
+                      />
+                    </Box>
+                  }
+                />
+              </Tabs>
+            </Box>
+          )}
+
           {/* Filter Bar */}
           <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center', mb: 2 }}>
             <TextField
@@ -1719,8 +1844,8 @@ export default function ScraperSection() {
               }
               sx={{ ml: 1, mr: 0 }}
             />
-            {(section || tag || date || q || onlyNew || scope || effStatusCode || nganh || linhVuc || docTypeCode || sheetStatus !== 'all') && (
-              <Button size="small" color="error" onClick={() => { setSection(''); setTag(''); setDate(''); setQ(''); setOnlyNew(false); setScope(''); setEffStatusCode(''); setNganh(''); setLinhVuc(''); setDocTypeCode(''); setSheetStatus('all'); }}>
+            {(section || tag || date || q || onlyNew || scope || effStatusCode || nganh || linhVuc || docTypeCode || sheetStatus !== 'all' || articleType !== 'all') && (
+              <Button size="small" color="error" onClick={() => { setSection(''); setTag(''); setDate(''); setQ(''); setOnlyNew(false); setScope(''); setEffStatusCode(''); setNganh(''); setLinhVuc(''); setDocTypeCode(''); setSheetStatus('all'); setArticleType('all'); }}>
                 Xóa lọc
               </Button>
             )}
@@ -1793,7 +1918,7 @@ export default function ScraperSection() {
           <Box sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider', overflow: 'hidden' }}>
             <CustomTable
               fields={columns}
-              data={items}
+              data={displayedItems}
               loading={loadingTable}
               page={page}
               rowsPerPage={limit}

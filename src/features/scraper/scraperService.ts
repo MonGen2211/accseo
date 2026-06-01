@@ -30,6 +30,7 @@ export const scraperService = {
     if (params.linhVuc) query.append('linhVuc', params.linhVuc);
     if (params.docTypeCode) query.append('docTypeCode', params.docTypeCode);
     if (params.sheetStatus) query.append('sheetStatus', params.sheetStatus);
+    if (params.articleType) query.append('articleType', params.articleType);
     if (params.page) query.append('page', params.page.toString());
     if (params.limit) query.append('limit', params.limit.toString());
 
@@ -37,10 +38,11 @@ export const scraperService = {
     return response.data.data;
   },
 
-  getSummary: async (params?: { source?: string; date?: string }): Promise<ScraperSummary> => {
+  getSummary: async (params?: { source?: string; date?: string; articleType?: string }): Promise<ScraperSummary> => {
     const query = new URLSearchParams();
     if (params?.source) query.append('source', params.source);
     if (params?.date) query.append('date', params.date);
+    if (params?.articleType) query.append('articleType', params.articleType);
 
     const response = await api.get<ApiResponse<ScraperSummary>>(`/scraper/articles/summary?${query.toString()}`);
     return response.data.data;
