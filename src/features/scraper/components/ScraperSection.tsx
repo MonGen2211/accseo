@@ -64,6 +64,7 @@ import { scraperService } from '../scraperService';
 import type { ScraperArticle, ScraperSummary, ScraperSchedule } from '../types';
 
 const CRON_OPTIONS = [
+  { value: '*/10 * * * *', label: 'Mỗi 10 phút một lần' },
   { value: '0 * * * *', label: 'Mỗi giờ một lần' },
   { value: '0 */2 * * *', label: 'Mỗi 2 giờ một lần' },
   { value: '0 */6 * * *', label: 'Mỗi 6 giờ một lần' },
@@ -160,8 +161,8 @@ export default function ScraperSection() {
   // --- Schedule State ---
   const [schedule, setSchedule] = useState<ScraperSchedule | null>(null);
   const [openScheduleDialog, setOpenScheduleDialog] = useState(false);
-  const [cronInput, setCronInput] = useState('0 */6 * * *');
-  const [cronPreset, setCronPreset] = useState('0 */6 * * *');
+  const [cronInput, setCronInput] = useState('*/10 * * * *');
+  const [cronPreset, setCronPreset] = useState('*/10 * * * *');
   const [isUpdatingSchedule, setIsUpdatingSchedule] = useState(false);
 
   // --- Export Excel Dialog State ---
