@@ -794,7 +794,7 @@ function ResultCard({ result, isExpanded, isSelected, onToggleExpand, onToggleSe
 
       {/* CARD BODY */}
       <Collapse in={isExpanded} unmountOnExit>
-        <Box sx={{ borderTop: '1px solid', borderColor: 'divider', p: 3, bgcolor: '#ffffff' }}>
+        <Box sx={{ borderTop: '1px solid', borderColor: 'divider', p: 3, bgcolor: 'background.default' }}>
           {result.ok && data ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5 }}>
               {/* Internal Tabs control */}
@@ -1038,7 +1038,7 @@ function ResultCard({ result, isExpanded, isSelected, onToggleExpand, onToggleSe
                   <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 3 }}>
                     {/* H1 Column */}
                     <Box sx={{ minWidth: 0 }}>
-                      <Paper sx={{ p: 2, border: '1px solid', borderColor: 'divider', bgcolor: '#fafafa', borderRadius: 3, height: '100%' }}>
+                      <Paper sx={{ p: 2, border: '1px solid', borderColor: 'divider', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fafafa', borderRadius: 3, height: '100%' }}>
                         <Typography sx={{ fontWeight: 800, fontSize: '0.9rem', color: 'primary.main', borderBottom: '2px solid', borderColor: 'divider', pb: 1, mb: 1.5 }}>
                           THẺ H1 ({data.headings?.h1?.length ?? 0})
                         </Typography>
@@ -1059,7 +1059,7 @@ function ResultCard({ result, isExpanded, isSelected, onToggleExpand, onToggleSe
 
                     {/* H2 Column */}
                     <Box sx={{ minWidth: 0 }}>
-                      <Paper sx={{ p: 2, border: '1px solid', borderColor: 'divider', bgcolor: '#fafafa', borderRadius: 3, height: '100%' }}>
+                      <Paper sx={{ p: 2, border: '1px solid', borderColor: 'divider', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fafafa', borderRadius: 3, height: '100%' }}>
                         <Typography sx={{ fontWeight: 800, fontSize: '0.9rem', color: 'secondary.main', borderBottom: '2px solid', borderColor: 'divider', pb: 1, mb: 1.5 }}>
                           THẺ H2 ({data.headings?.h2?.length ?? 0})
                         </Typography>
@@ -1080,7 +1080,7 @@ function ResultCard({ result, isExpanded, isSelected, onToggleExpand, onToggleSe
 
                     {/* H3 Column */}
                     <Box sx={{ minWidth: 0 }}>
-                      <Paper sx={{ p: 2, border: '1px solid', borderColor: 'divider', bgcolor: '#fafafa', borderRadius: 3, height: '100%' }}>
+                      <Paper sx={{ p: 2, border: '1px solid', borderColor: 'divider', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fafafa', borderRadius: 3, height: '100%' }}>
                         <Typography sx={{ fontWeight: 800, fontSize: '0.9rem', color: '#16a34a', borderBottom: '2px solid', borderColor: 'divider', pb: 1, mb: 1.5 }}>
                           THẺ H3 ({data.headings?.h3?.length ?? 0})
                         </Typography>
@@ -1220,12 +1220,12 @@ function ResultCard({ result, isExpanded, isSelected, onToggleExpand, onToggleSe
                                 </Box>
                               </Box>
                               <Collapse in={isNodeOpen} unmountOnExit>
-                                <Box sx={{ p: 2, bgcolor: '#ffffff', borderTop: '1px solid', borderColor: 'divider' }}>
+                                <Box sx={{ p: 2, bgcolor: 'background.default', borderTop: '1px solid', borderColor: 'divider' }}>
                                   <Box
                                     component="pre"
                                     sx={{
                                       p: 1.5,
-                                      bgcolor: '#fafafa',
+                                      bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fafafa',
                                       borderRadius: 2,
                                       border: '1px solid',
                                       borderColor: 'divider',
@@ -1260,7 +1260,7 @@ function ResultCard({ result, isExpanded, isSelected, onToggleExpand, onToggleSe
                     {(!data.relatedUrls || data.relatedUrls.length === 0) ? (
                       <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled', pl: 1 }}>Không phát hiện liên kết liên quan</Typography>
                     ) : (
-                      <List dense disablePadding sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2.5, bgcolor: '#fafafa', maxH: 220, overflowY: 'auto' }}>
+                      <List dense disablePadding sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2.5, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fafafa', maxH: 220, overflowY: 'auto' }}>
                         {data.relatedUrls.map((linkUrl, idx) => (
                           <ListItem
                             key={idx}
@@ -1328,10 +1328,10 @@ function ResultCard({ result, isExpanded, isSelected, onToggleExpand, onToggleSe
                           <Table size="small" stickyHeader>
                             <TableHead>
                               <TableRow>
-                                <TableCell sx={{ fontWeight: 700, bgcolor: '#fafafa', py: 1 }}>Ngày đăng</TableCell>
-                                <TableCell sx={{ fontWeight: 700, bgcolor: '#fafafa', py: 1 }}>Tiêu đề / Link</TableCell>
-                                <TableCell sx={{ fontWeight: 700, bgcolor: '#fafafa', py: 1 }}>Danh mục</TableCell>
-                                <TableCell sx={{ fontWeight: 700, bgcolor: '#fafafa', py: 1 }}>Tóm tắt (Description)</TableCell>
+                                 <TableCell sx={{ fontWeight: 700, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'background.paper' : '#fafafa', py: 1 }}>Ngày đăng</TableCell>
+                                 <TableCell sx={{ fontWeight: 700, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'background.paper' : '#fafafa', py: 1 }}>Tiêu đề / Link</TableCell>
+                                 <TableCell sx={{ fontWeight: 700, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'background.paper' : '#fafafa', py: 1 }}>Danh mục</TableCell>
+                                 <TableCell sx={{ fontWeight: 700, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'background.paper' : '#fafafa', py: 1 }}>Tóm tắt (Description)</TableCell>
                               </TableRow>
                             </TableHead>
                             <TableBody>
