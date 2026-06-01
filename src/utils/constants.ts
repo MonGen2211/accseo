@@ -24,6 +24,7 @@ export const ROUTES = {
   GROUPS_CREATE: '/groups/create',
   TRENDING_SCHEDULES: '/trending-schedules',
   FORCE_INDEX: '/tools/force-index',
+  SCRAPER_URL: '/tools/scraper-url',
 };
 
 export const PAGINATION_DEFAULT = {

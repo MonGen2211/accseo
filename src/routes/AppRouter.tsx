@@ -26,6 +26,7 @@ import CreateRequestPage from '../features/requests/components/CreateRequestPage
 import RequestDetailPage from '../features/requests/components/RequestDetailPage';
 import GroupFormPage from '../features/requests/components/GroupFormPage';
 import ForceIndexPage from '../features/force-index/components/ForceIndexPage';
+import UrlScraperSection from '../features/url-scraper/components/UrlScraperSection';
 
 export default function AppRouter() {
 	const dispatch = useAppDispatch();
@@ -63,6 +64,7 @@ export default function AppRouter() {
 					<Route path="groups/create" element={<PageRoute pageKey="requests"><GroupFormPage /></PageRoute>} />
 					<Route path="groups/:id/edit" element={<PageRoute pageKey="requests"><GroupFormPage /></PageRoute>} />
 					<Route path="tools/force-index" element={<ForceIndexPage />} />
+					<Route path="tools/scraper-url" element={<UrlScraperSection />} />
 				</Route>
 
 				<Route path="*" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
