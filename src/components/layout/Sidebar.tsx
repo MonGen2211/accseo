@@ -12,14 +12,12 @@ import LanguageOutlinedIcon from '@mui/icons-material/LanguageOutlined';
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import AndroidIcon from '@mui/icons-material/Android';
 
 const navItems = [
 	{ label: 'Tổng quan', icon: <DashboardOutlinedIcon />, path: ROUTES.DASHBOARD, end: true, pageKey: 'dashboard' },
 	{ label: 'Tên miền', icon: <LanguageOutlinedIcon />, path: ROUTES.DOMAINS, end: false, pageKey: 'domains' },
 	{ label: 'Yêu cầu & Nhóm', icon: <AssignmentOutlinedIcon />, path: ROUTES.REQUESTS, end: false, pageKey: 'requests' },
 	{ label: 'Người dùng', icon: <PeopleOutlinedIcon />, path: ROUTES.USERS, end: false, pageKey: 'users' },
-	{ label: 'Ép Index', icon: <AndroidIcon />, path: ROUTES.FORCE_INDEX, end: false, pageKey: 'force-index' },
 ];
 
 const DockBtn = ({ label, icon, path, end }: { label: string; icon: React.ReactNode; path: string; end: boolean }) => (
