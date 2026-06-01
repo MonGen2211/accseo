@@ -1006,7 +1006,7 @@ function ResultCard({ result, isExpanded, isSelected, onToggleExpand, onToggleSe
                       <Box
                         sx={{
                           p: 2,
-                          bgcolor: '#fafafa',
+                          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : '#fafafa',
                           border: '1px solid',
                           borderColor: 'divider',
                           borderRadius: 3,
