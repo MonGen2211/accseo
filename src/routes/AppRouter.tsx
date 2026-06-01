@@ -25,6 +25,7 @@ import RequestsPage from '../features/requests/components/RequestsPage';
 import CreateRequestPage from '../features/requests/components/CreateRequestPage';
 import RequestDetailPage from '../features/requests/components/RequestDetailPage';
 import GroupFormPage from '../features/requests/components/GroupFormPage';
+import ForceIndexPage from '../features/force-index/components/ForceIndexPage';
 
 export default function AppRouter() {
 	const dispatch = useAppDispatch();
@@ -61,6 +62,7 @@ export default function AppRouter() {
 					<Route path="requests/:id" element={<PageRoute pageKey="requests"><RequestDetailPage /></PageRoute>} />
 					<Route path="groups/create" element={<PageRoute pageKey="requests"><GroupFormPage /></PageRoute>} />
 					<Route path="groups/:id/edit" element={<PageRoute pageKey="requests"><GroupFormPage /></PageRoute>} />
+					<Route path="tools/force-index" element={<ForceIndexPage />} />
 				</Route>
 
 				<Route path="*" element={<Navigate to={ROUTES.DASHBOARD} replace />} />

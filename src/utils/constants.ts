@@ -23,6 +23,7 @@ export const ROUTES = {
   REQUESTS_CREATE: '/requests/create',
   GROUPS_CREATE: '/groups/create',
   TRENDING_SCHEDULES: '/trending-schedules',
+  FORCE_INDEX: '/tools/force-index',
 };
 
 export const PAGINATION_DEFAULT = {
