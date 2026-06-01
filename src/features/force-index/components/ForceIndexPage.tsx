@@ -438,8 +438,8 @@ export default function ForceIndexPage() {
       {/* ----------------------------------------------------------------------- */}
       {activeTab === 0 && (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5 }}>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1.2fr 1fr' }, gap: 3.5, alignItems: 'start' }}>
-            <Paper elevation={0} sx={{ p: 3.5, borderRadius: 4, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 3.5, alignItems: 'stretch' }}>
+            <Paper elevation={0} sx={{ p: 3.5, borderRadius: 4, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Typography variant="h6" sx={{ fontWeight: 800, mb: 1.5 }}>
                 Submit URL để ép index
               </Typography>
@@ -514,7 +514,7 @@ export default function ForceIndexPage() {
                 border: '1px solid',
                 borderColor: 'divider',
                 bgcolor: 'background.paper',
-                minHeight: 280,
+                height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
               }}
@@ -713,7 +713,20 @@ export default function ForceIndexPage() {
                 {/* Stats Cards Row */}
                 <Grid container spacing={2.5}>
                   <Grid item xs={12} sm={6} md={3}>
-                    <Card elevation={0} sx={{ borderRadius: 3.5, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', position: 'relative', overflow: 'hidden' }}>
+                    <Card elevation={0} sx={{
+                      borderRadius: 3.5,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      bgcolor: 'background.paper',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: '0 12px 24px rgba(0,0,0,0.05)',
+                        borderColor: 'primary.main',
+                      }
+                    }}>
                       <CardContent sx={{ p: 2.5 }}>
                         <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase' }}>
                           TỔNG SỐ LƯỢT TRUY CẬP (ALL-TIME)
@@ -729,7 +742,20 @@ export default function ForceIndexPage() {
                   </Grid>
 
                   <Grid item xs={12} sm={6} md={3}>
-                    <Card elevation={0} sx={{ borderRadius: 3.5, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', position: 'relative', overflow: 'hidden' }}>
+                    <Card elevation={0} sx={{
+                      borderRadius: 3.5,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      bgcolor: 'background.paper',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: '0 12px 24px rgba(0,0,0,0.05)',
+                        borderColor: 'primary.main',
+                      }
+                    }}>
                       <CardContent sx={{ p: 2.5 }}>
                         <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase' }}>
                           TRUY CẬP TRONG 24H QUA
@@ -745,7 +771,20 @@ export default function ForceIndexPage() {
                   </Grid>
 
                   <Grid item xs={12} sm={6} md={3}>
-                    <Card elevation={0} sx={{ borderRadius: 3.5, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', position: 'relative', overflow: 'hidden' }}>
+                    <Card elevation={0} sx={{
+                      borderRadius: 3.5,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      bgcolor: 'background.paper',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: '0 12px 24px rgba(0,0,0,0.05)',
+                        borderColor: 'primary.main',
+                      }
+                    }}>
                       <CardContent sx={{ p: 2.5 }}>
                         <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase' }}>
                           🤖 GOOGLEBOT (XÁC MINH DNS)
@@ -761,7 +800,20 @@ export default function ForceIndexPage() {
                   </Grid>
 
                   <Grid item xs={12} sm={6} md={3}>
-                    <Card elevation={0} sx={{ borderRadius: 3.5, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', position: 'relative', overflow: 'hidden' }}>
+                    <Card elevation={0} sx={{
+                      borderRadius: 3.5,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      bgcolor: 'background.paper',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: '0 12px 24px rgba(0,0,0,0.05)',
+                        borderColor: 'primary.main',
+                      }
+                    }}>
                       <CardContent sx={{ p: 2.5 }}>
                         <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase' }}>
                           👤 TRUY CẬP USER (CLOAKED HTML)
@@ -778,7 +830,7 @@ export default function ForceIndexPage() {
                 </Grid>
 
                 {/* Chart & Top URL Mapping layout */}
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1.2fr 1fr' }, gap: 3.5, alignItems: 'start' }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1.2fr 1fr' }, gap: 3.5, alignItems: 'stretch' }}>
                   {/* Left: 7 Days overlay bar chart */}
                   <Paper
                     elevation={0}
@@ -788,6 +840,9 @@ export default function ForceIndexPage() {
                       border: '1px solid',
                       borderColor: 'divider',
                       bgcolor: 'background.paper',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
                     }}
                   >
                     <Typography sx={{ fontWeight: 800, fontSize: '1.05rem', mb: 2.5, display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -824,6 +879,9 @@ export default function ForceIndexPage() {
                       border: '1px solid',
                       borderColor: 'divider',
                       bgcolor: 'background.paper',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
                     }}
                   >
                     <Typography sx={{ fontWeight: 800, fontSize: '1.05rem', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
