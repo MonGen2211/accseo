@@ -38,6 +38,7 @@ import {
   DialogActions,
   FormControlLabel,
   Switch,
+  Grid,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -1100,11 +1101,11 @@ export default function ContentAnalysisSection() {
               {/* 7. PAA + Related Searches */}
               {((activeSessionDetail.result.peopleAlsoAsk && activeSessionDetail.result.peopleAlsoAsk.length > 0) ||
                 (activeSessionDetail.result.relatedSearches && activeSessionDetail.result.relatedSearches.length > 0)) && (
-                <Grid2 container spacing={3.5}>
+                <Grid container spacing={3.5}>
                   
                   {/* People Also Ask */}
                   {activeSessionDetail.result.peopleAlsoAsk && activeSessionDetail.result.peopleAlsoAsk.length > 0 && (
-                    <Grid2 size={{ xs: 12, md: 6 }}>
+                    <Grid size={{ xs: 12, md: 6 }}>
                       <Paper elevation={0} sx={{ p: 3.5, borderRadius: 4, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', height: '100%' }}>
                         <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary', mb: 2 }}>
                           ❓ Người dùng cũng hỏi (People Also Ask)
@@ -1117,12 +1118,12 @@ export default function ContentAnalysisSection() {
                           ))}
                         </List>
                       </Paper>
-                    </Grid2>
+                    </Grid>
                   )}
 
                   {/* Related Searches */}
                   {activeSessionDetail.result.relatedSearches && activeSessionDetail.result.relatedSearches.length > 0 && (
-                    <Grid2 size={{ xs: 12, md: 6 }}>
+                    <Grid size={{ xs: 12, md: 6 }}>
                       <Paper elevation={0} sx={{ p: 3.5, borderRadius: 4, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', height: '100%' }}>
                         <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary', mb: 2 }}>
                           🔍 Tìm kiếm có liên quan (Related Searches)
@@ -1146,10 +1147,10 @@ export default function ContentAnalysisSection() {
                           ))}
                         </Box>
                       </Paper>
-                    </Grid2>
+                    </Grid>
                   )}
 
-                </Grid2>
+                </Grid>
               )}
 
               {/* 8. Featured Snippet */}
