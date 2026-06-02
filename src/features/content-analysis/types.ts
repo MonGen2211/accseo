@@ -118,8 +118,27 @@ export interface SessionDetail {
       snippet: string | null;
       position: number | null;
     }>;
+    failedSources?: FailedSource[];
+    scrapeSummary?: ScrapeSummary;
     analyzedAt: string;
   } | null;
+}
+
+export type FailedReason = 'scrape_failed' | 'no_fulltext' | 'thin_content';
+
+export interface FailedSource {
+  url: string;
+  reason: FailedReason;
+  method: string;
+  error: string | null;
+  fullTextLength: number;
+  durationMs: number;
+}
+
+export interface ScrapeSummary {
+  attempted: number;
+  succeeded: number;
+  failed: number;
 }
 
 export interface SessionListItem {

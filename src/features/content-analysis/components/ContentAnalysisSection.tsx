@@ -92,6 +92,42 @@ const ERROR_HINTS: Record<string, string> = {
   CONTENT_ANALYSIS_AI_RATE_LIMIT: 'Hết quota AI tạm thời, đợi vài phút.',
 };
 
+const FAILED_REASON_LABEL: Record<string, string> = {
+  scrape_failed: 'Bị chặn / fetch fail',
+  no_fulltext: 'Không trích được nội dung',
+  thin_content: 'Nội dung quá ngắn (<500 ký tự)',
+};
+
+const FAILED_REASON_STYLE: Record<string, { bgcolor: string; color: string }> = {
+  scrape_failed: { bgcolor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' },
+  no_fulltext: { bgcolor: 'rgba(249, 115, 22, 0.1)', color: '#f97316' },
+  thin_content: { bgcolor: 'rgba(234, 179, 8, 0.1)', color: '#ca8a04' },
+};
+
+const getMethodTooltip = (method: string): string => {
+  if (method === 'axios-lite' || method === 'axios-stealth') {
+    return 'Chặn ở tầng HTTP (UA / IP / Cloudflare)';
+  }
+  if (method === 'puppeteer') {
+    return 'Mở browser được nhưng nội dung không hợp lệ';
+  }
+  if (method === 'failed') {
+    return 'Tất cả phương pháp đều fail (CF / Datadome / Captcha hard block)';
+  }
+  if (method === 'pdf') {
+    return 'File PDF không parse được';
+  }
+  return method;
+};
+
+const getHostname = (urlStr: string): string => {
+  try {
+    return new URL(urlStr).hostname;
+  } catch (e) {
+    return urlStr;
+  }
+};
+
 export default function ContentAnalysisSection() {
   const { showToast } = useToastify();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -682,6 +718,12 @@ export default function ContentAnalysisSection() {
                     <Typography variant="h4" sx={{ fontWeight: 900, color: 'text.primary', letterSpacing: '-0.5px', wordBreak: 'break-word' }}>
                       {activeSessionDetail.keyword}
                     </Typography>
+
+                    {activeSessionDetail.result.scrapeSummary && (
+                      <Typography variant="body2" sx={{ mt: 1, fontWeight: 700, color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        📊 Đã phân tích {activeSessionDetail.result.scrapeSummary.succeeded}/{activeSessionDetail.result.scrapeSummary.attempted} trang Top SERP
+                      </Typography>
+                    )}
                     
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1.5 }}>
                       <Chip label={`Local: ${activeSessionDetail.location.toUpperCase()}`} size="small" variant="outlined" sx={{ fontWeight: 600 }} />
@@ -821,6 +863,25 @@ export default function ContentAnalysisSection() {
                     </Box>
                   )}
                 </Box>
+              )}
+
+              {/* Warning Banner for failed sources >= 30% */}
+              {activeSessionDetail.result.scrapeSummary && 
+               (activeSessionDetail.result.scrapeSummary.failed / activeSessionDetail.result.scrapeSummary.attempted >= 0.3) && (
+                <Alert 
+                  severity="warning" 
+                  sx={{ 
+                    borderRadius: 3.5, 
+                    border: '1px solid', 
+                    borderColor: 'warning.light', 
+                    bgcolor: 'rgba(237, 108, 2, 0.03)',
+                    fontWeight: 600,
+                    px: 3,
+                    py: 1.75
+                  }}
+                >
+                  ⚠️ {activeSessionDetail.result.scrapeSummary.failed}/{activeSessionDetail.result.scrapeSummary.attempted} trang đối thủ bị chặn (Cloudflare/Captcha). Outline AI chỉ phân tích trên {activeSessionDetail.result.scrapeSummary.succeeded} trang còn lại — kết quả có thể thiếu góc nhìn. Cân nhắc chạy lại keyword này khi IP mát hoặc dùng keyword biến thể.
+                </Alert>
               )}
 
               {/* 3. Outline Tree Section */}
@@ -1097,6 +1158,146 @@ export default function ContentAnalysisSection() {
                   </TableContainer>
                 </Paper>
               )}
+
+              {/* 5.1. Trang đối thủ KHÔNG scrape được */}
+              {activeSessionDetail.result.failedSources && (
+                <Accordion
+                  key={activeSessionDetail._id + '-failed-sources'}
+                  defaultExpanded={activeSessionDetail.result.failedSources.length > 0}
+                  elevation={0}
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 4,
+                    overflow: 'hidden',
+                    '&:before': { display: 'none' },
+                    bgcolor: 'background.paper',
+                  }}
+                >
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary' }}>
+                        ⚠️ Trang đối thủ KHÔNG scrape được (Failed Competitor Scrapes)
+                      </Typography>
+                      {activeSessionDetail.result.scrapeSummary && (
+                        <Chip
+                          label={`${activeSessionDetail.result.scrapeSummary.failed}/${activeSessionDetail.result.scrapeSummary.attempted} trang fail`}
+                          size="small"
+                          sx={{
+                            bgcolor: 'rgba(239, 68, 68, 0.1)',
+                            color: '#ef4444',
+                            fontWeight: 800,
+                          }}
+                        />
+                      )}
+                    </Box>
+                  </AccordionSummary>
+                  <AccordionDetails sx={{ borderTop: '1px solid', borderColor: 'divider', p: 3.5 }}>
+                    {activeSessionDetail.result.failedSources.length === 0 ? (
+                      <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', textAlign: 'center', py: 2 }}>
+                        Không có trang đối thủ nào bị lỗi cào quét.
+                      </Typography>
+                    ) : (
+                      <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3 }}>
+                        <Table size="small">
+                          <TableHead sx={{ bgcolor: 'action.hover' }}>
+                            <TableRow>
+                              <TableCell sx={{ fontWeight: 800, py: 1.25 }}>#</TableCell>
+                              <TableCell sx={{ fontWeight: 800, py: 1.25 }}>URL</TableCell>
+                              <TableCell sx={{ fontWeight: 800, py: 1.25 }}>Lý do</TableCell>
+                              <TableCell sx={{ fontWeight: 800, py: 1.25 }}>Method</TableCell>
+                              <TableCell sx={{ fontWeight: 800, py: 1.25 }}>Error</TableCell>
+                              <TableCell sx={{ fontWeight: 800, py: 1.25 }}>Thời gian</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {activeSessionDetail.result.failedSources.map((source, idx) => {
+                              const style = FAILED_REASON_STYLE[source.reason] || { bgcolor: 'action.selected', color: 'text.secondary' };
+                              return (
+                                <TableRow key={idx} hover sx={{ '&:hover': { bgcolor: 'action.hover' } }}>
+                                  <TableCell sx={{ fontWeight: 700, py: 1.2 }}>{idx + 1}</TableCell>
+                                  <TableCell sx={{ py: 1.2, maxWidth: 280 }}>
+                                    <Tooltip title={source.url} arrow>
+                                      <a
+                                        href={source.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{
+                                          color: '#00b894',
+                                          textDecoration: 'underline',
+                                          fontWeight: 650,
+                                          wordBreak: 'break-all',
+                                          display: 'inline-block'
+                                        }}
+                                      >
+                                        {getHostname(source.url)}
+                                      </a>
+                                    </Tooltip>
+                                  </TableCell>
+                                  <TableCell sx={{ py: 1.2 }}>
+                                    <Chip
+                                      label={FAILED_REASON_LABEL[source.reason] || source.reason}
+                                      size="small"
+                                      sx={{
+                                        bgcolor: style.bgcolor,
+                                        color: style.color,
+                                        fontWeight: 800,
+                                        borderRadius: 2
+                                      }}
+                                    />
+                                  </TableCell>
+                                  <TableCell sx={{ py: 1.2 }}>
+                                    <Tooltip title={getMethodTooltip(source.method)} arrow>
+                                      <Chip
+                                        label={source.method}
+                                        size="small"
+                                        variant="outlined"
+                                        sx={{
+                                          fontWeight: 700,
+                                          borderColor: 'divider',
+                                          bgcolor: 'action.hover',
+                                          color: 'text.secondary',
+                                          borderRadius: 2
+                                        }}
+                                      />
+                                    </Tooltip>
+                                  </TableCell>
+                                  <TableCell sx={{ py: 1.2, maxWidth: 200 }}>
+                                    {source.error ? (
+                                      <Tooltip title={source.error} arrow>
+                                        <Typography
+                                          variant="body2"
+                                          sx={{
+                                            fontStyle: 'italic',
+                                            color: 'text.secondary',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap'
+                                          }}
+                                        >
+                                          {source.error}
+                                        </Typography>
+                                      </Tooltip>
+                                    ) : (
+                                      <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
+                                        —
+                                      </Typography>
+                                    )}
+                                  </TableCell>
+                                  <TableCell sx={{ py: 1.2, fontWeight: 600, color: 'text.secondary' }}>
+                                    {source.durationMs}ms
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    )}
+                  </AccordionDetails>
+                </Accordion>
+              )}
+
 
               {/* 7. PAA + Related Searches */}
               {((activeSessionDetail.result.peopleAlsoAsk && activeSessionDetail.result.peopleAlsoAsk.length > 0) ||
