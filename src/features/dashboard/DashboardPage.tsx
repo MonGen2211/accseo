@@ -605,13 +605,10 @@ export default function DashboardPage() {
           bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.4)' : 'rgba(241, 245, 249, 0.6)',
           backdropFilter: 'blur(20px)',
           display: 'flex',
+          flexWrap: 'wrap',
           gap: 1,
-          overflowX: 'auto',
           mb: 1,
           boxShadow: '0 4px 20px rgba(0,0,0,0.02)',
-          '::-webkit-scrollbar': { display: 'none' },
-          msOverflowStyle: 'none',
-          scrollbarWidth: 'none',
         }}
       >
         {dockItems.map((tab) => {
@@ -621,13 +618,14 @@ export default function DashboardPage() {
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
               sx={{
-                flex: { xs: 'none', md: 1 },
+                flex: '1 1 auto',
+                minWidth: { xs: 'calc(50% - 8px)', sm: 'calc(25% - 8px)', md: 'auto' },
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 1.25,
-                py: 1.5,
-                px: 3,
+                py: 1.2,
+                px: 2,
                 borderRadius: 3.2,
                 cursor: 'pointer',
                 color: isActive ? '#ffffff' : 'text.secondary',
@@ -635,7 +633,7 @@ export default function DashboardPage() {
                 boxShadow: isActive ? '0 4px 15px rgba(124, 58, 237, 0.25)' : 'none',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 fontWeight: isActive ? 800 : 600,
-                fontSize: '0.92rem',
+                fontSize: '0.88rem',
                 whiteSpace: 'nowrap',
                 '&:hover': {
                   color: isActive ? '#ffffff' : 'text.primary',
