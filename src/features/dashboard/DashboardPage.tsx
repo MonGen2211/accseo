@@ -6,9 +6,11 @@ import KeywordPlannerSection from './KeywordPlannerSection';
 import VbplSuggestionsSection from './components/vbpl/VbplSuggestionsSection';
 import ScraperSection from '../scraper/components/ScraperSection';
 import UrlScraperSection from '../url-scraper/components/UrlScraperSection';
+import ContentAnalysisSection from '../content-analysis/components/ContentAnalysisSection';
 import ForceIndexPage from '../force-index/components/ForceIndexPage';
 import AndroidIcon from '@mui/icons-material/Android';
 import LinkIcon from '@mui/icons-material/Link';
+import PsychologyIcon from '@mui/icons-material/Psychology';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
@@ -479,6 +481,7 @@ export default function DashboardPage() {
     { id: 'index-checker', label: 'Google Index Checker', icon: <CloudDoneOutlinedIcon sx={{ fontSize: 20 }} /> },
     { id: 'scraper', label: 'Thu thập báo chí', icon: <ArticleOutlinedIcon sx={{ fontSize: 20 }} /> },
     { id: 'scraper-url', label: 'URL Scraper', icon: <LinkIcon sx={{ fontSize: 20 }} /> },
+    { id: 'content-analysis', label: 'Phân tích nội dung', icon: <PsychologyIcon sx={{ fontSize: 20 }} /> },
     { id: 'indexed', label: 'Ép Index', icon: <AndroidIcon sx={{ fontSize: 20 }} /> },
   ];
 
@@ -819,6 +822,10 @@ export default function DashboardPage() {
 
       <Box sx={{ display: activeTab === 'scraper-url' ? 'block' : 'none', mt: 1 }}>
         <UrlScraperSection />
+      </Box>
+
+      <Box sx={{ display: activeTab === 'content-analysis' ? 'block' : 'none', mt: 1 }}>
+        <ContentAnalysisSection />
       </Box>
 
       <Box sx={{ display: activeTab === 'indexed' ? 'block' : 'none', mt: 1 }}>
