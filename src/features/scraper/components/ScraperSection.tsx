@@ -1156,10 +1156,10 @@ export default function ScraperSection() {
             return (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                 <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-                  Ban hành: <strong style={{ color: '#1e293b' }}>{formatVal(issued)}</strong>
+                  Ban hành: <Box component="span" sx={{ color: 'text.primary', fontWeight: 700 }}>{formatVal(issued)}</Box>
                 </Typography>
                 <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-                  Hiệu lực: <strong style={{ color: '#1e293b' }}>{formatVal(effective)}</strong>
+                  Hiệu lực: <Box component="span" sx={{ color: 'text.primary', fontWeight: 700 }}>{formatVal(effective)}</Box>
                 </Typography>
               </Box>
             );
