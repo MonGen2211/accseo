@@ -231,8 +231,8 @@ function ExpandPanel({ item }: { item: TrendItem }) {
 				)}
 				<Box>
 					<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1.25 }}>
-						<ArticleOutlinedIcon sx={{ fontSize: 15, color: '#7c3aed' }} />
-						<Typography sx={{ fontWeight: 700, fontSize: '0.73rem', color: '#7c3aed', textTransform: 'uppercase', letterSpacing: 0.6 }}>Bài viết liên quan</Typography>
+						<ArticleOutlinedIcon sx={{ fontSize: 15, color: '#00b894' }} />
+						<Typography sx={{ fontWeight: 700, fontSize: '0.73rem', color: '#00b894', textTransform: 'uppercase', letterSpacing: 0.6 }}>Bài viết liên quan</Typography>
 					</Box>
 					{showEmptyArticles ? (
 						<Box>

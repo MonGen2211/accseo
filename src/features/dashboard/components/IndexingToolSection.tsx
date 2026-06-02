@@ -306,10 +306,10 @@ export default function IndexingToolSection() {
                 borderRadius: 3,
                 fontWeight: 700,
                 textTransform: 'none',
-                background: 'linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)',
-                boxShadow: '0 4px 15px rgba(124, 58, 237, 0.25)',
+                background: 'linear-gradient(135deg, #00b894 0%, #009975 100%)',
+                boxShadow: '0 4px 15px rgba(0, 184, 148, 0.25)',
                 '&:hover': {
-                  background: 'linear-gradient(135deg, #9333ea 0%, #6d28d9 100%)',
+                  background: 'linear-gradient(135deg, #3dd6a0 0%, #009975 100%)',
                 },
               }}
             >

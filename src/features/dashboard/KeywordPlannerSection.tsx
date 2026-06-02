@@ -494,7 +494,7 @@ export default function KeywordPlannerSection() {
           fontSize: { xs: '2rem', md: '2.5rem' }, 
           fontWeight: 900, 
           textAlign: 'center',
-          background: 'linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899)', 
+          background: 'linear-gradient(90deg, #00b894, #00cec9, #0984e3)', 
           WebkitBackgroundClip: 'text', 
           color: 'transparent',
           mb: 1
@@ -629,9 +629,9 @@ export default function KeywordPlannerSection() {
               startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SearchIcon />}
               sx={{ 
                 borderRadius: 2, px: 4, py: 1.2, fontWeight: 700, fontSize: '1rem',
-                background: 'linear-gradient(90deg, #3b82f6, #8b5cf6)',
-                boxShadow: '0 8px 24px rgba(59, 130, 246, 0.3)',
-                '&:hover': { background: 'linear-gradient(90deg, #2563eb, #7c3aed)', boxShadow: '0 12px 32px rgba(59, 130, 246, 0.4)' }
+                background: 'linear-gradient(90deg, #00b894, #00cec9)',
+                boxShadow: '0 8px 24px rgba(0, 184, 148, 0.3)',
+                '&:hover': { background: 'linear-gradient(90deg, #009975, #00cec9)', boxShadow: '0 12px 32px rgba(0, 184, 148, 0.4)' }
               }}
             >
               {loading ? 'Analyzing...' : 'Find Keywords'}

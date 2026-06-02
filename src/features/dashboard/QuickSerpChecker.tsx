@@ -457,8 +457,8 @@ export default function QuickSerpChecker() {
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center', 
-              background: 'linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)', 
-              boxShadow: '0 4px 14px rgba(124, 58, 237, 0.3)', 
+              background: 'linear-gradient(135deg, #00b894 0%, #009975 100%)', 
+              boxShadow: '0 4px 14px rgba(0, 184, 148, 0.3)', 
               mr: 2 
             }}
           >
@@ -719,11 +719,11 @@ export default function QuickSerpChecker() {
                   fontWeight: 900,
                   fontSize: '0.85rem',
                   textTransform: 'none',
-                  background: 'linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)',
-                  boxShadow: '0 4px 14px rgba(124, 58, 237, 0.2)',
+                  background: 'linear-gradient(135deg, #00b894 0%, #009975 100%)',
+                  boxShadow: '0 4px 14px rgba(0, 184, 148, 0.2)',
                   '&:hover': {
-                    background: 'linear-gradient(135deg, #b55fe6 0%, #6d28d9 100%)',
-                    boxShadow: '0 6px 18px rgba(124, 58, 237, 0.3)'
+                    background: 'linear-gradient(135deg, #3dd6a0 0%, #009975 100%)',
+                    boxShadow: '0 6px 18px rgba(0, 184, 148, 0.3)'
                   }
                 }}
               >
@@ -772,10 +772,10 @@ export default function QuickSerpChecker() {
                   { label: 'TÌM THẤY', val: stats.found, color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.25)', icon: '✓' },
                   { label: 'KHÔNG TÌM THẤY', val: stats.notfound, color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.25)', icon: '✕' },
                   { label: 'LỖI', val: stats.error, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.25)', icon: '⚠️' },
-                  { label: 'TOP AIO', val: stats.topAio, color: '#a855f7', bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.25)', icon: '★' },
+                  { label: 'TOP AIO', val: stats.topAio, color: '#00b894', bg: 'rgba(0, 184, 148, 0.15)', border: 'rgba(0, 184, 148, 0.25)', icon: '★' },
                   { label: 'TOP 3', val: stats.top3, color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.15)', border: 'rgba(251, 191, 36, 0.25)', icon: '🏆' },
                   { label: 'TOP 10', val: stats.top10, color: '#ec4899', bg: 'rgba(236, 72, 153, 0.15)', border: 'rgba(236, 72, 153, 0.25)', icon: '🎯' },
-                  { label: 'VỊ TRÍ TB', val: stats.avgPos > 0 ? stats.avgPos : '—', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)', border: 'rgba(139, 92, 246, 0.25)', icon: '📊' }
+                  { label: 'VỊ TRÍ TB', val: stats.avgPos > 0 ? stats.avgPos : '—', color: '#00cec9', bg: 'rgba(0, 206, 201, 0.15)', border: 'rgba(0, 206, 201, 0.25)', icon: '📊' }
                 ].map((card, i) => (
                   <Grid size={{ xs: 6, sm: 3 }} key={i}>
                     <Paper 

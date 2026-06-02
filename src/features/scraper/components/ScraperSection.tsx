@@ -680,7 +680,7 @@ export default function ScraperSection() {
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 0.75, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <PsychologyIcon sx={{ color: '#a855f7', fontSize: 18 }} />
+          <PsychologyIcon sx={{ color: '#00b894', fontSize: 18 }} />
           <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.primary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
             AI Keywords (SEO)
           </Typography>
@@ -688,7 +688,7 @@ export default function ScraperSection() {
 
         {isGenerating ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 2, gap: 1 }}>
-            <CircularProgress size={20} sx={{ color: '#a855f7' }} />
+            <CircularProgress size={20} sx={{ color: '#00b894' }} />
             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
               Đang gọi AI và push Sheet... (5-15s)
             </Typography>
@@ -797,10 +797,10 @@ export default function ScraperSection() {
                   textTransform: 'none', 
                   fontWeight: 700, 
                   fontSize: '0.75rem',
-                  background: 'linear-gradient(45deg, #a855f7, #7c3aed)',
+                  background: 'linear-gradient(135deg, #00b894 0%, #009975 100%)',
                   boxShadow: 'none',
                   '&:hover': { 
-                    background: 'linear-gradient(45deg, #9333ea, #6d28d9)',
+                    background: 'linear-gradient(135deg, #3dd6a0 0%, #009975 100%)',
                     boxShadow: 'none'
                   }
                 }}
@@ -830,11 +830,11 @@ export default function ScraperSection() {
               width: 26,
               height: 26,
               borderRadius: '50%',
-              border: '1px solid rgba(168, 85, 247, 0.4)',
-              bgcolor: 'rgba(168, 85, 247, 0.08)',
+              border: '1px solid rgba(0, 184, 148, 0.4)',
+              bgcolor: 'rgba(0, 184, 148, 0.08)',
             }}
           >
-            <CircularProgress size={14} sx={{ color: '#a855f7' }} />
+            <CircularProgress size={14} sx={{ color: '#00b894' }} />
           </Box>
         </Tooltip>
       );
@@ -868,7 +868,7 @@ export default function ScraperSection() {
       );
     }
 
-    // Default/Not generated: Purple Brain Icon Button
+    // Default/Not generated: Green Brain Icon Button
     return (
       <Tooltip title="Nhấp để tự động Gen AI & Push Sheet" onClick={(e) => e.stopPropagation()}>
         <IconButton
@@ -881,17 +881,17 @@ export default function ScraperSection() {
           sx={{
             p: 0.5,
             borderRadius: '50%',
-            border: '1px solid rgba(168, 85, 247, 0.6)',
-            bgcolor: 'rgba(168, 85, 247, 0.08)',
+            border: '1px solid rgba(0, 184, 148, 0.6)',
+            bgcolor: 'rgba(0, 184, 148, 0.08)',
             transition: 'all 0.2s',
             '&:hover': {
-              bgcolor: 'rgba(168, 85, 247, 0.15)',
-              borderColor: '#9333ea',
+              bgcolor: 'rgba(0, 184, 148, 0.15)',
+              borderColor: '#00b894',
               transform: 'scale(1.1)',
             },
             '&.Mui-disabled': {
-              border: '1px solid rgba(168, 85, 247, 0.2)',
-              bgcolor: 'rgba(168, 85, 247, 0.03)',
+              border: '1px solid rgba(0, 184, 148, 0.2)',
+              bgcolor: 'rgba(0, 184, 148, 0.03)',
             }
           }}
         >
@@ -927,9 +927,9 @@ export default function ScraperSection() {
           }}
           sx={{ 
             p: 0, 
-            color: 'rgba(168, 85, 247, 0.4)',
-            '&.Mui-checked': { color: '#a855f7' },
-            '&.MuiCheckbox-indeterminate': { color: '#a855f7' }
+            color: 'rgba(0, 184, 148, 0.4)',
+            '&.Mui-checked': { color: '#00b894' },
+            '&.MuiCheckbox-indeterminate': { color: '#00b894' }
           }}
         />
       ),
@@ -957,8 +957,8 @@ export default function ScraperSection() {
             }}
             sx={{ 
               p: 0,
-              color: 'rgba(168, 85, 247, 0.3)',
-              '&.Mui-checked': { color: '#a855f7' }
+              color: 'rgba(0, 184, 148, 0.3)',
+              '&.Mui-checked': { color: '#00b894' }
             }}
           />
         );
@@ -1861,8 +1861,8 @@ export default function ScraperSection() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                bgcolor: 'rgba(168, 85, 247, 0.05)',
-                border: '1px solid rgba(168, 85, 247, 0.2)',
+                bgcolor: 'rgba(0, 184, 148, 0.05)',
+                border: '1px solid rgba(0, 184, 148, 0.2)',
                 animation: 'fadeIn 0.3s ease-in-out',
                 '@keyframes fadeIn': {
                   '0%': { opacity: 0, transform: 'translateY(-10px)' },
@@ -1871,7 +1871,7 @@ export default function ScraperSection() {
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <PsychologyIcon sx={{ color: '#a855f7' }} />
+                <PsychologyIcon sx={{ color: '#00b894' }} />
                 <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
                   Đã chọn <strong>{selectedIds.length}</strong> bài viết để tạo từ khóa SEO hàng loạt
                 </Typography>
@@ -1886,10 +1886,10 @@ export default function ScraperSection() {
                   sx={{
                     textTransform: 'none',
                     fontWeight: 700,
-                    background: 'linear-gradient(45deg, #a855f7, #7c3aed)',
+                    background: 'linear-gradient(135deg, #00b894 0%, #009975 100%)',
                     boxShadow: 'none',
                     '&:hover': {
-                      background: 'linear-gradient(45deg, #9333ea, #6d28d9)',
+                      background: 'linear-gradient(135deg, #3dd6a0 0%, #009975 100%)',
                       boxShadow: 'none'
                     }
                   }}

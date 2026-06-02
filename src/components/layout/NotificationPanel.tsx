@@ -43,7 +43,7 @@ function filterByTab(items: AppNotification[], filter: TabFilter): AppNotificati
 function NotifIcon({ type, title }: { type: NotificationType; title?: string }) {
   if (REQUEST_TYPES.includes(type)) {
     const colorMap: Partial<Record<NotificationType, string>> = {
-      REQUEST_ASSIGNED:   '#7C3AED',
+      REQUEST_ASSIGNED:   '#00b894',
       REQUEST_CLAIMED:    '#2563EB',
       REQUEST_DONE:       '#059669',
       REQUEST_REJECTED:   '#DC2626',
@@ -51,7 +51,7 @@ function NotifIcon({ type, title }: { type: NotificationType; title?: string }) 
       REQUEST_REMINDER:   '#D97706',
       REQUEST_REASSIGNED: title?.startsWith('Yêu cầu đã được giao lại') ? '#F59E0B' : '#0891B2',
     };
-    const color = colorMap[type] ?? '#7C3AED';
+    const color = colorMap[type] ?? '#00b894';
     return (
       <Box sx={{ width: 40, height: 40, borderRadius: '50%', bgcolor: `${color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color, flexShrink: 0 }}>
         <AssignmentOutlinedIcon sx={{ fontSize: 20 }} />

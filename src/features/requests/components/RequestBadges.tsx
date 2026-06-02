@@ -3,9 +3,9 @@ import Chip from '@mui/material/Chip';
 import type { RequestType, RequestPriority, RequestStatus } from '../types';
 
 const TYPE_CONFIG: Record<RequestType, { label: string; color: string }> = {
-  KEYWORD_APPROVAL: { label: 'Duyệt từ khoá', color: '#7C3AED' },
+  KEYWORD_APPROVAL: { label: 'Duyệt từ khoá', color: '#00b894' },
   CONTENT_TASK: { label: 'Nội dung', color: '#0D9488' },
-  REVIEW: { label: 'Review', color: '#4338CA' },
+  REVIEW: { label: 'Review', color: '#00cec9' },
   DOMAIN_TASK: { label: 'Tên miền', color: '#0891B2' },
   GENERAL: { label: 'Chung', color: 'text.secondary' },
 };

@@ -35,12 +35,12 @@ const getMsgColor = (msg: string): { bg: string; color: string } => {
 	if (m.includes('process') || m.includes('update') || m.includes('cập nhật'))
 		return { bg: '#eff6ff', color: '#2563eb' };
 	if (m.includes('creat') || m.includes('add') || m.includes('tạo'))
-		return { bg: '#f5f3ff', color: '#7c3aed' };
+		return { bg: '#e6fcf5', color: '#00b894' };
 	return { bg: 'background.default', color: 'text.secondary' };
 };
 
 const getAvatarColor = (name: string | null | undefined): string => {
-	const colors = ['#3b82f6', '#8b5cf6', '#f97316', '#10b981', '#ef4444', '#0ea5e9', '#d97706'];
+	const colors = ['#3b82f6', '#00cec9', '#f97316', '#10b981', '#ef4444', '#0ea5e9', '#d97706'];
 	if (!name) return colors[0];
 	let hash = 0;
 	for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);

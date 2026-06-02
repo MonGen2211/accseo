@@ -522,7 +522,7 @@ export default function GoogleIndexChecker() {
                   { label: 'ĐÃ INDEX', val: result.summary.indexed, color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.25)', icon: '✅' },
                   { label: 'CHƯA INDEX', val: result.summary.notIndexed, color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.25)', icon: '✕' },
                   { label: 'KHÔNG XÁC ĐỊNH / LỖI', val: result.summary.failed, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.25)', icon: '⚠️' },
-                  { label: 'THỜI GIAN CHẠY', val: `${(result.tookMs / 1000).toFixed(1)}s`, color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)', border: 'rgba(139, 92, 246, 0.25)', icon: '⏱️' }
+                  { label: 'THỜI GIAN CHẠY', val: `${(result.tookMs / 1000).toFixed(1)}s`, color: '#00b894', bg: 'rgba(0, 184, 148, 0.15)', border: 'rgba(0, 184, 148, 0.25)', icon: '⏱️' }
                 ].map((card, i) => (
                   <Grid item xs={6} sm={2.4} key={i}>
                     <Paper 

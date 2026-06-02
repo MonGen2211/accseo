@@ -2,7 +2,7 @@ export interface ScrapeResult {
   url: string;
   finalUrl: string | null;
   ok: boolean;
-  method: 'axios-lite' | 'axios-stealth' | 'puppeteer' | 'rss' | 'vbpl-api' | 'failed';
+  method: 'axios-lite' | 'axios-stealth' | 'puppeteer' | 'rss' | 'vbpl-api' | 'failed' | 'pdf' | 'youtube' | 'reddit' | 'github';
   contentType: string | null;
   contentLength: number;
   durationMs: number;
@@ -24,6 +24,7 @@ export interface ScrapeResult {
     excerpt: string | null;
     headings: { h1: string[]; h2: string[]; h3: string[] };
     relatedUrls: string[];
+    bodyLinks: string[]; // inline links in article body
     fullText: string | null;
     jsonLd: any[];
     openGraph: Record<string, string>;
@@ -37,6 +38,7 @@ export interface ScrapeResult {
       enclosure: string | null;
     }> | null;
   } | null;
+  childResults?: ScrapeResult[];
 }
 
 export interface UrlScrapeResponse {

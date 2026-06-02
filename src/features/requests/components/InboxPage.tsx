@@ -153,7 +153,7 @@ export default function InboxPage({ tabsNode }: { tabsNode?: React.ReactNode }) 
       {/* Loading */}
       {loading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
-          <CircularProgress size={36} sx={{ color: '#7c3aed' }} />
+          <CircularProgress size={36} sx={{ color: '#00b894' }} />
         </Box>
       )}
 
@@ -177,7 +177,7 @@ export default function InboxPage({ tabsNode }: { tabsNode?: React.ReactNode }) 
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             mx: 'auto', mb: 2,
           }}>
-            <InboxOutlinedIcon sx={{ fontSize: 36, color: '#7c3aed' }} />
+            <InboxOutlinedIcon sx={{ fontSize: 36, color: '#00b894' }} />
           </Box>
           <Typography sx={{ fontWeight: 700, fontSize: '1rem', mb: 0.5 }}>Hộp thư trống</Typography>
           <Typography sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>

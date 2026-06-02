@@ -629,8 +629,8 @@ export default function DashboardPage() {
                 borderRadius: 3.2,
                 cursor: 'pointer',
                 color: isActive ? '#ffffff' : 'text.secondary',
-                background: isActive ? 'linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)' : 'transparent',
-                boxShadow: isActive ? '0 4px 15px rgba(124, 58, 237, 0.25)' : 'none',
+                background: isActive ? 'linear-gradient(135deg, #00b894 0%, #009975 100%)' : 'transparent',
+                boxShadow: isActive ? '0 4px 15px rgba(0, 184, 148, 0.25)' : 'none',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 fontWeight: isActive ? 800 : 600,
                 fontSize: '0.88rem',
@@ -700,9 +700,9 @@ export default function DashboardPage() {
               <StatCard
                 title="YÊU CẦU CẦN XỬ LÝ"
                 value={stats.pendingRequests}
-                icon={<InboxOutlinedIcon sx={{ color: '#7c3aed', fontSize: 22 }} />}
-                bgColor="#ede9fe" iconBgColor="#f5f3ff"
-                activeColor="#7C3AED"
+                icon={<InboxOutlinedIcon sx={{ color: '#00b894', fontSize: 22 }} />}
+                bgColor="#e6fcf5" iconBgColor="#c3fae8"
+                activeColor="#00b894"
                 active={activePanel === 'requests'}
                 onClick={() => handleCardClick('requests')}
               />

@@ -42,6 +42,12 @@ import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import LinkIcon from '@mui/icons-material/Link';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import YouTubeIcon from '@mui/icons-material/YouTube';
+import RedditIcon from '@mui/icons-material/Reddit';
+import GitHubIcon from '@mui/icons-material/GitHub';
+import ArrowRightIcon from '@mui/icons-material/ArrowRight';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
 import { urlScraperService } from '../urlScraperService';
 import type { ScrapeResult, UrlScrapeResponse } from '../types';
@@ -76,6 +82,150 @@ const formatDate = (dateStr: string | null | undefined): string => {
   }
 };
 
+const getMethodBadgeColor = (method: ScrapeResult['method']) => {
+  switch (method) {
+    case 'axios-lite':
+      return { bg: '#dcfce7', color: '#15803d' };
+    case 'axios-stealth':
+      return { bg: '#dbeafe', color: '#1e40af' };
+    case 'puppeteer':
+      return { bg: '#fff7ed', color: '#c2410c' }; // orange
+    case 'rss':
+      return { bg: '#e0f7fa', color: '#00838f' }; // cyan
+    case 'vbpl-api':
+      return { bg: '#ffe4e6', color: '#9f1239' }; // dark red
+    case 'pdf':
+      return { bg: '#f1f5f9', color: '#475569' }; // slate/dark gray
+    case 'youtube':
+      return { bg: '#fef2f2', color: '#991b1b' }; // youtube red
+    case 'reddit':
+      return { bg: '#ffedd5', color: '#c2410c' }; // reddit orange
+    case 'github':
+      return { bg: '#f3f4f6', color: '#1f2937' }; // github black/dark gray
+    case 'failed':
+    default:
+      return { bg: '#f3f4f6', color: '#6b7280' }; // gray
+  }
+};
+
+const getMethodIcon = (method: ScrapeResult['method'], sx: any = {}) => {
+  switch (method) {
+    case 'pdf':
+      return <PictureAsPdfIcon sx={sx} />;
+    case 'youtube':
+      return <YouTubeIcon sx={sx} />;
+    case 'reddit':
+      return <RedditIcon sx={sx} />;
+    case 'github':
+      return <GitHubIcon sx={sx} />;
+    default:
+      return undefined;
+  }
+};
+
+const renderThumbnail = (result: ScrapeResult) => {
+  if (!result.ok || !result.data) return null;
+  const { thumbnailUrl } = result.data;
+  
+  if (thumbnailUrl) {
+    return (
+      <Box
+        component="img"
+        src={thumbnailUrl}
+        alt="thumb"
+        sx={{ width: 44, height: 44, borderRadius: 2, objectFit: 'cover', flexShrink: 0, border: '1px solid', borderColor: 'divider' }}
+      />
+    );
+  }
+  
+  // No thumbnail, check method for fallback icons
+  if (result.method === 'pdf') {
+    return (
+      <Box
+        sx={{
+          width: 44,
+          height: 44,
+          borderRadius: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'rgba(71, 85, 105, 0.1)',
+          color: '#475569',
+          border: '1px solid rgba(71, 85, 105, 0.2)',
+          flexShrink: 0,
+        }}
+      >
+        <PictureAsPdfIcon sx={{ fontSize: 24 }} />
+      </Box>
+    );
+  }
+
+  if (result.method === 'youtube') {
+    return (
+      <Box
+        sx={{
+          width: 44,
+          height: 44,
+          borderRadius: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'rgba(239, 68, 68, 0.1)',
+          color: '#991b1b',
+          border: '1px solid rgba(239, 68, 68, 0.2)',
+          flexShrink: 0,
+        }}
+      >
+        <YouTubeIcon sx={{ fontSize: 24 }} />
+      </Box>
+    );
+  }
+
+  if (result.method === 'reddit') {
+    return (
+      <Box
+        sx={{
+          width: 44,
+          height: 44,
+          borderRadius: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'rgba(249, 115, 22, 0.1)',
+          color: '#c2410c',
+          border: '1px solid rgba(249, 115, 22, 0.2)',
+          flexShrink: 0,
+        }}
+      >
+        <RedditIcon sx={{ fontSize: 24 }} />
+      </Box>
+    );
+  }
+
+  if (result.method === 'github') {
+    return (
+      <Box
+        sx={{
+          width: 44,
+          height: 44,
+          borderRadius: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'rgba(0, 0, 0, 0.05)',
+          color: '#1f2937',
+          border: '1px solid rgba(0, 0, 0, 0.1)',
+          flexShrink: 0,
+        }}
+      >
+        <GitHubIcon sx={{ fontSize: 24 }} />
+      </Box>
+    );
+  }
+
+  return null;
+};
+
 export default function UrlScraperSection() {
   const { showToast } = useToastify();
 
@@ -84,12 +234,15 @@ export default function UrlScraperSection() {
   const [includeFullText, setIncludeFullText] = useState(true);
   const [forcePuppeteer, setForcePuppeteer] = useState(false);
   const [skipAxios, setSkipAxios] = useState(false);
+  const [followLinks, setFollowLinks] = useState(false);
+  const [followLinksMax, setFollowLinksMax] = useState(3);
 
   // States
   const [isScraping, setIsScraping] = useState(false);
   const [resultsData, setResultsData] = useState<UrlScrapeResponse | null>(null);
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
   const [selectedUrls, setSelectedUrls] = useState<Record<string, boolean>>({});
+  const [expandedChildren, setExpandedChildren] = useState<Record<string, boolean>>({});
 
   // History state
   const [historyList, setHistoryList] = useState<string[][]>([]);
@@ -194,10 +347,19 @@ export default function UrlScraperSection() {
       showToast('Một số URL thiếu giao thức đã tự động thêm https://', 'warning');
     }
 
+    if (followLinks) {
+      const estimatedExtra = finalUrls.length * followLinksMax;
+      const ok = window.confirm(
+        `Bạn đã bật "Theo dõi link con". Hệ thống dự kiến sẽ scrape thêm tối đa khoảng ${estimatedExtra} URL con cùng domain.\nQuá trình này có thể mất thêm từ 15-45 giây.\n\nBạn có muốn tiếp tục?`
+      );
+      if (!ok) return;
+    }
+
     setIsScraping(true);
     setResultsData(null);
     setExpandedCards({});
     setSelectedUrls({});
+    setExpandedChildren({});
     showToast('Đang gửi yêu cầu cào dữ liệu...', 'info');
 
     try {
@@ -206,10 +368,24 @@ export default function UrlScraperSection() {
         includeFullText,
         forcePuppeteer,
         skipAxios,
+        followLinks,
+        followLinksMax,
       });
 
       setResultsData(res);
       saveToHistory(finalUrls);
+
+      // Tự động mở rộng danh sách link con khi tải xong để hiển thị ngay cho user
+      if (res.results) {
+        const initExpandedChildren: Record<string, boolean> = {};
+        res.results.forEach((r) => {
+          if (r.childResults && r.childResults.length > 0) {
+            initExpandedChildren[r.url] = true;
+          }
+        });
+        setExpandedChildren(initExpandedChildren);
+      }
+
       showToast(`Cào hoàn tất! Thành công: ${res.okCount}, Thất bại: ${res.failCount}`, 'success');
     } catch (err: any) {
       console.error('URL Scraper submit error:', err);
@@ -250,6 +426,103 @@ export default function UrlScraperSection() {
     downloadAnchor.click();
     downloadAnchor.remove();
     showToast(`Đã xuất JSON cho ${selectedResults.length} kết quả!`, 'success');
+  };
+
+  const handleBulkExportExcel = () => {
+    if (!resultsData) return;
+    const selectedResults = resultsData.results.filter((r) => selectedUrls[r.url]);
+    if (selectedResults.length === 0) {
+      showToast('Vui lòng chọn ít nhất 1 dòng để xuất Excel', 'warning');
+      return;
+    }
+
+    // Định nghĩa các tiêu đề cột
+    const headers = [
+      'Loại (Type)',
+      'URL gốc (Parent URL)',
+      'URL',
+      'Trạng thái (Status)',
+      'Phương thức (Method)',
+      'Thời gian chạy (Duration)',
+      'Dung lượng (Size)',
+      'Tiêu đề (Title)',
+      'Mô tả (Description)',
+      'Ngày đăng (Published)',
+      'Số link con (Child count)',
+      'Số link trong bài (Body Links)',
+      'Lỗi (Error)',
+      'Tóm tắt nội dung (Excerpt)'
+    ];
+
+    const rows: string[][] = [headers];
+
+    // Hàm escape ký tự đặc biệt cho CSV
+    const escapeCsvValue = (val: any): string => {
+      if (val === null || val === undefined) return '';
+      const str = String(val);
+      if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    // Điền dữ liệu các hàng
+    selectedResults.forEach((r) => {
+      // Hàng cho kết quả cha (Gốc)
+      rows.push([
+        'Gốc (Parent)',
+        r.url,
+        r.url,
+        r.ok ? 'Thành công' : 'Thất bại',
+        r.method,
+        formatDuration(r.durationMs),
+        formatBytes(r.contentLength),
+        r.data?.title || '',
+        r.data?.description || '',
+        formatDate(r.data?.publishedAt),
+        String(r.childResults?.length ?? 0),
+        String(r.data?.bodyLinks?.length ?? 0),
+        r.error || '',
+        r.data?.excerpt || ''
+      ]);
+
+      // Các hàng cho kết quả con (Level-1) nếu có
+      if (r.childResults && r.childResults.length > 0) {
+        r.childResults.forEach((child) => {
+          rows.push([
+            'Con (Child)',
+            r.url,
+            child.url,
+            child.ok ? 'Thành công' : 'Thất bại',
+            child.method,
+            formatDuration(child.durationMs),
+            formatBytes(child.contentLength),
+            child.data?.title || '',
+            child.data?.description || '',
+            formatDate(child.data?.publishedAt),
+            '0',
+            String(child.data?.bodyLinks?.length ?? 0),
+            child.error || '',
+            child.data?.excerpt || ''
+          ]);
+        });
+      }
+    });
+
+    // Tạo nội dung CSV kèm UTF-8 BOM để Excel hiển thị đúng tiếng Việt
+    const csvContent = '\uFEFF' + rows.map((row) => row.map(escapeCsvValue).join(',')).join('\r\n');
+
+    // Tải xuống file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute('href', url);
+    downloadAnchor.setAttribute('download', `scraper_export_${Date.now()}.csv`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    URL.revokeObjectURL(url);
+    showToast(`Đã xuất file Excel cho ${selectedResults.length} dòng kết quả chính!`, 'success');
   };
 
   const handleBulkCopyUrls = () => {
@@ -424,6 +697,43 @@ export default function UrlScraperSection() {
                 </Box>
               }
             />
+
+            <FormControlLabel
+              control={<Checkbox checked={followLinks} onChange={(e) => setFollowLinks(e.target.checked)} disabled={isScraping} />}
+              label={
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>Theo dõi link con (Follow links)</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                    Scrape thêm tối đa {followLinksMax} link con cùng tên miền tìm thấy trong nội dung bài viết.
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'primary.main', display: 'block', mt: 0.25, fontWeight: 500 }}>
+                    Khi bật, mỗi URL sẽ scrape thêm tối đa {followLinksMax} link con tìm thấy trong nội dung bài viết. Tăng thời gian xử lý nhưng lấy được dữ liệu sâu hơn.
+                  </Typography>
+                </Box>
+              }
+            />
+
+            {followLinks && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 200 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary', whiteSpace: 'nowrap' }}>
+                  Max link con / bài:
+                </Typography>
+                <TextField
+                  size="small"
+                  type="number"
+                  disabled={isScraping}
+                  value={followLinksMax}
+                  onChange={(e) => {
+                    const val = Math.max(1, Math.min(20, Number(e.target.value)));
+                    setFollowLinksMax(val);
+                  }}
+                  slotProps={{
+                    htmlInput: { min: 1, max: 20 }
+                  }}
+                  sx={{ width: 80, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                />
+              </Box>
+            )}
           </Box>
 
           <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
@@ -438,10 +748,10 @@ export default function UrlScraperSection() {
                 fontWeight: 700,
                 textTransform: 'none',
                 px: 5,
-                background: 'linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)',
-                boxShadow: '0 4px 15px rgba(124, 58, 237, 0.25)',
+                background: 'linear-gradient(135deg, #00b894 0%, #009975 100%)',
+                boxShadow: '0 4px 15px rgba(0, 184, 148, 0.25)',
                 '&:hover': {
-                  background: 'linear-gradient(135deg, #9333ea 0%, #6d28d9 100%)',
+                  background: 'linear-gradient(135deg, #3dd6a0 0%, #009975 100%)',
                 },
               }}
             >
@@ -498,53 +808,65 @@ export default function UrlScraperSection() {
               gap: 2,
             }}
           >
-            <Box sx={{ display: 'flex', gap: 3.5, flexWrap: 'wrap' }}>
-              <Typography variant="body2" sx={{ fontWeight: 700, color: '#10b981' }}>
-                ✓ {resultsData.okCount} thành công
-              </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 700, color: '#ef4444' }}>
-                ✗ {resultsData.failCount} thất bại
-              </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.secondary' }}>
-                ⏱ {formatDuration(resultsData.results.reduce((acc, curr) => acc + curr.durationMs, 0))} tổng thời gian
-              </Typography>
-            </Box>
+            {(() => {
+              const totalMain = resultsData.results.length;
+              const totalChildren = resultsData.results.reduce((sum, r) => sum + (r.childResults?.length ?? 0), 0);
+              const totalAll = totalMain + totalChildren;
+
+              const okMain = resultsData.results.filter(r => r.ok).length;
+              const okChildren = resultsData.results.reduce((sum, r) => sum + (r.childResults?.filter(c => c.ok).length ?? 0), 0);
+              const okAll = okMain + okChildren;
+
+              const failMain = resultsData.results.filter(r => !r.ok).length;
+              const failChildren = resultsData.results.reduce((sum, r) => sum + (r.childResults?.filter(c => !c.ok).length ?? 0), 0);
+              const failAll = failMain + failChildren;
+
+              const totalDuration = resultsData.results.reduce((acc, curr) => 
+                acc + curr.durationMs + (curr.childResults?.reduce((accChild, currChild) => accChild + currChild.durationMs, 0) ?? 0)
+              , 0);
+
+              return (
+                <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider', pb: 1, width: '100%' }}>
+                    <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.main' }}>
+                      📊 Đã scrape: {totalMain} URL chính + {totalChildren} URL con = {totalAll} tổng URL
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 3.5, flexWrap: 'wrap' }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#10b981' }}>
+                      ✓ Thành công: {okAll} ({okMain} chính + {okChildren} con)
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#ef4444' }}>
+                      ✗ Thất bại: {failAll} ({failMain} chính + {failChildren} con)
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.secondary' }}>
+                      ⏱ {formatDuration(totalDuration)} tổng thời gian
+                    </Typography>
+                  </Box>
+                </Box>
+              );
+            })()}
 
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
               <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>
                 PHƯƠNG THỨC SỬ DỤNG:
               </Typography>
-              {['axios-lite', 'axios-stealth', 'puppeteer', 'rss', 'vbpl-api'].map((m) => {
+              {['axios-lite', 'axios-stealth', 'puppeteer', 'rss', 'vbpl-api', 'pdf', 'youtube', 'reddit', 'github'].map((m) => {
                 const count = resultsData.results.filter((r) => r.method === m).length;
                 if (count === 0) return null;
+                const badgeStyles = getMethodBadgeColor(m as any);
                 return (
                   <Chip
                     key={m}
                     label={`${m} x${count}`}
                     size="small"
+                    icon={getMethodIcon(m as any, { fontSize: 14, color: 'inherit' })}
                     sx={{
                       fontWeight: 600,
                       fontSize: '0.75rem',
-                      bgcolor:
-                        m === 'axios-lite'
-                          ? '#dcfce7'
-                          : m === 'axios-stealth'
-                          ? '#dbeafe'
-                          : m === 'puppeteer'
-                          ? '#f3e8ff'
-                          : m === 'rss'
-                          ? '#ffedd5'
-                          : '#e0e7ff',
-                      color:
-                        m === 'axios-lite'
-                          ? '#15803d'
-                          : m === 'axios-stealth'
-                          ? '#1e40af'
-                          : m === 'puppeteer'
-                          ? '#6b21a8'
-                          : m === 'rss'
-                          ? '#c2410c'
-                          : '#3730a3',
+                      bgcolor: badgeStyles.bg,
+                      color: badgeStyles.color,
+                      border: `1px solid ${badgeStyles.color}30`,
                     }}
                   />
                 );
@@ -575,6 +897,25 @@ export default function UrlScraperSection() {
               </Button>
               <Button
                 size="small"
+                variant="contained"
+                startIcon={<CloudDownloadIcon />}
+                onClick={handleBulkExportExcel}
+                sx={{
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  bgcolor: '#10b981',
+                  color: 'white',
+                  border: 'none',
+                  '&:hover': {
+                    bgcolor: '#059669',
+                  }
+                }}
+              >
+                Xuất file Excel
+              </Button>
+              <Button
+                size="small"
                 variant="outlined"
                 startIcon={<ContentCopyIcon />}
                 onClick={handleBulkCopyUrls}
@@ -588,19 +929,50 @@ export default function UrlScraperSection() {
           {/* Results List */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             {resultsData.results.map((result) => (
-              <ResultCard
-                key={result.url}
-                result={result}
-                isExpanded={!!expandedCards[result.url]}
-                isSelected={!!selectedUrls[result.url]}
-                onToggleExpand={() =>
-                  setExpandedCards((prev) => ({ ...prev, [result.url]: !prev[result.url] }))
-                }
-                onToggleSelect={() =>
-                  setSelectedUrls((prev) => ({ ...prev, [result.url]: !prev[result.url] }))
-                }
-                onRetry={handleSingleRetry}
-              />
+              <Box key={result.url} sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                <ResultCard
+                  result={result}
+                  isExpanded={!!expandedCards[result.url]}
+                  isSelected={!!selectedUrls[result.url]}
+                  onToggleExpand={() =>
+                    setExpandedCards((prev) => ({ ...prev, [result.url]: !prev[result.url] }))
+                  }
+                  onToggleSelect={() =>
+                    setSelectedUrls((prev) => ({ ...prev, [result.url]: !prev[result.url] }))
+                  }
+                  onRetry={handleSingleRetry}
+                  isChild={false}
+                  isChildExpanded={expandedChildren[result.url] !== false}
+                  onToggleExpandChild={() =>
+                    setExpandedChildren((prev) => {
+                      const currentVal = prev[result.url] !== false;
+                      return { ...prev, [result.url]: !currentVal };
+                    })
+                  }
+                />
+
+                {/* Nested child results tree */}
+                {result.childResults && result.childResults.length > 0 && (
+                  <Collapse in={expandedChildren[result.url] !== false} unmountOnExit>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 0.5 }}>
+                      {result.childResults.map((childResult) => (
+                        <ResultCard
+                          key={childResult.url}
+                          result={childResult}
+                          isExpanded={!!expandedCards[childResult.url]}
+                          isSelected={false}
+                          onToggleExpand={() =>
+                            setExpandedCards((prev) => ({ ...prev, [childResult.url]: !prev[childResult.url] }))
+                          }
+                          onToggleSelect={() => {}}
+                          onRetry={handleSingleRetry}
+                          isChild={true}
+                        />
+                      ))}
+                    </Box>
+                  </Collapse>
+                )}
+              </Box>
             ))}
           </Box>
         </Box>
@@ -646,28 +1018,26 @@ interface ResultCardProps {
   onToggleExpand: () => void;
   onToggleSelect: () => void;
   onRetry: (url: string) => void;
+  isChild?: boolean;
+  isChildExpanded?: boolean;
+  onToggleExpandChild?: () => void;
 }
 
-function ResultCard({ result, isExpanded, isSelected, onToggleExpand, onToggleSelect, onRetry }: ResultCardProps) {
+function ResultCard({
+  result,
+  isExpanded,
+  isSelected,
+  onToggleExpand,
+  onToggleSelect,
+  onRetry,
+  isChild = false,
+  isChildExpanded = false,
+  onToggleExpandChild,
+}: ResultCardProps) {
   const [activeSubTab, setActiveSubTab] = useState(0);
   const { showToast } = useToastify();
 
-  const getMethodBadgeColor = (method: ScrapeResult['method']) => {
-    switch (method) {
-      case 'axios-lite':
-        return { bg: '#dcfce7', color: '#15803d' };
-      case 'axios-stealth':
-        return { bg: '#dbeafe', color: '#1e40af' };
-      case 'puppeteer':
-        return { bg: '#f3e8ff', color: '#6b21a8' };
-      case 'rss':
-        return { bg: '#ffedd5', color: '#c2410c' };
-      case 'vbpl-api':
-        return { bg: '#e0e7ff', color: '#3730a3' };
-      default:
-        return { bg: '#fee2e2', color: '#b91c1c' };
-    }
-  };
+
 
   const badgeStyles = getMethodBadgeColor(result.method);
   const data = result.data;
@@ -715,18 +1085,35 @@ function ResultCard({ result, isExpanded, isSelected, onToggleExpand, onToggleSe
         bgcolor: result.ok ? 'background.paper' : '#fff5f5',
         overflow: 'hidden',
         boxShadow: '0 4px 15px rgba(0,0,0,0.01)',
+        ml: isChild ? 4 : 0,
+        width: isChild ? 'calc(100% - 32px)' : '100%',
       }}
     >
       {/* CARD HEADER */}
       <Box sx={{ display: 'flex', alignItems: 'center', p: 2, gap: 2, flexWrap: 'wrap', cursor: 'pointer' }} onClick={onToggleExpand}>
-        <Checkbox
-          checked={isSelected}
-          onChange={(e) => {
-            e.stopPropagation();
-            onToggleSelect();
-          }}
-          onClick={(e) => e.stopPropagation()}
-        />
+        {result.childResults && result.childResults.length > 0 && (
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleExpandChild?.();
+            }}
+            sx={{ mr: -0.5, p: 0.5 }}
+          >
+            {isChildExpanded ? <ArrowDropDownIcon sx={{ fontSize: 24 }} /> : <ArrowRightIcon sx={{ fontSize: 24 }} />}
+          </IconButton>
+        )}
+
+        {!isChild && (
+          <Checkbox
+            checked={isSelected}
+            onChange={(e) => {
+              e.stopPropagation();
+              onToggleSelect();
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        )}
 
         {result.ok ? (
           <CheckCircleIcon sx={{ color: '#10b981', fontSize: 22 }} />
@@ -734,18 +1121,35 @@ function ResultCard({ result, isExpanded, isSelected, onToggleExpand, onToggleSe
           <CancelIcon sx={{ color: '#ef4444', fontSize: 22 }} />
         )}
 
-        {result.ok && data?.thumbnailUrl && (
-          <Box
-            component="img"
-            src={data.thumbnailUrl}
-            alt="thumb"
-            sx={{ width: 44, height: 44, borderRadius: 2, objectFit: 'cover', flexShrink: 0, border: '1px solid', borderColor: 'divider' }}
-          />
-        )}
+        {renderThumbnail(result)}
 
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }} noWrap>
-            {result.ok ? data?.title || 'Không tìm thấy tiêu đề' : `Lỗi cào URL`}
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }} noWrap>
+            <span>{result.ok ? data?.title || 'Không tìm thấy tiêu đề' : `Lỗi cào URL`}</span>
+            {result.childResults && result.childResults.length > 0 && (
+              <Chip
+                label={`+${result.childResults.length} con`}
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleExpandChild?.();
+                }}
+                sx={{
+                  height: 18,
+                  fontSize: '0.68rem',
+                  fontWeight: 800,
+                  bgcolor: '#e6fcf5',
+                  color: '#00b894',
+                  border: '1px solid #c3fae8',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    bgcolor: '#c3fae8',
+                    transform: 'scale(1.05)',
+                  }
+                }}
+              />
+            )}
           </Typography>
           <Typography
             variant="caption"
@@ -970,7 +1374,15 @@ function ResultCard({ result, isExpanded, isSelected, onToggleExpand, onToggleSe
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   {!data.fullText ? (
                     <Alert severity="info" icon={<InfoOutlinedIcon />} sx={{ borderRadius: 3 }}>
-                      Chưa fetch full text — Hãy chắc chắn bật tuỳ chọn <strong>"Lấy toàn bộ nội dung Full Text"</strong> khi cào.
+                      {result.method === 'youtube' ? (
+                        'Nguồn YouTube không chứa nội dung văn bản fullText. Bạn có thể xem thông tin tóm tắt ở tab Tổng quan.'
+                      ) : result.method === 'github' ? (
+                        'Kho lưu trữ hoặc trang GitHub này không chứa nội dung văn bản hoặc không có file README.'
+                      ) : (
+                        <span>
+                          Chưa cào nội dung văn bản fullText — Hãy chắc chắn bật tuỳ chọn "Lấy toàn bộ nội dung Full Text" khi cào.
+                        </span>
+                      )}
                     </Alert>
                   ) : (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, position: 'relative' }}>
@@ -1300,6 +1712,61 @@ function ResultCard({ result, isExpanded, isSelected, onToggleExpand, onToggleSe
                     )}
                   </Box>
 
+                  {/* Body Links list */}
+                  <Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                      <Typography sx={{ fontWeight: 800, fontSize: '0.95rem', color: 'text.primary' }}>
+                        ▼ Link trong nội dung bài viết (Body Links)
+                      </Typography>
+                      <Chip 
+                        label={data.bodyLinks?.length ?? 0} 
+                        size="small" 
+                        sx={{ bgcolor: '#e6fcf5', color: '#00b894', fontWeight: 700, height: 20 }} 
+                      />
+                    </Box>
+                    {(!data.bodyLinks || data.bodyLinks.length === 0) ? (
+                      <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled', pl: 1 }}>Không phát hiện liên kết nào trong nội dung bài viết</Typography>
+                    ) : (
+                      <List dense disablePadding sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2.5, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fafafa', maxH: 220, overflowY: 'auto' }}>
+                        {data.bodyLinks.map((linkUrl, idx) => (
+                          <ListItem
+                            key={idx}
+                            divider={idx < data.bodyLinks.length - 1}
+                            sx={{
+                              py: 1,
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              '&:hover': { bgcolor: 'action.hover' },
+                            }}
+                          >
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color: 'text.primary',
+                                fontWeight: 500,
+                                wordBreak: 'break-all',
+                                pr: 2,
+                              }}
+                            >
+                              {linkUrl}
+                            </Typography>
+                            <Button
+                              size="small"
+                              variant="text"
+                              startIcon={<OpenInNewIcon sx={{ fontSize: 13 }} />}
+                              component="a"
+                              href={linkUrl}
+                              target="_blank"
+                              sx={{ textTransform: 'none', flexShrink: 0, fontWeight: 700 }}
+                            >
+                              Truy cập
+                            </Button>
+                          </ListItem>
+                        ))}
+                      </List>
+                    )}
+                  </Box>
+
                   {/* RSS Items feed table */}
                   {result.method === 'rss' && (
                     <Box>
@@ -1392,6 +1859,17 @@ function ResultCard({ result, isExpanded, isSelected, onToggleExpand, onToggleSe
                   Chi tiết lỗi: {result.error || 'Lỗi mạng không phản hồi (Connection timeout / Blocked).'}
                 </Typography>
               </Alert>
+
+              {result.url.includes('github.com') && (result.error?.includes('403') || result.error?.toLowerCase().includes('rate limit')) && (
+                <Alert severity="warning" sx={{ borderRadius: 3 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                    Phát hiện giới hạn Rate Limit của GitHub!
+                  </Typography>
+                  <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>
+                    GitHub giới hạn tối đa 60 yêu cầu cào dữ liệu ẩn danh mỗi giờ đối với các yêu cầu không xác thực. Nếu bạn cào quá nhiều URL GitHub cùng lúc, bạn sẽ bị chặn tạm thời. Vui lòng thử lại sau.
+                  </Typography>
+                </Alert>
+              )}
 
               <Box>
                 <Button
