@@ -39,8 +39,6 @@ import FileCopyIcon from '@mui/icons-material/FileCopy';
 import InfoIcon from '@mui/icons-material/Info';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import GavelIcon from '@mui/icons-material/Gavel';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import HistoryIcon from '@mui/icons-material/History';
 import PsychologyIcon from '@mui/icons-material/Psychology';
@@ -1130,8 +1128,6 @@ export default function VbplSuggestionsSection() {
 
   // Fetch all lists initially on mount
   useEffect(() => {
-    fetchKeywords(days, linhVuc, agency);
-    fetchTrending(trendingHours, trendingCategories);
     fetchDates(true);
     fetchCustomSnapshots(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2281,7 +2277,7 @@ export default function VbplSuggestionsSection() {
           <AutoAwesomeIcon sx={{ color: '#f59e0b' }} /> Gợi ý Keyword SEO & Xu hướng tìm kiếm
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          Duyệt danh sách từ khoá trích xuất từ văn bản pháp luật và xu hướng tìm kiếm mới nhất từ Google Trends
+          Duyệt danh sách từ khoá và chủ đề gợi ý bởi AI giúp tối ưu hoá nội dung SEO
         </Typography>
       </Box>
 
@@ -2336,18 +2332,6 @@ export default function VbplSuggestionsSection() {
               iconPosition="start" 
               label="AI Gợi ý Tự Chọn" 
               id="suggestions-tab-1"
-            />
-            <Tab 
-              icon={<GavelIcon sx={{ fontSize: 18 }} />} 
-              iconPosition="start" 
-              label="VBPL" 
-              id="suggestions-tab-2"
-            />
-            <Tab 
-              icon={<TrendingUpIcon sx={{ fontSize: 18 }} />} 
-              iconPosition="start" 
-              label="Trending Google Search" 
-              id="suggestions-tab-3"
             />
           </Tabs>
         </Box>
@@ -3918,186 +3902,6 @@ export default function VbplSuggestionsSection() {
               </DialogActions>
             </Dialog>
 
-          </Box>
-        ) : activeTab === 2 ? (
-          /* ================= VBPL Keywords (Full width) ================= */
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            {loading ? (
-              <SkeletonLoading />
-            ) : !data?.keywords || data.keywords.length === 0 ? (
-              <Box sx={{ py: 6, textAlign: 'center' }}>
-                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', mb: 2 }}>
-                  Không có văn bản pháp luật mới trong khoảng thời gian này.
-                </Typography>
-                <Button 
-                  variant="outlined" 
-                  color="primary" 
-                  size="small"
-                  onClick={handleExpandDays}
-                  startIcon={<RefreshIcon />}
-                  sx={{ textTransform: 'none', borderRadius: 2 }}
-                >
-                  Mở rộng khoảng ngày (30 ngày)
-                </Button>
-              </Box>
-            ) : (
-              <>
-                {/* Actions & Filters */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
-                  <TextField
-                    placeholder="Lọc từ khoá..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    size="small"
-                    fullWidth
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
-                        </InputAdornment>
-                      ),
-                    }}
-                    sx={{
-                      maxWidth: 300,
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                        bgcolor: 'background.default'
-                      }
-                    }}
-                  />
-
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    size="small"
-                    startIcon={<FileCopyIcon sx={{ fontSize: 13 }} />}
-                    onClick={handleCopyAll}
-                    sx={{ 
-                      borderRadius: 2, 
-                      fontWeight: 700, 
-                      textTransform: 'none',
-                      height: 36
-                    }}
-                  >
-                    Copy tất cả ({filteredKeywords.length})
-                  </Button>
-                </Box>
-
-                {/* Scrollable vertical list container */}
-                {filteredKeywords.length === 0 ? (
-                  <Box sx={{ py: 4, textAlign: 'center' }}>
-                    <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                      Không có từ khoá khớp với "{searchQuery}"
-                    </Typography>
-                  </Box>
-                ) : (
-                  <Box 
-                    sx={{ 
-                      display: 'flex', 
-                      flexDirection: 'column', 
-                      gap: 1.2, 
-                      height: 400, 
-                      overflowY: 'auto', 
-                      pr: 0.5,
-                      '&::-webkit-scrollbar': { width: '4px' },
-                      '&::-webkit-scrollbar-thumb': { bgcolor: 'divider', borderRadius: '4px' }
-                    }}
-                  >
-                    {filteredKeywords.map((kw, idx) => (
-                      <KeywordRow key={idx} keyword={kw} index={idx + 1} type="vbpl" />
-                    ))}
-                  </Box>
-                )}
-              </>
-            )}
-          </Box>
-        ) : activeTab === 3 ? (
-          /* ================= Google Trends by Categories (Full width) ================= */
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            {trendingLoading ? (
-              <SkeletonLoading />
-            ) : !trendingData?.keywords || trendingData.keywords.length === 0 ? (
-              <Box sx={{ py: 6, textAlign: 'center' }}>
-                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                  Không có từ khoá trending nào trong danh mục đã chọn.
-                </Typography>
-              </Box>
-            ) : (
-              <>
-                {/* Actions Row */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
-                  <TextField
-                    placeholder="Lọc xu hướng..."
-                    value={trendingSearchQuery}
-                    onChange={(e) => setTrendingSearchQuery(e.target.value)}
-                    size="small"
-                    fullWidth
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
-                        </InputAdornment>
-                      ),
-                    }}
-                    sx={{
-                      maxWidth: 300,
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                        bgcolor: 'background.default'
-                      }
-                    }}
-                  />
-
-                  <Button
-                    variant="outlined"
-                    color="secondary"
-                    size="small"
-                    startIcon={<FileCopyIcon sx={{ fontSize: 13 }} />}
-                    onClick={handleCopyAllTrending}
-                    sx={{ 
-                      borderRadius: 2, 
-                      fontWeight: 700, 
-                      textTransform: 'none',
-                      height: 36,
-                      color: '#ec4899',
-                      borderColor: 'rgba(236, 72, 153, 0.4)',
-                      '&:hover': {
-                        borderColor: '#ec4899',
-                        bgcolor: 'rgba(236, 72, 153, 0.04)'
-                      }
-                    }}
-                  >
-                    Copy tất cả ({filteredTrendingKeywords.length})
-                  </Button>
-                </Box>
-
-                {/* Scrollable vertical list container */}
-                {filteredTrendingKeywords.length === 0 ? (
-                  <Box sx={{ py: 4, textAlign: 'center' }}>
-                    <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                      Không có xu hướng khớp với "{trendingSearchQuery}"
-                    </Typography>
-                  </Box>
-                ) : (
-                  <Box 
-                    sx={{ 
-                      display: 'flex', 
-                      flexDirection: 'column', 
-                      gap: 1.2, 
-                      height: 400, 
-                      overflowY: 'auto', 
-                      pr: 0.5,
-                      '&::-webkit-scrollbar': { width: '4px' },
-                      '&::-webkit-scrollbar-thumb': { bgcolor: 'divider', borderRadius: '4px' }
-                    }}
-                  >
-                    {filteredTrendingKeywords.map((kw, idx) => (
-                      <KeywordRow key={idx} keyword={kw} index={idx + 1} type="trends" />
-                    ))}
-                  </Box>
-                )}
-              </>
-            )}
           </Box>
         ) : (
           /* ================= AI suggestions by Categories (Horizontal Timeline Layout) ================= */
