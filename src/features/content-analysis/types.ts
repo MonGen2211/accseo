@@ -73,6 +73,9 @@ export interface SessionDetail {
   currentStep: string | null;
   errorCode: string | null;
   errorMessage: string | null;
+  docUrl?: string | null;
+  docId?: string | null;
+  docExportedAt?: string | null;
   startedAt: string | null;
   finishedAt: string | null;
   createdAt: string;
@@ -152,6 +155,7 @@ export interface SessionListItem {
   errorCode: string | null;
   createdAt: string;
   finishedAt: string | null;
+  docUrl?: string | null;
 }
 
 export interface HistoryResponse {

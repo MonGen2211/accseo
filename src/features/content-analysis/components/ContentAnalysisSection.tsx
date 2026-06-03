@@ -56,6 +56,7 @@ import FileSearchIcon from '@mui/icons-material/FindInPage';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import DescriptionIcon from '@mui/icons-material/Description';
 
 import { contentAnalysisService } from '../contentAnalysisService';
 import type { SessionDetail, SessionListItem } from '../types';
@@ -145,6 +146,7 @@ export default function ContentAnalysisSection() {
   const [activeSessionDetail, setActiveSessionDetail] = useState<SessionDetail | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompactOutline, setIsCompactOutline] = useState(false);
+  const [isExportingDoc, setIsExportingDoc] = useState(false);
 
   // Competitor details modal state
   const [selectedCompetitor, setSelectedCompetitor] = useState<any | null>(null);
@@ -326,6 +328,54 @@ export default function ContentAnalysisSection() {
       showToast(err?.response?.data?.message || err?.message || 'Lỗi khi yêu cầu phân tích lại', 'danger');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Helper to export/open Google Doc
+  const handleExportGoogleDoc = async (force = false) => {
+    if (!activeSessionDetail) return;
+
+    if (force) {
+      const confirmRestart = window.confirm("Bạn có chắc chắn muốn tạo lại Google Doc mới? File cũ sẽ bị ghi đè/tạo file mới.");
+      if (!confirmRestart) return;
+    }
+
+    setIsExportingDoc(true);
+    showToast(force ? 'Đang tạo lại Google Doc mới...' : 'Đang xuất Google Doc (quá trình này mất 2–6 giây)...', 'info');
+
+    try {
+      const res = await contentAnalysisService.exportDoc(activeSessionDetail._id, force);
+
+      // Update local state with docUrl and docId
+      setActiveSessionDetail(prev => prev ? {
+        ...prev,
+        docUrl: res.docUrl,
+        docId: res.docId
+      } : null);
+
+      // Update history list in place if found
+      setHistoryList(prev => prev.map(item => 
+        item._id === activeSessionDetail._id ? { ...item, docUrl: res.docUrl } : item
+      ));
+
+      showToast(force ? 'Đã tạo lại Google Doc mới!' : 'Xuất Google Doc thành công!', 'success');
+
+      // Open the document in a new tab
+      if (res.docUrl) {
+        window.open(res.docUrl, '_blank');
+      }
+    } catch (err: any) {
+      console.error('Export Google Doc error:', err);
+      const code = err?.response?.data?.code || err?.code;
+      const msg = err?.response?.data?.message || err?.message || 'Lỗi khi xuất Google Doc';
+
+      if (code === 'DOCS_APPS_SCRIPT_NOT_CONFIGURED') {
+        showToast('Docs Apps Script chưa được cấu hình. Vui lòng liên hệ Admin.', 'danger');
+      } else {
+        showToast(msg, 'danger');
+      }
+    } finally {
+      setIsExportingDoc(false);
     }
   };
 
@@ -538,8 +588,13 @@ export default function ContentAnalysisSection() {
                         sx={{ p: 1.5, flexDirection: 'column', alignItems: 'stretch' }}
                       >
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1.5, alignItems: 'flex-start', mb: 0.5 }}>
-                          <Typography variant="body2" sx={{ fontWeight: isActive ? 800 : 700, color: 'text.primary', wordBreak: 'break-word', flex: 1 }}>
+                          <Typography variant="body2" sx={{ fontWeight: isActive ? 800 : 700, color: 'text.primary', wordBreak: 'break-word', flex: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
                             {item.keyword}
+                            {item.docUrl && (
+                              <Tooltip title="Đã có Google Doc" arrow>
+                                <DescriptionIcon sx={{ fontSize: 14, color: 'success.main' }} />
+                              </Tooltip>
+                            )}
                           </Typography>
                           <Chip
                             label={STATUS_LABEL[item.status] || item.status}
@@ -754,6 +809,42 @@ export default function ContentAnalysisSection() {
                     >
                       Tải Markdown (.md)
                     </Button>
+                    {activeSessionDetail.docUrl ? (
+                      <>
+                        <Button
+                          size="small"
+                          variant="contained"
+                          color="success"
+                          startIcon={<DescriptionIcon />}
+                          onClick={() => window.open(activeSessionDetail.docUrl!, '_blank')}
+                          sx={{ borderRadius: 2.5, textTransform: 'none', fontWeight: 700, py: 0.8 }}
+                        >
+                          Mở Google Doc
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="secondary"
+                          onClick={() => handleExportGoogleDoc(true)}
+                          disabled={isExportingDoc}
+                          sx={{ borderRadius: 2.5, textTransform: 'none', fontWeight: 700, py: 0.8 }}
+                        >
+                          Tạo lại Doc
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        size="small"
+                        variant="contained"
+                        color="primary"
+                        startIcon={isExportingDoc ? <CircularProgress size={16} color="inherit" /> : <DescriptionIcon />}
+                        onClick={() => handleExportGoogleDoc(false)}
+                        disabled={isExportingDoc}
+                        sx={{ borderRadius: 2.5, textTransform: 'none', fontWeight: 700, py: 0.8 }}
+                      >
+                        {isExportingDoc ? 'Đang tạo Doc...' : 'Xuất Google Doc'}
+                      </Button>
+                    )}
                     <Button
                       size="small"
                       variant="contained"

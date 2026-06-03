@@ -30,4 +30,9 @@ export const contentAnalysisService = {
     const res = await api.get<any>(`/content-analysis/list?limit=${limit}`);
     return res.data.data;
   },
+
+  exportDoc: async (sessionId: string, force: boolean = false): Promise<{ docId: string; docUrl: string; cached: boolean }> => {
+    const res = await api.post<any>(`/content-analysis/${sessionId}/export-doc${force ? '?force=true' : ''}`);
+    return res.data.data;
+  },
 };
