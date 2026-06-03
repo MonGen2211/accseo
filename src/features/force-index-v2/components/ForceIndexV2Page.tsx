@@ -622,7 +622,7 @@ export default function ForceIndexV2Page() {
           </Box>
         ) : filteredItems.length === 0 ? (
           <Box sx={{ p: 6, textAlign: 'center', color: 'text.disabled' }}>
-            <ErrorOutlineIcon sx={{ fontSize: 44, opacity: 0.3, mb: 1.5 }} />
+            <ErrorOutlinedIcon sx={{ fontSize: 44, opacity: 0.3, mb: 1.5 }} />
             <Typography variant="body2" sx={{ fontWeight: 600 }}>
               Không tìm thấy URL nào khớp với điều kiện lọc.
             </Typography>
