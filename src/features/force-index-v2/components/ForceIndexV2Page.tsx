@@ -339,7 +339,7 @@ export default function ForceIndexV2Page() {
 
         <Box component="form" onSubmit={handleFormSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <Grid container spacing={3}>
-            <Grid item xs={12} md={8.5}>
+            <Grid size={{ xs: 12, md: 8.5 }}>
               <TextField
                 label="Danh sách URL cần ép index (Mỗi dòng 1 URL, tối đa 50 URL)"
                 placeholder="https://luatvietnam.vn/abc.html&#10;https://luatvietnam.vn/xyz.html"
@@ -360,7 +360,7 @@ export default function ForceIndexV2Page() {
                 }}
               />
             </Grid>
-            <Grid item xs={12} md={3.5} sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 2.5 }}>
+            <Grid size={{ xs: 12, md: 3.5 }} sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 2.5 }}>
               <TextField
                 label="Chủ đề / Nhóm (Topic - tùy chọn)"
                 placeholder="luat-doanh-nghiep"
@@ -416,7 +416,7 @@ export default function ForceIndexV2Page() {
       ) : !stats ? (
         <Grid container spacing={2.5}>
           {[...Array(4)].map((_, i) => (
-            <Grid item xs={12} sm={6} md={3} key={i}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }} key={i}>
               <Skeleton variant="rectangular" height={108} sx={{ borderRadius: 4 }} />
             </Grid>
           ))}
@@ -424,7 +424,7 @@ export default function ForceIndexV2Page() {
       ) : (
         <Grid container spacing={2.5}>
           {/* Card 1: Total Links */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, height: '100%', bgcolor: 'background.paper' }}>
               <CardContent sx={{ p: 2.5 }}>
                 <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase' }}>
@@ -438,7 +438,7 @@ export default function ForceIndexV2Page() {
           </Grid>
 
           {/* Card 2: Submitted API */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, height: '100%', bgcolor: 'background.paper' }}>
               <CardContent sx={{ p: 2.5 }}>
                 <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase' }}>
@@ -452,7 +452,7 @@ export default function ForceIndexV2Page() {
           </Grid>
 
           {/* Card 3: Googlebot visits */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, height: '100%', bgcolor: 'background.paper' }}>
               <CardContent sx={{ p: 2.5 }}>
                 <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase' }}>
@@ -466,7 +466,7 @@ export default function ForceIndexV2Page() {
           </Grid>
 
           {/* Card 4: Indexed (PREMIUM GRADIENT HIGHLIGHT) */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card
               elevation={0}
               sx={{
@@ -748,8 +748,8 @@ export default function ForceIndexV2Page() {
         onClose={() => setSelectedLink(null)}
         fullWidth
         maxWidth="md"
-        PaperProps={{
-          sx: { borderRadius: 4, p: 1 },
+        slotProps={{
+          paper: { sx: { borderRadius: 4, p: 1 } }
         }}
       >
         <DialogTitle sx={{ fontWeight: 850, display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1.5 }}>
@@ -764,7 +764,7 @@ export default function ForceIndexV2Page() {
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
               {/* Detailed specs */}
               <Grid container spacing={2.5}>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Box>
                     <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 0.5 }}>
                       TARGET URL (ĐƯỜNG DẪN CẦN INDEX)
@@ -774,7 +774,7 @@ export default function ForceIndexV2Page() {
                     </Typography>
                   </Box>
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Box>
                     <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 0.5 }}>
                       PUBLIC HUB URL (ĐƯỜNG DẪN DECÔY VỆ TINH)
@@ -784,7 +784,7 @@ export default function ForceIndexV2Page() {
                     </Typography>
                   </Box>
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <Box>
                     <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 0.5 }}>
                       SLUG ĐỊNH DANH
@@ -794,7 +794,7 @@ export default function ForceIndexV2Page() {
                     </Typography>
                   </Box>
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <Box>
                     <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 0.5 }}>
                       API ACCOUNT GỬI GOOGLE
@@ -804,7 +804,7 @@ export default function ForceIndexV2Page() {
                     </Typography>
                   </Box>
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <Box>
                     <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 0.5 }}>
                       THỜI GIAN GỬI API
