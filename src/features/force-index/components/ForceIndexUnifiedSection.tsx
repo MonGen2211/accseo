@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
@@ -6,20 +6,20 @@ import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 
 // Icons
-import AndroidIcon from '@mui/icons-material/Android';
-import HubIcon from '@mui/icons-material/Hub';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import SettingsInputAntennaIcon from '@mui/icons-material/SettingsInputAntenna';
+import BoltIcon from '@mui/icons-material/Bolt';
 
 // Inner Pages
-import ForceIndexPage from './ForceIndexPage';
-import ForceIndexV2Page from '../../force-index-v2/components/ForceIndexV2Page';
+import IndexBoosterPage from '../../index-booster/components/IndexBoosterPage';
 import ForceIndexOwnerSection from '../../force-index-owner/components/ForceIndexOwnerSection';
 
 export default function ForceIndexUnifiedSection() {
   // Use session storage or simple state to remember active sub-tab
   const [activeSubTab, setActiveSubTab] = useState<number>(() => {
     const saved = sessionStorage.getItem('force_index_active_subtab');
+    // Default to 0, if value is 2 (old Index Owner), redirect to 1 (new index of Ép Index Direct)
+    if (saved === '2') return 1;
     return saved ? parseInt(saved, 10) : 0;
   });
 
@@ -69,33 +69,27 @@ export default function ForceIndexUnifiedSection() {
             }}
           >
             <Tab 
-              icon={<AndroidIcon sx={{ fontSize: 18 }} />} 
+              icon={<BoltIcon sx={{ fontSize: 18 }} />} 
               iconPosition="start" 
-              label="Ép Index Decoy" 
+              label="Index Booster" 
               id="force-index-subtab-0"
-            />
-            <Tab 
-              icon={<HubIcon sx={{ fontSize: 18 }} />} 
-              iconPosition="start" 
-              label="Ép Index Link Hub" 
-              id="force-index-subtab-1"
             />
             <Tab 
               icon={<CloudUploadIcon sx={{ fontSize: 18 }} />} 
               iconPosition="start" 
-              label="Index Owner" 
-              id="force-index-subtab-2"
+              label="Ép Index Direct" 
+              id="force-index-subtab-1"
             />
           </Tabs>
         </Box>
 
         {/* Tab content wrappers */}
         <Box>
-          {activeSubTab === 0 && <ForceIndexPage />}
-          {activeSubTab === 1 && <ForceIndexV2Page />}
-          {activeSubTab === 2 && <ForceIndexOwnerSection />}
+          {activeSubTab === 0 && <IndexBoosterPage />}
+          {activeSubTab === 1 && <ForceIndexOwnerSection />}
         </Box>
       </Paper>
     </Box>
   );
 }
+
