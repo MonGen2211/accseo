@@ -8,9 +8,11 @@ import ScraperSection from '../scraper/components/ScraperSection';
 import UrlScraperSection from '../url-scraper/components/UrlScraperSection';
 import ContentAnalysisSection from '../content-analysis/components/ContentAnalysisSection';
 import ForceIndexPage from '../force-index/components/ForceIndexPage';
+import ForceIndexV2Page from '../force-index-v2/components/ForceIndexV2Page';
 import AndroidIcon from '@mui/icons-material/Android';
 import LinkIcon from '@mui/icons-material/Link';
 import PsychologyIcon from '@mui/icons-material/Psychology';
+import HubIcon from '@mui/icons-material/Hub';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
@@ -483,6 +485,7 @@ export default function DashboardPage() {
     { id: 'scraper-url', label: 'URL Scraper', icon: <LinkIcon sx={{ fontSize: 20 }} /> },
     { id: 'content-analysis', label: 'Phân tích nội dung', icon: <PsychologyIcon sx={{ fontSize: 20 }} /> },
     { id: 'indexed', label: 'Ép Index', icon: <AndroidIcon sx={{ fontSize: 20 }} /> },
+    { id: 'index-v2', label: 'Index V2', icon: <HubIcon sx={{ fontSize: 20 }} /> },
   ];
 
   return (
@@ -830,6 +833,10 @@ export default function DashboardPage() {
 
       <Box sx={{ display: activeTab === 'indexed' ? 'block' : 'none', mt: 1 }}>
         <ForceIndexPage />
+      </Box>
+
+      <Box sx={{ display: activeTab === 'index-v2' ? 'block' : 'none', mt: 1 }}>
+        <ForceIndexV2Page />
       </Box>
 
     </Box>
