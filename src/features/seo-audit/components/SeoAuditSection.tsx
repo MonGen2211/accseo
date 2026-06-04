@@ -40,6 +40,8 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import HistoryIcon from '@mui/icons-material/History';
 import SpeedIcon from '@mui/icons-material/Speed';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import ArticleIcon from '@mui/icons-material/Article';
+import { saveAs } from 'file-saver';
 
 import { seoAuditService } from '../seoAuditService';
 import type { SeoReport, Criterion } from '../types';
@@ -95,6 +97,82 @@ const SECTION_CONFIGS: Record<string, { label: string; icon: string }> = {
 const sortCriteria = (criteria: Criterion[]) => {
   const order = { fail: 1, warn: 2, pass: 3 };
   return [...criteria].sort((a, b) => order[a.status] - order[b.status]);
+};
+
+// Formatter for Word Document (.doc) Evidence
+const formatEvidenceForDoc = (key: string, evidence: any): string => {
+  if (evidence === null || evidence === undefined) return '';
+  try {
+    switch (key) {
+      case 'title': {
+        const val = evidence.value || '';
+        const len = evidence.length || val.length || 0;
+        return `<div><strong>Nội dung thẻ Title:</strong> "${val}" (${len} ký tự)</div>`;
+      }
+      case 'meta_description': {
+        const val = evidence.value || '';
+        const len = evidence.length || val.length || 0;
+        return `<div><strong>Nội dung Meta Description:</strong> "${val}" (${len} ký tự)</div>`;
+      }
+      case 'headings': {
+        let html = '';
+        const renderList = (tag: string, arr: string[] | undefined) => {
+          if (!arr || arr.length === 0) return '';
+          return `<div style="margin-top: 5px;"><strong>Danh sách thẻ ${tag.toUpperCase()} (${arr.length}):</strong><ul style="margin: 3px 0 3px 20px; padding: 0;">` +
+            arr.map(h => `<li>${h}</li>`).join('') +
+            '</ul></div>';
+        };
+        html += renderList('h1', evidence.h1);
+        html += renderList('h2', evidence.h2);
+        html += renderList('h3', evidence.h3);
+        html += renderList('h4', evidence.h4);
+        return html;
+      }
+      case 'canonical':
+      case 'favicon': {
+        return `<div><strong>Đường dẫn:</strong> <a href="${evidence.href}">${evidence.href}</a></div>`;
+      }
+      case 'robots_txt': {
+        return `<div><strong>Đường dẫn Robots.txt:</strong> <a href="${evidence.url}">${evidence.url}</a></div>`;
+      }
+      case 'sitemap': {
+        if (!evidence.urls || evidence.urls.length === 0) return 'Không tìm thấy sitemap';
+        return `<div><strong>Sitemap URLs:</strong><ul style="margin: 3px 0 3px 20px; padding: 0;">` +
+          evidence.urls.map((u: any) => `<li><a href="${u}">${u}</a></li>`).join('') +
+          '</ul></div>';
+      }
+      case 'keyword_density': {
+        const items = Array.isArray(evidence) ? evidence : [];
+        if (items.length === 0) return '';
+        return '<strong>Mật độ từ khóa:</strong><table style="width: auto; border: 1px solid #ddd; border-collapse: collapse; margin-top: 5px;">' +
+          '<tr><th style="padding: 4px 8px; border: 1px solid #ddd; background-color: #f8fafc;">Từ khóa</th><th style="padding: 4px 8px; border: 1px solid #ddd; background-color: #f8fafc;">Số lượng</th><th style="padding: 4px 8px; border: 1px solid #ddd; background-color: #f8fafc;">Mật độ</th></tr>' +
+          items.slice(0, 10).map((x: any) => `<tr><td style="padding: 4px 8px; border: 1px solid #ddd;">${x.keyword}</td><td style="padding: 4px 8px; border: 1px solid #ddd; text-align: center;">${x.count}</td><td style="padding: 4px 8px; border: 1px solid #ddd; text-align: center;">${(x.density * 100).toFixed(2)}%</td></tr>`).join('') +
+          '</table>';
+      }
+      case 'images_alt_missing': {
+        const list = Array.isArray(evidence.images) ? evidence.images : [];
+        if (list.length === 0) return 'Không có ảnh thiếu Alt';
+        return `<div><strong>Danh sách ảnh thiếu thẻ ALT (${list.length}):</strong><ul style="margin: 3px 0 3px 20px; padding: 0;">` +
+          list.slice(0, 10).map((img: any) => `<li><a href="${img.src || img}">${img.src || img}</a></li>`).join('') +
+          (list.length > 10 ? `<li>... và ${list.length - 10} ảnh khác</li>` : '') +
+          '</ul></div>';
+      }
+      default: {
+        if (typeof evidence === 'object') {
+          const entries = Object.entries(evidence).filter(([_, v]) => typeof v !== 'object' && v !== null && v !== undefined);
+          if (entries.length > 0) {
+            return '<div style="margin-top: 5px;">' +
+              entries.map(([k, v]) => `<strong>${k}:</strong> ${v}`).join('<br/>') +
+              '</div>';
+          }
+        }
+        return '';
+      }
+    }
+  } catch (err) {
+    console.error('Error formatting evidence for doc', err);
+    return '';
+  }
 };
 
 // Dynamic Evidence Renderer based on key
@@ -881,6 +959,300 @@ export default function SeoAuditSection() {
     }
   };
 
+  // Export report to Microsoft Word document (.doc)
+  const handleExportDoc = () => {
+    if (!activeReport) return;
+    
+    // Construct HTML content for Word
+    let htmlContent = `
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+  <meta charset="utf-8">
+  <title>Báo cáo SEO Audit - ${activeReport.url}</title>
+  <!--[if gte mso 9]>
+  <xml>
+   <w:WordDocument>
+    <w:View>Print</w:View>
+    <w:Zoom>100</w:Zoom>
+   </w:WordDocument>
+  </xml>
+  <![endif]-->
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      line-height: 1.5;
+      color: #1e293b;
+      margin: 20px;
+    }
+    .header {
+      border-bottom: 3px solid #00b894;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+    .title {
+      font-size: 24pt;
+      font-weight: bold;
+      color: #0f172a;
+      margin: 0 0 5px 0;
+    }
+    .url {
+      font-size: 11pt;
+      color: #0984e3;
+      margin: 0 0 10px 0;
+    }
+    .meta {
+      font-size: 9pt;
+      color: #64748b;
+    }
+    .score-box {
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 25px;
+    }
+    .score-value {
+      font-size: 32pt;
+      font-weight: 900;
+      display: inline-block;
+      margin-right: 15px;
+    }
+    .stats-table {
+      width: 100%;
+      margin-top: 10px;
+    }
+    .stats-table td {
+      border: none;
+      padding: 5px 10px;
+      font-size: 10pt;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 8.5pt;
+    }
+    .badge-pass { background-color: #e6fcf5; color: #00b894; border: 1px solid #00b894; }
+    .badge-warn { background-color: #fff9db; color: #d97706; border: 1px solid #d97706; }
+    .badge-fail { background-color: #fff5f5; color: #d63031; border: 1px solid #d63031; }
+    
+    .badge-critical { background-color: #ffe5e5; color: #c0392b; }
+    .badge-medium { background-color: #fff9db; color: #d97706; }
+    .badge-low { background-color: #f1f2f6; color: #57606f; }
+    
+    .section-title {
+      font-size: 16pt;
+      font-weight: bold;
+      color: #0f172a;
+      margin-top: 30px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 5px;
+    }
+    
+    .report-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 25px;
+    }
+    .report-table th {
+      background-color: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      font-weight: bold;
+      padding: 10px;
+      font-size: 10pt;
+      text-align: left;
+    }
+    .report-table td {
+      border: 1px solid #cbd5e1;
+      padding: 10px;
+      font-size: 9.5pt;
+      vertical-align: top;
+    }
+    
+    .metrics-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    .metrics-table th {
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 8px;
+      font-size: 9pt;
+      text-align: left;
+    }
+    .metrics-table td {
+      border: 1px solid #e2e8f0;
+      padding: 8px;
+      font-size: 9pt;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1 class="title">Báo Cáo SEO Audit & AI On-page</h1>
+    <div class="url">Đường dẫn phân tích: <a href="${activeReport.url}">${activeReport.url}</a></div>
+    <div class="meta">Ngày phân tích: ${formatVnTime(activeReport.createdAt)}</div>
+  </div>
+
+  <div class="score-box">
+    <table class="stats-table">
+      <tr>
+        <td style="width: 120px; text-align: center; vertical-align: middle;">
+          <div style="font-size: 10pt; color: #64748b; margin-bottom: 5px;">ĐIỂM SEO</div>
+          <div class="score-value" style="color: ${getScoreColor(activeReport.score)};">${activeReport.score}</div>
+        </td>
+        <td>
+          <strong>Thống kê kết quả kiểm tra tiêu chí:</strong>
+          <ul style="margin: 5px 0 0 0; padding-left: 20px;">
+            <li>Đạt: <span class="badge badge-pass">${activeReport.summary.pass}</span></li>
+            <li>Cần cải thiện: <span class="badge badge-warn">${activeReport.summary.warn}</span></li>
+            <li>Không đạt: <span class="badge badge-fail">${activeReport.summary.fail}</span></li>
+            <li>Tổng cộng: <strong>${activeReport.summary.total}</strong> tiêu chí</li>
+          </ul>
+        </td>
+      </tr>
+    </table>
+  </div>
+`;
+
+    // Add Performance Metrics if available
+    if (activeReport.metrics) {
+      const getPerformanceRating = (key: string, val: any) => {
+        if (val === null || val === undefined) return { label: 'không đo được', class: 'badge-low' };
+        if (key === 'ttfbMs') return val <= 800 ? { label: 'Tốt', class: 'badge-pass' } : val <= 1800 ? { label: 'Cần cải thiện', class: 'badge-warn' } : { label: 'Kém', class: 'badge-fail' };
+        if (key === 'fcpMs') return val <= 1800 ? { label: 'Tốt', class: 'badge-pass' } : val <= 3000 ? { label: 'Cần cải thiện', class: 'badge-warn' } : { label: 'Kém', class: 'badge-fail' };
+        if (key === 'lcpMs') return val <= 2500 ? { label: 'Tốt', class: 'badge-pass' } : val <= 4000 ? { label: 'Cần cải thiện', class: 'badge-warn' } : { label: 'Kém', class: 'badge-fail' };
+        if (key === 'cls') return val <= 0.1 ? { label: 'Tốt', class: 'badge-pass' } : val <= 0.25 ? { label: 'Cần cải thiện', class: 'badge-warn' } : { label: 'Kém', class: 'badge-fail' };
+        return { label: 'Bình thường', class: 'badge-pass' };
+      };
+      
+      const formatValue = (key: string, val: any) => {
+        if (val === null || val === undefined) return '—';
+        if (['ttfbMs', 'fcpMs', 'lcpMs', 'loadMs'].includes(key)) return `${(val / 1000).toFixed(2)}s`;
+        if (key === 'totalBytes') return `${(val / 1048576).toFixed(2)} MB`;
+        if (key === 'cls') return val.toFixed(4);
+        return val.toLocaleString('vi-VN');
+      };
+
+      htmlContent += `
+  <h2>⚡ Chỉ số Hiệu năng & Trải nghiệm (Page Metrics)</h2>
+  <table class="metrics-table">
+    <thead>
+      <tr>
+        <th>Chỉ số</th>
+        <th>Kết quả đo</th>
+        <th>Đánh giá</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Thời gian phản hồi đầu tiên (TTFB)</td>
+        <td>${formatValue('ttfbMs', activeReport.metrics.ttfbMs)}</td>
+        <td><span class="badge ${getPerformanceRating('ttfbMs', activeReport.metrics.ttfbMs).class}">${getPerformanceRating('ttfbMs', activeReport.metrics.ttfbMs).label}</span></td>
+      </tr>
+      <tr>
+        <td>Hiển thị nội dung đầu tiên (FCP)</td>
+        <td>${formatValue('fcpMs', activeReport.metrics.fcpMs)}</td>
+        <td><span class="badge ${getPerformanceRating('fcpMs', activeReport.metrics.fcpMs).class}">${getPerformanceRating('fcpMs', activeReport.metrics.fcpMs).label}</span></td>
+      </tr>
+      <tr>
+        <td>Hiển thị nội dung lớn nhất (LCP)</td>
+        <td>${formatValue('lcpMs', activeReport.metrics.lcpMs)}</td>
+        <td><span class="badge ${getPerformanceRating('lcpMs', activeReport.metrics.lcpMs).class}">${getPerformanceRating('lcpMs', activeReport.metrics.lcpMs).label}</span></td>
+      </tr>
+      <tr>
+        <td>Thay đổi bố cục lũy kế (CLS)</td>
+        <td>${formatValue('cls', activeReport.metrics.cls)}</td>
+        <td><span class="badge ${getPerformanceRating('cls', activeReport.metrics.cls).class}">${getPerformanceRating('cls', activeReport.metrics.cls).label}</span></td>
+      </tr>
+      <tr>
+        <td>Thời gian tải trang hoàn tất</td>
+        <td>${formatValue('loadMs', activeReport.metrics.loadMs)}</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>Tổng số lượng HTTP Requests</td>
+        <td>${formatValue('totalRequests', activeReport.metrics.totalRequests)}</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>Tổng dung lượng trang web</td>
+        <td>${formatValue('totalBytes', activeReport.metrics.totalBytes)}</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>Số lượng thẻ DOM Nodes đã render</td>
+        <td>${formatValue('domNodes', activeReport.metrics.domNodes)}</td>
+        <td><span class="badge ${activeReport.metrics.domNodes && activeReport.metrics.domNodes > 1500 ? 'badge-warn' : 'badge-pass'}">${activeReport.metrics.domNodes && activeReport.metrics.domNodes > 1500 ? 'Cần tối ưu' : 'Tốt'}</span></td>
+      </tr>
+    </tbody>
+  </table>
+`;
+    }
+
+    // Add Detailed Checklist Sections
+    activeReport.sections.forEach((sec) => {
+      htmlContent += `
+  <h2 class="section-title">${sec.label} (${sec.pass}/${sec.total} đạt)</h2>
+  <table class="report-table">
+    <thead>
+      <tr>
+        <th style="width: 25%;">Tiêu chí kiểm tra</th>
+        <th style="width: 15%;">Kết quả</th>
+        <th style="width: 20%;">Trọng số & Tác động</th>
+        <th style="width: 40%;">Khuyến nghị & Bằng chứng thực tế</th>
+      </tr>
+    </thead>
+    <tbody>
+`;
+
+      sec.criteria.forEach((c) => {
+        const isUnavailable = c.message && c.message.includes('Không đo được');
+        const finalStatus = isUnavailable ? 'warn' : c.status;
+        const statusText = finalStatus === 'pass' ? 'Đạt' : finalStatus === 'warn' ? 'Cần cải thiện' : 'Không đạt';
+        const statusClass = finalStatus === 'pass' ? 'badge-pass' : finalStatus === 'warn' ? 'badge-warn' : 'badge-fail';
+        
+        const importanceClass = c.importance === 'critical' ? 'badge-critical' : c.importance === 'medium' ? 'badge-medium' : 'badge-low';
+        
+        const evidenceHtml = formatEvidenceForDoc(c.key, c.evidence);
+
+        htmlContent += `
+      <tr>
+        <td><strong>${c.name}</strong></td>
+        <td><span class="badge ${statusClass}">${statusText}</span></td>
+        <td>
+          <span class="badge ${importanceClass}">${c.importanceLabel}</span>
+          <div style="font-size: 8pt; color: #64748b; margin-top: 4px;">Tác động: ${c.weight}%</div>
+        </td>
+        <td>
+          <div style="font-weight: bold; color: #0f172a; margin-bottom: 5px;">${c.message}</div>
+          <div style="color: #64748b; font-size: 8.5pt; margin-bottom: 8px;">💡 Mô tả: ${c.description}</div>
+          ${evidenceHtml ? `<div style="margin-top: 10px; background-color: #f8fafc; border: 1px dashed #cbd5e1; padding: 8px; border-radius: 4px;">${evidenceHtml}</div>` : ''}
+        </td>
+      </tr>
+`;
+      });
+
+      htmlContent += `
+    </tbody>
+  </table>
+`;
+    });
+
+    htmlContent += `
+</body>
+</html>
+`;
+
+    // Download document as .doc
+    const blob = new Blob(['\ufeff' + htmlContent], { type: 'application/msword;charset=utf-8' });
+    const filename = `Seo_Audit_Report_${activeReport.url.replace(/https?:\/\/(www\.)?/, '').replace(/[^a-zA-Z0-9]/g, '_')}.doc`;
+    saveAs(blob, filename);
+  };
+
   // Status Badge Renderer
   const renderStatusBadge = (status: 'pass' | 'warn' | 'fail') => {
     switch (status) {
@@ -1129,27 +1501,44 @@ export default function SeoAuditSection() {
                   <Typography variant="h5" sx={{ fontWeight: 800 }}>
                     🔍 SEO Audit Report
                   </Typography>
-                  <Button
-                    variant="contained"
-                    onClick={() => window.print()}
-                    startIcon={<PictureAsPdfIcon />}
-                    sx={{
-                      fontWeight: 700,
-                      borderRadius: 2.5,
-                      textTransform: 'none',
-                      bgcolor: '#00b894',
-                      color: '#ffffff',
-                      boxShadow: '0 4px 12px rgba(0, 184, 148, 0.2)',
-                      '&:hover': {
-                        bgcolor: '#009975',
-                      },
-                      '@media print': {
-                        display: 'none'
-                      }
-                    }}
-                  >
-                    Xuất PDF
-                  </Button>
+                  <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', '@media print': { display: 'none' } }}>
+                    <Button
+                      variant="outlined"
+                      onClick={handleExportDoc}
+                      startIcon={<ArticleIcon />}
+                      sx={{
+                        fontWeight: 700,
+                        borderRadius: 2.5,
+                        textTransform: 'none',
+                        borderColor: 'divider',
+                        color: 'text.primary',
+                        '&:hover': {
+                          bgcolor: 'action.hover',
+                          borderColor: 'text.secondary'
+                        }
+                      }}
+                    >
+                      Xuất File Word (.doc)
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => window.print()}
+                      startIcon={<PictureAsPdfIcon />}
+                      sx={{
+                        fontWeight: 700,
+                        borderRadius: 2.5,
+                        textTransform: 'none',
+                        bgcolor: '#00b894',
+                        color: '#ffffff',
+                        boxShadow: '0 4px 12px rgba(0, 184, 148, 0.2)',
+                        '&:hover': {
+                          bgcolor: '#009975',
+                        }
+                      }}
+                    >
+                      Xuất PDF
+                    </Button>
+                  </Box>
                 </Box>
                 
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3, flexWrap: 'wrap' }}>
