@@ -286,11 +286,18 @@ function Ga4Panel({ domains, selectedDomainId, onDomainChange, selectedDays, onD
           </Box>
         </Box>
         {ga4Data && ga4Data.trend?.length > 0 && (
-          <Box sx={{ textAlign: 'right', bgcolor: '#f0fdf4', p: 2, borderRadius: 3, border: '1px solid #bbf7d0' }}>
-            <Typography sx={{ fontSize: '1.8rem', fontWeight: 800, color: '#166534', lineHeight: 1 }}>
+          <Box sx={{
+            textAlign: 'right',
+            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.1)' : '#f0fdf4',
+            p: 2,
+            borderRadius: 3,
+            border: '1px solid',
+            borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.25)' : '#bbf7d0'
+          }}>
+            <Typography sx={{ fontSize: '1.8rem', fontWeight: 800, color: (theme) => theme.palette.mode === 'dark' ? '#00b894' : '#166534', lineHeight: 1 }}>
               {new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short' }).format(ga4Data.summary.screenPageViews)}
             </Typography>
-            <Typography sx={{ fontSize: '0.8rem', color: '#15803d', fontWeight: 600, mt: 0.5 }}>Tổng lượt views</Typography>
+            <Typography sx={{ fontSize: '0.8rem', color: (theme) => theme.palette.mode === 'dark' ? '#3dd6a0' : '#15803d', fontWeight: 600, mt: 0.5 }}>Tổng lượt views</Typography>
           </Box>
         )}
       </Box>

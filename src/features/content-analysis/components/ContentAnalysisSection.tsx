@@ -719,9 +719,6 @@ export default function ContentAnalysisSection() {
                 icon={<CancelIcon sx={{ color: '#ef4444' }} />}
                 sx={{
                   borderRadius: 4,
-                  bgcolor: '#fef2f2',
-                  color: '#b91c1c',
-                  border: '1px solid #fee2e2',
                   p: 3,
                 }}
               >
@@ -1043,10 +1040,32 @@ export default function ContentAnalysisSection() {
 
                             <Box sx={{ display: 'flex', gap: 0.8 }}>
                               {node.isCoreIntent && (
-                                <Chip label="Bắt buộc (Core)" size="small" sx={{ height: 16, fontSize: '0.6rem', fontWeight: 800, bgcolor: '#e6fcf5', color: '#00b894', border: '1px solid #c3fae8' }} />
+                                <Chip
+                                  label="Bắt buộc (Core)"
+                                  size="small"
+                                  sx={{
+                                    height: 16,
+                                    fontSize: '0.6rem',
+                                    fontWeight: 800,
+                                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.15)' : '#e6fcf5',
+                                    color: '#00b894',
+                                    border: (theme) => theme.palette.mode === 'dark' ? '1px solid rgba(0, 184, 148, 0.25)' : '1px solid #c3fae8'
+                                  }}
+                                />
                               )}
                               {node.isUniqueValue && (
-                                <Chip label="Góc nhìn độc đáo" size="small" sx={{ height: 16, fontSize: '0.6rem', fontWeight: 800, bgcolor: '#f3e5f5', color: '#7b1fa2', border: '1px solid #e1bee7' }} />
+                                <Chip
+                                  label="Góc nhìn độc đáo"
+                                  size="small"
+                                  sx={{
+                                    height: 16,
+                                    fontSize: '0.6rem',
+                                    fontWeight: 800,
+                                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(123, 31, 162, 0.15)' : '#f3e5f5',
+                                    color: (theme) => theme.palette.mode === 'dark' ? '#ba68c8' : '#7b1fa2',
+                                    border: (theme) => theme.palette.mode === 'dark' ? '1px solid rgba(186, 104, 200, 0.25)' : '1px solid #e1bee7'
+                                  }}
+                                />
                               )}
                               {!isCompactOutline && node.appearsInArticles && (
                                 <Tooltip title={`Xuất hiện ở các đối thủ vị trí: ${node.appearsInArticles.join(', ')}`} arrow>

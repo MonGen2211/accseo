@@ -489,13 +489,10 @@ export default function ForceIndexPage() {
 
               <Alert
                 severity="warning"
-                icon={<WarningAmberIcon sx={{ color: '#d97706' }} />}
+                icon={<WarningAmberIcon />}
                 sx={{
                   mb: 3,
                   borderRadius: 3,
-                  bgcolor: '#fffbeb',
-                  color: '#b45309',
-                  border: '1px solid #fef3c7',
                   '& .MuiAlert-icon': { alignSelf: 'center' },
                 }}
               >
@@ -591,24 +588,36 @@ export default function ForceIndexPage() {
                     {submitResult.results?.forceIndex?.skipped ? (
                       <Alert
                         severity="error"
-                        icon={<WarningAmberIcon sx={{ color: '#ef4444' }} />}
+                        icon={<WarningAmberIcon />}
                         sx={{
                           borderRadius: 3,
-                          bgcolor: '#fef2f2',
-                          color: '#b91c1c',
-                          border: '1px solid #fee2e2',
                         }}
                       >
                         <strong>Lỗi:</strong> Decoy domain chưa setup trên BE. Force-Index không hoạt động.
                       </Alert>
                     ) : submitResult.results?.forceIndex ? (
-                      <Box sx={{ p: 2, borderRadius: 3, bgcolor: '#f0fdf4', border: '1px solid #bbf7d0' }}>
-                        <Typography sx={{ fontWeight: 800, fontSize: '0.85rem', color: '#166534', display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <Box sx={{
+                        p: 2,
+                        borderRadius: 3,
+                        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.1)' : '#f0fdf4',
+                        border: '1px solid',
+                        borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.25)' : '#bbf7d0'
+                      }}>
+                        <Typography sx={{ fontWeight: 800, fontSize: '0.85rem', color: (theme) => theme.palette.mode === 'dark' ? '#00b894' : '#166534', display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                           <CheckCircleIcon sx={{ fontSize: 16 }} />
                           TẠO DECOY URL ÉP INDEX THÀNH CÔNG
                         </Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: '#ffffff', border: '1px solid #dcfce7', p: 1, borderRadius: 2 }}>
-                          <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all', color: '#15803d', fontWeight: 600 }}>
+                        <Box sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'background.default' : '#ffffff',
+                          border: '1px solid',
+                          borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.2)' : '#dcfce7',
+                          p: 1,
+                          borderRadius: 2
+                        }}>
+                          <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all', color: (theme) => theme.palette.mode === 'dark' ? '#3dd6a0' : '#15803d', fontWeight: 600 }}>
                             {submitResult.results.forceIndex.decoyUrl}
                           </Typography>
                           <Box sx={{ display: 'flex', gap: 0.5 }}>

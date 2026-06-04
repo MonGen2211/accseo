@@ -138,7 +138,7 @@ export default function ActivitySection({ onViewAll }: ActivitySectionProps) {
 											borderColor: 'divider',
 											alignItems: 'flex-start',
 											transition: 'background 0.15s',
-											'&:hover': { bgcolor: '#fafbfc' },
+											'&:hover': { bgcolor: 'action.hover' },
 										}}
 									>
 										<Avatar
@@ -150,7 +150,7 @@ export default function ActivitySection({ onViewAll }: ActivitySectionProps) {
 
 										<Box sx={{ flex: 1, minWidth: 0 }}>
 											<Typography sx={{ fontSize: '0.875rem', lineHeight: 1.45, color: 'text.primary' }}>
-												<Box component="span" sx={{ fontWeight: 800, color: '#0f172a', mr: 0.5 }}>
+												<Box component="span" sx={{ fontWeight: 800, color: 'text.primary', mr: 0.5 }}>
 													{item.name}
 												</Box>
 												<Box component="span" sx={{ color, fontWeight: 600, bgcolor: bg, px: 0.6, py: 0.1, borderRadius: 0.75, fontSize: '0.82rem' }}>
@@ -186,7 +186,7 @@ export default function ActivitySection({ onViewAll }: ActivitySectionProps) {
 						borderTop: '1px solid', borderColor: 'divider',
 						display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5,
 						cursor: onViewAll ? 'pointer' : 'default',
-						bgcolor: '#fafbfc',
+						bgcolor: (theme) => theme.palette.mode === 'dark' ? 'action.hover' : '#fafbfc',
 						'&:hover': onViewAll ? { bgcolor: 'action.hover' } : {},
 						transition: 'background 0.15s',
 					}}

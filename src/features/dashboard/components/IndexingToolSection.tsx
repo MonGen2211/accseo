@@ -265,9 +265,6 @@ export default function IndexingToolSection() {
             sx={{
               mb: 3,
               borderRadius: 3,
-              bgcolor: '#fffbeb',
-              color: '#92400e',
-              border: '1px solid #fef3c7',
               '& .MuiAlert-icon': { alignSelf: 'center' },
             }}
           >
@@ -389,9 +386,6 @@ export default function IndexingToolSection() {
                   sx={{
                     mt: 2,
                     borderRadius: 3,
-                    bgcolor: '#f0f9ff',
-                    color: '#0369a1',
-                    border: '1px solid #e0f2fe',
                     '& .MuiAlert-icon': { alignSelf: 'center' },
                   }}
                 >
