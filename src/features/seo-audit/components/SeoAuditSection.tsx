@@ -10,12 +10,6 @@ import {
   List,
   ListItemButton,
   Chip,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Accordion,
   AccordionSummary,
   AccordionDetails,
@@ -26,6 +20,7 @@ import {
   Pagination,
   Grid,
   Skeleton,
+  LinearProgress,
 } from '@mui/material';
 
 // Icons
@@ -40,7 +35,7 @@ import HistoryIcon from '@mui/icons-material/History';
 import SpeedIcon from '@mui/icons-material/Speed';
 
 import { seoAuditService } from '../seoAuditService';
-import type { SeoReport } from '../types';
+import type { SeoReport, Criterion, ReportSection } from '../types';
 import { useToastify } from '../../../components/Toastify';
 
 // Vietnamese Time Formatter
@@ -60,6 +55,16 @@ const formatVnTime = (dateStr: string | undefined | null) => {
   }
 };
 
+// Formatting Helper for Bytes
+const formatBytes = (bytes: number | undefined | null) => {
+  if (bytes === undefined || bytes === null || isNaN(bytes)) return '0 B';
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+};
+
 // Threshold-based color generator
 const getScoreColor = (score: number) => {
   if (score >= 80) return '#00b894'; // Xanh lá
@@ -67,7 +72,7 @@ const getScoreColor = (score: number) => {
   return '#d63031'; // Đỏ
 };
 
-// Emojis mapping for 8 mandatory sections
+// Emojis mapping for 8 sections
 const SECTION_CONFIGS: Record<string, { label: string; icon: string }> = {
   seo_basic: { label: 'SEO Cơ Bản', icon: '🔍' },
   images: { label: 'Tối Ưu Hình Ảnh', icon: '🖼️' },
@@ -77,6 +82,528 @@ const SECTION_CONFIGS: Record<string, { label: string; icon: string }> = {
   mobile: { label: 'Mobile & UX', icon: '📱' },
   errors: { label: 'Lỗi & Console', icon: '⚠️' },
   url_redirect: { label: 'URL & Redirect', icon: '🔗' },
+};
+
+// Sort Criteria: fail -> warn -> pass
+const sortCriteria = (criteria: Criterion[]) => {
+  const order = { fail: 1, warn: 2, pass: 3 };
+  return [...criteria].sort((a, b) => order[a.status] - order[b.status]);
+};
+
+// Dynamic Evidence Renderer based on key
+const renderEvidence = (key: string, evidence: any) => {
+  if (evidence === null || evidence === undefined) return null;
+
+  try {
+    switch (key) {
+      case 'title': {
+        const val = evidence.value || '';
+        const len = evidence.length || val.length || 0;
+        const max = evidence.max || 60;
+        const ratio = Math.min((len / max) * 100, 100);
+        return (
+          <Box sx={{ mt: 1.5, p: 2, bgcolor: 'action.hover', borderRadius: 2.5, border: '1px solid', borderColor: 'divider' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 0.8 }}>Dữ liệu thẻ Title:</Typography>
+            <Typography variant="body2" sx={{ fontFamily: 'monospace', bgcolor: 'background.paper', p: 1, borderRadius: 1.5, border: '1px solid', borderColor: 'divider', mb: 1.5, wordBreak: 'break-all' }}>
+              "{val}"
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <LinearProgress variant="determinate" value={ratio} color={len > max ? 'error' : 'success'} sx={{ flex: 1, height: 6, borderRadius: 3 }} />
+              <Typography variant="caption" sx={{ fontWeight: 800 }}>
+                {len} / {max} ký tự
+              </Typography>
+            </Box>
+          </Box>
+        );
+      }
+
+      case 'meta_description': {
+        const val = evidence.value || '';
+        const len = evidence.length || val.length || 0;
+        return (
+          <Box sx={{ mt: 1.5, p: 2, bgcolor: 'action.hover', borderRadius: 2.5, border: '1px solid', borderColor: 'divider' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 0.8 }}>Dữ liệu Meta Description:</Typography>
+            <Typography variant="body2" sx={{ fontFamily: 'monospace', bgcolor: 'background.paper', p: 1, borderRadius: 1.5, border: '1px solid', borderColor: 'divider', mb: 1, wordBreak: 'break-all' }}>
+              "{val}"
+            </Typography>
+            <Typography variant="caption" sx={{ fontWeight: 800, display: 'block' }}>
+              Độ dài: {len} ký tự
+            </Typography>
+          </Box>
+        );
+      }
+
+      case 'social_meta': {
+        const og = evidence.openGraph || {};
+        const twitter = evidence.twitterCard || {};
+        const renderTable = (title: string, obj: Record<string, any>) => {
+          const entries = Object.entries(obj);
+          if (entries.length === 0) return null;
+          return (
+            <Box sx={{ flex: 1, minWidth: 280 }}>
+              <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', display: 'block', mb: 1 }}>{title}</Typography>
+              <Box sx={{ maxHeight: 220, overflowY: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+                <Table size="small" stickyHeader>
+                  <TableBody>
+                    {entries.map(([k, v]) => (
+                      <TableRow key={k} hover>
+                        <TableCell sx={{ fontSize: '0.72rem', py: 0.8, fontWeight: 700, color: 'text.secondary', borderBottom: '1px solid', borderColor: 'divider' }}>{k}</TableCell>
+                        <TableCell sx={{ fontSize: '0.72rem', py: 0.8, borderBottom: '1px solid', borderColor: 'divider', wordBreak: 'break-all' }}>{String(v)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Box>
+            </Box>
+          );
+        };
+        return (
+          <Box sx={{ mt: 1.5, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+            {renderTable('Open Graph Meta Tags', og)}
+            {renderTable('Twitter Card Meta Tags', twitter)}
+          </Box>
+        );
+      }
+
+      case 'google_preview': {
+        return (
+          <Box sx={{ mt: 1.5, p: 2.5, bgcolor: '#ffffff', border: '1px solid', borderColor: 'divider', borderRadius: 2.5, maxWidth: 600 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 1.5 }}>Xem trước hiển thị Google Tìm Kiếm (SERP Preview):</Typography>
+            <Box sx={{ fontFamily: 'Arial, sans-serif', textAlign: 'left' }}>
+              <Typography sx={{ color: '#1a0dab', fontSize: '1.2rem', lineHeight: 1.3, mb: 0.25, '&:hover': { textDecoration: 'underline', cursor: 'pointer' } }}>
+                {evidence.title || 'Chưa cấu hình Title'}
+              </Typography>
+              <Typography sx={{ color: '#006621', fontSize: '0.85rem', mb: 0.5, wordBreak: 'break-all' }}>
+                {evidence.url || 'https://example.com'}
+              </Typography>
+              <Typography sx={{ color: '#545454', fontSize: '0.82rem', lineHeight: 1.4 }}>
+                {evidence.description || 'Chưa cấu hình thẻ Meta Description.'}
+              </Typography>
+            </Box>
+          </Box>
+        );
+      }
+
+      case 'top_keywords':
+      case 'keyword_cloud': {
+        const list = evidence.keywords || [];
+        if (list.length === 0) return null;
+        return (
+          <Box sx={{ mt: 1.5, p: 2, bgcolor: 'action.hover', borderRadius: 2.5, border: '1px solid', borderColor: 'divider' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 1.5 }}>Mật độ từ khóa phổ biến:</Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              {list.map((kw: any, idx: number) => {
+                let col: 'primary' | 'secondary' | 'default' = 'default';
+                if (kw.count >= 8) col = 'primary';
+                else if (kw.count >= 4) col = 'secondary';
+                return (
+                  <Chip
+                    key={idx}
+                    label={`${kw.word} (${kw.count})`}
+                    color={col}
+                    size="small"
+                    variant="outlined"
+                    sx={{ fontWeight: 700, borderRadius: 2 }}
+                  />
+                );
+              })}
+            </Box>
+          </Box>
+        );
+      }
+
+      case 'keyword_distribution': {
+        const rows = evidence.table || [];
+        if (rows.length === 0) return null;
+        return (
+          <Box sx={{ mt: 1.5 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 1 }}>Sự phân bố của các từ khóa chính:</Typography>
+            <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2.5 }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow sx={{ bgcolor: 'action.hover' }}>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.72rem' }}>Từ khóa</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 800, fontSize: '0.72rem' }}>Thẻ Title</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 800, fontSize: '0.72rem' }}>Thẻ Description</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 800, fontSize: '0.72rem' }}>Thẻ Heading</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {rows.map((row: any, idx: number) => (
+                    <TableRow key={idx} hover>
+                      <TableCell sx={{ fontSize: '0.75rem', fontWeight: 700 }}>{row.keyword}</TableCell>
+                      <TableCell align="center" sx={{ fontSize: '0.75rem' }}>{row.inTitle ? '✅' : '❌'}</TableCell>
+                      <TableCell align="center" sx={{ fontSize: '0.75rem' }}>{row.inDescription ? '✅' : '❌'}</TableCell>
+                      <TableCell align="center" sx={{ fontSize: '0.75rem' }}>{row.inHeadings ? '✅' : '❌'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Box>
+        );
+      }
+
+      case 'headings': {
+        const renderList = (tag: string, arr: string[] | undefined) => {
+          if (!arr || arr.length === 0) return null;
+          return (
+            <Box sx={{ mb: 1.5 }}>
+              <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                Danh sách thẻ {tag.toUpperCase()} ({arr.length})
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, pl: 1.5, borderLeft: '2px solid', borderColor: 'divider' }}>
+                {arr.map((h, i) => (
+                  <Typography key={i} variant="body2" sx={{ fontSize: '0.78rem', color: 'text.primary' }}>
+                    - {h}
+                  </Typography>
+                ))}
+              </Box>
+            </Box>
+          );
+        };
+        return (
+          <Box sx={{ mt: 1.5, p: 2, bgcolor: 'action.hover', borderRadius: 2.5, border: '1px solid', borderColor: 'divider' }}>
+            {renderList('h1', evidence.h1)}
+            {renderList('h2', evidence.h2)}
+            {renderList('h3', evidence.h3)}
+            {renderList('h4', evidence.h4)}
+          </Box>
+        );
+      }
+
+      case 'robots_txt': {
+        if (!evidence.url) return null;
+        return (
+          <Box sx={{ mt: 1.5 }}>
+            <Button variant="outlined" size="small" href={evidence.url} target="_blank" rel="noopener noreferrer" startIcon={<OpenInNewIcon />} sx={{ textTransform: 'none', borderRadius: 2 }}>
+              Mở link Robots.txt
+            </Button>
+          </Box>
+        );
+      }
+
+      case 'canonical':
+      case 'favicon': {
+        if (!evidence.href) return null;
+        return (
+          <Box sx={{ mt: 1.5 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ mr: 1, fontWeight: 700 }}>Đường dẫn:</Typography>
+            <Typography variant="body2" component="a" href={evidence.href} target="_blank" rel="noopener noreferrer" sx={{ color: 'primary.main', textDecoration: 'underline', fontSize: '0.78rem', wordBreak: 'break-all' }}>
+              {evidence.href}
+            </Typography>
+          </Box>
+        );
+      }
+
+      case 'structured_data': {
+        const types = evidence.types || [];
+        if (types.length === 0) return null;
+        return (
+          <Box sx={{ mt: 1.5, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+            {types.map((type: string, idx: number) => (
+              <Chip key={idx} label={type} size="small" color="primary" sx={{ fontWeight: 700, borderRadius: 2 }} />
+            ))}
+          </Box>
+        );
+      }
+
+      case 'charset': {
+        if (!evidence.value) return null;
+        return (
+          <Box sx={{ mt: 1.5 }}>
+            <Typography variant="body2" sx={{ fontWeight: 700 }}>Kiểu mã hóa: <Chip label={evidence.value} size="small" color="secondary" sx={{ fontWeight: 700 }} /></Typography>
+          </Box>
+        );
+      }
+
+      case 'compression': {
+        if (!evidence.algo) return null;
+        return (
+          <Box sx={{ mt: 1.5 }}>
+            <Typography variant="body2" sx={{ fontWeight: 700 }}>Chuẩn nén truyền tải: <Chip label={evidence.algo} size="small" color="success" sx={{ fontWeight: 700 }} /></Typography>
+          </Box>
+        );
+      }
+
+      case 'viewport': {
+        if (!evidence.content) return null;
+        return (
+          <Box sx={{ mt: 1.5, p: 1.5, bgcolor: 'action.hover', borderRadius: 2, fontFamily: 'monospace', fontSize: '0.75rem', border: '1px solid', borderColor: 'divider' }}>
+            {evidence.content}
+          </Box>
+        );
+      }
+
+      case 'deprecated_tags': {
+        const tags = evidence.tags || [];
+        if (tags.length === 0) return null;
+        return (
+          <Box sx={{ mt: 1.5 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 0.8 }}>Các thẻ HTML lỗi thời:</Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              {tags.map((t: string, idx: number) => (
+                <Chip key={idx} label={`<${t}>`} size="small" color="error" variant="outlined" sx={{ fontWeight: 700 }} />
+              ))}
+            </Box>
+          </Box>
+        );
+      }
+
+      case 'modern_image_format': {
+        const legacy = evidence.legacy || [];
+        if (legacy.length === 0) return null;
+        return (
+          <Box sx={{ mt: 1.5 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 0.8 }}>Ảnh định dạng cũ cần tối ưu hóa:</Typography>
+            <List sx={{ p: 0, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+              {legacy.slice(0, 5).map((url: string, idx: number) => (
+                <Typography key={idx} variant="caption" component="a" href={url} target="_blank" rel="noopener noreferrer" sx={{ display: 'block', color: 'primary.main', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', '&:hover': { textDecoration: 'underline' } }}>
+                  - {url}
+                </Typography>
+              ))}
+              {legacy.length > 5 && (
+                <Typography variant="caption" color="text.disabled" sx={{ fontStyle: 'italic', display: 'block', mt: 0.5 }}>
+                  ... và {legacy.length - 5} ảnh khác.
+                </Typography>
+              )}
+            </List>
+          </Box>
+        );
+      }
+
+      case 'aspect_ratio':
+      case 'image_size': {
+        const items = evidence.items || [];
+        if (items.length === 0) return null;
+        return (
+          <Box sx={{ mt: 1.5 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 1 }}>Kích thước ảnh thực tế:</Typography>
+            <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2.5 }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow sx={{ bgcolor: 'action.hover' }}>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.72rem' }}>Hình ảnh</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 800, fontSize: '0.72rem' }}>Hiển thị</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 800, fontSize: '0.72rem' }}>Kích thước gốc</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {items.slice(0, 5).map((row: any, idx: number) => (
+                    <TableRow key={idx} hover>
+                      <TableCell sx={{ py: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box sx={{ width: 32, height: 32, borderRadius: 1, border: '1px solid', borderColor: 'divider', overflow: 'hidden', bgcolor: 'action.hover', flexShrink: 0 }}>
+                            <img src={row.src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          </Box>
+                          <Typography variant="caption" component="a" href={row.src} target="_blank" rel="noopener noreferrer" sx={{ display: 'inline-block', color: 'primary.main', maxWidth: 200, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', '&:hover': { textDecoration: 'underline' } }}>
+                            {row.src}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell align="center" sx={{ fontSize: '0.72rem' }}>{row.display}</TableCell>
+                      <TableCell align="center" sx={{ fontSize: '0.72rem' }}>{row.natural}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            {items.length > 5 && (
+              <Typography variant="caption" color="text.disabled" sx={{ fontStyle: 'italic', display: 'block', mt: 1 }}>
+                ... và {items.length - 5} ảnh khác.
+              </Typography>
+            )}
+          </Box>
+        );
+      }
+
+      case 'render_blocking': {
+        const count = evidence.count || 0;
+        const urls = evidence.urls || [];
+        return (
+          <Box sx={{ mt: 1.5 }}>
+            <Typography variant="body2" sx={{ fontWeight: 700, mb: 1 }}>
+              ⚠️ Có {count} tài nguyên chặn quá trình render trang:
+            </Typography>
+            {urls.length > 0 && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, pl: 1.5, borderLeft: '2px solid', borderColor: 'divider' }}>
+                {urls.slice(0, 5).map((url: string, idx: number) => (
+                  <Typography key={idx} variant="caption" component="a" href={url} target="_blank" rel="noopener noreferrer" sx={{ color: 'primary.main', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', '&:hover': { textDecoration: 'underline' } }}>
+                    - {url}
+                  </Typography>
+                ))}
+                {urls.length > 5 && (
+                  <Typography variant="caption" color="text.disabled" sx={{ fontStyle: 'italic', mt: 0.5 }}>
+                    ... và {urls.length - 5} tài nguyên khác.
+                  </Typography>
+                )}
+              </Box>
+            )}
+          </Box>
+        );
+      }
+
+      case 'http_requests': {
+        const count = evidence.count || 0;
+        const b = evidence.bytes || {};
+        const total = Object.values(b).reduce((acc: number, cur: any) => acc + (Number(cur) || 0), 0) as number;
+        const categories = [
+          { key: 'image', label: 'Hình ảnh', color: '#10ac84', val: b.image || 0 },
+          { key: 'javascript', label: 'JS Scripts', color: '#ff9f43', val: b.javascript || 0 },
+          { key: 'css', label: 'CSS Styles', color: '#2e86de', val: b.css || 0 },
+          { key: 'font', label: 'Fonts', color: '#ee5253', val: b.font || 0 },
+          { key: 'html', label: 'HTML', color: '#8395a7', val: b.html || 0 },
+          { key: 'other', label: 'Khác', color: '#576574', val: b.other || 0 }
+        ].filter(c => c.val > 0);
+
+        return (
+          <Box sx={{ mt: 1.5, p: 2, bgcolor: 'action.hover', borderRadius: 2.5, border: '1px solid', borderColor: 'divider' }}>
+            <Typography variant="body2" sx={{ fontWeight: 700, mb: 1.5 }}>
+              Yêu cầu HTTP: {count} request (Dung lượng: {formatBytes(total)})
+            </Typography>
+            
+            {/* Custom stacked progress bar */}
+            <Box sx={{ width: '100%', height: 10, borderRadius: 5, overflow: 'hidden', display: 'flex', mb: 2, bgcolor: 'action.selected' }}>
+              {categories.map((c, idx) => {
+                const widthPct = total > 0 ? (c.val / total) * 100 : 0;
+                return (
+                  <Box
+                    key={idx}
+                    sx={{
+                      width: `${widthPct}%`,
+                      height: '100%',
+                      bgcolor: c.color
+                    }}
+                  />
+                );
+              })}
+            </Box>
+
+            {/* Legend grid */}
+            <Grid container spacing={1.5}>
+              {categories.map((c, idx) => (
+                <Grid item xs={6} sm={4} key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: c.color, flexShrink: 0 }} />
+                  <Typography variant="caption" sx={{ fontWeight: 650, color: 'text.secondary' }}>
+                    {c.label}: {formatBytes(c.val)}
+                  </Typography>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+        );
+      }
+
+      case 'load_time':
+      case 'ttfb':
+      case 'fcp':
+      case 'lcp': {
+        const isMs = typeof evidence.valueMs === 'number';
+        const val = isMs ? evidence.valueMs : (evidence.value || 0);
+        const goodMax = isMs ? evidence.goodMaxMs : (evidence.goodLimit || 0.1);
+        const warnMax = isMs ? evidence.warnMaxMs : (evidence.warnLimit || 0.25);
+        
+        let color = '#d63031'; // Red
+        let scoreLabel = 'Kém';
+        if (val <= goodMax) {
+          color = '#00b894'; // Green
+          scoreLabel = 'Tốt';
+        } else if (val <= warnMax) {
+          color = '#f1c40f'; // Yellow
+          scoreLabel = 'Cần cải thiện';
+        }
+
+        const valueDisplay = isMs ? `${val} ms` : String(val);
+        const goodDisplay = isMs ? `${goodMax} ms` : String(goodMax);
+        const warnDisplay = isMs ? `${warnMax} ms` : String(warnMax);
+
+        return (
+          <Box sx={{ mt: 1.5, p: 2, bgcolor: 'action.hover', borderRadius: 2.5, border: '1px solid', borderColor: 'divider' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+              <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                Thời gian đo được: <span style={{ color }}>{valueDisplay}</span> ({scoreLabel})
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: 'text.secondary', mb: 1 }}>
+              <span>Tốt (≤ {goodDisplay})</span>
+              <span>Khá (≤ {warnDisplay})</span>
+              <span>Kém (&gt; {warnDisplay})</span>
+            </Box>
+            <Box sx={{ position: 'relative', width: '100%', height: 6, bgcolor: 'divider', borderRadius: 3, overflow: 'hidden' }}>
+              <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${Math.min((val / (warnMax * 1.5 || 1)) * 100, 100)}%`, bgcolor: color, borderRadius: 3 }} />
+            </Box>
+          </Box>
+        );
+      }
+
+      case 'cls': {
+        const val = typeof evidence.value === 'number' ? evidence.value : 0;
+        return (
+          <Box sx={{ mt: 1.5 }}>
+            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+              Điểm tích lũy thay đổi bố cục (CLS): <Chip label={val} size="small" color={val <= 0.1 ? 'success' : 'error'} sx={{ fontWeight: 700 }} />
+            </Typography>
+          </Box>
+        );
+      }
+
+      case 'html_size': {
+        const kb = evidence.kb || 0;
+        const avgKb = evidence.avgKb || 100;
+        return (
+          <Box sx={{ mt: 1.5 }}>
+            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+              Dung lượng trang HTML: <span style={{ color: kb <= avgKb ? '#00b894' : '#d63031' }}>{kb} KB</span> (Trung bình ngành: {avgKb} KB)
+            </Typography>
+          </Box>
+        );
+      }
+
+      case 'dom_size': {
+        const nodes = evidence.nodes || 0;
+        const limit = evidence.limit || 1500;
+        return (
+          <Box sx={{ mt: 1.5 }}>
+            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+              Số lượng DOM nodes: <span style={{ color: nodes <= limit ? '#00b894' : '#d63031' }}>{nodes} nodes</span> (Giới hạn: {limit} nodes)
+            </Typography>
+          </Box>
+        );
+      }
+
+      case 'cache_images':
+      case 'cache_js':
+      case 'cache_css': {
+        const cached = evidence.cached || 0;
+        const total = evidence.total || 0;
+        const ratio = total > 0 ? Math.round((cached / total) * 100) : 0;
+        return (
+          <Box sx={{ mt: 1.5 }}>
+            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+              Tỷ lệ tài nguyên được thiết lập Cache: <span style={{ color: ratio >= 70 ? '#00b894' : '#f1c40f' }}>{cached}/{total} ({ratio}%)</span>
+            </Typography>
+          </Box>
+        );
+      }
+
+      // Default count fallback for specific count keys
+      default: {
+        if (typeof evidence.count === 'number') {
+          return (
+            <Box sx={{ mt: 1.5 }}>
+              <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                Số lượng phát hiện: <span style={{ color: evidence.count === 0 ? '#00b894' : '#d63031' }}>{evidence.count}</span>
+              </Typography>
+            </Box>
+          );
+        }
+        return null;
+      }
+    }
+  } catch (e) {
+    console.error('Error rendering evidence:', e);
+    return null;
+  }
 };
 
 export default function SeoAuditSection() {
@@ -166,6 +693,34 @@ export default function SeoAuditSection() {
     }
   };
 
+  // Re-run execution (triggered from footer icon)
+  const handleReRunAudit = async (url: string) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setSubmitError('');
+    try {
+      showToast('Đang chạy lại phân tích SEO...', 'info');
+      const res = await seoAuditService.runAudit(url);
+      setActiveReport(res);
+      mutateHistory();
+      showToast('Chạy lại phân tích SEO hoàn tất!', 'success');
+    } catch (err: any) {
+      console.error('SEO Audit re-run failed:', err);
+      const code = err?.response?.data?.code || err?.code;
+      const msg = err?.response?.data?.message || err?.message || 'Gặp lỗi khi chạy lại phân tích';
+      
+      if (code === 'INVALID_URL' || code === 'PRIVATE_URL_NOT_ALLOWED') {
+        setSubmitError(msg);
+      } else if (code === 'AUDIT_IN_PROGRESS') {
+        showToast('Hệ thống đang phân tích URL này. Vui lòng đợi rồi thử lại.', 'warning');
+      } else {
+        showToast(msg, 'danger');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Load old detail record
   const handleLoadHistoryDetail = async (id: string) => {
     try {
@@ -185,7 +740,7 @@ export default function SeoAuditSection() {
     }
   };
 
-  // Status Badge Renderer for checklist
+  // Status Badge Renderer
   const renderStatusBadge = (status: 'pass' | 'warn' | 'fail') => {
     switch (status) {
       case 'pass':
@@ -206,7 +761,7 @@ export default function SeoAuditSection() {
       case 'warn':
         return (
           <Chip
-            label="Cảnh báo"
+            label="Cần cải thiện"
             icon={<WarningAmberIcon sx={{ fontSize: '14px !important', color: '#f1c40f !important' }} />}
             size="small"
             sx={{
@@ -236,14 +791,16 @@ export default function SeoAuditSection() {
     }
   };
 
-  // Filter sections & criteria based on status filter
+  // Filter and sort sections
   const visibleSections = (activeReport?.sections || [])
     .map((sec) => {
       const filteredCriteria = sec.criteria.filter((c) => {
         if (filterStatus === 'all') return true;
         return c.status === filterStatus;
       });
-      return { ...sec, criteria: filteredCriteria };
+      // Sort: fail -> warn -> pass
+      const sortedCriteria = sortCriteria(filteredCriteria);
+      return { ...sec, criteria: sortedCriteria };
     })
     .filter((sec) => sec.criteria.length > 0);
 
@@ -345,7 +902,7 @@ export default function SeoAuditSection() {
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>Đang chạy phân tích SEO Audit</Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1, lineHeight: 1.6 }}>
-                  Đang tải trang và đo Core Web Vitals bằng trình duyệt, có thể mất <strong>5–35 giây</strong>...<br />
+                  Đang tải trang và đo Core Web Vitals..., có thể mất <strong>5–35 giây</strong>...<br />
                   Vui lòng không tắt trang hoặc bấm gửi lại yêu cầu!
                 </Typography>
               </Box>
@@ -375,7 +932,7 @@ export default function SeoAuditSection() {
                   <Typography
                     variant="body2"
                     component="a"
-                    href={activeReport.finalUrl || activeReport.url}
+                    href={activeReport.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     sx={{
@@ -390,7 +947,7 @@ export default function SeoAuditSection() {
                       '&:hover': { textDecoration: 'underline' }
                     }}
                   >
-                    {activeReport.finalUrl || activeReport.url} <OpenInNewIcon sx={{ fontSize: 13 }} />
+                    {activeReport.url} <OpenInNewIcon sx={{ fontSize: 13 }} />
                   </Typography>
                   
                   <Divider orientation="vertical" flexItem sx={{ mx: 1, display: { xs: 'none', sm: 'block' } }} />
@@ -398,15 +955,14 @@ export default function SeoAuditSection() {
                   <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
                     Ngày phân tích: {formatVnTime(activeReport.createdAt)}
                   </Typography>
-                  {activeReport.responseMs && (
-                    <>
-                      <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                        Tốc độ phản hồi: {activeReport.responseMs}ms
-                      </Typography>
-                    </>
-                  )}
                 </Box>
+
+                {/* Redirect indicator */}
+                {activeReport.finalUrl && activeReport.finalUrl !== activeReport.url && (
+                  <Alert severity="warning" variant="outlined" sx={{ borderRadius: 3, mb: 3, borderStyle: 'dashed' }}>
+                    ↪ Redirect tới: <strong>{activeReport.finalUrl}</strong>
+                  </Alert>
+                )}
 
                 <Grid container spacing={4} alignItems="center">
                   {/* Total score gauge circle */}
@@ -529,7 +1085,7 @@ export default function SeoAuditSection() {
                 />
 
                 <Chip
-                  label="Chỉ Cảnh Báo (🟡)"
+                  label="Chỉ Cần Cải Thiện (🟡)"
                   clickable
                   onClick={() => setFilterStatus('warn')}
                   variant={filterStatus === 'warn' ? 'filled' : 'outlined'}
@@ -538,31 +1094,24 @@ export default function SeoAuditSection() {
                 />
               </Box>
 
-              {/* Sections & Criteria Render */}
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {visibleSections.map((sec, idx) => {
+              {/* Sections & Nested Criteria Render */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                {visibleSections.map((sec) => {
                   const config = SECTION_CONFIGS[sec.key] || { label: sec.label, icon: '📋' };
-                  
-                  // Calculate local stats inside section (original criteria before filtering)
-                  const originalSec = (activeReport.sections || []).find((s) => s.key === sec.key);
-                  const passCount = originalSec ? originalSec.criteria.filter((c) => c.status === 'pass').length : 0;
-                  const warnCount = originalSec ? originalSec.criteria.filter((c) => c.status === 'warn').length : 0;
-                  const failCount = originalSec ? originalSec.criteria.filter((c) => c.status === 'fail').length : 0;
 
                   return (
                     <Accordion
                       key={sec.key}
-                      defaultExpanded={idx === 0}
+                      defaultExpanded
                       sx={{
-                        borderRadius: 3.5,
-                        mb: 0.5,
+                        borderRadius: 4,
                         '&:before': { display: 'none' },
                         border: '1px solid',
                         borderColor: 'divider',
                         overflow: 'hidden',
                         boxShadow: 'none',
                         '&.Mui-expanded': {
-                          margin: '0 0 4px 0'
+                          margin: '0 0 8px 0'
                         }
                       }}
                     >
@@ -584,71 +1133,204 @@ export default function SeoAuditSection() {
                             </Typography>
                           </Box>
                           
-                          {/* Mini badge counter for status in current section */}
-                          <Box sx={{ display: 'flex', gap: 0.75 }}>
-                            {passCount > 0 && (
-                              <Chip
-                                label={`🟢 ${passCount}`}
-                                size="small"
-                                variant="outlined"
-                                sx={{ height: 18, fontSize: '0.62rem', fontWeight: 800, borderColor: 'rgba(0,184,148,0.2)', color: '#00b894' }}
-                              />
-                            )}
-                            {warnCount > 0 && (
-                              <Chip
-                                label={`🟡 ${warnCount}`}
-                                size="small"
-                                variant="outlined"
-                                sx={{ height: 18, fontSize: '0.62rem', fontWeight: 800, borderColor: 'rgba(241,196,15,0.2)', color: '#f1c40f' }}
-                              />
-                            )}
-                            {failCount > 0 && (
-                              <Chip
-                                label={`🔴 ${failCount}`}
-                                size="small"
-                                variant="outlined"
-                                sx={{ height: 18, fontSize: '0.62rem', fontWeight: 800, borderColor: 'rgba(214,48,49,0.2)', color: '#d63031' }}
-                              />
-                            )}
-                          </Box>
+                          <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary' }}>
+                            {sec.pass}/{sec.total} đạt
+                          </Typography>
                         </Box>
                       </AccordionSummary>
                       
-                      <AccordionDetails sx={{ p: 0 }}>
-                        <TableContainer>
-                          <Table size="medium">
-                            <TableHead>
-                              <TableRow sx={{ bgcolor: 'background.default' }}>
-                                <TableCell sx={{ fontWeight: 800, fontSize: '0.82rem', py: 1.2 }}>Tiêu chí</TableCell>
-                                <TableCell align="right" sx={{ fontWeight: 800, fontSize: '0.82rem', width: 140, py: 1.2 }}>Kết quả</TableCell>
-                              </TableRow>
-                            </TableHead>
-                            
-                            <TableBody>
-                              {sec.criteria.map((c) => (
-                                <TableRow key={c.key} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                                  <TableCell sx={{ py: 1.8 }}>
-                                    <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.25 }}>
+                      <AccordionDetails sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {sec.criteria.map((c) => {
+                          const isUnavailable = c.message && c.message.includes('Không đo được');
+                          const finalStatus = isUnavailable ? 'warn' : c.status;
+                          
+                          const statusBadge = renderStatusBadge(finalStatus);
+                          const renderedBadge = isUnavailable ? (
+                            <Tooltip title="Máy chủ chưa khởi động được trình duyệt Chromium để đo, vui lòng chạy lại sau" arrow>
+                              <span>{statusBadge}</span>
+                            </Tooltip>
+                          ) : statusBadge;
+
+                          return (
+                            <Accordion
+                              key={c.key}
+                              sx={{
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 3,
+                                boxShadow: 'none',
+                                '&:before': { display: 'none' },
+                                '&.Mui-expanded': {
+                                  margin: 0
+                                }
+                              }}
+                            >
+                              <AccordionSummary expandIcon={<KeyboardArrowDownIcon />}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', pr: 1.5, flexWrap: 'wrap', gap: 1.5 }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1, minWidth: 220 }}>
+                                    <Typography sx={{ fontSize: '1.1rem', lineHeight: 1 }}>
+                                      {c.status === 'pass' ? '✅' : c.status === 'warn' ? '⚠️' : '❌'}
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
                                       {c.name}
                                     </Typography>
-                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>
-                                      {c.message}
-                                    </Typography>
-                                  </TableCell>
+                                  </Box>
                                   
-                                  <TableCell align="right" sx={{ py: 1.8 }}>
-                                    {renderStatusBadge(c.status)}
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </TableContainer>
+                                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                                    <Chip
+                                      label={c.importanceLabel}
+                                      size="small"
+                                      sx={{
+                                        height: 18,
+                                        fontSize: '0.62rem',
+                                        fontWeight: 800,
+                                        bgcolor: c.importance === 'critical' ? 'rgba(214,48,49,0.1)' : c.importance === 'medium' ? 'rgba(241,196,15,0.1)' : 'rgba(127,140,141,0.1)',
+                                        color: c.importance === 'critical' ? '#d63031' : c.importance === 'medium' ? '#f1c40f' : '#7f8c8d',
+                                        border: `1px solid ${c.importance === 'critical' ? '#d63031' : c.importance === 'medium' ? '#f1c40f' : '#7f8c8d'}50`
+                                      }}
+                                    />
+                                    <Chip
+                                      label={`Tác động: ${c.weight}%`}
+                                      size="small"
+                                      variant="outlined"
+                                      sx={{ height: 18, fontSize: '0.62rem', fontWeight: 750, color: 'text.secondary' }}
+                                    />
+                                  </Box>
+                                </Box>
+                              </AccordionSummary>
+                              
+                              <AccordionDetails sx={{ pt: 0, px: 3, pb: 3, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                                <Divider sx={{ mb: 1.5 }} />
+
+                                {/* 1. Description */}
+                                <Box>
+                                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 0.5 }}>Mô tả tiêu chuẩn:</Typography>
+                                  <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.5 }}>
+                                    💡 {c.description}
+                                  </Typography>
+                                </Box>
+
+                                {/* 2. Status message */}
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 1 }}>
+                                  {renderedBadge}
+                                  <Typography variant="body2" sx={{ fontWeight: 650 }}>
+                                    {c.message}
+                                  </Typography>
+                                </Box>
+
+                                {/* 3. Evidence */}
+                                {c.evidence !== null && c.evidence !== undefined && renderEvidence(c.key, c.evidence)}
+
+                                {/* 4. Fix Guide */}
+                                {c.fixGuide && (
+                                  <Box sx={{ mt: 2, p: 2.5, bgcolor: '#f8fafc', border: '1px solid', borderColor: 'divider', borderRadius: 3.5 }}>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'success.main', display: 'flex', alignItems: 'center', gap: 0.8, mb: 1.5 }}>
+                                      💡 Hướng dẫn cách sửa đổi
+                                    </Typography>
+                                    
+                                    {c.fixGuide.summary && (
+                                      <Typography variant="body2" sx={{ fontWeight: 700, mb: 1.5, display: 'block' }}>
+                                        {c.fixGuide.summary}
+                                      </Typography>
+                                    )}
+
+                                    {c.fixGuide.example && c.fixGuide.example.trim() !== '' && (
+                                      <Box sx={{ mb: 2 }}>
+                                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 0.5 }}>Mẫu cấu hình hoặc Code tham khảo:</Typography>
+                                        <Box
+                                          component="pre"
+                                          sx={{
+                                            p: 2,
+                                            bgcolor: '#1e293b',
+                                            color: '#f8fafc',
+                                            borderRadius: 2,
+                                            fontFamily: 'monospace',
+                                            fontSize: '0.78rem',
+                                            overflowX: 'auto',
+                                            whiteSpace: 'pre-wrap',
+                                            margin: 0
+                                          }}
+                                        >
+                                          {c.fixGuide.example}
+                                        </Box>
+                                      </Box>
+                                    )}
+
+                                    {c.fixGuide.whereToChange && c.fixGuide.whereToChange.length > 0 && (
+                                      <Box sx={{ mb: 1.5 }}>
+                                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 0.5 }}>Vị trí cần điều chỉnh:</Typography>
+                                        <Box sx={{ pl: 2 }}>
+                                          {c.fixGuide.whereToChange.map((item, idx) => (
+                                            <Typography key={idx} variant="body2" sx={{ fontSize: '0.8rem', lineHeight: 1.5 }}>• {item}</Typography>
+                                          ))}
+                                        </Box>
+                                      </Box>
+                                    )}
+
+                                    {c.fixGuide.commonCauses && c.fixGuide.commonCauses.length > 0 && (
+                                      <Box sx={{ mb: 1.5 }}>
+                                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 0.5 }}>Nguyên nhân thường gặp:</Typography>
+                                        <Box sx={{ pl: 2 }}>
+                                          {c.fixGuide.commonCauses.map((item, idx) => (
+                                            <Typography key={idx} variant="body2" sx={{ fontSize: '0.8rem', lineHeight: 1.5 }}>• {item}</Typography>
+                                          ))}
+                                        </Box>
+                                      </Box>
+                                    )}
+
+                                    {c.fixGuide.bestPractices && c.fixGuide.bestPractices.length > 0 && (
+                                      <Box sx={{ mb: 0.5 }}>
+                                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 0.5 }}>Phương pháp tối ưu khuyên dùng (Best Practices):</Typography>
+                                        <Box sx={{ pl: 2 }}>
+                                          {c.fixGuide.bestPractices.map((item, idx) => (
+                                            <Typography key={idx} variant="body2" sx={{ fontSize: '0.8rem', lineHeight: 1.5 }}>• {item}</Typography>
+                                          ))}
+                                        </Box>
+                                      </Box>
+                                    )}
+                                  </Box>
+                                )}
+                              </AccordionDetails>
+                            </Accordion>
+                          );
+                        })}
                       </AccordionDetails>
                     </Accordion>
                   );
                 })}
               </Box>
+
+              {/* Report Footer with processing latency & Re-run button */}
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2.5,
+                  borderRadius: 4,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: 'background.paper',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: 2
+                }}
+              >
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                  Thời gian phản hồi: {activeReport.responseMs ? (activeReport.responseMs / 1000).toFixed(2) : '0.00'}s
+                </Typography>
+                
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => handleReRunAudit(activeReport.url)}
+                  disabled={isSubmitting}
+                  startIcon={isSubmitting ? <CircularProgress size={14} color="inherit" /> : <RefreshIcon />}
+                  sx={{ textTransform: 'none', borderRadius: 2.5, fontWeight: 700 }}
+                >
+                  🔄 Chạy lại
+                </Button>
+              </Paper>
 
             </Box>
           )}
@@ -721,7 +1403,7 @@ export default function SeoAuditSection() {
             </Box>
           ) : historyData.items.length === 0 ? (
             <Typography variant="caption" color="text.disabled" sx={{ fontStyle: 'italic', textAlign: 'center', py: 8 }}>
-              Chưa có trang web nào được chạy Audit.
+              Chưa có lần audit nào.
             </Typography>
           ) : (
             <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1, gap: 3.5 }}>
