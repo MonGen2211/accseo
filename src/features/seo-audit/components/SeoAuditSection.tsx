@@ -173,16 +173,16 @@ const renderEvidence = (key: string, evidence: any) => {
 
       case 'google_preview': {
         return (
-          <Box sx={{ mt: 1.5, p: 2.5, bgcolor: '#ffffff', border: '1px solid', borderColor: 'divider', borderRadius: 2.5, maxWidth: 600 }}>
+          <Box sx={{ mt: 1.5, p: 2.5, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'action.hover' : '#ffffff', border: '1px solid', borderColor: 'divider', borderRadius: 2.5, maxWidth: 600 }}>
             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 1.5 }}>Xem trước hiển thị Google Tìm Kiếm (SERP Preview):</Typography>
             <Box sx={{ fontFamily: 'Arial, sans-serif', textAlign: 'left' }}>
-              <Typography sx={{ color: '#1a0dab', fontSize: '1.2rem', lineHeight: 1.3, mb: 0.25, '&:hover': { textDecoration: 'underline', cursor: 'pointer' } }}>
+              <Typography sx={{ color: (theme) => theme.palette.mode === 'dark' ? '#8ab4f8' : '#1a0dab', fontSize: '1.2rem', lineHeight: 1.3, mb: 0.25, '&:hover': { textDecoration: 'underline', cursor: 'pointer' } }}>
                 {evidence.title || 'Chưa cấu hình Title'}
               </Typography>
-              <Typography sx={{ color: '#006621', fontSize: '0.85rem', mb: 0.5, wordBreak: 'break-all' }}>
+              <Typography sx={{ color: (theme) => theme.palette.mode === 'dark' ? '#81c784' : '#006621', fontSize: '0.85rem', mb: 0.5, wordBreak: 'break-all' }}>
                 {evidence.url || 'https://example.com'}
               </Typography>
-              <Typography sx={{ color: '#545454', fontSize: '0.82rem', lineHeight: 1.4 }}>
+              <Typography sx={{ color: (theme) => theme.palette.mode === 'dark' ? '#bdc1c6' : '#545454', fontSize: '0.82rem', lineHeight: 1.4 }}>
                 {evidence.description || 'Chưa cấu hình thẻ Meta Description.'}
               </Typography>
             </Box>
@@ -1510,7 +1510,7 @@ export default function SeoAuditSection() {
 
                                 {/* 4. Fix Guide */}
                                 {c.fixGuide && (
-                                  <Box sx={{ mt: 2, p: 2.5, bgcolor: '#f8fafc', border: '1px solid', borderColor: 'divider', borderRadius: 3.5 }}>
+                                  <Box sx={{ mt: 2, p: 2.5, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'action.hover' : '#f8fafc', border: '1px solid', borderColor: 'divider', borderRadius: 3.5 }}>
                                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'success.main', display: 'flex', alignItems: 'center', gap: 0.8, mb: 1.5 }}>
                                       💡 Hướng dẫn cách sửa đổi
                                     </Typography>
