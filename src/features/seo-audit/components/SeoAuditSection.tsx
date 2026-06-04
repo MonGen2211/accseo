@@ -39,6 +39,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import HistoryIcon from '@mui/icons-material/History';
 import SpeedIcon from '@mui/icons-material/Speed';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 
 import { seoAuditService } from '../seoAuditService';
 import type { SeoReport, Criterion } from '../types';
@@ -945,7 +946,67 @@ export default function SeoAuditSection() {
     .filter((sec) => sec.criteria.length > 0);
 
   return (
-    <Grid container spacing={3.5}>
+    <>
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          /* Hide everything by default */
+          body * {
+            visibility: hidden;
+            box-shadow: none !important;
+          }
+          
+          /* Only show the print target and its children */
+          #printable-report, #printable-report * {
+            visibility: visible;
+          }
+          
+          /* Position printable report at the top of the print page */
+          #printable-report {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 20px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          
+          /* Hide non-printable elements within the report */
+          .no-print, 
+          #printable-report button, 
+          #printable-report .MuiButton-root,
+          #printable-report .no-print-element {
+            display: none !important;
+          }
+          
+          /* Force expand collapse/accordions for printing */
+          #printable-report .MuiCollapse-root {
+            display: block !important;
+            height: auto !important;
+            visibility: visible !important;
+          }
+          
+          #printable-report .MuiCollapse-wrapper {
+            display: block !important;
+            visibility: visible !important;
+          }
+          
+          #printable-report .MuiAccordionDetails-root {
+            display: flex !important;
+            visibility: visible !important;
+          }
+          
+          /* Optimize page backgrounds for printing */
+          body {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            background-color: #ffffff !important;
+          }
+        }
+      `}} />
+      <Grid container spacing={3.5}>
       {/* COLUMN A: Input form & Detailed Report */}
       <Grid size={{ xs: 12, lg: 8.5 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5 }}>
@@ -1051,7 +1112,7 @@ export default function SeoAuditSection() {
 
           {/* 3. Detailed Report Render */}
           {activeReport && !isSubmitting && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5 }}>
+            <Box id="printable-report" sx={{ display: 'flex', flexDirection: 'column', gap: 3.5 }}>
               
               {/* Report summary overview card */}
               <Paper
@@ -1064,9 +1125,32 @@ export default function SeoAuditSection() {
                   bgcolor: 'background.paper',
                 }}
               >
-                <Typography variant="h5" sx={{ fontWeight: 800, mb: 1 }}>
-                  🔍 SEO Audit Report
-                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, flexWrap: 'wrap', gap: 2 }}>
+                  <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                    🔍 SEO Audit Report
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    onClick={() => window.print()}
+                    startIcon={<PictureAsPdfIcon />}
+                    sx={{
+                      fontWeight: 700,
+                      borderRadius: 2.5,
+                      textTransform: 'none',
+                      bgcolor: '#00b894',
+                      color: '#ffffff',
+                      boxShadow: '0 4px 12px rgba(0, 184, 148, 0.2)',
+                      '&:hover': {
+                        bgcolor: '#009975',
+                      },
+                      '@media print': {
+                        display: 'none'
+                      }
+                    }}
+                  >
+                    Xuất PDF
+                  </Button>
+                </Box>
                 
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3, flexWrap: 'wrap' }}>
                   <Typography
@@ -1348,7 +1432,7 @@ export default function SeoAuditSection() {
               </Paper>
 
               {/* Filtering bar */}
-              <Box sx={{ display: 'flex', gap: 1.25, mb: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+              <Box className="no-print" sx={{ display: 'flex', gap: 1.25, mb: 1, flexWrap: 'wrap', alignItems: 'center' }}>
                 <Typography variant="body2" sx={{ fontWeight: 800, color: 'text.secondary', mr: 0.5 }}>
                   Lọc theo kết quả kiểm tra:
                 </Typography>
@@ -1471,16 +1555,37 @@ export default function SeoAuditSection() {
                                         height: 18,
                                         fontSize: '0.62rem',
                                         fontWeight: 800,
-                                        bgcolor: c.importance === 'critical' ? 'rgba(214,48,49,0.1)' : c.importance === 'medium' ? 'rgba(241,196,15,0.1)' : 'rgba(127,140,141,0.1)',
-                                        color: c.importance === 'critical' ? '#d63031' : c.importance === 'medium' ? '#f1c40f' : '#7f8c8d',
-                                        border: `1px solid ${c.importance === 'critical' ? '#d63031' : c.importance === 'medium' ? '#f1c40f' : '#7f8c8d'}50`
+                                        bgcolor: (theme) => {
+                                          const isDark = theme.palette.mode === 'dark';
+                                          if (c.importance === 'critical') return isDark ? 'rgba(255, 118, 117, 0.15)' : 'rgba(214, 48, 49, 0.08)';
+                                          if (c.importance === 'medium') return isDark ? 'rgba(254, 202, 87, 0.15)' : 'rgba(217, 119, 6, 0.08)';
+                                          return isDark ? 'rgba(148, 163, 184, 0.15)' : 'rgba(100, 116, 139, 0.08)';
+                                        },
+                                        color: (theme) => {
+                                          const isDark = theme.palette.mode === 'dark';
+                                          if (c.importance === 'critical') return isDark ? '#ff7675' : '#d63031';
+                                          if (c.importance === 'medium') return isDark ? '#fbc531' : '#d97706';
+                                          return isDark ? '#cbd5e1' : '#475569';
+                                        },
+                                        border: (theme) => {
+                                          const isDark = theme.palette.mode === 'dark';
+                                          if (c.importance === 'critical') return `1px solid ${isDark ? 'rgba(255, 118, 117, 0.3)' : 'rgba(214, 48, 49, 0.2)'}`;
+                                          if (c.importance === 'medium') return `1px solid ${isDark ? 'rgba(254, 202, 87, 0.3)' : 'rgba(217, 119, 6, 0.2)'}`;
+                                          return `1px solid ${isDark ? 'rgba(203, 213, 225, 0.3)' : 'rgba(100, 116, 139, 0.2)'}`;
+                                        }
                                       }}
                                     />
                                     <Chip
                                       label={`Tác động: ${c.weight}%`}
                                       size="small"
-                                      variant="outlined"
-                                      sx={{ height: 18, fontSize: '0.62rem', fontWeight: 750, color: 'text.secondary' }}
+                                      sx={{
+                                        height: 18,
+                                        fontSize: '0.62rem',
+                                        fontWeight: 800,
+                                        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 206, 201, 0.15)' : 'rgba(9, 132, 227, 0.08)',
+                                        color: (theme) => theme.palette.mode === 'dark' ? '#81ecec' : '#0984e3',
+                                        border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(0, 206, 201, 0.3)' : 'rgba(9, 132, 227, 0.2)'}`,
+                                      }}
                                     />
                                   </Box>
                                 </Box>
@@ -1608,6 +1713,7 @@ export default function SeoAuditSection() {
                 </Typography>
                 
                 <Button
+                  className="no-print"
                   variant="outlined"
                   size="small"
                   onClick={() => handleReRunAudit(activeReport.url)}
@@ -1776,5 +1882,6 @@ export default function SeoAuditSection() {
         </Paper>
       </Grid>
     </Grid>
+    </>
   );
 }
