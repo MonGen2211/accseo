@@ -1,37 +1,37 @@
-export interface AuditCategory {
+export interface Criterion {
+  key: string;
+  name: string;
+  status: 'pass' | 'warn' | 'fail';
+  message: string;
+}
+
+export interface ReportSection {
   key: string;
   label: string;
+  criteria: Criterion[];
+}
+
+export interface ReportSummaryStats {
   score: number;
-  weight: number;
-  findings: string;
+  pass: number;
+  warn: number;
+  fail: number;
+  total: number;
 }
 
-export interface AuditIssue {
-  category: string;
-  severity: 'critical' | 'high' | 'medium' | 'low';
-  title: string;
-  detail: string;
-  recommendation: string;
-}
-
-export interface AuditResult {
+export interface SeoReport {
   id: string;
   url: string;
-  healthScore: number;
-  businessTypeGuess: string;
-  summary: string;
-  categories: AuditCategory[];
-  issues: AuditIssue[];
-  quickWins: string[];
-  notAssessed: string[];
-  scrapeMethod: string;
-  aiProvider: string;
-  aiModel: string;
+  finalUrl: string;
+  score: number;
+  summary: ReportSummaryStats;
+  sections?: ReportSection[];
+  responseMs?: number;
   createdAt: string;
 }
 
 export interface SeoAuditHistoryResponse {
-  items: AuditResult[];
+  items: SeoReport[];
   total: number;
   page: number;
   limit: number;

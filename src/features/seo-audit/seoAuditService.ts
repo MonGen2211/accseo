@@ -1,9 +1,9 @@
 import api from '../../utils/api';
-import type { AuditResult, SeoAuditHistoryResponse } from './types';
+import type { SeoReport, SeoAuditHistoryResponse } from './types';
 
 export const seoAuditService = {
-  runAudit: async (url: string): Promise<AuditResult> => {
-    // Audit API can take up to 45 seconds, axios timeout is set to 360s, so it is safe.
+  runAudit: async (url: string): Promise<SeoReport> => {
+    // Audit API can take 5 to 35 seconds. Client timeout is set high.
     const res = await api.post<any>('/seo-audit', { url });
     return res.data.data;
   },
@@ -13,7 +13,7 @@ export const seoAuditService = {
     return res.data.data;
   },
 
-  getAuditDetail: async (id: string): Promise<AuditResult> => {
+  getAuditDetail: async (id: string): Promise<SeoReport> => {
     const res = await api.get<any>(`/seo-audit/${id}`);
     return res.data.data;
   },
