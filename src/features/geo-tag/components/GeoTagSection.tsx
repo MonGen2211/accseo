@@ -170,6 +170,18 @@ const stringToUtf16Bytes = (str: string): number[] => {
   return bytes;
 };
 
+// Helper to convert Unicode strings to a Latin1 binary string (for Ascii EXIF tags)
+const toUtf8BinaryString = (str: string): string => {
+  if (!str) return '';
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(str);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return binary;
+};
+
 // Decimal to DMS conversion
 const decimalToDMS = (val: number, refType: 'lat' | 'lng'): string => {
   const absolute = Math.abs(val);
@@ -462,14 +474,14 @@ export default function GeoTagSection() {
         const commentText = comments + (authorInComment && author ? ` | Author: ${author}` : '');
 
         if (titleText) {
-          zeroth[piexif.ImageIFD.ImageDescription] = titleText;
+          zeroth[piexif.ImageIFD.ImageDescription] = toUtf8BinaryString(titleText);
           zeroth[piexif.ImageIFD.XPTitle] = stringToUtf16Bytes(titleText);
         }
         if (author) {
-          zeroth[piexif.ImageIFD.Artist] = author;
+          zeroth[piexif.ImageIFD.Artist] = toUtf8BinaryString(author);
         }
         if (copyright) {
-          zeroth[piexif.ImageIFD.Copyright] = copyright;
+          zeroth[piexif.ImageIFD.Copyright] = toUtf8BinaryString(copyright);
         }
         if (subject) {
           zeroth[piexif.ImageIFD.XPSubject] = stringToUtf16Bytes(subject);
@@ -479,23 +491,23 @@ export default function GeoTagSection() {
         }
         if (commentText) {
           zeroth[piexif.ImageIFD.XPComment] = stringToUtf16Bytes(commentText);
-          exif[piexif.ExifIFD.UserComment] = commentText;
+          exif[piexif.ExifIFD.UserComment] = toUtf8BinaryString(commentText);
         }
         if (cameraMake) {
-          zeroth[piexif.ImageIFD.Make] = cameraMake;
+          zeroth[piexif.ImageIFD.Make] = toUtf8BinaryString(cameraMake);
         }
         if (cameraModel) {
-          zeroth[piexif.ImageIFD.Model] = cameraModel;
+          zeroth[piexif.ImageIFD.Model] = toUtf8BinaryString(cameraModel);
         }
         if (editingSoftware) {
-          zeroth[piexif.ImageIFD.Software] = editingSoftware;
+          zeroth[piexif.ImageIFD.Software] = toUtf8BinaryString(editingSoftware);
         }
         if (rating5Stars) {
           zeroth[piexif.ImageIFD.Rating] = 5;
         }
         if (dateTaken) {
           const formattedDate = dateTaken.replace(/-/g, ':').replace('T', ' ') + ':00';
-          exif[piexif.ExifIFD.DateTimeOriginal] = formattedDate;
+          exif[piexif.ExifIFD.DateTimeOriginal] = toUtf8BinaryString(formattedDate);
         }
 
         const exifObj = {
