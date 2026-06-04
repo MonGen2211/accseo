@@ -612,6 +612,140 @@ const renderEvidence = (key: string, evidence: any) => {
   }
 };
 
+// Metric Card interface and renderer
+interface MetricCardProps {
+  title: string;
+  icon: string;
+  value: string;
+  statusLabel: string;
+  statusColor: string;
+  isUnavailable: boolean;
+}
+
+const MetricCard = ({ title, icon, value, statusLabel, statusColor, isUnavailable }: MetricCardProps) => {
+  return (
+    <Paper
+      variant="outlined"
+      sx={{
+        p: 2,
+        borderRadius: 3.5,
+        bgcolor: isUnavailable ? 'action.hover' : 'transparent',
+        borderColor: isUnavailable
+          ? 'divider'
+          : statusColor === 'text.primary' || statusColor === 'text.secondary'
+          ? 'divider'
+          : `${statusColor}40`,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        transition: 'all 0.2s',
+        '&:hover': {
+          boxShadow: isUnavailable ? 'none' : `0 4px 12px ${statusColor}10`,
+          borderColor: isUnavailable
+            ? 'divider'
+            : statusColor === 'text.primary' || statusColor === 'text.secondary'
+            ? 'primary.main'
+            : statusColor,
+        },
+      }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 1 }}>
+        <Typography variant="body2" sx={{ fontSize: '1.1rem', lineHeight: 1 }}>
+          {icon}
+        </Typography>
+        <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', letterSpacing: 0.2 }}>
+          {title}
+        </Typography>
+      </Box>
+      <Box>
+        <Typography
+          variant="h5"
+          sx={{
+            fontWeight: 900,
+            color: isUnavailable
+              ? 'text.disabled'
+              : statusColor === 'text.secondary'
+              ? 'text.primary'
+              : statusColor,
+            mb: 0.5,
+          }}
+        >
+          {value}
+        </Typography>
+        <Typography
+          variant="caption"
+          sx={{
+            display: 'block',
+            fontWeight: 700,
+            color: isUnavailable
+              ? 'text.disabled'
+              : statusColor === 'text.primary' || statusColor === 'text.secondary'
+              ? 'text.secondary'
+              : statusColor,
+            fontStyle: isUnavailable ? 'italic' : 'normal',
+          }}
+        >
+          {statusLabel}
+        </Typography>
+      </Box>
+    </Paper>
+  );
+};
+
+const getMetricStatus = (key: string, val: number | null | undefined) => {
+  if (val === null || val === undefined) {
+    return { label: 'không đo được', color: 'text.secondary', text: '—' };
+  }
+
+  switch (key) {
+    case 'ttfb': {
+      const s = val / 1000;
+      const text = `${s.toFixed(2)}s`;
+      if (s <= 0.8) return { label: 'Tốt', color: '#00b894', text };
+      if (s <= 1.8) return { label: 'Cần cải thiện', color: '#f1c40f', text };
+      return { label: 'Kém', color: '#d63031', text };
+    }
+    case 'fcp': {
+      const s = val / 1000;
+      const text = `${s.toFixed(2)}s`;
+      if (s <= 1.8) return { label: 'Tốt', color: '#00b894', text };
+      if (s <= 3.0) return { label: 'Cần cải thiện', color: '#f1c40f', text };
+      return { label: 'Kém', color: '#d63031', text };
+    }
+    case 'lcp': {
+      const s = val / 1000;
+      const text = `${s.toFixed(2)}s`;
+      if (s <= 2.5) return { label: 'Tốt', color: '#00b894', text };
+      if (s <= 4.0) return { label: 'Cần cải thiện', color: '#f1c40f', text };
+      return { label: 'Kém', color: '#d63031', text };
+    }
+    case 'cls': {
+      const text = val.toFixed(4);
+      if (val <= 0.1) return { label: 'Tốt', color: '#00b894', text };
+      if (val <= 0.25) return { label: 'Cần cải thiện', color: '#f1c40f', text };
+      return { label: 'Kém', color: '#d63031', text };
+    }
+    case 'domNodes': {
+      const text = val.toLocaleString('en-US');
+      if (val < 1500) return { label: 'Tốt (ngưỡng < 1,500)', color: '#00b894', text };
+      if (val <= 3000) return { label: 'Cần cải thiện', color: '#f1c40f', text };
+      return { label: 'Kém', color: '#d63031', text };
+    }
+    case 'load': {
+      return { label: 'Thời gian tải', color: 'text.primary', text: `${(val / 1000).toFixed(2)}s` };
+    }
+    case 'requests': {
+      return { label: 'Số yêu cầu', color: 'text.primary', text: val.toString() };
+    }
+    case 'bytes': {
+      return { label: 'Tổng dung lượng', color: 'text.primary', text: `${(val / 1048576).toFixed(2)} MB` };
+    }
+    default:
+      return { label: '', color: 'text.primary', text: String(val) };
+  }
+};
+
 export default function SeoAuditSection() {
   const { showToast } = useToastify();
 
@@ -1064,6 +1198,153 @@ export default function SeoAuditSection() {
                     </Typography>
                   </Grid>
                 </Grid>
+
+                {activeReport.metrics && (
+                  <>
+                    <Divider sx={{ my: 3.5 }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 950, mb: 2, color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 1 }}>
+                      📊 Các chỉ số hiệu năng (Core Web Vitals & Page Metrics)
+                    </Typography>
+                    <Grid container spacing={2}>
+                      <Grid size={{ xs: 6, sm: 3 }}>
+                        {(() => {
+                          const m = activeReport.metrics.ttfbMs;
+                          const isNull = m === null || m === undefined;
+                          const status = getMetricStatus('ttfb', m);
+                          return (
+                            <MetricCard
+                              title="TTFB"
+                              icon="⏱️"
+                              value={status.text}
+                              statusLabel={status.label}
+                              statusColor={status.color}
+                              isUnavailable={isNull}
+                            />
+                          );
+                        })()}
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 3 }}>
+                        {(() => {
+                          const m = activeReport.metrics.fcpMs;
+                          const isNull = m === null || m === undefined;
+                          const status = getMetricStatus('fcp', m);
+                          return (
+                            <MetricCard
+                              title="FCP"
+                              icon="🎨"
+                              value={status.text}
+                              statusLabel={status.label}
+                              statusColor={status.color}
+                              isUnavailable={isNull}
+                            />
+                          );
+                        })()}
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 3 }}>
+                        {(() => {
+                          const m = activeReport.metrics.lcpMs;
+                          const isNull = m === null || m === undefined;
+                          const status = getMetricStatus('lcp', m);
+                          return (
+                            <MetricCard
+                              title="LCP"
+                              icon="📐"
+                              value={status.text}
+                              statusLabel={status.label}
+                              statusColor={status.color}
+                              isUnavailable={isNull}
+                            />
+                          );
+                        })()}
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 3 }}>
+                        {(() => {
+                          const m = activeReport.metrics.cls;
+                          const isNull = m === null || m === undefined;
+                          const status = getMetricStatus('cls', m);
+                          return (
+                            <MetricCard
+                              title="CLS"
+                              icon="📊"
+                              value={status.text}
+                              statusLabel={status.label}
+                              statusColor={status.color}
+                              isUnavailable={isNull}
+                            />
+                          );
+                        })()}
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 3 }}>
+                        {(() => {
+                          const m = activeReport.metrics.loadMs;
+                          const isNull = m === null || m === undefined;
+                          const status = getMetricStatus('load', m);
+                          return (
+                            <MetricCard
+                              title="Tải trang"
+                              icon="⚡"
+                              value={status.text}
+                              statusLabel={status.label}
+                              statusColor={status.color}
+                              isUnavailable={isNull}
+                            />
+                          );
+                        })()}
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 3 }}>
+                        {(() => {
+                          const m = activeReport.metrics.totalRequests;
+                          const isNull = m === null || m === undefined;
+                          const status = getMetricStatus('requests', m);
+                          return (
+                            <MetricCard
+                              title="HTTP Requests"
+                              icon="📦"
+                              value={isNull ? '—' : status.text}
+                              statusLabel={isNull ? 'không đo được' : 'Số yêu cầu'}
+                              statusColor={status.color}
+                              isUnavailable={isNull}
+                            />
+                          );
+                        })()}
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 3 }}>
+                        {(() => {
+                          const m = activeReport.metrics.totalBytes;
+                          const isNull = m === null || m === undefined;
+                          const status = getMetricStatus('bytes', m);
+                          return (
+                            <MetricCard
+                              title="Dung lượng"
+                              icon="💾"
+                              value={isNull ? '—' : status.text}
+                              statusLabel={isNull ? 'không đo được' : 'Tổng dung lượng'}
+                              statusColor={status.color}
+                              isUnavailable={isNull}
+                            />
+                          );
+                        })()}
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 3 }}>
+                        {(() => {
+                          const m = activeReport.metrics.domNodes;
+                          const isNull = m === null || m === undefined;
+                          const status = getMetricStatus('domNodes', m);
+                          return (
+                            <MetricCard
+                              title="DOM Nodes"
+                              icon="🏗️"
+                              value={isNull ? '—' : status.text}
+                              statusLabel={isNull ? 'không đo được' : status.label}
+                              statusColor={status.color}
+                              isUnavailable={isNull}
+                            />
+                          );
+                        })()}
+                      </Grid>
+                    </Grid>
+                  </>
+                )}
               </Paper>
 
               {/* Filtering bar */}

@@ -38,6 +38,17 @@ export interface ReportSummaryStats {
   total: number;
 }
 
+export interface SeoReportMetrics {
+  ttfbMs: number | null;
+  fcpMs: number | null;
+  lcpMs: number | null;
+  cls: number | null;
+  loadMs: number | null;
+  totalRequests: number;
+  totalBytes: number;
+  domNodes: number;
+}
+
 export interface SeoReport {
   id: string;
   url: string;
@@ -45,6 +56,7 @@ export interface SeoReport {
   score: number;
   summary: ReportSummaryStats;
   sections?: ReportSection[];
+  metrics?: SeoReportMetrics;
   responseMs?: number;
   createdAt: string;
 }
