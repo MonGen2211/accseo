@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import useSWR from 'swr';
 import {
   Box,
@@ -21,6 +21,12 @@ import {
   Grid,
   Skeleton,
   LinearProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from '@mui/material';
 
 // Icons
@@ -35,7 +41,7 @@ import HistoryIcon from '@mui/icons-material/History';
 import SpeedIcon from '@mui/icons-material/Speed';
 
 import { seoAuditService } from '../seoAuditService';
-import type { SeoReport, Criterion, ReportSection } from '../types';
+import type { SeoReport, Criterion } from '../types';
 import { useToastify } from '../../../components/Toastify';
 
 // Vietnamese Time Formatter
@@ -482,7 +488,7 @@ const renderEvidence = (key: string, evidence: any) => {
             {/* Legend grid */}
             <Grid container spacing={1.5}>
               {categories.map((c, idx) => (
-                <Grid item xs={6} sm={4} key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Grid size={{ xs: 6, sm: 4 }} key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: c.color, flexShrink: 0 }} />
                   <Typography variant="caption" sx={{ fontWeight: 650, color: 'text.secondary' }}>
                     {c.label}: {formatBytes(c.val)}
@@ -807,7 +813,7 @@ export default function SeoAuditSection() {
   return (
     <Grid container spacing={3.5}>
       {/* COLUMN A: Input form & Detailed Report */}
-      <Grid item xs={12} lg={8.5}>
+      <Grid size={{ xs: 12, lg: 8.5 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5 }}>
           
           {/* 1. URL Input Form Panel */}
@@ -964,9 +970,9 @@ export default function SeoAuditSection() {
                   </Alert>
                 )}
 
-                <Grid container spacing={4} alignItems="center">
+                <Grid container spacing={4} sx={{ alignItems: 'center' }}>
                   {/* Total score gauge circle */}
-                  <Grid item xs={12} md={4} sx={{ display: 'flex', justifyContent: 'center' }}>
+                  <Grid size={{ xs: 12, md: 4 }} sx={{ display: 'flex', justifyContent: 'center' }}>
                     <Box
                       sx={{
                         width: 150,
@@ -990,9 +996,9 @@ export default function SeoAuditSection() {
                   </Grid>
 
                   {/* 3 counter blocks */}
-                  <Grid item xs={12} md={8}>
+                  <Grid size={{ xs: 12, md: 8 }}>
                     <Grid container spacing={2}>
-                      <Grid item xs={4}>
+                      <Grid size={{ xs: 4 }}>
                         <Paper
                           variant="outlined"
                           sx={{
@@ -1012,7 +1018,7 @@ export default function SeoAuditSection() {
                         </Paper>
                       </Grid>
 
-                      <Grid item xs={4}>
+                      <Grid size={{ xs: 4 }}>
                         <Paper
                           variant="outlined"
                           sx={{
@@ -1032,7 +1038,7 @@ export default function SeoAuditSection() {
                         </Paper>
                       </Grid>
 
-                      <Grid item xs={4}>
+                      <Grid size={{ xs: 4 }}>
                         <Paper
                           variant="outlined"
                           sx={{
@@ -1366,7 +1372,7 @@ export default function SeoAuditSection() {
       </Grid>
 
       {/* COLUMN B: Right Sidebar History Panel */}
-      <Grid item xs={12} lg={3.5}>
+      <Grid size={{ xs: 12, lg: 3.5 }}>
         <Paper
           elevation={0}
           sx={{
