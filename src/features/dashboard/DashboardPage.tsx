@@ -9,8 +9,10 @@ import UrlScraperSection from '../url-scraper/components/UrlScraperSection';
 import ContentAnalysisSection from '../content-analysis/components/ContentAnalysisSection';
 import ForceIndexUnifiedSection from '../force-index/components/ForceIndexUnifiedSection';
 import SeoAuditSection from '../seo-audit/components/SeoAuditSection';
+import GeoTagSection from '../geo-tag/components/GeoTagSection';
 import AndroidIcon from '@mui/icons-material/Android';
 import LinkIcon from '@mui/icons-material/Link';
+import PlaceIcon from '@mui/icons-material/Place';
 import PsychologyIcon from '@mui/icons-material/Psychology';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
@@ -485,6 +487,7 @@ export default function DashboardPage() {
     { id: 'content-analysis', label: 'Phân tích nội dung', icon: <PsychologyIcon sx={{ fontSize: 20 }} /> },
     { id: 'indexed', label: 'Ép Index', icon: <AndroidIcon sx={{ fontSize: 20 }} /> },
     { id: 'seo-audit', label: 'SEO Audit', icon: <AssessmentOutlinedIcon sx={{ fontSize: 20 }} /> },
+    { id: 'geo-tag', label: 'Geo Tag Ảnh', icon: <PlaceIcon sx={{ fontSize: 20 }} /> },
   ];
 
   return (
@@ -836,6 +839,10 @@ export default function DashboardPage() {
 
       <Box sx={{ display: activeTab === 'seo-audit' ? 'block' : 'none', mt: 1 }}>
         <SeoAuditSection />
+      </Box>
+
+      <Box sx={{ display: activeTab === 'geo-tag' ? 'block' : 'none', mt: 1 }}>
+        <GeoTagSection />
       </Box>
 
     </Box>
