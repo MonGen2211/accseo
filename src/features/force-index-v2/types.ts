@@ -18,6 +18,19 @@ export interface LinkHubItem {
   lastIndexCheckAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  aiContent?: {
+    title: string;
+    metaDescription: string;
+    intro: string;
+    sections: Array<{
+      heading: string;
+      paragraphs: string[];
+    }>;
+    anchorText: string;
+    tags: string[];
+  } | null;
+  aiContentAt?: string | null;
+  aiModel?: string | null;
 }
 
 export interface LinkHubVisit {
@@ -46,7 +59,7 @@ export interface LinkHubSubmitResponse {
     url: string;
     slug: string;
     hubUrl: string;
-    reused: boolean;
+    replaced: boolean;
   }>;
   queueSize: number;
   note?: string;

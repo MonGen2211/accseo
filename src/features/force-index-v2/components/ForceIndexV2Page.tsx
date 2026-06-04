@@ -44,9 +44,12 @@ import SearchIcon from '@mui/icons-material/Search';
 import HubIcon from '@mui/icons-material/Hub';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import ErrorOutlinedIcon from '@mui/icons-material/ErrorOutlined';
+import ArticleIcon from '@mui/icons-material/Article';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import DoneIcon from '@mui/icons-material/Done';
 
 import { forceIndexV2Service } from '../forceIndexV2Service';
-import type { LinkHubItem, LinkHubVisit } from '../types';
+import type { LinkHubItem, LinkHubVisit, LinkHubSubmitResponse } from '../types';
 import { useToastify } from '../../../components/Toastify';
 
 // format time GMT+7 DD/MM/YYYY HH:mm
@@ -74,7 +77,11 @@ const getHostname = (urlStr: string): string => {
   }
 };
 
-export default function ForceIndexV2Page() {
+interface ForceIndexV2PageProps {
+  isActive?: boolean;
+}
+
+export default function ForceIndexV2Page({ isActive = true }: ForceIndexV2PageProps) {
   const { showToast } = useToastify();
 
   // Input states
@@ -82,6 +89,7 @@ export default function ForceIndexV2Page() {
   const [topicInput, setTopicInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [submitResult, setSubmitResult] = useState<LinkHubSubmitResponse | null>(null);
 
   // Table & Engine states
   const [engine, setEngine] = useState<'local' | 'apify'>('local');
@@ -89,6 +97,7 @@ export default function ForceIndexV2Page() {
   const [searchText, setSearchText] = useState('');
   const [isCheckingIndex, setIsCheckingIndex] = useState(false);
   const [checkProgress, setCheckProgress] = useState('');
+  const [selectedAiContent, setSelectedAiContent] = useState<LinkHubItem['aiContent']>(null);
 
   // Detail Modal states
   const [selectedLink, setSelectedLink] = useState<LinkHubItem | null>(null);
@@ -119,6 +128,7 @@ export default function ForceIndexV2Page() {
 
   // Auto-refresh stats and list every 30s
   useEffect(() => {
+    if (!isActive) return;
     const interval = setInterval(() => {
       if (document.visibilityState === 'visible') {
         mutateStats();
@@ -127,7 +137,7 @@ export default function ForceIndexV2Page() {
     }, 30000);
 
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === 'visible' && isActive) {
         mutateStats();
         mutateList();
       }
@@ -138,7 +148,15 @@ export default function ForceIndexV2Page() {
       clearInterval(interval);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [mutateStats, mutateList]);
+  }, [mutateStats, mutateList, isActive]);
+
+  // Refresh immediately when tab becomes active
+  useEffect(() => {
+    if (isActive) {
+      mutateStats();
+      mutateList();
+    }
+  }, [isActive, mutateStats, mutateList]);
 
   // Handler for Submit Form
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -178,11 +196,36 @@ export default function ForceIndexV2Page() {
     setSubmitError('');
     setIsSubmitting(true);
 
+    setSubmitResult(null);
     try {
       const res = await forceIndexV2Service.submitUrls(urls, topicInput.trim() || undefined);
       showToast(`Đã xếp hàng (queue) ${res.count} URL thành công!`, 'success');
       setUrlsInput('');
       setTopicInput('');
+      setSubmitResult(res);
+
+      // Sync open details dialog if the target url was resubmitted
+      if (selectedLink) {
+        const matched = res.items?.find((item) => item.url === selectedLink.targetUrl);
+        if (matched) {
+          setSelectedLink((prev) => prev ? {
+            ...prev,
+            slug: matched.slug,
+            hubUrl: matched.hubUrl,
+            status: 'pending',
+            crawlVisits: 0,
+            lastCrawlAt: null,
+            indexingApiResponse: null,
+            indexingApiAccount: null,
+            indexingApiCalledAt: null,
+            aiContent: null,
+            aiContentAt: null,
+            aiModel: null,
+          } : null);
+          setVisitsList([]);
+        }
+      }
+
       // Trigger update
       mutateStats();
       mutateList();
@@ -400,10 +443,87 @@ export default function ForceIndexV2Page() {
             </Grid>
           </Grid>
 
+          {/* Note message */}
+          <Alert
+            severity="info"
+            icon={<InfoOutlinedIcon />}
+            sx={{
+              borderRadius: 3.5,
+              mt: 1.5,
+            }}
+          >
+            <b>Chú thích:</b> Gửi lại một URL đã có trong danh sách sẽ <b>thay thế hub cũ bằng hub mới hoàn toàn</b> (slug + hubUrl mới). Mỗi lần gửi lại tốn 1 lượt gọi AI + 1 quota Indexing API và toàn bộ nhật ký/visits của hub cũ sẽ bị xóa.
+          </Alert>
+
           {submitError && (
-            <Alert severity="error" sx={{ borderRadius: 3 }}>
+            <Alert severity="error" sx={{ borderRadius: 3.5, mt: 1.5 }}>
               {submitError}
             </Alert>
+          )}
+
+          {/* Submission Result Box */}
+          {submitResult && (
+            <Fade in={!!submitResult}>
+              <Box 
+                sx={{ 
+                  mt: 2, 
+                  p: 2.5, 
+                  border: '1.5px solid #00b894', 
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.05)' : '#f0fdf4', 
+                  borderRadius: 3.5 
+                }}
+              >
+                <Typography variant="subtitle2" sx={{ color: '#009975', fontWeight: 850, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <DoneIcon sx={{ fontSize: 18 }} /> Kết quả kích hoạt chiến dịch Link Hub V2 thành công!
+                </Typography>
+                <Typography variant="body2" sx={{ fontSize: '0.85rem', color: 'text.secondary', mb: 2 }}>
+                  • Số URL được đưa vào hàng đợi xử lý: <b>{submitResult.count} URL</b> <br />
+                  • Kích thước hàng đợi hiện tại: <b>{submitResult.queueSize}</b> <br />
+                  {submitResult.note && <>• Lưu ý: {submitResult.note}</>}
+                </Typography>
+                
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
+                  {submitResult.items.map((item, idx) => (
+                    <Box 
+                      key={idx} 
+                      sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'space-between', 
+                        bgcolor: 'background.paper', 
+                        p: 1.5, 
+                        borderRadius: 2.5, 
+                        border: '1px solid', 
+                        borderColor: 'divider' 
+                      }}
+                    >
+                      <Box sx={{ minWidth: 0, flex: 1, pr: 2 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 700, wordBreak: 'break-all' }}>
+                          {item.url}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, wordBreak: 'break-all', fontFamily: 'monospace' }}>
+                          Hub URL: <a href={item.hubUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#00b894', textDecoration: 'underline' }}>{item.hubUrl}</a>
+                        </Typography>
+                      </Box>
+                      
+                      <Chip
+                        label={item.replaced ? '🔄 Đã thay hub mới' : '🆕 Hub mới'}
+                        size="small"
+                        sx={{
+                          fontWeight: 800,
+                          borderRadius: 2,
+                          bgcolor: item.replaced ? 'rgba(9, 132, 227, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                          color: item.replaced ? '#0984e3' : '#10b981',
+                          border: '1px solid',
+                          borderColor: item.replaced ? 'rgba(9, 132, 227, 0.3)' : 'rgba(16, 185, 129, 0.3)',
+                          px: 1,
+                        }}
+                      />
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            </Fade>
           )}
         </Box>
       </Paper>
@@ -632,11 +752,12 @@ export default function ForceIndexV2Page() {
             <Table size="small">
               <TableHead sx={{ bgcolor: 'action.hover' }}>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 800, py: 1.5 }}>Target URL</TableCell>
+                  <TableCell sx={{ fontWeight: 800, py: 1.5 }}>Tiêu đề & Target URL</TableCell>
                   <TableCell sx={{ fontWeight: 800, py: 1.5 }}>Anchor Text</TableCell>
                   <TableCell sx={{ fontWeight: 800, py: 1.5 }}>Chủ đề (Topic)</TableCell>
                   <TableCell sx={{ fontWeight: 800, py: 1.5 }}>Status</TableCell>
                   <TableCell sx={{ fontWeight: 800, py: 1.5 }}>Indexed Status</TableCell>
+                  <TableCell sx={{ fontWeight: 800, py: 1.5 }}>Bài AI</TableCell>
                   <TableCell sx={{ fontWeight: 800, py: 1.5, textAlign: 'center' }}>Crawl Visits</TableCell>
                   <TableCell sx={{ fontWeight: 800, py: 1.5 }}>Lần crawl cuối</TableCell>
                   <TableCell sx={{ fontWeight: 800, py: 1.5 }}>Ngày tạo</TableCell>
@@ -646,24 +767,35 @@ export default function ForceIndexV2Page() {
               <TableBody>
                 {filteredItems.map((item) => (
                   <TableRow key={item._id} hover sx={{ '&:hover': { bgcolor: 'action.hover' } }}>
-                    {/* Target URL */}
-                    <TableCell sx={{ py: 1.2, maxWidth: 220 }}>
-                      <Tooltip title={item.targetUrl} arrow>
-                        <a
-                          href={item.targetUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            color: '#00b894',
-                            textDecoration: 'underline',
-                            fontWeight: 650,
-                            wordBreak: 'break-all',
-                            display: 'inline-block'
-                          }}
-                        >
-                          {getHostname(item.targetUrl)}
-                        </a>
-                      </Tooltip>
+                    {/* Target URL with AI Title if available */}
+                    <TableCell sx={{ py: 1.2, maxWidth: 280 }}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                        {item.aiContent?.title ? (
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary', display: 'block', lineHeight: 1.2 }}>
+                            {item.aiContent.title}
+                          </Typography>
+                        ) : null}
+                        <Tooltip title={item.targetUrl} arrow>
+                          <a
+                            href={item.targetUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              color: '#00b894',
+                              textDecoration: 'underline',
+                              fontWeight: 600,
+                              fontSize: '0.8rem',
+                              wordBreak: 'break-all',
+                              display: 'inline-block'
+                            }}
+                          >
+                            {item.targetUrl}
+                          </a>
+                        </Tooltip>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.72rem', fontFamily: 'monospace' }}>
+                          Slug: {item.slug}
+                        </Typography>
+                      </Box>
                     </TableCell>
 
                     {/* Anchor Text */}
@@ -694,6 +826,47 @@ export default function ForceIndexV2Page() {
                       {getIndexedBadge(item.indexed, item.indexedAt)}
                     </TableCell>
 
+                    {/* AI Content Status */}
+                    <TableCell sx={{ py: 1.2 }}>
+                      {item.aiContent ? (
+                        <Tooltip 
+                          title={
+                            <Box sx={{ p: 0.5 }}>
+                              <Typography variant="caption" display="block">Model: {item.aiModel || '—'}</Typography>
+                              <Typography variant="caption" display="block">Tạo lúc: {formatVnTime(item.aiContentAt)}</Typography>
+                            </Box>
+                          } 
+                          arrow
+                        >
+                          <Chip 
+                            icon={<AutoAwesomeIcon sx={{ fontSize: 13, color: '#fff !important' }} />}
+                            label="Đã tạo" 
+                            size="small" 
+                            sx={{ 
+                              bgcolor: 'rgba(16, 185, 129, 0.15)', 
+                              color: '#10b981', 
+                              border: '1px solid rgba(16, 185, 129, 0.3)', 
+                              fontWeight: 800, 
+                              borderRadius: 2 
+                            }} 
+                          />
+                        </Tooltip>
+                      ) : (
+                        <Chip 
+                          icon={<CircularProgress size={10} color="inherit" sx={{ mr: 0.5 }} />}
+                          label="Đang tạo..." 
+                          size="small" 
+                          sx={{ 
+                            bgcolor: 'rgba(245, 158, 11, 0.15)', 
+                            color: '#f59e0b', 
+                            border: '1px solid rgba(245, 158, 11, 0.3)', 
+                            fontWeight: 800, 
+                            borderRadius: 2 
+                          }} 
+                        />
+                      )}
+                    </TableCell>
+
                     {/* Crawl visits */}
                     <TableCell sx={{ py: 1.2, textAlign: 'center', fontWeight: 800, color: item.crawlVisits > 0 ? 'primary.main' : 'text.disabled' }}>
                       {item.crawlVisits}
@@ -711,7 +884,29 @@ export default function ForceIndexV2Page() {
 
                     {/* Actions */}
                     <TableCell sx={{ py: 1.2, textAlign: 'center' }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, flexWrap: 'nowrap' }}>
+                        {item.aiContent ? (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => setSelectedAiContent(item.aiContent)}
+                            startIcon={<ArticleIcon sx={{ fontSize: 14 }} />}
+                            sx={{ 
+                              textTransform: 'none', 
+                              fontWeight: 700, 
+                              borderRadius: 2, 
+                              py: 0.4, 
+                              borderColor: '#00cec9', 
+                              color: '#00cec9', 
+                              '&:hover': { 
+                                borderColor: '#009975', 
+                                bgcolor: 'rgba(0, 206, 201, 0.04)' 
+                              } 
+                            }}
+                          >
+                            Xem bài AI
+                          </Button>
+                        ) : null}
                         <Button
                           size="small"
                           variant="outlined"
@@ -896,6 +1091,135 @@ export default function ForceIndexV2Page() {
             sx={{ borderRadius: 2.5, px: 3, textTransform: 'none', fontWeight: 750 }}
           >
             Đóng cửa sổ
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* AI Content Preview Dialog */}
+      <Dialog
+        open={!!selectedAiContent}
+        onClose={() => setSelectedAiContent(null)}
+        fullWidth
+        maxWidth="md"
+        slotProps={{
+          paper: { sx: { borderRadius: 4, p: 1 } }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 900, display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1.5 }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <AutoAwesomeIcon sx={{ color: '#00b894' }} /> Nội dung bài viết do AI sinh tự động
+          </span>
+          <IconButton onClick={() => setSelectedAiContent(null)}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers sx={{ py: 3, display: 'flex', flexDirection: 'column', gap: 3.5 }}>
+          {selectedAiContent && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {/* Title & Description */}
+              <Box>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, letterSpacing: 0.8, display: 'block', mb: 0.5, textTransform: 'uppercase' }}>
+                  Tiêu đề SEO (Title Tag)
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 850, color: 'text.primary', mb: 2 }}>
+                  {selectedAiContent.title}
+                </Typography>
+
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, letterSpacing: 0.8, display: 'block', mb: 0.5, textTransform: 'uppercase' }}>
+                  Thẻ mô tả (Meta Description)
+                </Typography>
+                <Paper variant="outlined" sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2.5, mb: 2 }}>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', fontStyle: 'italic', lineHeight: 1.5 }}>
+                    {selectedAiContent.metaDescription}
+                  </Typography>
+                </Paper>
+              </Box>
+
+              <Divider />
+
+              {/* Body Content */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, letterSpacing: 0.8, display: 'block', textTransform: 'uppercase' }}>
+                  Nội dung trang vệ tinh (Hub Content)
+                </Typography>
+                
+                {/* Intro */}
+                <Typography variant="body1" sx={{ fontWeight: 500, lineHeight: 1.6 }}>
+                  {selectedAiContent.intro}
+                </Typography>
+
+                {/* Sections */}
+                {selectedAiContent.sections?.map((sec, idx) => (
+                  <Box key={idx} sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 800, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {sec.heading}
+                    </Typography>
+                    {sec.paragraphs?.map((p, pIdx) => (
+                      <Typography key={pIdx} variant="body2" sx={{ color: 'text.primary', lineHeight: 1.6, textAlign: 'justify' }}>
+                        {p}
+                      </Typography>
+                    ))}
+                  </Box>
+                ))}
+              </Box>
+
+              <Divider />
+
+              {/* Anchor and Tags */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, letterSpacing: 0.8, display: 'block', mb: 1, textTransform: 'uppercase' }}>
+                    Từ khóa liên kết (Anchor Text trỏ về Target URL)
+                  </Typography>
+                  <Paper 
+                    variant="outlined" 
+                    sx={{ 
+                      p: 1.5, 
+                      display: 'inline-block', 
+                      borderRadius: 2, 
+                      bgcolor: 'rgba(0, 184, 148, 0.08)', 
+                      borderColor: 'rgba(0, 184, 148, 0.25)' 
+                    }}
+                  >
+                    <Typography variant="body2" sx={{ fontWeight: 800, color: '#009975', fontFamily: 'monospace' }}>
+                      {selectedAiContent.anchorText}
+                    </Typography>
+                  </Paper>
+                </Box>
+
+                {selectedAiContent.tags && selectedAiContent.tags.length > 0 && (
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, letterSpacing: 0.8, display: 'block', mb: 1, textTransform: 'uppercase' }}>
+                      Tags liên quan
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {selectedAiContent.tags.map((tag, idx) => (
+                        <Chip 
+                          key={idx} 
+                          label={tag} 
+                          size="small" 
+                          sx={{ 
+                            fontWeight: 700, 
+                            borderRadius: 1.5, 
+                            bgcolor: 'action.hover', 
+                            color: 'text.primary' 
+                          }} 
+                        />
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5 }}>
+          <Button
+            variant="contained"
+            onClick={() => setSelectedAiContent(null)}
+            sx={{ borderRadius: 2.5, px: 3, textTransform: 'none', fontWeight: 750, background: 'linear-gradient(135deg, #00b894 0%, #009975 100%)', '&:hover': { background: 'linear-gradient(135deg, #3dd6a0 0%, #009975 100%)' } }}
+          >
+            Đóng xem trước
           </Button>
         </DialogActions>
       </Dialog>
