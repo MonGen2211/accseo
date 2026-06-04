@@ -14,7 +14,11 @@ import BoltIcon from '@mui/icons-material/Bolt';
 import IndexBoosterPage from '../../index-booster/components/IndexBoosterPage';
 import ForceIndexOwnerSection from '../../force-index-owner/components/ForceIndexOwnerSection';
 
-export default function ForceIndexUnifiedSection() {
+interface ForceIndexUnifiedSectionProps {
+  isActive?: boolean;
+}
+
+export default function ForceIndexUnifiedSection({ isActive = true }: ForceIndexUnifiedSectionProps) {
   // Use session storage or simple state to remember active sub-tab
   const [activeSubTab, setActiveSubTab] = useState<number>(() => {
     const saved = sessionStorage.getItem('force_index_active_subtab');
@@ -85,8 +89,8 @@ export default function ForceIndexUnifiedSection() {
 
         {/* Tab content wrappers */}
         <Box>
-          {activeSubTab === 0 && <IndexBoosterPage />}
-          {activeSubTab === 1 && <ForceIndexOwnerSection />}
+          {activeSubTab === 0 && <IndexBoosterPage isActive={isActive} />}
+          {activeSubTab === 1 && <ForceIndexOwnerSection isActive={isActive} />}
         </Box>
       </Paper>
     </Box>

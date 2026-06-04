@@ -37,7 +37,11 @@ import { serpService } from '../../dashboard/serpService';
 import { useToastify } from '../../../components/Toastify';
 import type { DirectHistoryItem } from '../types';
 
-export default function ForceIndexOwnerSection() {
+interface ForceIndexOwnerSectionProps {
+  isActive?: boolean;
+}
+
+export default function ForceIndexOwnerSection({ isActive = true }: ForceIndexOwnerSectionProps) {
   const { showToast } = useToastify();
 
   // State for domain dropdown
@@ -111,16 +115,18 @@ export default function ForceIndexOwnerSection() {
 
   // Initialize
   useEffect(() => {
+    if (!isActive) return;
     const timer = setTimeout(() => {
       fetchDomains();
       fetchHistory();
     }, 0);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isActive]);
 
   // Polling history every 30s
   useEffect(() => {
+    if (!isActive) return;
     const interval = setInterval(() => {
       if (document.visibilityState === 'visible') {
         fetchHistory(true);
@@ -128,7 +134,7 @@ export default function ForceIndexOwnerSection() {
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [limit]);
+  }, [limit, isActive]);
 
   // Client side validation parsing
   const parsedUrls = useMemo(() => {

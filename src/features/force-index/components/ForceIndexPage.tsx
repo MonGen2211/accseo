@@ -218,6 +218,7 @@ export default function ForceIndexPage() {
   // Googlebot Crawl Notification Polling (Every 60s)
   useEffect(() => {
     const checkBotCrawlChanges = async () => {
+      if (document.visibilityState !== 'visible') return;
       try {
         const fresh = await forceIndexService.getList(200);
         const freshItems = fresh?.items ?? [];

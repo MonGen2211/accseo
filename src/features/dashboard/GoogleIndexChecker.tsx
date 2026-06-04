@@ -30,7 +30,11 @@ import TuneIcon from '@mui/icons-material/Tune';
 import { useToastify } from '../../components/Toastify';
 import { serpService } from './serpService';
 
-export default function GoogleIndexChecker() {
+interface GoogleIndexCheckerProps {
+  isActive?: boolean;
+}
+
+export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheckerProps) {
   const { showToast } = useToastify();
 
   // Local state
@@ -65,7 +69,7 @@ export default function GoogleIndexChecker() {
   // Simulated countdown interval for loading state
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (loading && parsedUrls.length > 0) {
+    if (loading && parsedUrls.length > 0 && isActive) {
       setSimulatedProgress(0);
       setSimulatedIndex(0);
       setSimulatedUrl(parsedUrls[0]);
@@ -96,7 +100,7 @@ export default function GoogleIndexChecker() {
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [loading, parsedUrls, minDelay, maxDelay, engine]);
+  }, [loading, parsedUrls, minDelay, maxDelay, engine, isActive]);
 
   // Map backend error codes to Vietnamese descriptions
   const mapErrorCode = (err: string | null | undefined) => {

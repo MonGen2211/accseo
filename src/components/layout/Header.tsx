@@ -120,12 +120,23 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 										key={crumb}
 										to={linkPath}
 										style={{
-											fontSize: '0.85rem',
-											color: 'text.secondary',
 											textDecoration: 'none',
+											color: 'inherit',
 										}}
 									>
-										{crumb}
+										<Typography
+											component="span"
+											sx={{
+												fontSize: '0.85rem',
+												color: 'text.secondary',
+												transition: 'color 0.2s',
+												'&:hover': {
+													color: 'primary.main',
+												}
+											}}
+										>
+											{crumb}
+										</Typography>
 									</Link>
 								);
 							}

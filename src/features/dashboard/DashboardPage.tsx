@@ -825,7 +825,7 @@ export default function DashboardPage() {
       </Box>
 
       <Box sx={{ display: activeTab === 'index-checker' ? 'block' : 'none', mt: 1 }}>
-        <GoogleIndexChecker />
+        <GoogleIndexChecker isActive={activeTab === 'index-checker'} />
       </Box>
 
       <Box sx={{ display: activeTab === 'scraper' ? 'block' : 'none', mt: 1 }}>
@@ -837,11 +837,11 @@ export default function DashboardPage() {
       </Box>
 
       <Box sx={{ display: activeTab === 'content-analysis' ? 'block' : 'none', mt: 1 }}>
-        <ContentAnalysisSection />
+        <ContentAnalysisSection isActive={activeTab === 'content-analysis'} />
       </Box>
 
       <Box sx={{ display: activeTab === 'indexed' ? 'block' : 'none', mt: 1 }}>
-        <ForceIndexUnifiedSection />
+        <ForceIndexUnifiedSection isActive={activeTab === 'indexed'} />
       </Box>
 
       <Box sx={{ display: activeTab === 'seo-audit' ? 'block' : 'none', mt: 1 }}>

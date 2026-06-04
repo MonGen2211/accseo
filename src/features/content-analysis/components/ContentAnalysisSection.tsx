@@ -129,7 +129,11 @@ const getHostname = (urlStr: string): string => {
   }
 };
 
-export default function ContentAnalysisSection() {
+interface ContentAnalysisSectionProps {
+  isActive?: boolean;
+}
+
+export default function ContentAnalysisSection({ isActive = true }: ContentAnalysisSectionProps) {
   const { showToast } = useToastify();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeSessionId = searchParams.get('session');
@@ -175,8 +179,10 @@ export default function ContentAnalysisSection() {
 
   // Poll active session details
   useEffect(() => {
-    if (!activeSessionId) {
-      setActiveSessionDetail(null);
+    if (!activeSessionId || !isActive) {
+      if (!activeSessionId) {
+        setActiveSessionDetail(null);
+      }
       return;
     }
 
@@ -216,10 +222,11 @@ export default function ContentAnalysisSection() {
     return () => {
       active = false;
     };
-  }, [activeSessionId]);
+  }, [activeSessionId, isActive]);
 
   // Background poll history list if there are active sessions
   useEffect(() => {
+    if (!isActive) return;
     const hasActive = historyList.some(item => !['done', 'failed'].includes(item.status));
     if (!hasActive) return;
 
@@ -228,7 +235,7 @@ export default function ContentAnalysisSection() {
     }, 7000);
 
     return () => clearInterval(interval);
-  }, [historyList]);
+  }, [historyList, isActive]);
 
   // Form submit to start analysis
   const handleSubmit = async (e: React.FormEvent) => {

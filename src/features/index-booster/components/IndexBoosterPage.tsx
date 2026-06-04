@@ -381,7 +381,11 @@ function ExpandableRow({
   );
 }
 
-export default function IndexBoosterPage() {
+interface IndexBoosterPageProps {
+  isActive?: boolean;
+}
+
+export default function IndexBoosterPage({ isActive = true }: IndexBoosterPageProps) {
   const { showToast } = useToastify();
 
   // Form Inputs
@@ -405,7 +409,7 @@ export default function IndexBoosterPage() {
     mutate: mutateQuota,
   } = useSWR('/api/v1/index-booster/quota-status', () => indexBoosterService.getQuotaStatus(), {
     revalidateOnFocus: false,
-    refreshInterval: 60000, // every 1 min
+    refreshInterval: isActive ? 60000 : 0, // every 1 min if active, else disabled
   });
 
   // SWR fetching for History
