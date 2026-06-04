@@ -8,7 +8,7 @@ export default defineConfig({
 	server: {
 		proxy: {
 			'/api/v1': {
-				target: 'http://36.50.55.38/',
+				target: 'http://localhost:3000/',
 				changeOrigin: true,
 				// SSE: tắt buffering để event stream qua ngay lập tức
 				configure: (proxy) => {

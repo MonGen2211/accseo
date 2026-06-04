@@ -8,6 +8,7 @@ import ScraperSection from '../scraper/components/ScraperSection';
 import UrlScraperSection from '../url-scraper/components/UrlScraperSection';
 import ContentAnalysisSection from '../content-analysis/components/ContentAnalysisSection';
 import ForceIndexUnifiedSection from '../force-index/components/ForceIndexUnifiedSection';
+import SeoAuditSection from '../seo-audit/components/SeoAuditSection';
 import AndroidIcon from '@mui/icons-material/Android';
 import LinkIcon from '@mui/icons-material/Link';
 import PsychologyIcon from '@mui/icons-material/Psychology';
@@ -483,6 +484,7 @@ export default function DashboardPage() {
     { id: 'scraper-url', label: 'URL Scraper', icon: <LinkIcon sx={{ fontSize: 20 }} /> },
     { id: 'content-analysis', label: 'Phân tích nội dung', icon: <PsychologyIcon sx={{ fontSize: 20 }} /> },
     { id: 'indexed', label: 'Ép Index', icon: <AndroidIcon sx={{ fontSize: 20 }} /> },
+    { id: 'seo-audit', label: 'SEO Audit', icon: <AssessmentOutlinedIcon sx={{ fontSize: 20 }} /> },
   ];
 
   return (
@@ -830,6 +832,10 @@ export default function DashboardPage() {
 
       <Box sx={{ display: activeTab === 'indexed' ? 'block' : 'none', mt: 1 }}>
         <ForceIndexUnifiedSection />
+      </Box>
+
+      <Box sx={{ display: activeTab === 'seo-audit' ? 'block' : 'none', mt: 1 }}>
+        <SeoAuditSection />
       </Box>
 
     </Box>
