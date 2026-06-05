@@ -8,7 +8,9 @@ import type {
   PublicTrendSuggestionsResponse,
   PublicTrendDatesResponse,
   CustomTrendSnapshotResponse,
-  CustomTrendPaginationResponse
+  CustomTrendPaginationResponse,
+  AiExpandKeywordsRequest,
+  AiExpandKeywordsResponse
 } from './vbplSuggestions.types';
 
 interface ApiResponse<T> {
@@ -239,5 +241,11 @@ export const vbplSuggestionsService = {
         } catch { /* ignore chunk parse errors */ }
       }
     }
+  },
+
+  async aiExpandKeywords(payload: AiExpandKeywordsRequest): Promise<AiExpandKeywordsResponse> {
+    const response = await api.post<ApiResponse<AiExpandKeywordsResponse>>('/keywords/ai-expand', payload);
+    return response.data.data;
   }
 };
+

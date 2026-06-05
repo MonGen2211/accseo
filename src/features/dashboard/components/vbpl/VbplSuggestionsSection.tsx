@@ -70,12 +70,45 @@ import type {
   CustomTrendPaginationResponse,
   CustomTrendSnapshotSummary,
   CustomTrendSuggestionItem,
-  CustomProjectGroup
+  CustomProjectGroup,
+  AiExpandKeywordItem
 } from '../../vbplSuggestions.types';
 import { vbplSuggestionsService } from '../../vbplSuggestionsService';
 import { useToastify } from '../../../../components/Toastify';
 import { format, isValid } from 'date-fns';
 import { TrendLineChart } from '../../../keywords/components/TrendLineChart';
+import CustomTable from '../../../../components/custom-table/CustomTable';
+const Sparkline = ({ keyword, volumes }: { keyword: string, volumes: { year: number, month: number, volume: number }[] }) => {
+  if (!volumes || volumes.length === 0) return null;
+  const width = 120;
+  const height = 30;
+  const max = Math.max(...volumes.map(v => v.volume));
+  const min = Math.min(...volumes.map(v => v.volume));
+  const getX = (i: number) => i * (width / 11);
+  const getY = (v: number) => {
+    if (max === min) return height / 2;
+    const padding = 4;
+    const usableHeight = height - padding * 2;
+    return padding + usableHeight - ((v - min) / (max - min)) * usableHeight;
+  };
+
+  const points = volumes.map((v, i) => `${getX(i)},${getY(v.volume)}`).join(' ');
+
+  return (
+    <Box sx={{ position: 'relative', width, height, display: 'inline-block' }}>
+      <svg width={width} height={height} style={{ overflow: 'visible', position: 'absolute', top: 0, left: 0 }}>
+        <polyline points={points} fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex' }}>
+        {volumes.map((v, i) => (
+          <Tooltip key={i} title={`${keyword} — Tháng ${v.month}/${v.year}: ${new Intl.NumberFormat('vi-VN').format(v.volume)} lượt`} placement="top" arrow>
+            <Box sx={{ flex: 1, height: '100%', cursor: 'crosshair' }} />
+          </Tooltip>
+        ))}
+      </Box>
+    </Box>
+  );
+};
 
 const STANDARD_CATEGORIES = [
   { id: '14', name: 'Luật pháp' },
@@ -978,6 +1011,161 @@ export default function VbplSuggestionsSection() {
 
   // ================= Active Tab State =================
   const [activeTab, setActiveTab] = useState<number>(0);
+
+  // ================= AI Keyword Expansion Tab States =================
+  const [seedKeywordsText, setSeedKeywordsText] = useState<string>('');
+  const [perSeed, setPerSeed] = useState<number>(15);
+  const [locationCode, setLocationCode] = useState<string>('VN');
+  const [languageCode, setLanguageCode] = useState<string>('vi');
+  const [minVolume, setMinVolume] = useState<number | ''>('');
+  const [maxVolume, setMaxVolume] = useState<number | ''>('');
+  const [competitionFilters, setCompetitionFilters] = useState<string[]>([]);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [expandedKeywords, setExpandedKeywords] = useState<AiExpandKeywordItem[]>([]);
+  const [expandedTotal, setExpandedTotal] = useState<number>(0);
+  const [expandedGenerated, setExpandedGenerated] = useState<number>(0);
+  const [expandedTotalPages, setExpandedTotalPages] = useState<number>(1);
+  const [expansionPage, setExpansionPage] = useState<number>(1);
+  const [expansionLimit, setExpansionLimit] = useState<number>(50);
+  const [expansionLoading, setExpansionLoading] = useState<boolean>(false);
+  const [hasSearchedKeywords, setHasSearchedKeywords] = useState<boolean>(false);
+  const [validationError, setValidationError] = useState<string>('');
+
+  const handleExpandKeywords = async (targetPage: number, forceRefresh: boolean, customLimit?: number) => {
+    const rawKeywords = seedKeywordsText
+      .split(/[\n,]+/)
+      .map(k => k.trim())
+      .filter(k => k.length > 0);
+
+    if (rawKeywords.length === 0) {
+      setValidationError('Vui lòng nhập ít nhất 1 từ khóa hạt giống.');
+      showToast('Vui lòng nhập từ khóa hạt giống!', 'warning');
+      return;
+    }
+
+    if (rawKeywords.length > 30) {
+      setValidationError('Số lượng từ khóa hạt giống vượt quá giới hạn (tối đa 30 từ).');
+      showToast('Tối đa 30 từ khóa hạt giống!', 'warning');
+      return;
+    }
+
+    setValidationError('');
+    setExpansionLoading(true);
+
+    const activeLimit = customLimit !== undefined ? customLimit : expansionLimit;
+
+    try {
+      const payload: any = {
+        keywords: rawKeywords,
+        perSeed,
+        page: targetPage,
+        limit: activeLimit,
+        location: locationCode,
+        language: languageCode,
+        sortOrder,
+        refresh: forceRefresh
+      };
+
+      if (minVolume !== '') payload.minVolume = Number(minVolume);
+      if (maxVolume !== '') payload.maxVolume = Number(maxVolume);
+      if (competitionFilters.length > 0) payload.competition = competitionFilters;
+
+      const res = await vbplSuggestionsService.aiExpandKeywords(payload);
+      
+      setExpandedKeywords(res.keywords || []);
+      setExpandedTotal(res.total || 0);
+      setExpandedGenerated(res.generated || 0);
+      setExpandedTotalPages(res.totalPages || 1);
+      setExpansionPage(res.page || 1);
+      setHasSearchedKeywords(true);
+      
+      if (forceRefresh) {
+        showToast('Sinh lại danh sách từ khóa AI thành công!', 'success');
+      }
+    } catch (err: any) {
+      console.error(err);
+      const statusCode = err.response?.status;
+      const responseData = err.response?.data;
+      const code = responseData?.code || responseData?.message;
+      const msg = responseData?.message || err.message;
+
+      if (statusCode === 400) {
+        setValidationError(msg || 'Tham số không hợp lệ.');
+        showToast('Lỗi tham số: ' + (msg || 'vui lòng kiểm tra lại đầu vào'), 'danger');
+      } else if (code === 'AI_GENERATE_FAILED') {
+        showToast('AI lỗi, thử lại', 'danger');
+      } else if (code === 'GEMINI_NOT_CONFIGURED') {
+        showToast('Lỗi hệ thống: Chưa cấu hình AI', 'danger');
+      } else if (code === 'GOOGLE_ADS_NOT_CONFIGURED') {
+        showToast('Lỗi hệ thống: Chưa cấu hình Google Ads', 'danger');
+      } else if (code === 'GOOGLE_ADS_QUOTA_EXCEEDED') {
+        showToast('Hết quota, thử lại sau', 'danger');
+      } else if (code === 'GOOGLE_ADS_AUTH_ERROR') {
+        showToast('Lỗi hệ thống: Token Google Ads lỗi', 'danger');
+      } else if (code === 'GOOGLE_ADS_ERROR') {
+        showToast(msg || 'Lỗi Google Ads khác', 'danger');
+      } else {
+        showToast(msg || 'Có lỗi xảy ra khi kết nối máy chủ.', 'danger');
+      }
+    } finally {
+      setExpansionLoading(false);
+    }
+  };
+
+  const handleExportCsv = () => {
+    const headers = ['Từ khóa', 'Volume trung bình', 'Độ cạnh tranh', 'Chỉ số cạnh tranh', 'Giá thầu thấp', 'Giá thầu cao'];
+    const rows = expandedKeywords.map(row => [
+      row.keyword,
+      String(row.avgMonthlySearches),
+      row.competition,
+      String(row.competitionIndex),
+      row.bidLow !== null && row.bidLow !== undefined ? String(row.bidLow) : '',
+      row.bidHigh !== null && row.bidHigh !== undefined ? String(row.bidHigh) : ''
+    ]);
+    downloadCSV(headers, rows, 'AI-Keyword-Expansion');
+    showToast('Tải CSV thành công', 'success');
+  };
+
+  const handleAddAllToCart = () => {
+    const toAdd = expandedKeywords.filter(row => !cartItems.some(k => k.name === row.keyword));
+    if (toAdd.length === 0) {
+      setCartItems(prev => prev.filter(k => !expandedKeywords.some(row => row.keyword === k.name)));
+      showToast('Đã bỏ chọn tất cả từ khóa trang này khỏi giỏ hàng!', 'info');
+    } else {
+      const newItems = toAdd.map(row => ({
+        name: row.keyword,
+        currentScore: 0,
+        avg: row.avgMonthlySearches,
+        slope: 0,
+        isSpike: false,
+        trendTimeline: row.monthlySearchVolumes?.map((v: any) => ({ date: `Tháng ${v.month}/${v.year}`, value: v.volume })) || [],
+        relatedQueries: [],
+        relatedTopics: []
+      }));
+      setCartItems(prev => [...prev, ...newItems]);
+      showToast(`Đã thêm ${toAdd.length} từ khóa vào giỏ hàng!`, 'success');
+    }
+  };
+
+  const formatCurrency = (val: number | null) => {
+    if (val === null || val === undefined) return '-';
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+  };
+
+  const maxSearchVolume = useMemo(() => {
+    return expandedKeywords.length > 0 ? Math.max(...expandedKeywords.map(d => d.avgMonthlySearches)) : 1;
+  }, [expandedKeywords]);
+
+  // Debounced/automatic search when local filters / page sizes change (caching ensures this is cheap)
+  useEffect(() => {
+    if (hasSearchedKeywords) {
+      const timer = setTimeout(() => {
+        handleExpandKeywords(1, false);
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [minVolume, maxVolume, competitionFilters, sortOrder, locationCode, languageCode]);
+
 
   // ================= Left Panel Data Fetching =================
   const fetchKeywords = async (targetDays: number, targetLinhVuc?: string, targetAgency?: string) => {
@@ -2332,6 +2520,18 @@ export default function VbplSuggestionsSection() {
               iconPosition="start" 
               label="AI Gợi ý Tự Chọn" 
               id="suggestions-tab-1"
+            />
+            <Tab 
+              icon={
+                expansionLoading ? (
+                  <CircularProgress size={16} sx={{ color: '#10b981' }} />
+                ) : (
+                  <AutoAwesomeIcon sx={{ fontSize: 18 }} />
+                )
+              } 
+              iconPosition="start" 
+              label="AI Gợi ý Từ khóa (Volume)" 
+              id="suggestions-tab-2"
             />
           </Tabs>
         </Box>
@@ -3902,6 +4102,449 @@ export default function VbplSuggestionsSection() {
               </DialogActions>
             </Dialog>
 
+          </Box>
+        ) : activeTab === 2 ? (
+          /* ================= AI Keyword Expansion (Volume suggestions) ================= */
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5, width: '100%', boxSizing: 'border-box' }}>
+            {/* Form controls paper */}
+            <Paper 
+              elevation={0} 
+              sx={{ 
+                p: 3, 
+                borderRadius: 3.5, 
+                border: '1px solid', 
+                borderColor: 'divider',
+                bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.002)'
+              }}
+            >
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <AutoAwesomeIcon sx={{ color: '#10b981', fontSize: 18 }} /> Từ khóa hạt giống (Seed keywords - Tối đa 30 từ, cách nhau bởi dòng mới hoặc dấu phẩy)
+                    </Typography>
+                    <Tooltip title="Nhập danh sách từ khóa gốc của bạn để AI phân tích và tìm các từ khóa mở rộng liên quan để viết bài." arrow>
+                      <IconButton size="small"><InfoIcon sx={{ fontSize: 16 }} /></IconButton>
+                    </Tooltip>
+                  </Box>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={4}
+                    placeholder="Nhập mỗi từ khóa trên một dòng. Ví dụ:&#10;luật đất đai&#10;sổ đỏ"
+                    value={seedKeywordsText}
+                    onChange={(e) => {
+                      setSeedKeywordsText(e.target.value);
+                      setValidationError('');
+                    }}
+                    error={!!validationError}
+                    helperText={validationError}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3, bgcolor: 'background.default' } }}
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormControl fullWidth size="small">
+                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Mở rộng mỗi seed
+                    </Typography>
+                    <TextField
+                      type="number"
+                      size="small"
+                      value={perSeed}
+                      onChange={(e) => setPerSeed(Math.min(50, Math.max(1, Number(e.target.value))))}
+                      slotProps={{ htmlInput: { min: 1, max: 50 } }}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'background.default' } }}
+                    />
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormControl fullWidth size="small">
+                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Quốc gia</Typography>
+                    <Select value={locationCode} onChange={(e) => setLocationCode(e.target.value)} sx={{ borderRadius: 2, bgcolor: 'background.default' }}>
+                      <MenuItem value="VN"><span style={{ marginRight: 8 }}>🇻🇳</span> Vietnam</MenuItem>
+                      <MenuItem value="US"><span style={{ marginRight: 8 }}>🇺🇸</span> United States</MenuItem>
+                      <MenuItem value="GB"><span style={{ marginRight: 8 }}>🇬🇧</span> United Kingdom</MenuItem>
+                      <MenuItem value="AU"><span style={{ marginRight: 8 }}>🇦🇺</span> Australia</MenuItem>
+                      <MenuItem value="CA"><span style={{ marginRight: 8 }}>🇨🇦</span> Canada</MenuItem>
+                      <MenuItem value="JP"><span style={{ marginRight: 8 }}>🇯🇵</span> Japan</MenuItem>
+                      <MenuItem value="KR"><span style={{ marginRight: 8 }}>🇰🇷</span> South Korea</MenuItem>
+                      <MenuItem value="SG"><span style={{ marginRight: 8 }}>🇸🇬</span> Singapore</MenuItem>
+                      <MenuItem value="TH"><span style={{ marginRight: 8 }}>🇹🇭</span> Thailand</MenuItem>
+                      <MenuItem value="ID"><span style={{ marginRight: 8 }}>🇮🇩</span> Indonesia</MenuItem>
+                      <MenuItem value="MY"><span style={{ marginRight: 8 }}>🇲🇾</span> Malaysia</MenuItem>
+                      <MenuItem value="PH"><span style={{ marginRight: 8 }}>🇵🇭</span> Philippines</MenuItem>
+                      <MenuItem value="IN"><span style={{ marginRight: 8 }}>🇮🇳</span> India</MenuItem>
+                      <MenuItem value="FR"><span style={{ marginRight: 8 }}>🇫🇷</span> France</MenuItem>
+                      <MenuItem value="DE"><span style={{ marginRight: 8 }}>🇩🇪</span> Germany</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormControl fullWidth size="small">
+                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ngôn ngữ</Typography>
+                    <Select value={languageCode} onChange={(e) => setLanguageCode(e.target.value)} sx={{ borderRadius: 2, bgcolor: 'background.default' }}>
+                      <MenuItem value="vi">Vietnamese</MenuItem>
+                      <MenuItem value="en">English</MenuItem>
+                      <MenuItem value="ja">Japanese</MenuItem>
+                      <MenuItem value="zh">Chinese</MenuItem>
+                      <MenuItem value="ko">Korean</MenuItem>
+                      <MenuItem value="fr">French</MenuItem>
+                      <MenuItem value="de">German</MenuItem>
+                      <MenuItem value="es">Spanish</MenuItem>
+                      <MenuItem value="pt">Portuguese</MenuItem>
+                      <MenuItem value="th">Thai</MenuItem>
+                      <MenuItem value="id">Indonesian</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormControl fullWidth size="small">
+                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sắp xếp theo Volume</Typography>
+                    <Select value={sortOrder} onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')} sx={{ borderRadius: 2, bgcolor: 'background.default' }}>
+                      <MenuItem value="desc">Giảm dần (Volume cao &rarr; thấp)</MenuItem>
+                      <MenuItem value="asc">Tăng dần (Volume thấp &rarr; cao)</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormControl fullWidth size="small">
+                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Volume tối thiểu</Typography>
+                    <TextField
+                      type="number"
+                      size="small"
+                      placeholder="Ví dụ: 100"
+                      value={minVolume}
+                      onChange={(e) => setMinVolume(e.target.value === '' ? '' : Number(e.target.value))}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'background.default' } }}
+                    />
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormControl fullWidth size="small">
+                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Volume tối đa</Typography>
+                    <TextField
+                      type="number"
+                      size="small"
+                      placeholder="Ví dụ: 50000"
+                      value={maxVolume}
+                      onChange={(e) => setMaxVolume(e.target.value === '' ? '' : Number(e.target.value))}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'background.default' } }}
+                    />
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sm={12} md={6}>
+                  <FormControl fullWidth size="small">
+                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Độ cạnh tranh</Typography>
+                    <Select
+                      multiple
+                      displayEmpty
+                      value={competitionFilters}
+                      onChange={(e) => setCompetitionFilters(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
+                      renderValue={(selected) => selected.length === 0 ? 'Tất cả độ cạnh tranh' : selected.join(', ')}
+                      sx={{ borderRadius: 2, bgcolor: 'background.default' }}
+                    >
+                      {['LOW', 'MEDIUM', 'HIGH'].map((comp) => (
+                        <MenuItem key={comp} value={comp}>
+                          <Checkbox checked={competitionFilters.indexOf(comp) > -1} size="small" />
+                          <ListItemText primary={comp} />
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sx={{ display: 'flex', gap: 2, justifyContent: 'flex-start', alignItems: 'center', mt: 1 }}>
+                  <Button 
+                    variant="contained" 
+                    onClick={() => handleExpandKeywords(1, false)} 
+                    disabled={expansionLoading}
+                    startIcon={expansionLoading ? <CircularProgress size={20} color="inherit" /> : <AutoAwesomeIcon />}
+                    sx={{ 
+                      borderRadius: 2.5, px: 4, py: 1.2, fontWeight: 800, fontSize: '0.95rem',
+                      background: 'linear-gradient(90deg, #10b981, #059669)',
+                      boxShadow: '0 8px 24px rgba(16, 185, 129, 0.25)',
+                      textTransform: 'none',
+                      '&:hover': { background: 'linear-gradient(90deg, #059669, #047857)', boxShadow: '0 12px 32px rgba(16, 185, 129, 0.35)' }
+                    }}
+                  >
+                    {expansionLoading ? 'Đang mở rộng...' : 'Mở rộng từ khóa AI'}
+                  </Button>
+
+                  {hasSearchedKeywords && (
+                    <Button 
+                      variant="outlined" 
+                      color="warning"
+                      onClick={() => handleExpandKeywords(1, true)} 
+                      disabled={expansionLoading}
+                      startIcon={expansionLoading ? <CircularProgress size={20} color="inherit" /> : <RefreshIcon />}
+                      sx={{ borderRadius: 2.5, px: 3, py: 1.2, fontWeight: 700, fontSize: '0.95rem', height: 43, textTransform: 'none' }}
+                    >
+                      Sinh lại (Bỏ cache)
+                    </Button>
+                  )}
+                </Grid>
+              </Grid>
+            </Paper>
+
+            {/* Loading Display */}
+            {expansionLoading && (
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 6,
+                  borderRadius: 4,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 3,
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.03)' : 'rgba(16, 185, 129, 0.01)',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.02)'
+                }}
+              >
+                <CircularProgress size={45} sx={{ color: '#10b981' }} />
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography variant="body1" sx={{ fontWeight: 800, color: 'text.primary', mb: 1 }}>
+                    ⚡ Đang phân tích và mở rộng từ khóa bằng AI...
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 500, mx: 'auto', fontStyle: 'italic' }}>
+                    Hệ thống đang gọi AI sinh list từ khóa mở rộng và check volume thật từ Google Ads. Lần đầu cào mới có thể mất từ 10s đến 20s. Vui lòng giữ kết nối!
+                  </Typography>
+                </Box>
+              </Paper>
+            )}
+
+            {/* Results Section */}
+            {!expansionLoading && hasSearchedKeywords && (
+              expandedKeywords.length === 0 ? (
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 6,
+                    borderRadius: 4,
+                    border: '1px dashed',
+                    borderColor: 'divider',
+                    textAlign: 'center',
+                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.1)' : 'rgba(0,0,0,0.01)'
+                  }}
+                >
+                  <Typography variant="body1" color="text.secondary" sx={{ fontStyle: 'italic', fontWeight: 600 }}>
+                    AI chưa sinh được từ khoá phù hợp, thử seed khác.
+                  </Typography>
+                </Paper>
+              ) : (
+                <Paper 
+                  elevation={0} 
+                  sx={{ 
+                    borderRadius: 4, 
+                    overflow: 'hidden', 
+                    border: '1px solid', 
+                    borderColor: 'divider', 
+                    boxShadow: '0 4px 24px rgba(0,0,0,0.03)' 
+                  }}
+                >
+                  <Box 
+                    sx={{ 
+                      p: 3, 
+                      borderBottom: '1px solid', 
+                      borderColor: 'divider', 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center', 
+                      flexWrap: 'wrap', 
+                      gap: 2,
+                      bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.005)' : 'rgba(0,0,0,0.002)'
+                    }}
+                  >
+                    <Box>
+                      <Typography sx={{ fontWeight: 850, fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <AutoAwesomeIcon sx={{ color: '#10b981', fontSize: 20 }} /> Danh sách từ khóa AI mở rộng
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                        Đã sinh được <strong style={{ color: '#10b981' }}>{expandedGenerated}</strong> từ khóa · Đang hiển thị {expandedTotal} kết quả sau bộ lọc
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<AddIcon sx={{ fontSize: 13 }} />}
+                        onClick={handleAddAllToCart}
+                        sx={{ 
+                          borderRadius: 2, 
+                          fontWeight: 800, 
+                          textTransform: 'none',
+                          color: 'primary.main',
+                          borderColor: 'primary.main',
+                          px: 2
+                        }}
+                      >
+                        {expandedKeywords.every(row => cartItems.some(k => k.name === row.keyword))
+                          ? "Bỏ chọn cả trang" 
+                          : `Chọn cả trang (${expandedKeywords.length})`}
+                      </Button>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        color="success"
+                        startIcon={<FileDownloadIcon />}
+                        onClick={handleExportCsv}
+                        sx={{ 
+                          borderRadius: 2, 
+                          fontWeight: 800, 
+                          textTransform: 'none',
+                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                          boxShadow: 'none',
+                          '&:hover': {
+                            background: 'linear-gradient(135deg, #34d399 0%, #059669 100%)',
+                            boxShadow: 'none'
+                          },
+                          px: 2.5
+                        }}
+                      >
+                        Tải CSV
+                      </Button>
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ minHeight: 300, '& .MuiPaper-root': { border: 'none', mx: 0, mb: 0, boxShadow: 'none' } }}>
+                    <CustomTable
+                      fields={[
+                        {
+                          id: 'cart', name: 'cart', label: 'GIỎ HÀNG', width: 85,
+                          renderCell: (row: any) => {
+                            const inCart = cartItems.some(k => k.name === row.keyword);
+                            return (
+                              <Checkbox
+                                checked={inCart}
+                                onChange={() => handleToggleCart({
+                                  name: row.keyword,
+                                  currentScore: 0,
+                                  avg: row.avgMonthlySearches,
+                                  slope: 0,
+                                  isSpike: false,
+                                  trendTimeline: row.monthlySearchVolumes?.map((v: any) => ({ date: `Tháng ${v.month}/${v.year}`, value: v.volume })) || [],
+                                  relatedQueries: [],
+                                  relatedTopics: []
+                                })}
+                                size="small"
+                                sx={{ color: '#10b981', '&.Mui-checked': { color: '#10b981' } }}
+                              />
+                            );
+                          }
+                        },
+                        {
+                          id: 'index', name: 'index', label: '#', width: 55,
+                          renderCell: (row: any) => (
+                            <Typography sx={{ color: 'text.secondary', fontWeight: 700, fontSize: '0.85rem' }}>
+                              {row.index}
+                            </Typography>
+                          )
+                        },
+                        {
+                          id: 'keyword', name: 'keyword', label: 'TỪ KHÓA MỞ RỘNG', width: 250,
+                          renderCell: (row: any) => (
+                            <Typography 
+                              sx={{ 
+                                fontWeight: 800, 
+                                fontSize: '0.9rem', 
+                                color: 'primary.main', 
+                                cursor: 'pointer',
+                                '&:hover': { textDecoration: 'underline', color: 'primary.dark' }
+                              }}
+                              onClick={() => {
+                                window.open(`https://trends.google.com/trends/explore?date=today%203-m&geo=VN&q=${encodeURIComponent(row.keyword)}`, '_blank');
+                              }}
+                            >
+                              {row.keyword}
+                            </Typography>
+                          )
+                        },
+                        { 
+                          id: 'avgMonthlySearches', name: 'avgMonthlySearches', label: 'VOLUME', width: 140,
+                          renderCell: (row: any) => (
+                            <Box sx={{ width: '100%', maxWidth: 100 }}>
+                              <Typography sx={{ fontWeight: 850, fontSize: '0.95rem', color: 'text.primary', textAlign: 'right', mb: 0.5 }}>
+                                {new Intl.NumberFormat('en-US').format(row.avgMonthlySearches)}
+                              </Typography>
+                              <Box sx={{ width: '100%', height: 4, bgcolor: 'action.hover', borderRadius: 2, overflow: 'hidden' }}>
+                                <Box sx={{ height: '100%', width: `${(row.avgMonthlySearches / maxSearchVolume) * 100}%`, bgcolor: '#10b981', borderRadius: 2 }} />
+                              </Box>
+                            </Box>
+                          )
+                        },
+                        {
+                          id: 'trend', name: 'trend', label: 'XU HƯỚNG 12 THÁNG', width: 160,
+                          renderCell: (row: any) => <Sparkline keyword={row.keyword} volumes={row.monthlySearchVolumes} />
+                        },
+                        {
+                          id: 'competition', name: 'competition', label: 'CẠNH TRANH', width: 180,
+                          renderCell: (row: any) => {
+                            const colorHex = row.competition === 'LOW' ? '#10b981' : row.competition === 'MEDIUM' ? '#f59e0b' : row.competition === 'HIGH' ? '#ef4444' : '#6b7280';
+                            const labelText = row.competition === 'LOW' ? 'Low' : row.competition === 'MEDIUM' ? 'Medium' : row.competition === 'HIGH' ? 'High' : 'Unknown';
+                            return (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+                                  <CircularProgress variant="determinate" value={100} size={28} thickness={4} sx={{ color: 'action.hover' }} />
+                                  <CircularProgress variant="determinate" value={row.competitionIndex} size={28} thickness={4} sx={{ color: colorHex, position: 'absolute', left: 0 }} />
+                                  <Box sx={{ top: 0, left: 0, bottom: 0, right: 0, position: 'absolute', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: 'text.primary' }}>
+                                      {row.competitionIndex}
+                                    </Typography>
+                                  </Box>
+                                </Box>
+                                <Chip 
+                                  label={labelText} 
+                                  size="small" 
+                                  sx={{ fontWeight: 700, fontSize: 11, height: 22, bgcolor: `${colorHex}1A`, color: colorHex, border: `1px solid ${colorHex}30` }}
+                                />
+                              </Box>
+                            )
+                          }
+                        },
+                        {
+                          id: 'bidLow', name: 'bidLow', label: 'THẦU TỐI THIỂU', width: 120,
+                          renderCell: (row: any) => (
+                            <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', color: 'text.secondary' }}>
+                              {formatCurrency(row.bidLow)}
+                            </Typography>
+                          )
+                        },
+                        {
+                          id: 'bidHigh', name: 'bidHigh', label: 'THẦU TỐI ĐA', width: 120,
+                          renderCell: (row: any) => (
+                            <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', color: 'text.secondary' }}>
+                              {formatCurrency(row.bidHigh)}
+                            </Typography>
+                          )
+                        }
+                      ]}
+                      data={expandedKeywords.map((item, idx) => ({ ...item, index: (expansionPage - 1) * expansionLimit + idx + 1 }))}
+                      loading={expansionLoading}
+                      page={expansionPage - 1}
+                      rowsPerPage={expansionLimit}
+                      totalCount={expandedTotal}
+                      onPageChange={(p) => handleExpandKeywords(p + 1, false)}
+                      onRowsPerPageChange={(l) => {
+                        setExpansionLimit(l);
+                        handleExpandKeywords(1, false, l);
+                      }}
+                      enablePagination={true}
+                    />
+                  </Box>
+                </Paper>
+              )
+            )}
           </Box>
         ) : (
           /* ================= AI suggestions by Categories (Horizontal Timeline Layout) ================= */

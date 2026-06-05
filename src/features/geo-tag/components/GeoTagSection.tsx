@@ -448,9 +448,22 @@ export default function GeoTagSection() {
           reader.readAsDataURL(imgFile.file);
         });
 
+        // Detect original EXIF Orientation
+        let originalOrientation = 1;
+        const isJpeg = imgFile.file.type === 'image/jpeg' || imgFile.file.type === 'image/jpg';
+        if (isJpeg) {
+          try {
+            const exifData = piexif.load(base64Data);
+            if (exifData && exifData["0th"] && exifData["0th"][piexif.ImageIFD.Orientation]) {
+              originalOrientation = exifData["0th"][piexif.ImageIFD.Orientation];
+            }
+          } catch (e) {
+            // No EXIF orientation or parsing failed
+          }
+        }
+
         // 2. Remove Exif if enabled (only for JPEGs since piexif fails to parse png/webp exif removal)
         let targetBase64 = base64Data;
-        const isJpeg = imgFile.file.type === 'image/jpeg' || imgFile.file.type === 'image/jpg';
         if (clearOriginalExif && isJpeg) {
           try {
             targetBase64 = piexif.remove(targetBase64);
@@ -459,8 +472,8 @@ export default function GeoTagSection() {
           }
         }
 
-        // 3. Compress/Resize/Convert format on canvas + Watermark
-        const needCanvas = compressImage || resizeImage || addWatermark || outputFormat !== 'jpeg' || !isJpeg;
+        // 3. Compress/Resize/Convert format on canvas + Watermark + Auto-orientation
+        const needCanvas = compressImage || resizeImage || addWatermark || outputFormat !== 'jpeg' || !isJpeg || originalOrientation !== 1;
         if (needCanvas) {
           const quality = compressImage ? compressionQuality / 100 : 0.95;
           targetBase64 = await new Promise<string>((resolve, reject) => {
@@ -538,7 +551,7 @@ export default function GeoTagSection() {
               resolve(compressedBase64);
             };
             img.onerror = () => reject(new Error(`Lỗi tải ảnh lên canvas: ${imgFile.name}`));
-            img.src = targetBase64;
+            img.src = base64Data; // Load the original base64 to preserve EXIF orientation for browser auto-orientation
           });
         }
 

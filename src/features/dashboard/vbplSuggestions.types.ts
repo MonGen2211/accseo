@@ -155,4 +155,44 @@ export interface CustomProjectGroup {
   latestId: string;
 }
 
+export interface AiExpandKeywordsRequest {
+  keywords: string[];
+  perSeed?: number;
+  page?: number;
+  limit?: number;
+  minVolume?: number;
+  maxVolume?: number;
+  competition?: string[];
+  location?: string;
+  language?: string;
+  sortOrder?: 'asc' | 'desc';
+  refresh?: boolean;
+}
+
+export interface MonthlySearchVolume {
+  year: number;
+  month: number;
+  volume: number;
+}
+
+export interface AiExpandKeywordItem {
+  keyword: string;
+  avgMonthlySearches: number;
+  monthlySearchVolumes: MonthlySearchVolume[];
+  competition: 'LOW' | 'MEDIUM' | 'HIGH' | 'UNKNOWN';
+  competitionIndex: number;
+  bidLow: number | null;
+  bidHigh: number | null;
+}
+
+export interface AiExpandKeywordsResponse {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  generated: number;
+  keywords: AiExpandKeywordItem[];
+}
+
+
 
