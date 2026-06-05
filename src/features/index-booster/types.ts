@@ -8,6 +8,10 @@ export interface IndexBoosterSubmitResult {
       _verified: string;
       [key: string]: string;
     };
+    indexNowHub?: {
+      _verified: string;
+      [key: string]: string;
+    };
     ping?: {
       [key: string]: string;
     };
@@ -39,6 +43,10 @@ export interface IndexBoosterHistoryItem {
   failCount: number;
   results: {
     indexNow?: {
+      _verified: string;
+      [key: string]: string;
+    };
+    indexNowHub?: {
       _verified: string;
       [key: string]: string;
     };

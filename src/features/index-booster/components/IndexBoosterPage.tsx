@@ -85,6 +85,7 @@ function ExpandableRow({
   indexStatus,
 }: ExpandableRowProps) {
   const [open, setOpen] = useState(false);
+  const hasIndexNowHub = !!item.results?.indexNowHub;
 
   const getOkFailBadge = (ok: number, fail: number) => {
     const total = ok + fail;
@@ -216,7 +217,7 @@ function ExpandableRow({
               </Typography>
               <Grid container spacing={2}>
                 {/* Hub */}
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid item xs={12} sm={6} md={hasIndexNowHub ? 2.4 : 3}>
                   <Card variant="outlined" sx={{ borderRadius: 2, height: '100%' }}>
                     <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
                       <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mb: 0.5 }}>
@@ -261,11 +262,11 @@ function ExpandableRow({
                 </Grid>
 
                 {/* Decoy */}
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid item xs={12} sm={6} md={hasIndexNowHub ? 2.4 : 3}>
                   <Card variant="outlined" sx={{ borderRadius: 2, height: '100%' }}>
                     <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
                       <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mb: 0.5 }}>
-                        KÊNH 2: DECOY 302
+                        KÊNH 2: DECOY 301
                       </Typography>
                       {item.results?.forceIndex ? (
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
@@ -303,7 +304,7 @@ function ExpandableRow({
                 </Grid>
 
                 {/* IndexNow */}
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid item xs={12} sm={6} md={hasIndexNowHub ? 2.4 : 3}>
                   <Card variant="outlined" sx={{ borderRadius: 2, height: '100%' }}>
                     <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
                       <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mb: 0.5 }}>
@@ -340,7 +341,7 @@ function ExpandableRow({
                 </Grid>
 
                 {/* Ping */}
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid item xs={12} sm={6} md={hasIndexNowHub ? 2.4 : 3}>
                   <Card variant="outlined" sx={{ borderRadius: 2, height: '100%' }}>
                     <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
                       <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mb: 0.5 }}>
@@ -372,6 +373,45 @@ function ExpandableRow({
                     </CardContent>
                   </Card>
                 </Grid>
+
+                {/* IndexNow Hub */}
+                {hasIndexNowHub && (
+                  <Grid item xs={12} sm={6} md={2.4}>
+                    <Card variant="outlined" sx={{ borderRadius: 2, height: '100%' }}>
+                      <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mb: 0.5 }}>
+                          KÊNH 5: INDEXNOW (HUB SỞ HỮU)
+                        </Typography>
+                        {item.results?.indexNowHub ? (
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            {Object.entries(item.results.indexNowHub)
+                              .filter(([key]) => key !== '_verified')
+                              .map(([engine, status]) => (
+                                <Box key={engine} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 0.5 }}>
+                                  <Typography variant="caption" sx={{ fontWeight: 650 }}>{engine}:</Typography>
+                                  <Typography
+                                    variant="caption"
+                                    color={status.includes('error') ? 'error.main' : 'success.main'}
+                                    sx={{ fontWeight: 600, maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                                  >
+                                    {status}
+                                  </Typography>
+                                </Box>
+                              ))}
+                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem', mt: 0.5 }}>
+                              Verify: {item.results.indexNowHub._verified || 'no'}
+                            </Typography>
+                          </Box>
+                        ) : (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <HelpOutlinedIcon color="disabled" sx={{ fontSize: 16 }} />
+                            <Typography variant="body2" color="text.secondary">Không hỗ trợ</Typography>
+                          </Box>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                )}
               </Grid>
             </Box>
           </Collapse>
@@ -697,7 +737,7 @@ export default function IndexBoosterPage({ isActive = true }: IndexBoosterPagePr
           <BoltIcon sx={{ color: '#00b894', fontSize: 28 }} /> Kích hoạt ép Index Booster
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3.5 }}>
-          Bắn đồng thời 4 kênh: <strong>Trang mồi Hub dofollow (JobPosting schema)</strong>, <strong>Decoy 302 redirect</strong>, <strong>IndexNow (Bing/Yandex)</strong>, và <strong>Ping XML-RPC</strong>.
+          Bắn đồng thời 5 kênh: <strong>Trang mồi Hub dofollow (JobPosting schema)</strong>, <strong>Decoy 301 redirect</strong>, <strong>IndexNow (Bing/Yandex)</strong>, <strong>IndexNow Hub (Bing/Yandex)</strong>, và <strong>Ping XML-RPC</strong>.
         </Typography>
 
         <Box component="form" onSubmit={handleFormSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -812,9 +852,10 @@ export default function IndexBoosterPage({ isActive = true }: IndexBoosterPagePr
                     <Divider sx={{ my: 1 }} />
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                       {renderChannelRow('Kênh 1: Hub Page', res.results.hub, 'hubUrl', 'Xem trang mồi')}
-                      {renderChannelRow('Kênh 2: Decoy 302', res.results.forceIndex, 'decoyUrl', 'Xem decoy')}
+                      {renderChannelRow('Kênh 2: Decoy 301', res.results.forceIndex, 'decoyUrl', 'Xem decoy')}
                       {renderChannelRow('Kênh 3: IndexNow', res.results.indexNow)}
                       {renderChannelRow('Kênh 4: Ping XML-RPC', res.results.ping)}
+                      {renderChannelRow('Kênh 5: IndexNow (Hub sở hữu)', res.results.indexNowHub)}
                     </Box>
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, fontStyle: 'italic' }}>
                       {res.note}
