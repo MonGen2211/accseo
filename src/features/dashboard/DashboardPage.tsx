@@ -485,7 +485,7 @@ export default function DashboardPage() {
 
   const dockItems = [
     { id: 'overview', label: 'Tổng quan & Báo cáo', icon: <SpaceDashboardIcon sx={{ fontSize: 20 }} /> },
-    { id: 'vbpl', label: 'Gợi ý SEO & VBPL', icon: <AutoAwesomeIcon sx={{ fontSize: 20 }} /> },
+    { id: 'vbpl', label: 'Gợi ý từ khóa', icon: <AutoAwesomeIcon sx={{ fontSize: 20 }} /> },
     { id: 'planner', label: 'Keyword Planner', icon: <SearchIcon sx={{ fontSize: 20 }} /> },
     { id: 'serp', label: 'Thứ hạng SERP', icon: <EmojiEventsIcon sx={{ fontSize: 20 }} /> },
     { id: 'index-checker', label: 'Google Index Checker', icon: <CloudDoneOutlinedIcon sx={{ fontSize: 20 }} /> },

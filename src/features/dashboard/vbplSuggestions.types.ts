@@ -156,17 +156,19 @@ export interface CustomProjectGroup {
 }
 
 export interface AiExpandKeywordsRequest {
-  keywords: string[];
-  perSeed?: number;
-  page?: number;
-  limit?: number;
-  minVolume?: number;
-  maxVolume?: number;
-  competition?: string[];
-  location?: string;
-  language?: string;
-  sortOrder?: 'asc' | 'desc';
-  refresh?: boolean;
+  keywords: string[];          // BẮT BUỘC, 1-30 seed
+  perSeed?: number;            // 1-50, default 15 (số từ khoá con/topic)
+  context?: string;            // optional, ≤300 ký tự, lĩnh vực ưu tiên
+  includeZeroVolume?: boolean; // default false
+  page?: number;               // default 1 (phân trang theo TOPIC)
+  limit?: number;              // 1-200, default 50
+  minVolume?: number;          // ≥0, lọc trên từ khoá con
+  maxVolume?: number;          // ≥0
+  competition?: ('LOW' | 'MEDIUM' | 'HIGH')[];
+  location?: 'VN'|'US'|'GB'|'AU'|'CA'|'JP'|'KR'|'SG'|'TH'|'ID'|'MY'|'PH'|'IN'|'FR'|'DE'; // default VN
+  language?: 'vi'|'en'|'ja'|'zh'|'ko'|'fr'|'de'|'es'|'pt'|'th'|'id'; // default vi
+  sortOrder?: 'asc' | 'desc';  // default desc (sắp từ khoá con theo volume)
+  refresh?: boolean;           // default false (true = sinh lại, bỏ cache)
 }
 
 export interface MonthlySearchVolume {
@@ -175,7 +177,7 @@ export interface MonthlySearchVolume {
   volume: number;
 }
 
-export interface AiExpandKeywordItem {
+export interface ChildKeyword {
   keyword: string;
   avgMonthlySearches: number;
   monthlySearchVolumes: MonthlySearchVolume[];
@@ -185,14 +187,23 @@ export interface AiExpandKeywordItem {
   bidHigh: number | null;
 }
 
+export interface TopicGroup {
+  topic: string;
+  topicVolume: number;
+  topicCompetition: 'LOW' | 'MEDIUM' | 'HIGH' | 'UNKNOWN';
+  keywordCount: number;
+  keywords: ChildKeyword[];
+}
+
 export interface AiExpandKeywordsResponse {
   total: number;
   page: number;
   limit: number;
   totalPages: number;
   generated: number;
-  keywords: AiExpandKeywordItem[];
+  topics: TopicGroup[];
 }
+
 
 
 
