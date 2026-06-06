@@ -185,12 +185,17 @@ export interface ChildKeyword {
   competitionIndex: number;
   bidLow: number | null;
   bidHigh: number | null;
+  intent?: 'info' | 'commercial' | 'local';
+  opportunityScore?: number;
+  trend?: number;
 }
 
 export interface TopicGroup {
   topic: string;
   topicVolume: number;
   topicCompetition: 'LOW' | 'MEDIUM' | 'HIGH' | 'UNKNOWN';
+  topicScore?: number;
+  topicTotalVolume?: number;
   keywordCount: number;
   keywords: ChildKeyword[];
 }

@@ -1035,6 +1035,39 @@ export default function VbplSuggestionsSection() {
   const [competitionFilters, setCompetitionFilters] = useState<string[]>([]);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [expandedTopics, setExpandedTopics] = useState<TopicGroup[]>([]);
+  const [clientSortBy, setClientSortBy] = useState<'opportunity' | 'volume'>('opportunity');
+  const [intentFilter, setIntentFilter] = useState<'all' | 'commercial' | 'local' | 'info'>('all');
+
+  const processedTopics = useMemo(() => {
+    let result = expandedTopics.map(tg => {
+      let filteredKeywords = tg.keywords || [];
+      if (intentFilter !== 'all') {
+        filteredKeywords = filteredKeywords.filter(k => k.intent === intentFilter);
+      }
+      return {
+        ...tg,
+        keywords: filteredKeywords,
+        keywordCount: filteredKeywords.length
+      };
+    });
+
+    if (clientSortBy === 'volume') {
+      result = [...result].sort((a, b) => {
+        const volA = a.topicTotalVolume ?? a.topicVolume ?? 0;
+        const volB = b.topicTotalVolume ?? b.topicVolume ?? 0;
+        return sortOrder === 'asc' ? volA - volB : volB - volA;
+      });
+      result = result.map(tg => {
+        const sortedKeywords = [...tg.keywords].sort((a, b) => {
+          return sortOrder === 'asc' 
+            ? a.avgMonthlySearches - b.avgMonthlySearches 
+            : b.avgMonthlySearches - a.avgMonthlySearches;
+        });
+        return { ...tg, keywords: sortedKeywords };
+      });
+    }
+    return result;
+  }, [expandedTopics, clientSortBy, intentFilter, sortOrder]);
   const [expandedTotal, setExpandedTotal] = useState<number>(0);
   const [expandedGenerated, setExpandedGenerated] = useState<number>(0);
   const [expandedTotalPages, setExpandedTotalPages] = useState<number>(1);
@@ -1147,13 +1180,15 @@ export default function VbplSuggestionsSection() {
   };
 
   const handleExportCsv = () => {
-    const headers = ['Chủ đề cha', 'Từ khóa con', 'Volume trung bình', 'Độ cạnh tranh', 'Chỉ số cạnh tranh', 'Giá thầu thấp', 'Giá thầu cao'];
+    const headers = ['Chủ đề cha', 'Từ khóa con', 'Intent', 'Điểm cơ hội', 'Volume trung bình', 'Độ cạnh tranh', 'Chỉ số cạnh tranh', 'Giá thầu thấp', 'Giá thầu cao'];
     const rows: string[][] = [];
-    expandedTopics.forEach(topicGroup => {
+    processedTopics.forEach(topicGroup => {
       topicGroup.keywords.forEach(row => {
         rows.push([
           topicGroup.topic,
           row.keyword,
+          row.intent || '—',
+          row.opportunityScore !== undefined && row.opportunityScore !== null ? String(row.opportunityScore) : '—',
           String(row.avgMonthlySearches),
           row.competition,
           String(row.competitionIndex),
@@ -1168,7 +1203,7 @@ export default function VbplSuggestionsSection() {
 
   const handleAddAllToCart = () => {
     const allChildKeywords: ChildKeyword[] = [];
-    expandedTopics.forEach(topicGroup => {
+    processedTopics.forEach(topicGroup => {
       allChildKeywords.push(...topicGroup.keywords);
     });
 
@@ -1221,7 +1256,7 @@ export default function VbplSuggestionsSection() {
   };
 
   const handleCopySelected = () => {
-    const currentSessionKeywords = expandedTopics.flatMap(t => t.keywords.map(k => k.keyword));
+    const currentSessionKeywords = processedTopics.flatMap(t => t.keywords.map(k => k.keyword));
     const selectedInSession = cartItems.filter(c => currentSessionKeywords.includes(c.name)).map(c => c.name);
     
     if (selectedInSession.length === 0) {
@@ -1240,7 +1275,7 @@ export default function VbplSuggestionsSection() {
 
   const maxSearchVolume = useMemo(() => {
     let maxVal = 1;
-    expandedTopics.forEach(t => {
+    processedTopics.forEach(t => {
       t.keywords?.forEach(k => {
         if (k.avgMonthlySearches > maxVal) {
           maxVal = k.avgMonthlySearches;
@@ -1248,7 +1283,7 @@ export default function VbplSuggestionsSection() {
       });
     });
     return maxVal;
-  }, [expandedTopics]);
+  }, [processedTopics]);
 
   // Debounced/automatic search when local filters change (caching ensures this is cheap)
   useEffect(() => {
@@ -4490,7 +4525,7 @@ export default function VbplSuggestionsSection() {
                         <AutoAwesomeIcon sx={{ color: '#10b981', fontSize: 20 }} /> Danh sách nhóm chủ đề từ khóa AI
                       </Typography>
                       <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                        Tổng từ khóa con AI sinh được: <strong style={{ color: '#10b981' }}>{expandedGenerated}</strong> · Hiển thị {expandedTotal} chủ đề cha sau lọc
+                        Tổng từ khóa con AI sinh được: <strong style={{ color: '#10b981' }}>{expandedGenerated}</strong> · Hiển thị {processedTopics.length} chủ đề cha sau lọc
                       </Typography>
                     </Box>
 
@@ -4510,7 +4545,7 @@ export default function VbplSuggestionsSection() {
                         }}
                       >
                         {(() => {
-                          const allChildKeywords = expandedTopics.flatMap(t => t.keywords);
+                          const allChildKeywords = processedTopics.flatMap(t => t.keywords);
                           const isAllSelected = allChildKeywords.length > 0 && allChildKeywords.every(row => cartItems.some(k => k.name === row.keyword));
                           return isAllSelected ? "Bỏ chọn cả trang" : `Chọn cả trang (${allChildKeywords.length})`;
                         })()}
@@ -4549,9 +4584,71 @@ export default function VbplSuggestionsSection() {
                     </Box>
                   </Paper>
 
+                  {/* Quick Client Filters & Sorting Bar */}
+                  <Box 
+                    sx={{ 
+                      p: 2.5, 
+                      borderRadius: 4, 
+                      border: '1px solid', 
+                      borderColor: 'divider', 
+                      bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.002)',
+                      display: 'flex', 
+                      flexWrap: 'wrap', 
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: 2.5
+                    }}
+                  >
+                    {/* Intent Filter Chips */}
+                    <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Lọc theo Intent:
+                      </Typography>
+                      {([
+                        { value: 'all', label: 'Tất cả' },
+                        { value: 'commercial', label: 'Thương mại (Commercial)' },
+                        { value: 'local', label: 'Địa phương (Local)' },
+                        { value: 'info', label: 'Thông tin (Info)' }
+                      ] as const).map(opt => (
+                        <Chip
+                          key={opt.value}
+                          label={opt.label}
+                          size="small"
+                          clickable
+                          color={intentFilter === opt.value ? 'primary' : 'default'}
+                          variant={intentFilter === opt.value ? 'default' : 'outlined'}
+                          onClick={() => setIntentFilter(opt.value)}
+                          sx={{ fontWeight: 800, px: 0.5, borderRadius: 2 }}
+                        />
+                      ))}
+                    </Box>
+
+                    {/* Sort Toggle Chips */}
+                    <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Sắp xếp kết quả:
+                      </Typography>
+                      {([
+                        { value: 'opportunity', label: 'Điểm cơ hội (Mặc định BE)' },
+                        { value: 'volume', label: 'Volume lượng tìm kiếm' }
+                      ] as const).map(opt => (
+                        <Chip
+                          key={opt.value}
+                          label={opt.label}
+                          size="small"
+                          clickable
+                          color={clientSortBy === opt.value ? 'secondary' : 'default'}
+                          variant={clientSortBy === opt.value ? 'default' : 'outlined'}
+                          onClick={() => setClientSortBy(opt.value)}
+                          sx={{ fontWeight: 800, px: 0.5, borderRadius: 2 }}
+                        />
+                      ))}
+                    </Box>
+                  </Box>
+
                   {/* Accordion 2-level rendering */}
                   <Box>
-                    {expandedTopics.map((topicGroup, tIdx) => {
+                    {processedTopics.map((topicGroup, tIdx) => {
                       const allSelected = isTopicAllSelected(topicGroup);
                       const compColor = topicGroup.topicCompetition === 'LOW' ? '#10b981' : topicGroup.topicCompetition === 'MEDIUM' ? '#f59e0b' : topicGroup.topicCompetition === 'HIGH' ? '#ef4444' : '#6b7280';
                       const compLabel = topicGroup.topicCompetition === 'LOW' ? 'Low' : topicGroup.topicCompetition === 'MEDIUM' ? 'Medium' : topicGroup.topicCompetition === 'HIGH' ? 'High' : 'Unknown';
@@ -4603,18 +4700,43 @@ export default function VbplSuggestionsSection() {
                                 size="small" 
                                 sx={{ fontWeight: 700, fontSize: 10, height: 20, bgcolor: `${compColor}15`, color: compColor, border: `1px solid ${compColor}30` }}
                               />
+                              {topicGroup.topicScore !== undefined && topicGroup.topicScore !== null && (
+                                <Chip 
+                                  label={`Cơ hội: ${topicGroup.topicScore}`} 
+                                  size="small" 
+                                  sx={{ 
+                                    fontWeight: 800, 
+                                    fontSize: '0.75rem', 
+                                    bgcolor: 'primary.main', 
+                                    color: 'white',
+                                    boxShadow: '0 2px 8px rgba(25, 118, 210, 0.25)' 
+                                  }}
+                                />
+                              )}
                             </Box>
 
                             {/* Right details */}
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mr: 1, flexShrink: 0 }}>
                               <Box sx={{ textAlign: 'right' }}>
                                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontWeight: 650, fontSize: '0.65rem' }}>
-                                  VOLUME CHA
+                                  TỔNG VOLUME CON
                                 </Typography>
                                 <Typography variant="body2" sx={{ fontWeight: 850, color: 'text.primary' }}>
-                                  {topicGroup.topicVolume ? topicGroup.topicVolume.toLocaleString('vi-VN') : '—'}
+                                  {topicGroup.topicTotalVolume !== undefined && topicGroup.topicTotalVolume !== null
+                                    ? topicGroup.topicTotalVolume.toLocaleString('vi-VN') 
+                                    : (topicGroup.topicVolume ? topicGroup.topicVolume.toLocaleString('vi-VN') : '—')}
                                 </Typography>
                               </Box>
+                              {topicGroup.topicTotalVolume !== undefined && topicGroup.topicTotalVolume !== null && topicGroup.topicVolume !== undefined && (
+                                <Box sx={{ textAlign: 'right', opacity: 0.7 }}>
+                                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontWeight: 650, fontSize: '0.65rem' }}>
+                                    VOLUME GỐC
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.secondary', fontSize: '0.8rem' }}>
+                                    {topicGroup.topicVolume.toLocaleString('vi-VN')}
+                                  </Typography>
+                                </Box>
+                              )}
                               <Box sx={{ textAlign: 'right', minWidth: 80 }}>
                                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontWeight: 650, fontSize: '0.65rem' }}>
                                   SỐ TỪ CON
@@ -4634,11 +4756,21 @@ export default function VbplSuggestionsSection() {
                                     <TableCell sx={{ fontWeight: 800, color: 'text.secondary', width: 60 }}></TableCell>
                                     <TableCell sx={{ fontWeight: 800, color: 'text.secondary', width: 50 }}>#</TableCell>
                                     <TableCell sx={{ fontWeight: 800, color: 'text.secondary' }}>TỪ KHÓA CON</TableCell>
-                                    <TableCell sx={{ fontWeight: 800, color: 'text.secondary', align: 'right' }}>VOLUME</TableCell>
-                                    <TableCell sx={{ fontWeight: 800, color: 'text.secondary', width: 140 }}>XU HƯỚNG (12T)</TableCell>
-                                    <TableCell sx={{ fontWeight: 800, color: 'text.secondary', width: 150 }}>CẠNH TRANH</TableCell>
-                                    <TableCell sx={{ fontWeight: 800, color: 'text.secondary', width: 120 }}>THẦU THẤP</TableCell>
-                                    <TableCell sx={{ fontWeight: 800, color: 'text.secondary', width: 120 }}>THẦU CAO</TableCell>
+                                    <TableCell sx={{ fontWeight: 800, color: 'text.secondary', width: 110 }}>INTENT</TableCell>
+                                    <TableCell sx={{ fontWeight: 800, color: 'text.secondary', align: 'right', width: 110 }}>VOLUME</TableCell>
+                                    <TableCell sx={{ fontWeight: 800, color: 'text.secondary', width: 120 }}>XU HƯỚNG (12T)</TableCell>
+                                    <TableCell sx={{ fontWeight: 800, color: 'text.secondary', width: 100 }}>TREND 3T</TableCell>
+                                    <TableCell sx={{ fontWeight: 800, color: 'text.secondary', width: 110 }}>ĐIỂM CƠ HỘI</TableCell>
+                                    <TableCell sx={{ fontWeight: 800, color: 'text.secondary', width: 150 }}>
+                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        CẠNH TRANH
+                                        <Tooltip title="Đây là độ cạnh tranh QUẢNG CÁO Google Ads, KHÔNG phải độ khó SEO" arrow>
+                                          <InfoIcon sx={{ fontSize: 13, cursor: 'help', color: 'text.secondary' }} />
+                                        </Tooltip>
+                                      </Box>
+                                    </TableCell>
+                                    <TableCell sx={{ fontWeight: 800, color: 'text.secondary', width: 110 }}>THẦU THẤP</TableCell>
+                                    <TableCell sx={{ fontWeight: 800, color: 'text.secondary', width: 110 }}>THẦU CAO</TableCell>
                                   </TableRow>
                                 </TableHead>
                                 <TableBody>
@@ -4646,6 +4778,38 @@ export default function VbplSuggestionsSection() {
                                     const inCart = cartItems.some(c => c.name === k.keyword);
                                     const childCompColor = k.competition === 'LOW' ? '#10b981' : k.competition === 'MEDIUM' ? '#f59e0b' : k.competition === 'HIGH' ? '#ef4444' : '#6b7280';
                                     const childCompLabel = k.competition === 'LOW' ? 'Low' : k.competition === 'MEDIUM' ? 'Medium' : k.competition === 'HIGH' ? 'High' : 'Unknown';
+
+                                    let intentLabel = '';
+                                    let intentBg = '';
+                                    let intentColor = '';
+                                    if (k.intent === 'commercial') {
+                                      intentLabel = 'Thương mại';
+                                      intentBg = '#ffedd5';
+                                      intentColor = '#ea580c';
+                                    } else if (k.intent === 'local') {
+                                      intentLabel = 'Địa phương';
+                                      intentBg = '#dcfce7';
+                                      intentColor = '#16a34a';
+                                    } else if (k.intent === 'info') {
+                                      intentLabel = 'Thông tin';
+                                      intentBg = '#f3f4f6';
+                                      intentColor = '#4b5563';
+                                    }
+
+                                    let trendText = '—';
+                                    let trendColor = 'text.secondary';
+                                    if (k.trend !== undefined && k.trend !== null) {
+                                      if (k.trend >= 1.1) {
+                                        trendText = `▲ ${k.trend.toFixed(1)}x`;
+                                        trendColor = '#10b981';
+                                      } else if (k.trend <= 0.9) {
+                                        trendText = `▼ ${k.trend.toFixed(1)}x`;
+                                        trendColor = '#ef4444';
+                                      } else {
+                                        trendText = `– ${k.trend.toFixed(1)}x`;
+                                        trendColor = 'text.secondary';
+                                      }
+                                    }
 
                                     return (
                                       <TableRow 
@@ -4703,6 +4867,22 @@ export default function VbplSuggestionsSection() {
                                           </Box>
                                         </TableCell>
                                         <TableCell>
+                                          {intentLabel ? (
+                                            <Chip 
+                                              label={intentLabel} 
+                                              size="small" 
+                                              sx={{ 
+                                                fontWeight: 800, 
+                                                fontSize: 10, 
+                                                height: 20, 
+                                                bgcolor: intentBg, 
+                                                color: intentColor,
+                                                border: `1px solid ${intentColor}25`
+                                              }}
+                                            />
+                                          ) : '—'}
+                                        </TableCell>
+                                        <TableCell>
                                           <Box sx={{ width: 100 }}>
                                             <Typography sx={{ fontWeight: 800, fontSize: '0.88rem', color: 'text.primary', mb: 0.5 }}>
                                               {k.avgMonthlySearches ? k.avgMonthlySearches.toLocaleString('vi-VN') : '0'}
@@ -4714,6 +4894,22 @@ export default function VbplSuggestionsSection() {
                                         </TableCell>
                                         <TableCell>
                                           <Sparkline keyword={k.keyword} volumes={k.monthlySearchVolumes} />
+                                        </TableCell>
+                                        <TableCell>
+                                          {k.trend !== undefined && k.trend !== null ? (
+                                            <Tooltip title="Xu hướng 3 tháng gần so với 3 tháng trước" arrow>
+                                              <Typography sx={{ fontWeight: 800, fontSize: '0.85rem', color: trendColor, display: 'inline-flex', alignItems: 'center', cursor: 'help' }}>
+                                                {trendText}
+                                              </Typography>
+                                            </Tooltip>
+                                          ) : '—'}
+                                        </TableCell>
+                                        <TableCell>
+                                          {k.opportunityScore !== undefined && k.opportunityScore !== null ? (
+                                            <Typography sx={{ fontWeight: 850, fontSize: '0.88rem', color: 'primary.main' }}>
+                                              {k.opportunityScore}
+                                            </Typography>
+                                          ) : '—'}
                                         </TableCell>
                                         <TableCell>
                                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
