@@ -157,7 +157,8 @@ export interface CustomProjectGroup {
 
 export interface AiExpandKeywordsRequest {
   keywords: string[];          // BẮT BUỘC, 1-30 seed
-  perSeed?: number;            // 1-50, default 15 (số từ khoá con/topic)
+  outputCount?: number;        // optional, default 20 (1-50) - Số từ khóa MỚI AI sinh (= số topic)
+  perSeed?: number;            // 1-50, default 10 (số từ liên quan lấy kèm cho mỗi từ AI)
   context?: string;            // optional, ≤300 ký tự, lĩnh vực ưu tiên
   includeZeroVolume?: boolean; // default false
   page?: number;               // default 1 (phân trang theo TOPIC)

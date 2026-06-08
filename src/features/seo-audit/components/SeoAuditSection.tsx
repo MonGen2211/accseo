@@ -1202,7 +1202,7 @@ export default function SeoAuditSection() {
       <tr>
         <th style="width: 25%;">Tiêu chí kiểm tra</th>
         <th style="width: 15%;">Kết quả</th>
-        <th style="width: 20%;">Trọng số & Tác động</th>
+        <th style="width: 20%;">Trọng số</th>
         <th style="width: 40%;">Khuyến nghị & Bằng chứng thực tế</th>
       </tr>
     </thead>
@@ -1225,7 +1225,6 @@ export default function SeoAuditSection() {
         <td><span class="badge ${statusClass}">${statusText}</span></td>
         <td>
           <span class="badge ${importanceClass}">${c.importanceLabel}</span>
-          <div style="font-size: 8pt; color: #64748b; margin-top: 4px;">Tác động: ${c.weight}%</div>
         </td>
         <td>
           <div style="font-weight: bold; color: #0f172a; margin-bottom: 5px;">${c.message}</div>
@@ -1964,7 +1963,7 @@ export default function SeoAuditSection() {
                                         }
                                       }}
                                     />
-                                    <Chip
+                                    {/* <Chip
                                       label={`Tác động: ${c.weight}%`}
                                       size="small"
                                       sx={{
@@ -1975,7 +1974,7 @@ export default function SeoAuditSection() {
                                         color: (theme) => theme.palette.mode === 'dark' ? '#81ecec' : '#0984e3',
                                         border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(0, 206, 201, 0.3)' : 'rgba(9, 132, 227, 0.2)'}`,
                                       }}
-                                    />
+                                    /> */}
                                   </Box>
                                 </Box>
                               </AccordionSummary>

@@ -1024,8 +1024,10 @@ export default function VbplSuggestionsSection() {
   const [activeTab, setActiveTab] = useState<number>(0);
 
   // ================= AI Keyword Expansion Tab States =================
-  const [seedKeywordsText, setSeedKeywordsText] = useState<string>('');
-  const [perSeed, setPerSeed] = useState<number>(15);
+  const [seedKeywords, setSeedKeywords] = useState<string[]>([]);
+  const [seedInputText, setSeedInputText] = useState<string>('');
+  const [outputCount, setOutputCount] = useState<number>(20);
+  const [perSeed, setPerSeed] = useState<number>(10);
   const [context, setContext] = useState<string>('');
   const [includeZeroVolume, setIncludeZeroVolume] = useState<boolean>(false);
   const [locationCode, setLocationCode] = useState<string>('VN');
@@ -1078,14 +1080,19 @@ export default function VbplSuggestionsSection() {
   const [validationError, setValidationError] = useState<string>('');
 
   const handleExpandKeywords = async (targetPage: number, forceRefresh: boolean, customLimit?: number) => {
-    const rawKeywords = seedKeywordsText
-      .split(/[\n,]+/)
-      .map(k => k.trim())
-      .filter(k => k.length > 0);
+    let activeKeywords = [...seedKeywords];
+    const trimmedInput = seedInputText.trim().replace(/,$/, '');
+    if (trimmedInput) {
+      if (!activeKeywords.includes(trimmedInput)) {
+        activeKeywords.push(trimmedInput);
+        setSeedKeywords(activeKeywords);
+      }
+      setSeedInputText('');
+    }
 
     const seen = new Set<string>();
     const uniqueKeywords: string[] = [];
-    rawKeywords.forEach(k => {
+    activeKeywords.forEach(k => {
       const lower = k.toLowerCase();
       if (!seen.has(lower)) {
         seen.add(lower);
@@ -1126,6 +1133,7 @@ export default function VbplSuggestionsSection() {
     try {
       const payload: any = {
         keywords: uniqueKeywords,
+        outputCount,
         perSeed,
         page: targetPage,
         limit: activeLimit,
@@ -1160,15 +1168,18 @@ export default function VbplSuggestionsSection() {
       const code = responseData?.code || responseData?.message;
       const msg = responseData?.message || err.message;
 
-      if (statusCode === 400) {
+      if (statusCode === 401) {
+        showToast('Phiên làm việc hết hạn. Vui lòng đăng nhập lại.', 'danger');
+        window.location.href = '/login';
+      } else if (statusCode === 400) {
         setValidationError(msg || 'Tham số không hợp lệ.');
         showToast('Lỗi tham số: ' + (msg || 'vui lòng kiểm tra lại đầu vào'), 'danger');
       } else if (code === 'AI_GENERATE_FAILED') {
-        showToast('AI lỗi, thử lại', 'danger');
+        showToast('AI sinh từ khoá thất bại, thử lại.', 'danger');
       } else if (code === 'GOOGLE_ADS_QUOTA_EXCEEDED') {
-        showToast('Hết quota Google, thử lại sau', 'danger');
+        showToast('Hết quota Google Ads, thử lại sau.', 'danger');
       } else if (['GEMINI_NOT_CONFIGURED', 'GOOGLE_ADS_NOT_CONFIGURED', 'GOOGLE_ADS_AUTH_ERROR'].includes(code)) {
-        showToast('Lỗi cấu hình hệ thống, báo admin', 'danger');
+        showToast('Lỗi cấu hình Google Ads, liên hệ admin.', 'danger');
       } else if (code === 'GOOGLE_ADS_ERROR') {
         showToast(msg || 'Lỗi Google Ads khác', 'danger');
       } else {
@@ -1180,7 +1191,7 @@ export default function VbplSuggestionsSection() {
   };
 
   const handleExportCsv = () => {
-    const headers = ['Chủ đề cha', 'Từ khóa con', 'Intent', 'Điểm cơ hội', 'Volume trung bình', 'Độ cạnh tranh', 'Chỉ số cạnh tranh', 'Giá thầu thấp', 'Giá thầu cao'];
+    const headers = ['Chủ đề cha', 'Từ khóa con', 'Intent', 'Volume trung bình', 'Độ cạnh tranh', 'Chỉ số cạnh tranh', 'Giá thầu thấp', 'Giá thầu cao'];
     const rows: string[][] = [];
     processedTopics.forEach(topicGroup => {
       topicGroup.keywords.forEach(row => {
@@ -1188,7 +1199,6 @@ export default function VbplSuggestionsSection() {
           topicGroup.topic,
           row.keyword,
           row.intent || '—',
-          row.opportunityScore !== undefined && row.opportunityScore !== null ? String(row.opportunityScore) : '—',
           String(row.avgMonthlySearches),
           row.competition,
           String(row.competitionIndex),
@@ -1271,6 +1281,15 @@ export default function VbplSuggestionsSection() {
   const formatCurrency = (val: number | null) => {
     if (val === null || val === undefined) return '-';
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+  };
+
+  const formatBidRange = (low: number | null, high: number | null) => {
+    if ((low === null || low === undefined) && (high === null || high === undefined)) {
+      return '—';
+    }
+    const lowStr = low !== null && low !== undefined ? formatCurrency(low) : '—';
+    const highStr = high !== null && high !== undefined ? formatCurrency(high) : '—';
+    return `${lowStr} – ${highStr}`;
   };
 
   const maxSearchVolume = useMemo(() => {
@@ -4236,6 +4255,7 @@ export default function VbplSuggestionsSection() {
           /* ================= AI Keyword Expansion (Volume suggestions) ================= */
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5, width: '100%', boxSizing: 'border-box' }}>
             {/* Form controls paper */}
+            {/* Form controls paper */}
             <Paper 
               elevation={0} 
               sx={{ 
@@ -4250,29 +4270,119 @@ export default function VbplSuggestionsSection() {
                 <Grid item xs={12}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <AutoAwesomeIcon sx={{ color: '#10b981', fontSize: 18 }} /> Từ khóa hạt giống (Seed keywords - Tối đa 30 từ, cách nhau bởi dòng mới hoặc dấu phẩy)
+                      <AutoAwesomeIcon sx={{ color: '#10b981', fontSize: 18 }} /> Từ khóa hạt giống (Seed keywords - 1 đến 30 từ, tối đa 200 ký tự mỗi từ)
                     </Typography>
                     <Tooltip title="Nhập danh sách từ khóa gốc của bạn để AI phân tích và tìm các từ khóa mở rộng liên quan để viết bài." arrow>
                       <IconButton size="small"><InfoIcon sx={{ fontSize: 16 }} /></IconButton>
                     </Tooltip>
                   </Box>
+
+                  {/* Visual list of seed chips */}
+                  {seedKeywords.length > 0 && (
+                    <Box 
+                      sx={{ 
+                        display: 'flex', 
+                        flexWrap: 'wrap', 
+                        gap: 0.8, 
+                        p: 1.5, 
+                        mb: 1.5,
+                        borderRadius: 2, 
+                        bgcolor: 'background.default',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        maxHeight: 120,
+                        overflowY: 'auto'
+                      }}
+                    >
+                      {seedKeywords.map((tag, idx) => (
+                        <Chip
+                          key={idx}
+                          label={tag}
+                          size="small"
+                          onDelete={() => {
+                            setSeedKeywords(prev => prev.filter((_, i) => i !== idx));
+                          }}
+                          sx={{ 
+                            fontWeight: 700, 
+                            borderRadius: 1.5,
+                            bgcolor: 'action.selected',
+                            color: 'text.primary'
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  )}
+
                   <TextField
                     fullWidth
-                    multiline
-                    rows={3}
-                    placeholder="Nhập mỗi từ khóa trên một dòng. Ví dụ:&#10;luật đất đai&#10;sổ đỏ"
-                    value={seedKeywordsText}
+                    placeholder="Nhập từ khóa hạt giống (Nhấn Enter hoặc Dấu phẩy để thêm, tối đa 30 từ)"
+                    value={seedInputText}
                     onChange={(e) => {
-                      setSeedKeywordsText(e.target.value);
+                      setSeedInputText(e.target.value);
                       setValidationError('');
                     }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ',') {
+                        e.preventDefault();
+                        const val = seedInputText.trim().replace(/,$/, '');
+                        if (val) {
+                          if (val.length > 200) {
+                            setValidationError('Từ khóa hạt giống không được vượt quá 200 ký tự.');
+                            showToast('Từ khóa quá dài (tối đa 200 ký tự)!', 'warning');
+                            return;
+                          }
+                          if (seedKeywords.length >= 30) {
+                            setValidationError('Chỉ được nhập tối đa 30 từ khóa hạt giống.');
+                            showToast('Tối đa 30 từ khóa hạt giống!', 'warning');
+                            return;
+                          }
+                          if (!seedKeywords.includes(val)) {
+                            setSeedKeywords(prev => [...prev, val]);
+                          }
+                          setSeedInputText('');
+                        }
+                      }
+                    }}
+                    onPaste={(e) => {
+                      e.preventDefault();
+                      const text = e.clipboardData.getData('text');
+                      const items = text
+                        .split(/\r?\n|,|;/)
+                        .map(item => item.trim())
+                        .filter(Boolean);
+                      
+                      if (items.length > 0) {
+                        const longItem = items.find(item => item.length > 200);
+                        if (longItem) {
+                          setValidationError('Từ khóa hạt giống không được vượt quá 200 ký tự.');
+                          showToast('Có từ khóa quá dài (tối đa 200 ký tự)!', 'warning');
+                          return;
+                        }
+
+                        setSeedKeywords(prev => {
+                          const merged = [...prev];
+                          items.forEach(item => {
+                            if (merged.length < 30 && !merged.includes(item)) {
+                              merged.push(item);
+                            }
+                          });
+                          if (prev.length + items.length > 30) {
+                            showToast('Đã dừng thêm khi đạt giới hạn 30 từ khóa hạt giống!', 'warning');
+                          } else {
+                            showToast(`Đã tự động tách và thêm ${items.length} từ khóa gốc!`, 'info');
+                          }
+                          return merged;
+                        });
+                        setSeedInputText('');
+                      }
+                    }}
                     error={!!validationError}
-                    helperText={validationError}
+                    helperText={validationError || `${seedKeywords.length}/30 từ khóa đã thêm`}
                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3, bgcolor: 'background.default' } }}
                   />
                 </Grid>
 
-                <Grid item xs={12} sm={12} md={9}>
+                <Grid item xs={12} sm={12} md={6}>
                   <FormControl fullWidth size="small">
                     <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                       Lĩnh vực ưu tiên (context - Tối đa 300 ký tự)
@@ -4290,7 +4400,24 @@ export default function VbplSuggestionsSection() {
                 <Grid item xs={12} sm={6} md={3}>
                   <FormControl fullWidth size="small">
                     <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      Mở rộng mỗi seed
+                      Số topic AI sinh (outputCount)
+                    </Typography>
+                    <Select
+                      value={outputCount}
+                      onChange={(e) => setOutputCount(Number(e.target.value))}
+                      sx={{ borderRadius: 2, bgcolor: 'background.default' }}
+                    >
+                      {[5, 10, 15, 20, 25, 30, 35, 40, 45, 50].map((num) => (
+                        <MenuItem key={num} value={num}>{num} topic</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormControl fullWidth size="small">
+                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Mở rộng mỗi seed (perSeed)
                     </Typography>
                     <TextField
                       type="number"
@@ -4303,122 +4430,161 @@ export default function VbplSuggestionsSection() {
                   </FormControl>
                 </Grid>
 
-                <Grid item xs={12} sm={6} md={3}>
-                  <FormControl fullWidth size="small">
-                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Quốc gia</Typography>
-                    <Select value={locationCode} onChange={(e) => setLocationCode(e.target.value)} sx={{ borderRadius: 2, bgcolor: 'background.default' }}>
-                      <MenuItem value="VN"><span style={{ marginRight: 8 }}>🇻🇳</span> Vietnam</MenuItem>
-                      <MenuItem value="US"><span style={{ marginRight: 8 }}>🇺🇸</span> United States</MenuItem>
-                      <MenuItem value="GB"><span style={{ marginRight: 8 }}>🇬🇧</span> United Kingdom</MenuItem>
-                      <MenuItem value="AU"><span style={{ marginRight: 8 }}>🇦🇺</span> Australia</MenuItem>
-                      <MenuItem value="CA"><span style={{ marginRight: 8 }}>🇨🇦</span> Canada</MenuItem>
-                      <MenuItem value="JP"><span style={{ marginRight: 8 }}>🇯🇵</span> Japan</MenuItem>
-                      <MenuItem value="KR"><span style={{ marginRight: 8 }}>🇰🇷</span> South Korea</MenuItem>
-                      <MenuItem value="SG"><span style={{ marginRight: 8 }}>🇸🇬</span> Singapore</MenuItem>
-                      <MenuItem value="TH"><span style={{ marginRight: 8 }}>🇹🇭</span> Thailand</MenuItem>
-                      <MenuItem value="ID"><span style={{ marginRight: 8 }}>🇮🇩</span> Indonesia</MenuItem>
-                      <MenuItem value="MY"><span style={{ marginRight: 8 }}>🇲🇾</span> Malaysia</MenuItem>
-                      <MenuItem value="PH"><span style={{ marginRight: 8 }}>🇵🇭</span> Philippines</MenuItem>
-                      <MenuItem value="IN"><span style={{ marginRight: 8 }}>🇮🇳</span> India</MenuItem>
-                      <MenuItem value="FR"><span style={{ marginRight: 8 }}>🇫🇷</span> France</MenuItem>
-                      <MenuItem value="DE"><span style={{ marginRight: 8 }}>🇩🇪</span> Germany</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                <Grid item xs={12} sm={6} md={3}>
-                  <FormControl fullWidth size="small">
-                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ngôn ngữ</Typography>
-                    <Select value={languageCode} onChange={(e) => setLanguageCode(e.target.value)} sx={{ borderRadius: 2, bgcolor: 'background.default' }}>
-                      <MenuItem value="vi">Vietnamese</MenuItem>
-                      <MenuItem value="en">English</MenuItem>
-                      <MenuItem value="ja">Japanese</MenuItem>
-                      <MenuItem value="zh">Chinese</MenuItem>
-                      <MenuItem value="ko">Korean</MenuItem>
-                      <MenuItem value="fr">French</MenuItem>
-                      <MenuItem value="de">German</MenuItem>
-                      <MenuItem value="es">Spanish</MenuItem>
-                      <MenuItem value="pt">Portuguese</MenuItem>
-                      <MenuItem value="th">Thai</MenuItem>
-                      <MenuItem value="id">Indonesian</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                <Grid item xs={12} sm={6} md={3}>
-                  <FormControl fullWidth size="small">
-                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sắp xếp Volume con</Typography>
-                    <Select value={sortOrder} onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')} sx={{ borderRadius: 2, bgcolor: 'background.default' }}>
-                      <MenuItem value="desc">Giảm dần (Volume cao &rarr; thấp)</MenuItem>
-                      <MenuItem value="asc">Tăng dần (Volume thấp &rarr; cao)</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                <Grid item xs={12} sm={6} md={3} sx={{ display: 'flex', alignItems: 'center', pt: 3 }}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={includeZeroVolume}
-                        onChange={(e) => setIncludeZeroVolume(e.target.checked)}
-                        color="primary"
-                      />
-                    }
-                    label={
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                        Hiện cả volume 0
-                      </Typography>
-                    }
-                  />
-                </Grid>
-
-                <Grid item xs={12} sm={6} md={3}>
-                  <FormControl fullWidth size="small">
-                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Volume con tối thiểu</Typography>
-                    <TextField
-                      type="number"
-                      size="small"
-                      placeholder="Ví dụ: 100"
-                      value={minVolume}
-                      onChange={(e) => setMinVolume(e.target.value === '' ? '' : Number(e.target.value))}
-                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'background.default' } }}
-                    />
-                  </FormControl>
-                </Grid>
-
-                <Grid item xs={12} sm={6} md={3}>
-                  <FormControl fullWidth size="small">
-                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Volume con tối đa</Typography>
-                    <TextField
-                      type="number"
-                      size="small"
-                      placeholder="Ví dụ: 50000"
-                      value={maxVolume}
-                      onChange={(e) => setMaxVolume(e.target.value === '' ? '' : Number(e.target.value))}
-                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'background.default' } }}
-                    />
-                  </FormControl>
-                </Grid>
-
-                <Grid item xs={12} sm={12} md={6}>
-                  <FormControl fullWidth size="small">
-                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Độ cạnh tranh con</Typography>
-                    <Select
-                      multiple
-                      displayEmpty
-                      value={competitionFilters}
-                      onChange={(e) => setCompetitionFilters(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
-                      renderValue={(selected) => selected.length === 0 ? 'Tất cả độ cạnh tranh' : selected.join(', ')}
-                      sx={{ borderRadius: 2, bgcolor: 'background.default' }}
+                {/* Collapsible Advanced Filters Accordion */}
+                <Grid item xs={12}>
+                  <Accordion 
+                    elevation={0}
+                    sx={{ 
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: '10px !important',
+                      bgcolor: 'background.default',
+                      '&:before': { display: 'none' }
+                    }}
+                  >
+                    <AccordionSummary 
+                      expandIcon={<ExpandMoreIcon />}
+                      sx={{
+                        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)',
+                        borderRadius: '10px !important',
+                        px: 2,
+                        minHeight: 40,
+                        '&.Mui-expanded': { minHeight: 40 },
+                        '& .MuiAccordionSummary-content': {
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                          my: 0.8
+                        }
+                      }}
                     >
-                      {['LOW', 'MEDIUM', 'HIGH'].map((comp) => (
-                        <MenuItem key={comp} value={comp}>
-                          <Checkbox checked={competitionFilters.indexOf(comp) > -1} size="small" />
-                          <ListItemText primary={comp} />
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                      <FilterAltIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                      <Typography sx={{ fontWeight: 800, fontSize: '0.8rem', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Bộ lọc nâng cao (Volume, Quốc gia, Ngôn ngữ...)
+                      </Typography>
+                    </AccordionSummary>
+                    <AccordionDetails sx={{ p: 3, borderTop: '1px solid', borderColor: 'divider' }}>
+                      <Grid container spacing={3}>
+                        <Grid item xs={12} sm={6} md={3}>
+                          <FormControl fullWidth size="small">
+                            <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Quốc gia</Typography>
+                            <Select value={locationCode} onChange={(e) => setLocationCode(e.target.value)} sx={{ borderRadius: 2, bgcolor: 'background.default' }}>
+                              <MenuItem value="VN"><span style={{ marginRight: 8 }}>🇻🇳</span> Vietnam</MenuItem>
+                              <MenuItem value="US"><span style={{ marginRight: 8 }}>🇺🇸</span> United States</MenuItem>
+                              <MenuItem value="GB"><span style={{ marginRight: 8 }}>🇬🇧</span> United Kingdom</MenuItem>
+                              <MenuItem value="AU"><span style={{ marginRight: 8 }}>🇦🇺</span> Australia</MenuItem>
+                              <MenuItem value="CA"><span style={{ marginRight: 8 }}>🇨🇦</span> Canada</MenuItem>
+                              <MenuItem value="JP"><span style={{ marginRight: 8 }}>🇯🇵</span> Japan</MenuItem>
+                              <MenuItem value="KR"><span style={{ marginRight: 8 }}>🇰🇷</span> South Korea</MenuItem>
+                              <MenuItem value="SG"><span style={{ marginRight: 8 }}>🇸🇬</span> Singapore</MenuItem>
+                              <MenuItem value="TH"><span style={{ marginRight: 8 }}>🇹🇭</span> Thailand</MenuItem>
+                              <MenuItem value="ID"><span style={{ marginRight: 8 }}>🇮🇩</span> Indonesia</MenuItem>
+                              <MenuItem value="MY"><span style={{ marginRight: 8 }}>🇲🇾</span> Malaysia</MenuItem>
+                              <MenuItem value="PH"><span style={{ marginRight: 8 }}>🇵🇭</span> Philippines</MenuItem>
+                              <MenuItem value="IN"><span style={{ marginRight: 8 }}>🇮🇳</span> India</MenuItem>
+                              <MenuItem value="FR"><span style={{ marginRight: 8 }}>🇫🇷</span> France</MenuItem>
+                              <MenuItem value="DE"><span style={{ marginRight: 8 }}>🇩🇪</span> Germany</MenuItem>
+                            </Select>
+                          </FormControl>
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={3}>
+                          <FormControl fullWidth size="small">
+                            <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ngôn ngữ</Typography>
+                            <Select value={languageCode} onChange={(e) => setLanguageCode(e.target.value)} sx={{ borderRadius: 2, bgcolor: 'background.default' }}>
+                              <MenuItem value="vi">Vietnamese</MenuItem>
+                              <MenuItem value="en">English</MenuItem>
+                              <MenuItem value="ja">Japanese</MenuItem>
+                              <MenuItem value="zh">Chinese</MenuItem>
+                              <MenuItem value="ko">Korean</MenuItem>
+                              <MenuItem value="fr">French</MenuItem>
+                              <MenuItem value="de">German</MenuItem>
+                              <MenuItem value="es">Spanish</MenuItem>
+                              <MenuItem value="pt">Portuguese</MenuItem>
+                              <MenuItem value="th">Thai</MenuItem>
+                              <MenuItem value="id">Indonesian</MenuItem>
+                            </Select>
+                          </FormControl>
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={3}>
+                          <FormControl fullWidth size="small">
+                            <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sắp xếp Volume con</Typography>
+                            <Select value={sortOrder} onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')} sx={{ borderRadius: 2, bgcolor: 'background.default' }}>
+                              <MenuItem value="desc">Giảm dần (Volume cao &rarr; thấp)</MenuItem>
+                              <MenuItem value="asc">Tăng dần (Volume thấp &rarr; cao)</MenuItem>
+                            </Select>
+                          </FormControl>
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={3} sx={{ display: 'flex', alignItems: 'center', pt: 3 }}>
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={includeZeroVolume}
+                                onChange={(e) => setIncludeZeroVolume(e.target.checked)}
+                                color="primary"
+                              />
+                            }
+                            label={
+                              <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                Hiện cả volume 0
+                              </Typography>
+                            }
+                          />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={3}>
+                          <FormControl fullWidth size="small">
+                            <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Volume con tối thiểu</Typography>
+                            <TextField
+                              type="number"
+                              size="small"
+                              placeholder="Ví dụ: 100"
+                              value={minVolume}
+                              onChange={(e) => setMinVolume(e.target.value === '' ? '' : Number(e.target.value))}
+                              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'background.default' } }}
+                            />
+                          </FormControl>
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={3}>
+                          <FormControl fullWidth size="small">
+                            <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Volume con tối đa</Typography>
+                            <TextField
+                              type="number"
+                              size="small"
+                              placeholder="Ví dụ: 50000"
+                              value={maxVolume}
+                              onChange={(e) => setMaxVolume(e.target.value === '' ? '' : Number(e.target.value))}
+                              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'background.default' } }}
+                            />
+                          </FormControl>
+                        </Grid>
+
+                        <Grid item xs={12} sm={12} md={6}>
+                          <FormControl fullWidth size="small">
+                            <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Độ cạnh tranh con</Typography>
+                            <Select
+                              multiple
+                              displayEmpty
+                              value={competitionFilters}
+                              onChange={(e) => setCompetitionFilters(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
+                              renderValue={(selected) => selected.length === 0 ? 'Tất cả độ cạnh tranh' : selected.join(', ')}
+                              sx={{ borderRadius: 2, bgcolor: 'background.default' }}
+                            >
+                              {['LOW', 'MEDIUM', 'HIGH'].map((comp) => (
+                                <MenuItem key={comp} value={comp}>
+                                  <Checkbox checked={competitionFilters.indexOf(comp) > -1} size="small" />
+                                  <ListItemText primary={comp} />
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Grid>
+                      </Grid>
+                    </AccordionDetails>
+                  </Accordion>
                 </Grid>
 
                 <Grid item xs={12} sx={{ display: 'flex', gap: 2, justifyContent: 'flex-start', alignItems: 'center', mt: 1 }}>
@@ -4475,10 +4641,10 @@ export default function VbplSuggestionsSection() {
                 <CircularProgress size={45} sx={{ color: '#10b981' }} />
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="body1" sx={{ fontWeight: 800, color: 'text.primary', mb: 1 }}>
-                    ⚡ Đang phân tích và mở rộng từ khóa bằng AI...
+                    ⚡ AI đang sinh từ khoá và kiểm tra volume, có thể mất tới 1 phút...
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 500, mx: 'auto', fontStyle: 'italic' }}>
-                    Hệ thống đang gọi AI sinh list từ khóa mở rộng và check volume thật từ Google Ads. Lần đầu cào mới có thể mất từ 10s đến 20s. Vui lòng giữ kết nối!
+                    Hệ thống đang gọi AI và kiểm tra volume thực tế từ Google Ads. Lần gọi đầu (chưa có cache) có thể chậm vì backend gọi Google Ads nhiều lần. Vui lòng giữ kết nối và không đóng trình duyệt!
                   </Typography>
                 </Box>
               </Paper>
@@ -4629,7 +4795,7 @@ export default function VbplSuggestionsSection() {
                         Sắp xếp kết quả:
                       </Typography>
                       {([
-                        { value: 'opportunity', label: 'Điểm cơ hội (Mặc định BE)' },
+                        { value: 'opportunity', label: 'Mặc định hệ thống' },
                         { value: 'volume', label: 'Volume lượng tìm kiếm' }
                       ] as const).map(opt => (
                         <Chip
@@ -4700,19 +4866,6 @@ export default function VbplSuggestionsSection() {
                                 size="small" 
                                 sx={{ fontWeight: 700, fontSize: 10, height: 20, bgcolor: `${compColor}15`, color: compColor, border: `1px solid ${compColor}30` }}
                               />
-                              {topicGroup.topicScore !== undefined && topicGroup.topicScore !== null && (
-                                <Chip 
-                                  label={`Cơ hội: ${topicGroup.topicScore}`} 
-                                  size="small" 
-                                  sx={{ 
-                                    fontWeight: 800, 
-                                    fontSize: '0.75rem', 
-                                    bgcolor: 'primary.main', 
-                                    color: 'white',
-                                    boxShadow: '0 2px 8px rgba(25, 118, 210, 0.25)' 
-                                  }}
-                                />
-                              )}
                             </Box>
 
                             {/* Right details */}
@@ -4760,7 +4913,6 @@ export default function VbplSuggestionsSection() {
                                     <TableCell sx={{ fontWeight: 800, color: 'text.secondary', align: 'right', width: 110 }}>VOLUME</TableCell>
                                     <TableCell sx={{ fontWeight: 800, color: 'text.secondary', width: 120 }}>XU HƯỚNG (12T)</TableCell>
                                     <TableCell sx={{ fontWeight: 800, color: 'text.secondary', width: 100 }}>TREND 3T</TableCell>
-                                    <TableCell sx={{ fontWeight: 800, color: 'text.secondary', width: 110 }}>ĐIỂM CƠ HỘI</TableCell>
                                     <TableCell sx={{ fontWeight: 800, color: 'text.secondary', width: 150 }}>
                                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                         CẠNH TRANH
@@ -4769,8 +4921,7 @@ export default function VbplSuggestionsSection() {
                                         </Tooltip>
                                       </Box>
                                     </TableCell>
-                                    <TableCell sx={{ fontWeight: 800, color: 'text.secondary', width: 110 }}>THẦU THẤP</TableCell>
-                                    <TableCell sx={{ fontWeight: 800, color: 'text.secondary', width: 110 }}>THẦU CAO</TableCell>
+                                    <TableCell sx={{ fontWeight: 800, color: 'text.secondary', width: 180 }}>GIÁ THẦU</TableCell>
                                   </TableRow>
                                 </TableHead>
                                 <TableBody>
@@ -4799,14 +4950,14 @@ export default function VbplSuggestionsSection() {
                                     let trendText = '—';
                                     let trendColor = 'text.secondary';
                                     if (k.trend !== undefined && k.trend !== null) {
-                                      if (k.trend >= 1.1) {
-                                        trendText = `▲ ${k.trend.toFixed(1)}x`;
+                                      if (k.trend > 1.05) {
+                                        trendText = `↑ ${k.trend.toFixed(2)}x`;
                                         trendColor = '#10b981';
-                                      } else if (k.trend <= 0.9) {
-                                        trendText = `▼ ${k.trend.toFixed(1)}x`;
+                                      } else if (k.trend < 0.95) {
+                                        trendText = `↓ ${k.trend.toFixed(2)}x`;
                                         trendColor = '#ef4444';
                                       } else {
-                                        trendText = `– ${k.trend.toFixed(1)}x`;
+                                        trendText = `→ ${k.trend.toFixed(2)}x`;
                                         trendColor = 'text.secondary';
                                       }
                                     }
@@ -4815,7 +4966,15 @@ export default function VbplSuggestionsSection() {
                                       <TableRow 
                                         key={kIdx} 
                                         hover
-                                        sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                                        sx={{ 
+                                          '&:last-child td, &:last-child th': { border: 0 },
+                                          ...(kIdx === 0 && {
+                                            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(16, 185, 129, 0.04)',
+                                            '&:hover': {
+                                              bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.12) !important' : 'rgba(16, 185, 129, 0.07) !important'
+                                            }
+                                          })
+                                        }}
                                       >
                                         <TableCell>
                                           <Checkbox
@@ -4853,6 +5012,21 @@ export default function VbplSuggestionsSection() {
                                             >
                                               {k.keyword}
                                             </Typography>
+                                            {kIdx === 0 && (
+                                              <Chip 
+                                                label="AI" 
+                                                size="small" 
+                                                sx={{ 
+                                                  height: 16, 
+                                                  fontSize: 9, 
+                                                  fontWeight: 800, 
+                                                  bgcolor: '#10b981', 
+                                                  color: 'white',
+                                                  px: 0.5,
+                                                  borderRadius: 1
+                                                }} 
+                                              />
+                                            )}
                                             <Tooltip title="Sao chép từ khóa này" arrow>
                                               <IconButton 
                                                 size="small" 
@@ -4904,13 +5078,7 @@ export default function VbplSuggestionsSection() {
                                             </Tooltip>
                                           ) : '—'}
                                         </TableCell>
-                                        <TableCell>
-                                          {k.opportunityScore !== undefined && k.opportunityScore !== null ? (
-                                            <Typography sx={{ fontWeight: 850, fontSize: '0.88rem', color: 'primary.main' }}>
-                                              {k.opportunityScore}
-                                            </Typography>
-                                          ) : '—'}
-                                        </TableCell>
+
                                         <TableCell>
                                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                             <Box sx={{ position: 'relative', display: 'inline-flex' }}>
@@ -4925,10 +5093,7 @@ export default function VbplSuggestionsSection() {
                                           </Box>
                                         </TableCell>
                                         <TableCell sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.8rem' }}>
-                                          {formatCurrency(k.bidLow)}
-                                        </TableCell>
-                                        <TableCell sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.8rem' }}>
-                                          {formatCurrency(k.bidHigh)}
+                                          {formatBidRange(k.bidLow, k.bidHigh)}
                                         </TableCell>
                                       </TableRow>
                                     );

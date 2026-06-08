@@ -244,7 +244,9 @@ export const vbplSuggestionsService = {
   },
 
   async aiExpandKeywords(payload: AiExpandKeywordsRequest): Promise<AiExpandKeywordsResponse> {
-    const response = await api.post<ApiResponse<AiExpandKeywordsResponse>>('/keywords/ai-expand', payload);
+    const response = await api.post<ApiResponse<AiExpandKeywordsResponse>>('/keywords/ai-expand', payload, {
+      timeout: 150000 // 150 seconds timeout for long AI + Google Ads processing
+    });
     return response.data.data;
   }
 };
