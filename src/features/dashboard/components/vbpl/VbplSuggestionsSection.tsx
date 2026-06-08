@@ -1299,57 +1299,61 @@ export default function VbplSuggestionsSection() {
   };
 
   const handleAddAllToCart = () => {
-    const allChildKeywords: ChildKeyword[] = [];
+    const allKeywordsToSelect: any[] = [];
     processedTopics.forEach(topicGroup => {
-      allChildKeywords.push(...topicGroup.keywords);
-    });
-
-    const toAdd = allChildKeywords.filter(row => !cartItems.some(k => k.name === row.keyword));
-    if (toAdd.length === 0) {
-      setCartItems(prev => prev.filter(k => !allChildKeywords.some(row => row.keyword === k.name)));
-      showToast('Đã bỏ chọn tất cả từ khóa trang này khỏi giỏ hàng!', 'info');
-    } else {
-      const newItems = toAdd.map(row => ({
-        name: row.keyword,
+      // Add parent keyword
+      allKeywordsToSelect.push({
+        name: topicGroup.topic,
         currentScore: 0,
-        avg: row.avgMonthlySearches,
+        avg: topicGroup.topicTotalVolume ?? topicGroup.topicVolume ?? 0,
         slope: 0,
         isSpike: false,
-        trendTimeline: row.monthlySearchVolumes?.map((v: any) => ({ date: `Tháng ${v.month}/${v.year}`, value: v.volume })) || [],
+        trendTimeline: [],
         relatedQueries: [],
         relatedTopics: []
-      }));
-      setCartItems(prev => [...prev, ...newItems]);
+      });
+      // Add child keywords
+      topicGroup.keywords.forEach(row => {
+        allKeywordsToSelect.push({
+          name: row.keyword,
+          currentScore: 0,
+          avg: row.avgMonthlySearches,
+          slope: 0,
+          isSpike: false,
+          trendTimeline: row.monthlySearchVolumes?.map((v: any) => ({ date: `Tháng ${v.month}/${v.year}`, value: v.volume })) || [],
+          relatedQueries: [],
+          relatedTopics: []
+        });
+      });
+    });
+
+    const toAdd = allKeywordsToSelect.filter(row => !cartItems.some(k => k.name === row.name));
+    if (toAdd.length === 0) {
+      const namesOnPage = allKeywordsToSelect.map(k => k.name);
+      setCartItems(prev => prev.filter(k => !namesOnPage.includes(k.name)));
+      showToast('Đã bỏ chọn tất cả từ khóa trang này khỏi giỏ hàng!', 'info');
+    } else {
+      setCartItems(prev => [...prev, ...toAdd]);
       showToast(`Đã thêm ${toAdd.length} từ khóa vào giỏ hàng!`, 'success');
     }
   };
 
   const isTopicAllSelected = (topicGroup: TopicGroup) => {
-    if (!topicGroup.keywords || topicGroup.keywords.length === 0) return false;
-    return topicGroup.keywords.every(k => cartItems.some(c => c.name === k.keyword));
+    return cartItems.some(c => c.name === topicGroup.topic);
   };
 
   const handleToggleTopicGroup = (topicGroup: TopicGroup, e: React.MouseEvent) => {
     e.stopPropagation();
-    const allSelected = isTopicAllSelected(topicGroup);
-    if (allSelected) {
-      setCartItems(prev => prev.filter(c => !topicGroup.keywords.some(k => k.keyword === c.name)));
-      showToast(`Đã bỏ chọn cụm từ khóa: ${topicGroup.topic}`, 'info');
-    } else {
-      const toAdd = topicGroup.keywords.filter(k => !cartItems.some(c => c.name === k.keyword));
-      const newItems = toAdd.map(row => ({
-        name: row.keyword,
-        currentScore: 0,
-        avg: row.avgMonthlySearches,
-        slope: 0,
-        isSpike: false,
-        trendTimeline: row.monthlySearchVolumes?.map((v: any) => ({ date: `Tháng ${v.month}/${v.year}`, value: v.volume })) || [],
-        relatedQueries: [],
-        relatedTopics: []
-      }));
-      setCartItems(prev => [...prev, ...newItems]);
-      showToast(`Đã thêm cụm từ khóa: ${topicGroup.topic}`, 'success');
-    }
+    handleToggleCart({
+      name: topicGroup.topic,
+      currentScore: 0,
+      avg: topicGroup.topicTotalVolume ?? topicGroup.topicVolume ?? 0,
+      slope: 0,
+      isSpike: false,
+      trendTimeline: [],
+      relatedQueries: [],
+      relatedTopics: []
+    });
   };
 
   const handleCopySelected = () => {
