@@ -82,7 +82,10 @@ import type {
   CustomTrendSuggestionItem,
   CustomProjectGroup,
   TopicGroup,
-  ChildKeyword
+  ChildKeyword,
+  AiExpandSnapshot,
+  AiExpandSnapshotListResponse,
+  AiExpandSnapshotDetailResponse
 } from '../../vbplSuggestions.types';
 import { vbplSuggestionsService } from '../../vbplSuggestionsService';
 import { useToastify } from '../../../../components/Toastify';
@@ -1039,6 +1042,15 @@ export default function VbplSuggestionsSection() {
   const [expandedTopics, setExpandedTopics] = useState<TopicGroup[]>([]);
   const [clientSortBy, setClientSortBy] = useState<'opportunity' | 'volume'>('opportunity');
   const [intentFilter, setIntentFilter] = useState<'all' | 'commercial' | 'local' | 'info'>('all');
+  
+  // ================= AI Keyword Expansion Snapshots States =================
+  const [expansionView, setExpansionView] = useState<'scan' | 'history'>('scan');
+  const [currentSnapshotId, setCurrentSnapshotId] = useState<string | null>(null);
+  const [snapshots, setSnapshots] = useState<AiExpandSnapshot[]>([]);
+  const [snapshotsLoading, setSnapshotsLoading] = useState<boolean>(false);
+  const [snapshotsTotal, setSnapshotsTotal] = useState<number>(0);
+  const [snapshotsPage, setSnapshotsPage] = useState<number>(1);
+  const [snapshotsTotalPages, setSnapshotsTotalPages] = useState<number>(1);
 
   const processedTopics = useMemo(() => {
     let result = expandedTopics.map(tg => {
@@ -1079,7 +1091,77 @@ export default function VbplSuggestionsSection() {
   const [hasSearchedKeywords, setHasSearchedKeywords] = useState<boolean>(false);
   const [validationError, setValidationError] = useState<string>('');
 
+  const fetchSnapshotsList = async (targetPage = 1) => {
+    setSnapshotsLoading(true);
+    try {
+      const res = await vbplSuggestionsService.getAiExpandSnapshots(targetPage, 20);
+      setSnapshots(res.items || []);
+      setSnapshotsTotal(res.total || 0);
+      setSnapshotsPage(res.page || 1);
+      setSnapshotsTotalPages(res.totalPages || 1);
+    } catch (err: any) {
+      showToast(err.response?.data?.message || err.message || 'Lỗi tải lịch sử từ khóa AI', 'danger');
+    } finally {
+      setSnapshotsLoading(false);
+    }
+  };
+
+  const fetchSnapshotDetail = async (id: string, targetPage = 1) => {
+    setExpansionLoading(true);
+    try {
+      const res = await vbplSuggestionsService.getAiExpandSnapshotDetail(id, targetPage, expansionLimit);
+      
+      // Update form parameters from snapshot settings
+      if (res.seeds && res.seeds.length > 0) {
+        setSeedKeywords(res.seeds);
+      }
+      if (res.outputCount !== undefined) setOutputCount(res.outputCount);
+      if (res.perSeed !== undefined) setPerSeed(res.perSeed);
+      if (res.location) setLocationCode(res.location);
+      if (res.language) setLanguageCode(res.language);
+      setContext(res.context || '');
+
+      // Set results
+      const mappedTopics = (res.topics || []).map(topicGroup => ({
+        ...topicGroup,
+        keywordCount: topicGroup.keywordCount !== undefined ? topicGroup.keywordCount : (topicGroup.keywords ? topicGroup.keywords.length : 0)
+      }));
+      setExpandedTopics(mappedTopics);
+      setExpandedTotal(res.total || 0);
+      setExpandedGenerated(res.generated || 0);
+      setExpandedTotalPages(res.totalPages || 1);
+      setExpansionPage(res.page || 1);
+      
+      setCurrentSnapshotId(id);
+      setHasSearchedKeywords(true);
+      setExpansionView('scan'); // switch view back to scan form & result table
+    } catch (err: any) {
+      console.error(err);
+      const statusCode = err.response?.status;
+      const responseData = err.response?.data;
+      const msg = responseData?.message || err.message;
+      if (statusCode === 400 && responseData?.code === 'INVALID_ID') {
+        showToast('ID bản cào không hợp lệ.', 'danger');
+      } else if (statusCode === 404 && responseData?.code === 'AI_EXPAND_SNAPSHOT_NOT_FOUND') {
+        showToast('Không tìm thấy bản cào từ khóa AI.', 'danger');
+      } else {
+        showToast(msg || 'Lỗi khi tải chi tiết bản cào', 'danger');
+      }
+    } finally {
+      setExpansionLoading(false);
+    }
+  };
+
   const handleExpandKeywords = async (targetPage: number, forceRefresh: boolean, customLimit?: number) => {
+    if (forceRefresh) {
+      setCurrentSnapshotId(null);
+    }
+
+    if (currentSnapshotId && !forceRefresh) {
+      await fetchSnapshotDetail(currentSnapshotId, targetPage);
+      return;
+    }
+
     let activeKeywords = [...seedKeywords];
     const trimmedInput = seedInputText.trim().replace(/,$/, '');
     if (trimmedInput) {
@@ -1158,6 +1240,11 @@ export default function VbplSuggestionsSection() {
       setExpansionPage(res.page || 1);
       setHasSearchedKeywords(true);
       
+      if (res.id) {
+        setCurrentSnapshotId(res.id);
+        fetchSnapshotsList(1);
+      }
+
       if (forceRefresh) {
         showToast('Sinh lại danh sách từ khóa AI thành công!', 'success');
       }
@@ -1466,6 +1553,7 @@ export default function VbplSuggestionsSection() {
   useEffect(() => {
     fetchDates(true);
     fetchCustomSnapshots(1);
+    fetchSnapshotsList(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -4254,9 +4342,55 @@ export default function VbplSuggestionsSection() {
         ) : activeTab === 2 ? (
           /* ================= AI Keyword Expansion (Volume suggestions) ================= */
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5, width: '100%', boxSizing: 'border-box' }}>
-            {/* Form controls paper */}
-            {/* Form controls paper */}
-            <Paper 
+            {/* View navigation sub-toggle */}
+            <Box sx={{ display: 'flex', gap: 1.5, mb: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+              <Button
+                variant="text"
+                onClick={() => setExpansionView('scan')}
+                sx={{
+                  fontWeight: 800,
+                  fontSize: '0.95rem',
+                  textTransform: 'none',
+                  color: expansionView === 'scan' ? 'primary.main' : 'text.secondary',
+                  borderBottom: '2px solid',
+                  borderColor: expansionView === 'scan' ? 'primary.main' : 'transparent',
+                  borderRadius: 0,
+                  px: 2,
+                  pb: 1,
+                  '&:hover': { bgcolor: 'transparent', color: 'primary.main' }
+                }}
+                startIcon={<AutoAwesomeIcon sx={{ fontSize: 18 }} />}
+              >
+                Tạo từ khóa mới
+              </Button>
+              <Button
+                variant="text"
+                onClick={() => {
+                  setExpansionView('history');
+                  fetchSnapshotsList(1);
+                }}
+                sx={{
+                  fontWeight: 800,
+                  fontSize: '0.95rem',
+                  textTransform: 'none',
+                  color: expansionView === 'history' ? 'primary.main' : 'text.secondary',
+                  borderBottom: '2px solid',
+                  borderColor: expansionView === 'history' ? 'primary.main' : 'transparent',
+                  borderRadius: 0,
+                  px: 2,
+                  pb: 1,
+                  '&:hover': { bgcolor: 'transparent', color: 'primary.main' }
+                }}
+                startIcon={<HistoryIcon sx={{ fontSize: 18 }} />}
+              >
+                Bản cào đã lưu ({snapshotsTotal})
+              </Button>
+            </Box>
+
+            {expansionView === 'scan' ? (
+              <>
+                {/* Form controls paper */}
+                <Paper 
               elevation={0} 
               sx={{ 
                 p: 3, 
@@ -5135,6 +5269,136 @@ export default function VbplSuggestionsSection() {
                   )}
                 </Box>
               )
+            )}
+              </>
+            ) : (
+              /* History view */
+              <Paper 
+                elevation={0} 
+                sx={{ 
+                  p: 3, 
+                  borderRadius: 3.5, 
+                  border: '1px solid', 
+                  borderColor: 'divider',
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.002)'
+                }}
+              >
+                <Typography variant="h6" sx={{ fontWeight: 800, mb: 3 }}>
+                  Lịch sử mở rộng từ khóa bằng AI
+                </Typography>
+                {snapshotsLoading ? (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, py: 3 }}>
+                    {[1, 2, 3].map((i) => (
+                      <Skeleton key={i} variant="rectangular" height={60} sx={{ borderRadius: 2 }} />
+                    ))}
+                  </Box>
+                ) : snapshots.length === 0 ? (
+                  <Box sx={{ p: 6, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: 4 }}>
+                    <Typography variant="body1" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                      Chưa có lịch sử mở rộng từ khóa nào. Hãy tạo từ khóa mới!
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Box>
+                    <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, overflow: 'hidden', mb: 2 }}>
+                      <Table>
+                        <TableHead>
+                          <TableRow sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)' }}>
+                            <TableCell sx={{ fontWeight: 800, color: 'text.secondary' }}>Từ khóa hạt giống</TableCell>
+                            <TableCell sx={{ fontWeight: 800, color: 'text.secondary', width: 140 }}>Ngôn ngữ / Vùng</TableCell>
+                            <TableCell sx={{ fontWeight: 800, color: 'text.secondary', width: 160 }}>Lĩnh vực ưu tiên</TableCell>
+                            <TableCell sx={{ fontWeight: 800, color: 'text.secondary', width: 110, textAlign: 'center' }}>Số Topic</TableCell>
+                            <TableCell sx={{ fontWeight: 800, color: 'text.secondary', width: 130, textAlign: 'center' }}>Tổng từ khóa</TableCell>
+                            <TableCell sx={{ fontWeight: 800, color: 'text.secondary', width: 180 }}>Ngày thực hiện</TableCell>
+                            <TableCell sx={{ fontWeight: 800, color: 'text.secondary', width: 130, textAlign: 'center' }}>Hành động</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {snapshots.map((s) => (
+                            <TableRow key={s.id} hover>
+                              <TableCell>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, maxWidth: 400 }}>
+                                  {s.seeds && s.seeds.slice(0, 3).map((seed, idx) => (
+                                    <Chip key={idx} label={seed} size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
+                                  ))}
+                                  {s.seeds && s.seeds.length > 3 && (
+                                    <Tooltip title={s.seeds.join(', ')} arrow>
+                                      <Chip label={`+${s.seeds.length - 3}`} size="small" sx={{ fontWeight: 700, borderRadius: 1, bgcolor: 'action.selected' }} />
+                                    </Tooltip>
+                                  )}
+                                </Box>
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 600 }}>
+                                <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                  {s.language?.toUpperCase()} / {s.location?.toUpperCase()}
+                                </Typography>
+                              </TableCell>
+                              <TableCell sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>
+                                {s.context ? (
+                                  <Tooltip title={s.context} arrow>
+                                    <Typography variant="body2" noWrap sx={{ maxWidth: 150 }}>
+                                      {s.context}
+                                    </Typography>
+                                  </Tooltip>
+                                ) : (
+                                  <span style={{ opacity: 0.5 }}>—</span>
+                                )}
+                              </TableCell>
+                              <TableCell sx={{ textAlign: 'center', fontWeight: 700 }}>
+                                {s.topicCount ?? s.outputCount}
+                              </TableCell>
+                              <TableCell sx={{ textAlign: 'center', fontWeight: 700, color: 'primary.main' }}>
+                                {s.generated}
+                              </TableCell>
+                              <TableCell sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>
+                                {s.createdAt ? format(new Date(s.createdAt), 'dd/MM/yyyy HH:mm') : '—'}
+                              </TableCell>
+                              <TableCell sx={{ textAlign: 'center' }}>
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  color="primary"
+                                  onClick={() => fetchSnapshotDetail(s.id, 1)}
+                                  sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 1.5 }}
+                                >
+                                  Xem chi tiết
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+
+                    {/* Pagination */}
+                    {snapshotsTotalPages > 1 && (
+                      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, pt: 1, pb: 1 }}>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          disabled={snapshotsPage === 1}
+                          onClick={() => fetchSnapshotsList(snapshotsPage - 1)}
+                          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+                        >
+                          Trang trước
+                        </Button>
+                        <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                          Trang {snapshotsPage} / {snapshotsTotalPages} (Tổng {snapshotsTotal} bản cào)
+                        </Typography>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          disabled={snapshotsPage >= snapshotsTotalPages}
+                          onClick={() => fetchSnapshotsList(snapshotsPage + 1)}
+                          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+                        >
+                          Trang sau
+                        </Button>
+                      </Box>
+                    )}
+                  </Box>
+                )}
+              </Paper>
             )}
           </Box>
         ) : (

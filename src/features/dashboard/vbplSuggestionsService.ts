@@ -10,7 +10,9 @@ import type {
   CustomTrendSnapshotResponse,
   CustomTrendPaginationResponse,
   AiExpandKeywordsRequest,
-  AiExpandKeywordsResponse
+  AiExpandKeywordsResponse,
+  AiExpandSnapshotListResponse,
+  AiExpandSnapshotDetailResponse
 } from './vbplSuggestions.types';
 
 interface ApiResponse<T> {
@@ -247,6 +249,20 @@ export const vbplSuggestionsService = {
     const response = await api.post<ApiResponse<AiExpandKeywordsResponse>>('/keywords/ai-expand', payload, {
       timeout: 150000 // 150 seconds timeout for long AI + Google Ads processing
     });
+    return response.data.data;
+  },
+
+  async getAiExpandSnapshots(page: number = 1, limit: number = 20): Promise<AiExpandSnapshotListResponse> {
+    const response = await api.get<ApiResponse<AiExpandSnapshotListResponse>>(
+      `/keywords/ai-expand/snapshots?page=${page}&limit=${limit}`
+    );
+    return response.data.data;
+  },
+
+  async getAiExpandSnapshotDetail(id: string, page: number = 1, limit: number = 50): Promise<AiExpandSnapshotDetailResponse> {
+    const response = await api.get<ApiResponse<AiExpandSnapshotDetailResponse>>(
+      `/keywords/ai-expand/snapshots/${id}?page=${page}&limit=${limit}`
+    );
     return response.data.data;
   }
 };

@@ -202,11 +202,50 @@ export interface TopicGroup {
 }
 
 export interface AiExpandKeywordsResponse {
+  id?: string;
   total: number;
   page: number;
   limit: number;
   totalPages: number;
   generated: number;
+  topics: TopicGroup[];
+}
+
+export interface AiExpandSnapshot {
+  id: string;
+  seeds: string[];
+  outputCount: number;
+  perSeed: number;
+  location: string;
+  language: string;
+  context: string | null;
+  generated: number;
+  topicCount: number;
+  createdAt: string;
+}
+
+export interface AiExpandSnapshotListResponse {
+  items: AiExpandSnapshot[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface AiExpandSnapshotDetailResponse {
+  id: string;
+  seeds: string[];
+  outputCount: number;
+  perSeed: number;
+  location: string;
+  language: string;
+  context: string | null;
+  generated: number;
+  createdAt: string;
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
   topics: TopicGroup[];
 }
 
