@@ -408,7 +408,7 @@ export default function ScraperSection() {
     setShowSectionDetails(false);
     setShowCategoryDetails(false);
     setShowTagDetails(false);
-    loadTags();
+    // loadTags(); // Tạm tắt để giảm lag
     loadSchedule();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSite]);
@@ -440,7 +440,7 @@ export default function ScraperSection() {
       showToast(res.message || 'Cào bài hoàn thành!', 'success');
       loadSummary();
       loadArticles(0, limit);
-      loadTags();
+      // loadTags(); // Tạm tắt để giảm lag
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Lỗi khi cào bài', 'danger');
     } finally {
@@ -836,11 +836,12 @@ export default function ScraperSection() {
               color: '#00b894',
               fontSize: '0.75rem',
               fontWeight: 800,
-              height: 20
+              height: 20,
+              whiteSpace: 'nowrap'
             }}
           >
             <CircularProgress size={10} sx={{ color: '#00b894' }} />
-            AI
+            Gen keyword
           </Box>
         </Tooltip>
       );
@@ -881,7 +882,7 @@ export default function ScraperSection() {
       );
     }
 
-    // Default/Not generated: Input-like styled button with text "AI"
+    // Default/Not generated: Input-like styled button with text "Gen keyword"
     return (
       <Tooltip title="Nhấp để tự động Gen AI & Push Sheet" onClick={(e) => e.stopPropagation()}>
         <Button
@@ -903,6 +904,7 @@ export default function ScraperSection() {
             minWidth: 0,
             height: 20,
             textTransform: 'none',
+            whiteSpace: 'nowrap',
             transition: 'all 0.2s',
             '&:hover': {
               bgcolor: 'rgba(0, 184, 148, 0.15)',
@@ -915,7 +917,7 @@ export default function ScraperSection() {
             }
           }}
         >
-          AI
+          Gen keyword
         </Button>
       </Tooltip>
     );
@@ -1836,12 +1838,12 @@ export default function ScraperSection() {
                 <MenuItem key={sec} value={sec}>{sec}</MenuItem>
               ))}
             </Select>
-            <Select size="small" value={tag} onChange={(e) => setTag(e.target.value)} displayEmpty sx={{ minWidth: 150 }}>
+            {/* <Select size="small" value={tag} onChange={(e) => setTag(e.target.value)} displayEmpty sx={{ minWidth: 150 }}>
               <MenuItem value="">Tất cả Chủ đề / Từ khóa</MenuItem>
               {[...new Set([...categoriesList, ...tagsList])].map((t, idx) => (
                 <MenuItem key={idx} value={t}>{t}</MenuItem>
               ))}
-            </Select>
+            </Select> */}
             <TextField
               size="small"
               type="date"
@@ -2565,7 +2567,7 @@ export default function ScraperSection() {
                 </Select>
               </Box>
 
-              <Box>
+              {/* <Box>
                 <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.5 }}>Chủ đề / Từ khóa</Typography>
                 <Select
                   fullWidth
@@ -2580,7 +2582,7 @@ export default function ScraperSection() {
                     <MenuItem key={idx} value={t}>{t}</MenuItem>
                   ))}
                 </Select>
-              </Box>
+              </Box> */}
 
               {activeSite === 'vbpl' && (
                 <>
