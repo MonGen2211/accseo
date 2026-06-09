@@ -75,13 +75,13 @@ const CRON_OPTIONS = [
 ];
 
 const SITE_SOURCES = [
-  { id: 'thuvienphapluat', name: 'Thư viện pháp luật', desc: 'Chuyên trang văn bản & hỏi đáp', color: '#166534', bg: '#dcfce7' },
-  { id: 'luatminhkhue', name: 'Luật Minh Khuê', desc: 'Tư vấn luật & tin tức đa ngành', color: '#1e40af', bg: '#dbeafe' },
-  { id: 'luatduonggia', name: 'Luật Dương Gia', desc: 'Pháp luật tổng hợp', color: '#0f766e', bg: '#ccfbf1' },
-  { id: 'luatvietnam', name: 'Luật Việt Nam', desc: 'Tin văn bản mới', color: '#0e7490', bg: '#cffafe' },
-  { id: 'ketoananpha', name: 'Kế Toán An Pha', desc: 'Kế toán - Thuế', color: '#be185d', bg: '#fce7f3' },
-  { id: 'vbpl', name: 'CSDL Quốc gia VBPL', desc: 'Văn bản pháp luật Bộ Tư pháp', color: '#b45309', bg: '#fef3c7' },
-  { id: 'rss', name: 'Các tờ báo', desc: 'Tin tức báo chí', color: '#4f46e5', bg: '#e0e7ff' },
+  { id: 'thuvienphapluat', name: 'thuvienphapluat.vn', desc: 'Chuyên trang văn bản & hỏi đáp', color: '#166534', bg: '#dcfce7' },
+  { id: 'luatminhkhue', name: 'luatminhkhue.vn', desc: 'Tư vấn luật & tin tức đa ngành', color: '#1e40af', bg: '#dbeafe' },
+  { id: 'luatduonggia', name: 'luatduonggia.vn', desc: 'Pháp luật tổng hợp', color: '#0f766e', bg: '#ccfbf1' },
+  { id: 'luatvietnam', name: 'luatvietnam.vn', desc: 'Tin văn bản mới', color: '#0e7490', bg: '#cffafe' },
+  { id: 'ketoananpha', name: 'ketoananpha.vn', desc: 'Kế toán - Thuế', color: '#be185d', bg: '#fce7f3' },
+  { id: 'vbpl', name: 'vbpl.vn', desc: 'Văn bản pháp luật Bộ Tư pháp', color: '#b45309', bg: '#fef3c7' },
+  { id: 'rss', name: 'Báo các loại', desc: 'Tin tức báo chí', color: '#4f46e5', bg: '#e0e7ff' },
 ];
 
 const LEGAL_SECTORS = [
@@ -1364,6 +1364,20 @@ export default function ScraperSection() {
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(5, 1fr)' }, gap: 2 }}>
           {SITE_SOURCES.map((site) => {
             const isActive = activeSite === site.id;
+            
+            // Map dark mode colors to look premium and readable
+            const getDarkThemeColor = (id: string) => {
+              switch (id) {
+                case 'thuvienphapluat': return '#4ade80';
+                case 'luatminhkhue': return '#60a5fa';
+                case 'luatduonggia': return '#2dd4bf';
+                case 'luatvietnam': return '#22d3ee';
+                case 'ketoananpha': return '#f472b6';
+                case 'vbpl': return '#fbbf24';
+                default: return '#818cf8';
+              }
+            };
+
             return (
               <Paper
                 key={site.id}
@@ -1373,7 +1387,9 @@ export default function ScraperSection() {
                   borderRadius: 3,
                   cursor: 'pointer',
                   border: '2px solid',
-                  borderColor: isActive ? 'primary.main' : 'transparent',
+                  borderColor: isActive 
+                    ? (theme) => theme.palette.mode === 'dark' ? getDarkThemeColor(site.id) : site.color
+                    : 'transparent',
                   bgcolor: 'background.paper',
                   boxShadow: isActive ? '0 4px 20px rgba(0,0,0,0.1)' : '0 2px 8px rgba(0,0,0,0.04)',
                   transition: 'all 0.2s',
@@ -1385,12 +1401,35 @@ export default function ScraperSection() {
                   }
                 }}
               >
-                {/* Background Tint */}
-                <Box sx={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: '40%', background: `linear-gradient(90deg, transparent, ${site.bg})`, opacity: isActive ? 1 : 0.4, transition: 'opacity 0.3s' }} />
+                {/* Background Tint - Softened in dark mode */}
+                <Box 
+                  sx={{ 
+                    position: 'absolute', 
+                    top: 0, 
+                    right: 0, 
+                    bottom: 0, 
+                    width: '50%', 
+                    background: (theme) => theme.palette.mode === 'dark' 
+                      ? `linear-gradient(90deg, transparent, ${site.color}15)` 
+                      : `linear-gradient(90deg, transparent, ${site.bg})`, 
+                    opacity: isActive ? 1 : 0.4, 
+                    transition: 'opacity 0.3s' 
+                  }} 
+                />
                 
                 <Box sx={{ position: 'relative', zIndex: 1 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Box sx={{ p: 0.5, borderRadius: 1.5, bgcolor: site.bg, color: site.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Box 
+                      sx={{ 
+                        p: 0.5, 
+                        borderRadius: 1.5, 
+                        bgcolor: (theme) => theme.palette.mode === 'dark' ? `${site.color}25` : site.bg, 
+                        color: (theme) => theme.palette.mode === 'dark' ? getDarkThemeColor(site.id) : site.color, 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center' 
+                      }}
+                    >
                       <LanguageIcon sx={{ fontSize: 18 }} />
                     </Box>
                     <Typography sx={{ fontWeight: 700, fontSize: '0.85rem' }} noWrap>{site.name}</Typography>

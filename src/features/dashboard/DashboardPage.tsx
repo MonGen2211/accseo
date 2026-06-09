@@ -1,15 +1,5 @@
 import TrendingKeywordsSection from './TrendingKeywordsSection';
 import ActivitySection from './ActivitySection';
-import QuickSerpChecker from './QuickSerpChecker';
-import GoogleIndexChecker from './GoogleIndexChecker';
-import KeywordPlannerSection from './KeywordPlannerSection';
-import VbplSuggestionsSection from './components/vbpl/VbplSuggestionsSection';
-import ScraperSection from '../scraper/components/ScraperSection';
-import UrlScraperSection from '../url-scraper/components/UrlScraperSection';
-import ContentAnalysisSection from '../content-analysis/components/ContentAnalysisSection';
-import ForceIndexUnifiedSection from '../force-index/components/ForceIndexUnifiedSection';
-import SeoAuditSection from '../seo-audit/components/SeoAuditSection';
-import GeoTagSection from '../geo-tag/components/GeoTagSection';
 import AndroidIcon from '@mui/icons-material/Android';
 import LinkIcon from '@mui/icons-material/Link';
 import PlaceIcon from '@mui/icons-material/Place';
@@ -41,7 +31,18 @@ import SearchIcon from '@mui/icons-material/Search';
 import SpaceDashboardIcon from '@mui/icons-material/SpaceDashboard';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
+
+const VbplSuggestionsSection = lazy(() => import('./components/vbpl/VbplSuggestionsSection'));
+const KeywordPlannerSection = lazy(() => import('./KeywordPlannerSection'));
+const QuickSerpChecker = lazy(() => import('./QuickSerpChecker'));
+const GoogleIndexChecker = lazy(() => import('./GoogleIndexChecker'));
+const ScraperSection = lazy(() => import('../scraper/components/ScraperSection'));
+const UrlScraperSection = lazy(() => import('../url-scraper/components/UrlScraperSection'));
+const ContentAnalysisSection = lazy(() => import('../content-analysis/components/ContentAnalysisSection'));
+const ForceIndexUnifiedSection = lazy(() => import('../force-index/components/ForceIndexUnifiedSection'));
+const SeoAuditSection = lazy(() => import('../seo-audit/components/SeoAuditSection'));
+const GeoTagSection = lazy(() => import('../geo-tag/components/GeoTagSection'));
 import { useNavigate } from 'react-router-dom';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
@@ -75,15 +76,15 @@ interface StatCardProps {
   onClick?: () => void;
 }
 
-function StatCard({ title, value, icon, bgColor, iconBgColor, activeColor = '#2563EB', active, onClick }: StatCardProps) {
+function StatCard({ title, value, bgColor, activeColor = '#2563EB', active, onClick }: StatCardProps) {
   return (
     <Paper
       elevation={0}
       onClick={onClick}
       sx={{
-        p: 1.75, borderRadius: 3, bgcolor: 'background.paper',
-        display: 'flex', flexDirection: 'column', gap: 1.25,
-        minHeight: 100, height: '100%',
+        p: 2.25, borderRadius: 3.5, bgcolor: 'background.paper',
+        display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 1.5,
+        minHeight: 110, height: '100%',
         position: 'relative', overflow: 'hidden',
         boxShadow: active ? `0 6px 18px ${activeColor}30` : '0 2px 12px rgba(0,0,0,0.04)',
         border: active ? '2px solid' : '1px solid',
@@ -97,21 +98,18 @@ function StatCard({ title, value, icon, bgColor, iconBgColor, activeColor = '#25
       }}
     >
       <Box sx={{
-        position: 'absolute', top: -20, right: -20,
-        width: 90, height: 90, borderRadius: '50%',
+        position: 'absolute', top: -15, right: -15,
+        width: 100, height: 100, borderRadius: '50%',
         background: (theme) => `linear-gradient(135deg, ${bgColor} 0%, ${theme.palette.mode === 'dark' ? 'rgba(0,0,0,0)' : 'rgba(255,255,255,0)'} 100%)`,
-        opacity: 0.7, zIndex: 0,
+        opacity: 0.6, zIndex: 0,
         transition: 'transform 0.4s ease',
-        '.MuiPaper-root:hover &': { transform: 'scale(1.2)' },
+        '.MuiPaper-root:hover &': { transform: 'scale(1.15)' },
       }} />
-      <Box sx={{ width: 38, height: 38, borderRadius: '10px', bgcolor: iconBgColor, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
-        {icon}
-      </Box>
-      <Box sx={{ zIndex: 1 }}>
-        <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary', mb: 0.25, fontWeight: 600, letterSpacing: 0.4, lineHeight: 1.3 }}>
+      <Box sx={{ zIndex: 1, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+        <Typography sx={{ fontSize: '0.82rem', color: 'text.primary', fontWeight: 800, letterSpacing: 0.5, lineHeight: 1.3 }}>
           {title}
         </Typography>
-        <Typography sx={{ fontSize: '1.75rem', fontWeight: 800, color: 'text.primary', lineHeight: 1 }}>
+        <Typography sx={{ fontSize: '2.5rem', fontWeight: 900, color: 'text.primary', lineHeight: 1 }}>
           {value}
         </Typography>
       </Box>
@@ -477,6 +475,18 @@ export default function DashboardPage() {
   const [isMinimized, setIsMinimized] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    return sessionStorage.getItem('sidebar_collapsed') === 'true';
+  });
+
+  const toggleSidebar = () => {
+    setSidebarCollapsed(prev => {
+      const next = !prev;
+      sessionStorage.setItem('sidebar_collapsed', String(next));
+      return next;
+    });
+  };
+
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
     sessionStorage.setItem('dashboard_active_tab', tabId);
@@ -497,159 +507,112 @@ export default function DashboardPage() {
     { id: 'geo-tag', label: 'Geo Tag Ảnh', icon: <PlaceIcon sx={{ fontSize: 20 }} /> },
   ];
 
+  const sidebarWidth = sidebarCollapsed ? 76 : 260;
+
   return (
-    <Box sx={{ maxWidth: 1400, mx: 'auto', display: 'flex', flexDirection: 'column', gap: 4, zoom: 0.8, position: 'relative' }}>
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: { xs: 'column', md: 'row' }, 
+      position: 'relative',
+      ml: { xs: -2, md: -3 },
+      mr: { xs: -2, md: -3 },
+      mt: { xs: -2, md: -3 },
+      mb: { xs: -12, md: -14 },
+      minHeight: '100vh',
+      zoom: 0.8
+    }}>
 
-      {/* Floating Apple-style Navigation Dock */}
-      {isMinimized && !isHovered ? (
-        <Paper
-          elevation={0}
-          onMouseEnter={() => setIsHovered(true)}
-          onClick={() => setIsMinimized(false)}
-          sx={{
-            position: 'fixed',
-            right: 16,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            zIndex: 1100,
-            width: 44,
-            height: 44,
-            borderRadius: '50%',
-            display: { xs: 'none', lg: 'flex' },
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: '1px solid',
-            borderColor: 'divider',
-            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.7)' : 'rgba(255, 255, 255, 0.85)',
-            backdropFilter: 'blur(20px)',
-            boxShadow: '0 6px 20px rgba(0,0,0,0.08)',
-            cursor: 'pointer',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            '&:hover': {
-              transform: 'translateY(-50%) scale(1.1)',
-              borderColor: 'primary.main',
-              boxShadow: '0 6px 20px rgba(37, 99, 235, 0.3)'
-            }
-          }}
-        >
-          <ChevronLeftIcon sx={{ color: 'primary.main', fontSize: 22 }} />
-        </Paper>
-      ) : (
-        <Paper
-          elevation={0}
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-          sx={{
-            position: 'fixed',
-            right: 24,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            zIndex: 1100,
-            display: { xs: 'none', lg: 'flex' },
-            flexDirection: 'column',
-            gap: 1.5,
-            p: 1.2,
-            borderRadius: '24px',
-            border: '1px solid',
-            borderColor: 'divider',
-            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.65)' : 'rgba(255, 255, 255, 0.75)',
-            backdropFilter: 'blur(20px)',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            '&:hover': {
-              boxShadow: '0 15px 40px rgba(0,0,0,0.15)',
-              borderColor: 'action.focus'
-            }
-          }}
-        >
-          {dockItems.map((item) => {
-            const isActive = activeTab === item.id;
-            return (
-              <Tooltip key={item.id} title={item.label} placement="left" arrow>
-                <IconButton
-                  onClick={() => handleTabChange(item.id)}
-                  size="medium"
-                  sx={{
-                    color: isActive ? '#fff' : 'text.secondary',
-                    bgcolor: isActive ? 'primary.main' : 'transparent',
-                    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                    boxShadow: isActive ? '0 4px 12px rgba(37, 99, 235, 0.35)' : 'none',
-                    '&:hover': {
-                      bgcolor: isActive ? 'primary.dark' : 'action.hover',
-                      transform: 'scale(1.1)'
-                    },
-                    '&:active': {
-                      transform: 'scale(0.95)'
-                    }
-                  }}
-                >
-                  {item.icon}
-                </IconButton>
-              </Tooltip>
-            );
-          })}
-          <Divider sx={{ my: 0.5 }} />
-          <Tooltip title={isMinimized ? "Ghim thanh điều hướng" : "Ẩn thanh nhanh"} placement="left" arrow>
-            <IconButton
-              onClick={() => setIsMinimized(prev => !prev)}
-              size="medium"
-              sx={{
-                color: 'text.secondary',
-                transition: 'all 0.2s',
-                '&:hover': {
-                  color: 'primary.main',
-                  bgcolor: 'action.hover',
-                  transform: 'scale(1.1)'
-                }
-              }}
-            >
-              {isMinimized ? <ChevronLeftIcon sx={{ fontSize: 20 }} /> : <ChevronRightIcon sx={{ fontSize: 20 }} />}
-            </IconButton>
-          </Tooltip>
-        </Paper>
-      )}
-
-      {/* Premium Segmented Tab Control */}
+      {/* Sidebar navigation */}
       <Paper
         elevation={0}
         sx={{
-          p: 0.75,
-          borderRadius: 4,
-          border: '1px solid',
+          width: { xs: '100%', md: sidebarWidth },
+          flexShrink: 0,
+          p: sidebarCollapsed ? 1.5 : 2,
+          borderRadius: 0,
+          border: 'none',
+          borderRight: '1px solid',
           borderColor: 'divider',
-          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.4)' : 'rgba(241, 245, 249, 0.6)',
-          backdropFilter: 'blur(20px)',
+          bgcolor: (theme) => theme.palette.mode === 'dark' ? '#0f172a' : '#ffffff',
           display: 'flex',
-          flexWrap: 'wrap',
+          flexDirection: 'column',
           gap: 1,
-          mb: 1,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.02)',
+          position: { xs: 'static', md: 'fixed' },
+          left: 0,
+          top: 0,
+          zIndex: 1100,
+          height: { xs: 'auto', md: '125vh' },
+          overflowY: 'auto',
+          boxShadow: 'none',
+          transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1), padding 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
+        {/* Brand logo / header inside sidebar */}
+        <Box sx={{ 
+          px: sidebarCollapsed ? 0.5 : 1.5, 
+          py: 2, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: sidebarCollapsed ? 'center' : 'space-between', 
+          flexDirection: sidebarCollapsed ? 'column' : 'row',
+          gap: 1.5 
+        }}>
+          {!sidebarCollapsed && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: '8px', bgcolor: 'primary.main', color: '#fff', fontWeight: 900, fontSize: '1.2rem' }}>
+                A
+              </Box>
+              <Typography variant="h6" sx={{ fontWeight: 900, color: 'text.primary', letterSpacing: '-0.5px' }}>
+                ACC SEO
+              </Typography>
+            </Box>
+          )}
+          {sidebarCollapsed && (
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: '8px', bgcolor: 'primary.main', color: '#fff', fontWeight: 900, fontSize: '1.2rem', mb: 0.5 }}>
+              A
+            </Box>
+          )}
+          <IconButton 
+            onClick={toggleSidebar}
+            size="small"
+            sx={{ 
+              color: 'text.secondary',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 1.5,
+              p: 0.5,
+              '&:hover': { bgcolor: 'action.hover' }
+            }}
+          >
+            {sidebarCollapsed ? <ChevronRightIcon sx={{ fontSize: 18 }} /> : <ChevronLeftIcon sx={{ fontSize: 18 }} />}
+          </IconButton>
+        </Box>
+        <Divider sx={{ mb: 1.5 }} />
+
         {dockItems.map((tab) => {
           const isActive = activeTab === tab.id;
-          return (
+          const content = (
             <Box
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
               sx={{
-                flex: '1 1 auto',
-                minWidth: { xs: 'calc(50% - 8px)', sm: 'calc(25% - 8px)', md: 'auto' },
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                gap: 1.25,
-                py: 1.2,
-                px: 2,
-                borderRadius: 3.2,
+                justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+                gap: sidebarCollapsed ? 0 : 2,
+                py: 1.5,
+                px: sidebarCollapsed ? 0 : 2.5,
+                width: sidebarCollapsed ? 44 : 'auto',
+                height: sidebarCollapsed ? 44 : 'auto',
+                mx: sidebarCollapsed ? 'auto' : 0,
+                borderRadius: sidebarCollapsed ? '50%' : 3,
                 cursor: 'pointer',
                 color: isActive ? '#ffffff' : 'text.secondary',
                 background: isActive ? 'linear-gradient(135deg, #00b894 0%, #009975 100%)' : 'transparent',
                 boxShadow: isActive ? '0 4px 15px rgba(0, 184, 148, 0.25)' : 'none',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                 fontWeight: isActive ? 800 : 600,
-                fontSize: '0.88rem',
-                whiteSpace: 'nowrap',
+                fontSize: '0.92rem',
                 '&:hover': {
                   color: isActive ? '#ffffff' : 'text.primary',
                   bgcolor: isActive ? null : 'action.hover',
@@ -661,13 +624,36 @@ export default function DashboardPage() {
               }}
             >
               {tab.icon}
-              <Typography sx={{ fontSize: 'inherit', fontWeight: 'inherit', color: 'inherit' }}>
-                {tab.label}
-              </Typography>
+              {!sidebarCollapsed && (
+                <Typography sx={{ fontSize: 'inherit', fontWeight: 'inherit', color: 'inherit' }}>
+                  {tab.label}
+                </Typography>
+              )}
             </Box>
           );
+
+          if (sidebarCollapsed) {
+            return (
+              <Tooltip key={tab.id} title={tab.label} placement="right" arrow>
+                {content}
+              </Tooltip>
+            );
+          }
+          return content;
         })}
       </Paper>
+
+      {/* Main Content Area */}
+      <Box sx={{ 
+        flexGrow: 1, 
+        minWidth: 0, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: 4, 
+        p: { xs: 2, md: 4 }, 
+        ml: { xs: 0, md: `${sidebarWidth}px` },
+        transition: 'margin-left 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+      }}>
 
       {/* Tab Content Panels */}
       <Box sx={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
@@ -812,46 +798,87 @@ export default function DashboardPage() {
         </Box>
       </Box>
 
-      <Box sx={{ display: activeTab === 'vbpl' ? 'block' : 'none', mt: 1 }}>
-        <VbplSuggestionsSection />
-      </Box>
+      {activeTab === 'vbpl' && (
+        <Box sx={{ mt: 1 }}>
+          <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>}>
+            <VbplSuggestionsSection />
+          </Suspense>
+        </Box>
+      )}
 
-      <Box sx={{ display: activeTab === 'planner' ? 'block' : 'none', mt: 1 }}>
-        <KeywordPlannerSection />
-      </Box>
+      {activeTab === 'planner' && (
+        <Box sx={{ mt: 1 }}>
+          <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>}>
+            <KeywordPlannerSection />
+          </Suspense>
+        </Box>
+      )}
 
-      <Box sx={{ display: activeTab === 'serp' ? 'block' : 'none', mt: 1 }}>
-        <QuickSerpChecker />
-      </Box>
+      {activeTab === 'serp' && (
+        <Box sx={{ mt: 1 }}>
+          <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>}>
+            <QuickSerpChecker />
+          </Suspense>
+        </Box>
+      )}
 
-      <Box sx={{ display: activeTab === 'index-checker' ? 'block' : 'none', mt: 1 }}>
-        <GoogleIndexChecker isActive={activeTab === 'index-checker'} />
-      </Box>
+      {activeTab === 'index-checker' && (
+        <Box sx={{ mt: 1 }}>
+          <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>}>
+            <GoogleIndexChecker isActive={activeTab === 'index-checker'} />
+          </Suspense>
+        </Box>
+      )}
 
-      <Box sx={{ display: activeTab === 'scraper' ? 'block' : 'none', mt: 1 }}>
-        <ScraperSection />
-      </Box>
+      {activeTab === 'scraper' && (
+        <Box sx={{ mt: 1 }}>
+          <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>}>
+            <ScraperSection />
+          </Suspense>
+        </Box>
+      )}
 
-      <Box sx={{ display: activeTab === 'scraper-url' ? 'block' : 'none', mt: 1 }}>
-        <UrlScraperSection />
-      </Box>
+      {activeTab === 'scraper-url' && (
+        <Box sx={{ mt: 1 }}>
+          <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>}>
+            <UrlScraperSection />
+          </Suspense>
+        </Box>
+      )}
 
-      <Box sx={{ display: activeTab === 'content-analysis' ? 'block' : 'none', mt: 1 }}>
-        <ContentAnalysisSection isActive={activeTab === 'content-analysis'} />
-      </Box>
+      {activeTab === 'content-analysis' && (
+        <Box sx={{ mt: 1 }}>
+          <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>}>
+            <ContentAnalysisSection isActive={activeTab === 'content-analysis'} />
+          </Suspense>
+        </Box>
+      )}
 
-      <Box sx={{ display: activeTab === 'indexed' ? 'block' : 'none', mt: 1 }}>
-        <ForceIndexUnifiedSection isActive={activeTab === 'indexed'} />
-      </Box>
+      {activeTab === 'indexed' && (
+        <Box sx={{ mt: 1 }}>
+          <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>}>
+            <ForceIndexUnifiedSection isActive={activeTab === 'indexed'} />
+          </Suspense>
+        </Box>
+      )}
 
-      <Box sx={{ display: activeTab === 'seo-audit' ? 'block' : 'none', mt: 1 }}>
-        <SeoAuditSection />
-      </Box>
+      {activeTab === 'seo-audit' && (
+        <Box sx={{ mt: 1 }}>
+          <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>}>
+            <SeoAuditSection />
+          </Suspense>
+        </Box>
+      )}
 
-      <Box sx={{ display: activeTab === 'geo-tag' ? 'block' : 'none', mt: 1 }}>
-        <GeoTagSection />
-      </Box>
+      {activeTab === 'geo-tag' && (
+        <Box sx={{ mt: 1 }}>
+          <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>}>
+            <GeoTagSection />
+          </Suspense>
+        </Box>
+      )}
 
+      </Box>
     </Box>
   );
 }

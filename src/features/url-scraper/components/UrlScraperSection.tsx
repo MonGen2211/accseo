@@ -327,8 +327,9 @@ export default function UrlScraperSection() {
       showToast(`Đã bỏ qua ${dupsCount} URL trùng lặp`, 'info');
     }
 
-    if (uniqueUrls.length > 20) {
-      setSubmitError('Tối đa 20 URL trong một lần cào');
+    const maxAllowed = followLinks ? 1 : 20;
+    if (uniqueUrls.length > maxAllowed) {
+      setSubmitError(followLinks ? 'Chỉ cho phép cào tối đa 1 URL khi bật "Theo dõi link con"' : 'Tối đa 20 URL trong một lần cào');
       return;
     }
     setSubmitError('');
@@ -630,8 +631,8 @@ export default function UrlScraperSection() {
 
         <Box component="form" onSubmit={handleScrape} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
           <TextField
-            label="Danh sách URL (mỗi dòng 1 URL, tối đa 20 URL)"
-            placeholder="https://vnexpress.net/rss/phap-luat.rss&#10;https://thuvienphapluat.vn/van-ban-moi"
+            label={followLinks ? "Danh sách URL (tối đa 1 URL khi bật Theo dõi link con)" : "Danh sách URL (mỗi dòng 1 URL, tối đa 20 URL)"}
+            placeholder={followLinks ? "https://vnexpress.net/phap-luat" : "https://vnexpress.net/rss/phap-luat.rss&#10;https://thuvienphapluat.vn/van-ban-moi"}
             multiline
             rows={5}
             fullWidth
@@ -640,8 +641,8 @@ export default function UrlScraperSection() {
               setUrlsText(e.target.value);
               if (submitError) setSubmitError('');
             }}
-            error={!!submitError || urlsCount > 20}
-            helperText={submitError || (urlsCount > 20 ? 'Vượt quá giới hạn tối đa 20 URL' : `Đã nhập: ${urlsCount}/20 URL`)}
+            error={!!submitError || urlsCount > (followLinks ? 1 : 20)}
+            helperText={submitError || (urlsCount > (followLinks ? 1 : 20) ? (followLinks ? 'Chỉ cho phép cào tối đa 1 URL khi bật "Theo dõi link con"' : 'Vượt quá giới hạn tối đa 20 URL') : `Đã nhập: ${urlsCount}/${followLinks ? 1 : 20} URL`)}
             disabled={isScraping}
             sx={{
               '& .MuiOutlinedInput-root': {
@@ -740,7 +741,7 @@ export default function UrlScraperSection() {
             <Button
               type="submit"
               variant="contained"
-              disabled={isScraping || urlsCount === 0 || urlsCount > 20}
+              disabled={isScraping || urlsCount === 0 || urlsCount > (followLinks ? 1 : 20)}
               startIcon={isScraping ? <CircularProgress size={16} color="inherit" /> : <SendIcon />}
               sx={{
                 py: 1.5,
