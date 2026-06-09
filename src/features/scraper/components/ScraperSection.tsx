@@ -824,17 +824,23 @@ export default function ScraperSection() {
         <Tooltip title="Đang gọi AI & push Sheet... (5-15s)">
           <Box
             sx={{
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: 26,
-              height: 26,
-              borderRadius: '50%',
+              gap: 0.75,
+              py: 0.25,
+              px: 1.25,
+              borderRadius: 1,
               border: '1px solid rgba(0, 184, 148, 0.4)',
               bgcolor: 'rgba(0, 184, 148, 0.08)',
+              color: '#00b894',
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              height: 20
             }}
           >
-            <CircularProgress size={14} sx={{ color: '#00b894' }} />
+            <CircularProgress size={10} sx={{ color: '#00b894' }} />
+            AI
           </Box>
         </Tooltip>
       );
@@ -843,35 +849,42 @@ export default function ScraperSection() {
     if (sheetUrl) {
       return (
         <Tooltip title={`Đã push Sheet (Batch #${sheetLastBatch || 1}) · Click để mở Google Sheet`} onClick={(e) => e.stopPropagation()}>
-          <IconButton
+          <Button
             size="small"
             onClick={(e) => {
               e.stopPropagation();
               window.open(sheetUrl, '_blank', 'noopener,noreferrer');
             }}
             sx={{
-              p: 0.5,
-              borderRadius: '50%',
+              py: 0.25,
+              px: 1.25,
+              borderRadius: 1,
               border: '1px solid #10b981',
               bgcolor: 'rgba(16, 185, 129, 0.08)',
+              color: '#10b981',
+              fontWeight: 800,
+              fontSize: '0.75rem',
+              minWidth: 0,
+              height: 20,
+              textTransform: 'none',
               transition: 'all 0.2s',
               '&:hover': {
                 bgcolor: 'rgba(16, 185, 129, 0.15)',
                 borderColor: '#059669',
-                transform: 'scale(1.1)',
+                transform: 'scale(1.05)',
               }
             }}
           >
-            <GridOnIcon sx={{ fontSize: 14, color: '#10b981' }} />
-          </IconButton>
+            mở
+          </Button>
         </Tooltip>
       );
     }
 
-    // Default/Not generated: Green Brain Icon Button
+    // Default/Not generated: Input-like styled button with text "AI"
     return (
       <Tooltip title="Nhấp để tự động Gen AI & Push Sheet" onClick={(e) => e.stopPropagation()}>
-        <IconButton
+        <Button
           size="small"
           onClick={(e) => {
             e.stopPropagation();
@@ -879,15 +892,22 @@ export default function ScraperSection() {
           }}
           disabled={aiLoadingId !== null}
           sx={{
-            p: 0.5,
-            borderRadius: '50%',
+            py: 0.25,
+            px: 1.25,
+            borderRadius: 1,
             border: '1px solid rgba(0, 184, 148, 0.6)',
             bgcolor: 'rgba(0, 184, 148, 0.08)',
+            color: '#00b894',
+            fontWeight: 800,
+            fontSize: '0.75rem',
+            minWidth: 0,
+            height: 20,
+            textTransform: 'none',
             transition: 'all 0.2s',
             '&:hover': {
               bgcolor: 'rgba(0, 184, 148, 0.15)',
               borderColor: '#00b894',
-              transform: 'scale(1.1)',
+              transform: 'scale(1.05)',
             },
             '&.Mui-disabled': {
               border: '1px solid rgba(0, 184, 148, 0.2)',
@@ -895,8 +915,8 @@ export default function ScraperSection() {
             }
           }}
         >
-          <PsychologyIcon sx={{ fontSize: 16, color: '#4b5563' }} />
-        </IconButton>
+          AI
+        </Button>
       </Tooltip>
     );
   };

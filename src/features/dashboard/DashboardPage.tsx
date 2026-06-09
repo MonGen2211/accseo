@@ -32,6 +32,7 @@ import SpaceDashboardIcon from '@mui/icons-material/SpaceDashboard';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { useState, useEffect, lazy, Suspense } from 'react';
+import LogoImage from '../../assets/Logo/Logo.png';
 
 const VbplSuggestionsSection = lazy(() => import('./components/vbpl/VbplSuggestionsSection'));
 const KeywordPlannerSection = lazy(() => import('./KeywordPlannerSection'));
@@ -559,18 +560,24 @@ export default function DashboardPage() {
         }}>
           {!sidebarCollapsed && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: '8px', bgcolor: 'primary.main', color: '#fff', fontWeight: 900, fontSize: '1.2rem' }}>
-                A
-              </Box>
+              <Box 
+                component="img"
+                src={LogoImage}
+                alt="ACC Logo"
+                sx={{ width: 32, height: 32, objectFit: 'contain' }}
+              />
               <Typography variant="h6" sx={{ fontWeight: 900, color: 'text.primary', letterSpacing: '-0.5px' }}>
                 ACC SEO
               </Typography>
             </Box>
           )}
           {sidebarCollapsed && (
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: '8px', bgcolor: 'primary.main', color: '#fff', fontWeight: 900, fontSize: '1.2rem', mb: 0.5 }}>
-              A
-            </Box>
+            <Box 
+              component="img"
+              src={LogoImage}
+              alt="ACC Logo"
+              sx={{ width: 32, height: 32, objectFit: 'contain', mb: 0.5 }}
+            />
           )}
           <IconButton 
             onClick={toggleSidebar}
