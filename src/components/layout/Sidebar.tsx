@@ -67,7 +67,9 @@ export default function Sidebar() {
 								display: 'flex', alignItems: 'center', justifyContent: 'center',
 								width: 42, height: 26, borderRadius: 3,
 								bgcolor: 'background.paper',
-								boxShadow: '0 2px 12px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)',
+								border: '1px solid',
+								borderColor: 'divider',
+								boxShadow: (theme) => theme.palette.mode === 'dark' ? '0 4px 20px rgba(0,0,0,0.4)' : '0 2px 12px rgba(0,0,0,0.08)',
 								cursor: 'pointer',
 								'&:hover': { bgcolor: 'action.hover' },
 							}}
@@ -85,7 +87,9 @@ export default function Sidebar() {
 					px: 2, py: 1,
 					bgcolor: 'background.paper',
 					borderRadius: 4,
-					boxShadow: '0 4px 32px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)',
+					border: '1px solid',
+					borderColor: 'divider',
+					boxShadow: (theme) => theme.palette.mode === 'dark' ? '0 8px 32px rgba(0,0,0,0.5)' : '0 4px 32px rgba(0,0,0,0.08)',
 					backdropFilter: 'blur(12px)',
 				}}>
 					{/* Collapse button */}

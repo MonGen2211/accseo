@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../app/store';
 import { logoutUser } from '../../features/auth/authSlice';
@@ -89,8 +89,43 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 		navigate(path);
 	};
 
+	const isDashboard = location.pathname === '/';
+	const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+		return sessionStorage.getItem('sidebar_collapsed') === 'true';
+	});
+
+	useEffect(() => {
+		const handleToggle = (e: Event) => {
+			const detail = (e as CustomEvent).detail;
+			setSidebarCollapsed(detail);
+		};
+		window.addEventListener('sidebar_toggle', handleToggle);
+		return () => {
+			window.removeEventListener('sidebar_toggle', handleToggle);
+		};
+	}, []);
+
+	// Nhân với 0.8 vì DashboardPage sử dụng zoom: 0.8
+	const rawSidebarWidth = sidebarCollapsed ? 76 : 260;
+	const sidebarWidth = isDashboard ? rawSidebarWidth * 0.8 : rawSidebarWidth;
+
+	// Căn lề padding bằng đúng padding của DashboardPage (32px) nhân 0.8 = 25.6px
+	const plDashboard = 32 * 0.8;
+	const prDashboard = 32 * 0.8;
+
 	return (
-		<Box sx={{ top: 0, zIndex: 50, px: { xs: 2, md: 3 }, pt: 2, pb: 0 }}>
+		<Box 
+			sx={{ 
+				top: 0, 
+				zIndex: 50, 
+				pl: isDashboard ? `${plDashboard}px` : { xs: 2, md: 3 },
+				pr: isDashboard ? `${prDashboard}px` : { xs: 2, md: 3 },
+				pt: 2, 
+				pb: 0,
+				ml: isDashboard ? { xs: 0, md: `${sidebarWidth}px` } : 0,
+				transition: 'margin-left 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+			}}
+		>
 			{/* Gradient banner bar */}
 			<Box
 				sx={{

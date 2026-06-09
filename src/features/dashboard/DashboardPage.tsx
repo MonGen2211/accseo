@@ -484,6 +484,7 @@ export default function DashboardPage() {
     setSidebarCollapsed(prev => {
       const next = !prev;
       sessionStorage.setItem('sidebar_collapsed', String(next));
+      window.dispatchEvent(new CustomEvent('sidebar_toggle', { detail: next }));
       return next;
     });
   };
@@ -494,18 +495,38 @@ export default function DashboardPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const dockItems = [
-    { id: 'overview', label: 'Tổng quan & Báo cáo', icon: <SpaceDashboardIcon sx={{ fontSize: 20 }} /> },
-    { id: 'vbpl', label: 'Gợi ý từ khóa', icon: <AutoAwesomeIcon sx={{ fontSize: 20 }} /> },
-    { id: 'planner', label: 'Keyword Planner', icon: <SearchIcon sx={{ fontSize: 20 }} /> },
-    { id: 'serp', label: 'Thứ hạng SERP', icon: <EmojiEventsIcon sx={{ fontSize: 20 }} /> },
-    { id: 'index-checker', label: 'Google Index Checker', icon: <CloudDoneOutlinedIcon sx={{ fontSize: 20 }} /> },
-    { id: 'scraper', label: 'Thu thập báo chí', icon: <ArticleOutlinedIcon sx={{ fontSize: 20 }} /> },
-    { id: 'scraper-url', label: 'URL Scraper', icon: <LinkIcon sx={{ fontSize: 20 }} /> },
-    { id: 'content-analysis', label: 'Phân tích nội dung', icon: <PsychologyIcon sx={{ fontSize: 20 }} /> },
-    { id: 'indexed', label: 'Ép Index', icon: <AndroidIcon sx={{ fontSize: 20 }} /> },
-    { id: 'seo-audit', label: 'SEO Audit', icon: <AssessmentOutlinedIcon sx={{ fontSize: 20 }} /> },
-    { id: 'geo-tag', label: 'Geo Tag Ảnh', icon: <PlaceIcon sx={{ fontSize: 20 }} /> },
+  const dockCategories = [
+    {
+      title: 'Overview',
+      items: [
+        { id: 'overview', label: 'Tổng quan & Báo cáo', icon: <SpaceDashboardIcon sx={{ fontSize: 20 }} /> },
+      ]
+    },
+    {
+      title: 'Keywords',
+      items: [
+        { id: 'vbpl', label: 'Gợi ý từ khóa', icon: <AutoAwesomeIcon sx={{ fontSize: 20 }} /> },
+        { id: 'planner', label: 'Keyword Planner', icon: <SearchIcon sx={{ fontSize: 20 }} /> },
+        { id: 'serp', label: 'Thứ hạng SERP', icon: <EmojiEventsIcon sx={{ fontSize: 20 }} /> },
+      ]
+    },
+    {
+      title: 'Services',
+      items: [
+        { id: 'index-checker', label: 'Google Index Checker', icon: <CloudDoneOutlinedIcon sx={{ fontSize: 20 }} /> },
+        { id: 'scraper', label: 'Thu thập báo chí', icon: <ArticleOutlinedIcon sx={{ fontSize: 20 }} /> },
+        { id: 'scraper-url', label: 'URL Scraper', icon: <LinkIcon sx={{ fontSize: 20 }} /> },
+        { id: 'indexed', label: 'Ép Index', icon: <AndroidIcon sx={{ fontSize: 20 }} /> },
+      ]
+    },
+    {
+      title: 'Developers',
+      items: [
+        { id: 'content-analysis', label: 'Phân tích nội dung', icon: <PsychologyIcon sx={{ fontSize: 20 }} /> },
+        { id: 'seo-audit', label: 'SEO Audit', icon: <AssessmentOutlinedIcon sx={{ fontSize: 20 }} /> },
+        { id: 'geo-tag', label: 'Geo Tag Ảnh', icon: <PlaceIcon sx={{ fontSize: 20 }} /> },
+      ]
+    }
   ];
 
   const sidebarWidth = sidebarCollapsed ? 76 : 260;
@@ -529,7 +550,10 @@ export default function DashboardPage() {
         sx={{
           width: { xs: '100%', md: sidebarWidth },
           flexShrink: 0,
-          p: sidebarCollapsed ? 1.5 : 2,
+          pt: 2, // Cố định padding top 16px để căn chỉnh dọc chuẩn với Header
+          pl: sidebarCollapsed ? 1.5 : 2,
+          pr: { xs: sidebarCollapsed ? 1.5 : 2, md: 0 }, // Bỏ padding right ở desktop để thanh scroll sát mép viền
+          pb: { xs: 1.5, md: 0 }, // Giảm padding-bottom ở desktop để cuộn sát đáy
           borderRadius: 0,
           border: 'none',
           borderRight: '1px solid',
@@ -541,17 +565,20 @@ export default function DashboardPage() {
           position: { xs: 'static', md: 'fixed' },
           left: 0,
           top: 0,
+          bottom: { xs: 'auto', md: 0 },
           zIndex: 1100,
-          height: { xs: 'auto', md: '125vh' },
-          overflowY: 'auto',
+          height: { xs: 'auto', md: 'auto' },
+          overflow: 'hidden', // Chỉ cho phép cuộn list ở trong, cố định header logo
           boxShadow: 'none',
           transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1), padding 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
         {/* Brand logo / header inside sidebar */}
         <Box sx={{ 
-          px: sidebarCollapsed ? 0.5 : 1.5, 
-          py: 2, 
+          pl: 0,
+          pr: sidebarCollapsed ? 0 : 2, 
+          pt: 1.5,
+          pb: 1.5,
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: sidebarCollapsed ? 'center' : 'space-between', 
@@ -594,60 +621,132 @@ export default function DashboardPage() {
             {sidebarCollapsed ? <ChevronRightIcon sx={{ fontSize: 18 }} /> : <ChevronLeftIcon sx={{ fontSize: 18 }} />}
           </IconButton>
         </Box>
-        <Divider sx={{ mb: 1.5 }} />
+        <Divider sx={{ mb: 2, mr: sidebarCollapsed ? 0 : 2, borderStyle: 'dashed', borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)' }} />
 
-        {dockItems.map((tab) => {
-          const isActive = activeTab === tab.id;
-          const content = (
-            <Box
-              key={tab.id}
-              onClick={() => handleTabChange(tab.id)}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-                gap: sidebarCollapsed ? 0 : 2,
-                py: 1.5,
-                px: sidebarCollapsed ? 0 : 2.5,
-                width: sidebarCollapsed ? 44 : 'auto',
-                height: sidebarCollapsed ? 44 : 'auto',
-                mx: sidebarCollapsed ? 'auto' : 0,
-                borderRadius: sidebarCollapsed ? '50%' : 3,
-                cursor: 'pointer',
-                color: isActive ? '#ffffff' : 'text.secondary',
-                background: isActive ? 'linear-gradient(135deg, #00b894 0%, #009975 100%)' : 'transparent',
-                boxShadow: isActive ? '0 4px 15px rgba(0, 184, 148, 0.25)' : 'none',
-                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                fontWeight: isActive ? 800 : 600,
-                fontSize: '0.92rem',
-                '&:hover': {
-                  color: isActive ? '#ffffff' : 'text.primary',
-                  bgcolor: isActive ? null : 'action.hover',
-                  transform: isActive ? 'scale(1.02)' : 'none'
-                },
-                '&:active': {
-                  transform: 'scale(0.98)'
-                }
+        <Box 
+          sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: 2, 
+            flexGrow: 1,
+            overflowY: 'auto',
+            pb: 4, // Khoảng đệm dưới cùng khi cuộn xuống hết
+            pr: 0,
+            // Scrollbar phong cách tối giản, hiện đại
+            '&::-webkit-scrollbar': {
+              width: '5px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: 'transparent',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+              borderRadius: '4px',
+            },
+            '&::-webkit-scrollbar-thumb:hover': {
+              background: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
+            },
+          }}
+        >
+          {dockCategories.map((category, catIdx) => (
+            <Box 
+              key={category.title} 
+              sx={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: 0.5,
+                pr: sidebarCollapsed ? 0 : 2
               }}
             >
-              {tab.icon}
+              {catIdx > 0 && (
+                <Divider 
+                  sx={{ 
+                    borderStyle: 'dashed', 
+                    mb: 1.5, 
+                    mt: 0.5,
+                    borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)' 
+                  }} 
+                />
+              )}
+              
               {!sidebarCollapsed && (
-                <Typography sx={{ fontSize: 'inherit', fontWeight: 'inherit', color: 'inherit' }}>
-                  {tab.label}
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    fontWeight: 700, 
+                    fontSize: '0.68rem', 
+                    color: 'text.disabled', 
+                    letterSpacing: '1px', 
+                    px: 1.5, 
+                    mb: 0.8,
+                    textTransform: 'uppercase'
+                  }}
+                >
+                  {category.title}
                 </Typography>
               )}
-            </Box>
-          );
 
-          if (sidebarCollapsed) {
-            return (
-              <Tooltip key={tab.id} title={tab.label} placement="right" arrow>
-                {content}
-              </Tooltip>
-            );
-          }
-          return content;
-        })}
+              {category.items.map((tab) => {
+                const isActive = activeTab === tab.id;
+                const content = (
+                  <Box
+                    key={tab.id}
+                    onClick={() => handleTabChange(tab.id)}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+                      gap: sidebarCollapsed ? 0 : 2,
+                      py: 1.2,
+                      px: sidebarCollapsed ? 0 : 2,
+                      width: sidebarCollapsed ? 44 : 'auto',
+                      height: sidebarCollapsed ? 44 : 'auto',
+                      mx: sidebarCollapsed ? 'auto' : 0,
+                      borderRadius: 2,
+                      cursor: 'pointer',
+                      color: isActive ? '#00b894' : 'text.secondary',
+                      bgcolor: isActive 
+                        ? (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.08)' : 'rgba(0, 184, 148, 0.04)'
+                        : 'transparent',
+                      border: '1px solid',
+                      borderColor: isActive 
+                        ? (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.25)' : 'rgba(0, 184, 148, 0.15)'
+                        : 'transparent',
+                      transition: 'all 0.15s ease-in-out',
+                      fontWeight: isActive ? 700 : 500,
+                      fontSize: '0.92rem',
+                      '&:hover': {
+                        color: isActive ? '#00b894' : 'text.primary',
+                        bgcolor: isActive 
+                          ? (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.12)' : 'rgba(0, 184, 148, 0.08)'
+                          : 'action.hover',
+                      },
+                      '&:active': {
+                        transform: 'scale(0.98)'
+                      }
+                    }}
+                  >
+                    {tab.icon}
+                    {!sidebarCollapsed && (
+                      <Typography sx={{ fontSize: 'inherit', fontWeight: 'inherit', color: 'inherit' }}>
+                        {tab.label}
+                      </Typography>
+                    )}
+                  </Box>
+                );
+
+                if (sidebarCollapsed) {
+                  return (
+                    <Tooltip key={tab.id} title={tab.label} placement="right" arrow>
+                      {content}
+                    </Tooltip>
+                  );
+                }
+                return content;
+              })}
+            </Box>
+          ))}
+        </Box>
       </Paper>
 
       {/* Main Content Area */}
