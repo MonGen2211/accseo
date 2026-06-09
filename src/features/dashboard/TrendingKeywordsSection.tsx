@@ -1,4 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useTheme } from '@mui/material/styles';
+import type { PaletteMode } from '@mui/material';
 import api from '../../utils/api';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
@@ -108,11 +110,38 @@ const fmtDateTime = (iso: string): string => {
 	return `Cập nhật lúc ${hh}:${mm} ${dd}/${mo}/${d.getFullYear()}`;
 };
 
-const posStyle = (pos: number) => {
-	if (pos === 1) return { color: '#92400e', bg: '#fef3c7', fw: 900 };
-	if (pos === 2) return { color: 'text.primary', bg: 'action.hover', fw: 800 };
-	if (pos === 3) return { color: '#78350f', bg: '#ffedd5', fw: 800 };
-	return { color: 'text.secondary', bg: 'background.default', fw: 700 };
+const posStyle = (pos: number, mode: PaletteMode) => {
+	const isDark = mode === 'dark';
+	if (pos === 1) {
+		return { 
+			color: isDark ? '#3dd6a0' : '#009975', 
+			bg: isDark ? 'rgba(0, 184, 148, 0.15)' : '#e6f7f4', 
+			border: isDark ? '1px solid rgba(0, 184, 148, 0.3)' : '1px solid rgba(0, 184, 148, 0.15)',
+			fw: 900 
+		};
+	}
+	if (pos === 2) {
+		return { 
+			color: isDark ? '#22d3ee' : '#0891b2', 
+			bg: isDark ? 'rgba(6, 182, 212, 0.15)' : '#ecfeff', 
+			border: isDark ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid rgba(6, 182, 212, 0.15)',
+			fw: 800 
+		};
+	}
+	if (pos === 3) {
+		return { 
+			color: isDark ? '#94a3b8' : '#475569', 
+			bg: isDark ? 'rgba(148, 163, 184, 0.15)' : '#f1f5f9', 
+			border: isDark ? '1px solid rgba(148, 163, 184, 0.3)' : '1px solid rgba(148, 163, 184, 0.15)',
+			fw: 800 
+		};
+	}
+	return { 
+		color: 'text.secondary', 
+		bg: 'background.default', 
+		border: 'none',
+		fw: 700 
+	};
 };
 
 const parseRetryAfterMs = (errData: { retryAfterMs?: number; retryAfter?: number; message?: string }): number | null => {
@@ -187,22 +216,45 @@ function ExpandPanel({ item }: { item: TrendItem }) {
 	const showEmptyArticles = item.articles.length === 0;
 
 	return (
-		<Box sx={{ bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider', px: { xs: 2, md: 3 }, pt: 1.5, pb: 2.5, borderLeft: '4px solid #f97316' }}>
+		<Box sx={{ bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider', px: { xs: 2, md: 3 }, pt: 1.5, pb: 2.5, borderLeft: (theme) => `4px solid ${theme.palette.primary.main}` }}>
 			<Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
 				{item.categories && item.categories.length > 0 && (
 					<Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
 						<Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#059669', mr: 0.5, alignSelf: 'center', textTransform: 'uppercase', letterSpacing: 0.5 }}>Danh mục:</Typography>
 						{item.categories.map((c, i) => (
-							<Chip key={i} label={getCategoryName(c)} size="small" sx={{ fontSize: 10, height: 20, bgcolor: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0', fontWeight: 600 }} />
+							<Chip 
+								key={i} 
+								label={getCategoryName(c)} 
+								size="small" 
+								sx={{ 
+									fontSize: 10, 
+									height: 20, 
+									bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.15)' : '#ecfdf5', 
+									color: (theme) => theme.palette.mode === 'dark' ? '#34d399' : '#059669', 
+									border: (theme) => theme.palette.mode === 'dark' ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid #a7f3d0', 
+									fontWeight: 600 
+								}} 
+							/>
 						))}
 					</Box>
 				)}
 
 				{item.trendBreakdown.length > 0 && (
 					<Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', ml: item.categories?.length > 0 ? 2 : 0 }}>
-						<Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#c2410c', mr: 0.5, alignSelf: 'center', textTransform: 'uppercase', letterSpacing: 0.5 }}>Biến thể:</Typography>
+						<Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'text.secondary', mr: 0.5, alignSelf: 'center', textTransform: 'uppercase', letterSpacing: 0.5 }}>Biến thể:</Typography>
 						{item.trendBreakdown.map((b, i) => (
-							<Chip key={i} label={b} size="small" sx={{ fontSize: 10, height: 20, bgcolor: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa' }} />
+							<Chip 
+								key={i} 
+								label={b} 
+								size="small" 
+								sx={{ 
+									fontSize: 10, 
+									height: 20, 
+									bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9', 
+									color: (theme) => theme.palette.mode === 'dark' ? '#cbd5e1' : '#475569', 
+									border: (theme) => theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #e2e8f0' 
+								}} 
+							/>
 						))}
 					</Box>
 				)}
@@ -211,8 +263,8 @@ function ExpandPanel({ item }: { item: TrendItem }) {
 				{!isScrapeMaybe && (
 				<Box>
 					<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1.25 }}>
-						<SearchOutlinedIcon sx={{ fontSize: 15, color: '#2563eb' }} />
-						<Typography sx={{ fontWeight: 700, fontSize: '0.73rem', color: '#2563eb', textTransform: 'uppercase', letterSpacing: 0.6 }}>Tìm kiếm liên quan</Typography>
+						<SearchOutlinedIcon sx={{ fontSize: 15, color: 'primary.main' }} />
+						<Typography sx={{ fontWeight: 700, fontSize: '0.73rem', color: 'primary.main', textTransform: 'uppercase', letterSpacing: 0.6 }}>Tìm kiếm liên quan</Typography>
 					</Box>
 					{item.relatedQueries.length === 0 ? (
 						<Typography sx={{ fontSize: '0.82rem', color: 'text.disabled', fontStyle: 'italic' }}>Không có dữ liệu</Typography>
@@ -220,7 +272,20 @@ function ExpandPanel({ item }: { item: TrendItem }) {
 						<Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
 							{item.relatedQueries.map((q, i) => (
 								<Link key={i} href={q.link} target="_blank" rel="noopener noreferrer"
-									sx={{ fontSize: '0.84rem', color: '#1d4ed8', fontWeight: 500, display: 'flex', alignItems: 'flex-start', gap: 0.5, textDecoration: 'none', lineHeight: 1.4, '&:hover': { color: '#ef4444', textDecoration: 'underline' } }}>
+									sx={{ 
+										fontSize: '0.84rem', 
+										color: (theme) => theme.palette.mode === 'dark' ? '#3dd6a0' : '#009975', 
+										fontWeight: 500, 
+										display: 'flex', 
+										alignItems: 'flex-start', 
+										gap: 0.5, 
+										textDecoration: 'none', 
+										lineHeight: 1.4, 
+										'&:hover': { 
+											color: 'primary.main', 
+											textDecoration: 'underline' 
+										} 
+									}}>
 									<OpenInNewIcon sx={{ fontSize: 12, mt: '3px', flexShrink: 0 }} />
 									{q.query}
 								</Link>
@@ -249,7 +314,7 @@ function ExpandPanel({ item }: { item: TrendItem }) {
 						<Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
 							{item.articles.slice(0, 4).map((article, i) => (
 								<Link key={i} href={article.link} target="_blank" rel="noopener noreferrer"
-									sx={{ display: 'flex', gap: 1.25, textDecoration: 'none', '&:hover .art-title': { color: '#ef4444' } }}>
+									sx={{ display: 'flex', gap: 1.25, textDecoration: 'none', '&:hover .art-title': { color: 'primary.main' } }}>
 									<Avatar src={article.thumbnail ?? undefined} variant="rounded"
 										sx={{ width: 52, height: 52, flexShrink: 0, bgcolor: 'action.hover', borderRadius: 1.5 }}>
 										<ArticleOutlinedIcon sx={{ fontSize: 22, color: 'text.secondary' }} />
@@ -281,6 +346,7 @@ function ExpandPanel({ item }: { item: TrendItem }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function TrendingKeywordsSection() {
+	const theme = useTheme();
 	const [qp, setQp] = useState<QP>(DEFAULT_QP);
 	const [data, setData] = useState<TrendData | null>(null);
 	const [loading, setLoading] = useState(false);
@@ -374,9 +440,9 @@ export default function TrendingKeywordsSection() {
 		{
 			id: 'position', name: 'position', label: '#', width: 56, align: 'center',
 			renderCell: (row: TableRowData) => {
-				const ps = posStyle(row.position as number);
+				const ps = posStyle(row.position as number, theme.palette.mode);
 				return (
-					<Box sx={{ width: 36, height: 36, borderRadius: 2, bgcolor: ps.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+					<Box sx={{ width: 36, height: 36, borderRadius: 2, bgcolor: ps.bg, border: ps.border, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
 						<Typography sx={{ fontWeight: ps.fw, fontSize: (row.position as number) <= 3 ? '1rem' : '0.88rem', color: ps.color, lineHeight: 1 }}>{row.position}</Typography>
 					</Box>
 				);
@@ -392,7 +458,30 @@ export default function TrendingKeywordsSection() {
 					<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.4, flexWrap: 'wrap' }}>
 						<Typography sx={{ fontWeight: 700, fontSize: '0.94rem', lineHeight: 1.3 }} noWrap>{item.keyword}</Typography>
 						{activeBadge && (
-							<Chip label={activeBadge.label} size="small" sx={{ height: 18, fontSize: 10, fontWeight: 700, color: activeBadge.variant === 'success' ? '#16a34a' : 'text.secondary', bgcolor: activeBadge.variant === 'success' ? '#dcfce7' : 'action.hover' }} />
+							<Chip 
+								label={activeBadge.label} 
+								size="small" 
+								sx={{ 
+									height: 18, 
+									fontSize: 10, 
+									fontWeight: 700, 
+									color: (theme) => {
+										const isDark = theme.palette.mode === 'dark';
+										if (activeBadge.variant === 'success') return isDark ? '#4ade80' : '#16a34a';
+										return 'text.secondary';
+									}, 
+									bgcolor: (theme) => {
+										const isDark = theme.palette.mode === 'dark';
+										if (activeBadge.variant === 'success') return isDark ? 'rgba(74, 222, 128, 0.15)' : '#dcfce7';
+										return 'action.hover';
+									},
+									border: (theme) => {
+										const isDark = theme.palette.mode === 'dark';
+										if (activeBadge.variant === 'success') return isDark ? '1px solid rgba(74, 222, 128, 0.3)' : 'none';
+										return 'none';
+									}
+								}} 
+							/>
 						)}
 					</Box>
 				</Box>
@@ -426,8 +515,21 @@ export default function TrendingKeywordsSection() {
 						size="small" 
 						sx={{ 
 							fontWeight: 700, fontSize: '0.85rem', height: 24, 
-							bgcolor: isBreakout ? '#fee2e2' : '#ecfdf5', 
-							color: isBreakout ? '#dc2626' : '#059669' 
+							bgcolor: (theme) => {
+								const isDark = theme.palette.mode === 'dark';
+								if (isBreakout) return isDark ? 'rgba(231, 76, 60, 0.12)' : '#fdf2f2';
+								return isDark ? 'rgba(0, 184, 148, 0.12)' : '#e6f7f4';
+							},
+							color: (theme) => {
+								const isDark = theme.palette.mode === 'dark';
+								if (isBreakout) return isDark ? '#f87171' : '#e74c3c';
+								return isDark ? '#3dd6a0' : '#009975';
+							},
+							border: (theme) => {
+								const isDark = theme.palette.mode === 'dark';
+								if (isBreakout) return isDark ? '1px solid rgba(231, 76, 60, 0.25)' : '1px solid rgba(231, 76, 60, 0.15)';
+								return isDark ? '1px solid rgba(0, 184, 148, 0.25)' : '1px solid rgba(0, 184, 148, 0.15)';
+							}
 						}} 
 					/>
 				);
@@ -444,7 +546,7 @@ export default function TrendingKeywordsSection() {
 			renderCell: (row: TableRowData) => {
 				const id = String(row.position);
 				return expandedId === id
-					? <KeyboardArrowUpIcon fontSize="small" sx={{ color: '#f97316' }} />
+					? <KeyboardArrowUpIcon fontSize="small" sx={{ color: 'primary.main' }} />
 					: <KeyboardArrowDownIcon fontSize="small" sx={{ color: 'text.disabled' }} />;
 			},
 		},
@@ -471,9 +573,9 @@ export default function TrendingKeywordsSection() {
 		<Box sx={{ width: '100%', height: 750 }}>
 			<Paper elevation={0} sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider', overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', height: '100%' }}>
 				{/* ── Header ── */}
-				<Box sx={{ px: 3, pt: 2.5, pb: 2, background: (theme) => theme.palette.mode === 'dark' ? 'linear-gradient(135deg, rgba(249, 115, 22, 0.05) 0%, transparent 70%)' : 'linear-gradient(135deg, #fff7ed 0%, #ffffff 70%)', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+				<Box sx={{ px: 3, pt: 2.5, pb: 2, background: (theme) => theme.palette.mode === 'dark' ? 'linear-gradient(135deg, rgba(0, 184, 148, 0.05) 0%, transparent 70%)' : 'linear-gradient(135deg, #e6f7f4 0%, #ffffff 70%)', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
 					<Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-						<Box sx={{ width: 42, height: 42, borderRadius: 2.5, background: 'linear-gradient(135deg, #ef4444, #f97316)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(239,68,68,0.3)', flexShrink: 0, animation: 'pulse 2s infinite', '@keyframes pulse': { '0%': { boxShadow: '0 4px 12px rgba(239,68,68,0.3)' }, '50%': { boxShadow: '0 4px 20px rgba(239,68,68,0.55)' }, '100%': { boxShadow: '0 4px 12px rgba(239,68,68,0.3)' } } }}>
+						<Box sx={{ width: 42, height: 42, borderRadius: 2.5, background: 'linear-gradient(135deg, #00b894, #009975)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0, 184, 148, 0.25)', flexShrink: 0, animation: 'pulse 2s infinite', '@keyframes pulse': { '0%': { boxShadow: '0 4px 12px rgba(0, 184, 148, 0.25)' }, '50%': { boxShadow: '0 4px 20px rgba(0, 184, 148, 0.45)' }, '100%': { boxShadow: '0 4px 12px rgba(0, 184, 148, 0.25)' } } }}>
 							<WhatshotIcon sx={{ color: 'primary.contrastText', fontSize: 22 }} />
 						</Box>
 						<Box>
@@ -481,7 +583,7 @@ export default function TrendingKeywordsSection() {
 								<Typography sx={{ fontWeight: 800, fontSize: '1.05rem', lineHeight: 1.2 }}>
 									Trending Keywords
 								</Typography>
-								<Chip label="LIVE" size="small" sx={{ fontSize: 9, height: 16, bgcolor: '#ef4444', color: 'primary.contrastText', fontWeight: 800, letterSpacing: 0.5, px: 0.25 }} />
+								<Chip label="LIVE" size="small" sx={{ fontSize: 9, height: 16, bgcolor: 'error.main', color: 'error.contrastText', fontWeight: 800, letterSpacing: 0.5, px: 0.5, borderRadius: 1 }} />
 							</Box>
 							<Typography sx={{ fontSize: '0.75rem', color: 'text.secondary', mt: 0.1 }}>Từ khoá bùng nổ tại Việt Nam · Nguồn Google Trends</Typography>
 						</Box>
@@ -491,7 +593,7 @@ export default function TrendingKeywordsSection() {
 						{/* Time pills */}
 						<Box sx={{ display: 'flex', gap: 0.5, p: 0.5, bgcolor: 'action.hover', borderRadius: 2 }}>
 							{TIME_OPTS.map(opt => (
-								<Box key={opt.value} onClick={() => updateFilter({ hours: opt.value })} sx={{ px: 1.5, py: 0.5, borderRadius: 1.5, cursor: 'pointer', bgcolor: qp.hours === opt.value ? 'background.paper' : 'transparent', boxShadow: qp.hours === opt.value ? '0 1px 4px rgba(0,0,0,0.12)' : 'none', color: qp.hours === opt.value ? '#ef4444' : 'text.secondary', fontWeight: qp.hours === opt.value ? 700 : 500, fontSize: '0.78rem', transition: 'all 0.15s', userSelect: 'none', whiteSpace: 'nowrap' }}>
+								<Box key={opt.value} onClick={() => updateFilter({ hours: opt.value })} sx={{ px: 1.5, py: 0.5, borderRadius: 1.5, cursor: 'pointer', bgcolor: qp.hours === opt.value ? 'background.paper' : 'transparent', boxShadow: qp.hours === opt.value ? '0 1px 4px rgba(0,0,0,0.12)' : 'none', color: qp.hours === opt.value ? 'primary.main' : 'text.secondary', fontWeight: qp.hours === opt.value ? 700 : 500, fontSize: '0.78rem', transition: 'all 0.15s', userSelect: 'none', whiteSpace: 'nowrap' }}>
 									{opt.label}
 								</Box>
 							))}
@@ -541,12 +643,12 @@ export default function TrendingKeywordsSection() {
 								fontWeight: 600,
 								fontSize: '0.78rem',
 								borderRadius: 1.5,
-								boxShadow: '0 2px 6px rgba(239,68,68,0.2)',
-								background: 'linear-gradient(135deg, #ef4444, #f97316)',
+								boxShadow: '0 2px 6px rgba(0, 184, 148, 0.15)',
+								background: 'linear-gradient(135deg, #00b894, #009975)',
 								color: 'primary.contrastText',
 								'&:hover': { 
-									background: 'linear-gradient(135deg, #dc2626, #ea580c)',
-									boxShadow: '0 4px 12px rgba(239,68,68,0.35)' 
+									background: 'linear-gradient(135deg, #3dd6a0, #009975)',
+									boxShadow: '0 4px 12px rgba(0, 184, 148, 0.3)' 
 								}
 							}}
 						>
@@ -556,10 +658,42 @@ export default function TrendingKeywordsSection() {
 						{/* Refresh */}
 						<Box onClick={() => { if (!loading && !isBlocked_ && !isSyncing) fetchTrending(); }}
 							title={isBlocked_ ? 'Đang trong thời gian cooldown' : 'Làm mới'}
-							sx={{ minWidth: 34, height: 34, px: isBlocked_ && countdown ? 1 : 0, borderRadius: 2, border: '1px solid', borderColor: isBlocked_ ? '#fca5a5' : 'divider', bgcolor: isBlocked_ ? '#fff5f5' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, cursor: loading || isBlocked_ ? 'not-allowed' : 'pointer', color: isBlocked_ ? '#ef4444' : 'text.secondary', transition: 'all 0.15s', '&:hover': !loading && !isBlocked_ ? { bgcolor: 'action.hover', color: '#ef4444' } : {} }}>
-							<RefreshOutlinedIcon sx={{ fontSize: 18, color: isBlocked_ ? '#ef4444' : 'inherit', animation: loading ? 'spin 1s linear infinite' : 'none', '@keyframes spin': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } } }} />
+							sx={{ 
+								minWidth: 34, 
+								height: 34, 
+								px: isBlocked_ && countdown ? 1 : 0, 
+								borderRadius: 2, 
+								border: '1px solid', 
+								borderColor: (theme) => {
+									const isDark = theme.palette.mode === 'dark';
+									if (isBlocked_) return isDark ? 'rgba(231, 76, 60, 0.4)' : 'rgba(231, 76, 60, 0.3)';
+									return 'divider';
+								}, 
+								bgcolor: (theme) => {
+									const isDark = theme.palette.mode === 'dark';
+									if (isBlocked_) return isDark ? 'rgba(231, 76, 60, 0.12)' : '#fdf2f2';
+									return isDark ? 'rgba(255, 255, 255, 0.05)' : '#fff';
+								}, 
+								display: 'flex', 
+								alignItems: 'center', 
+								justifyContent: 'center', 
+								gap: 0.5, 
+								cursor: loading || isBlocked_ ? 'not-allowed' : 'pointer', 
+								color: (theme) => {
+									const isDark = theme.palette.mode === 'dark';
+									if (isBlocked_) return 'error.main';
+									return isDark ? '#f8fafc' : 'text.secondary';
+								}, 
+								transition: 'all 0.15s', 
+								'&:hover': !loading && !isBlocked_ ? { 
+									bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'action.hover', 
+									color: 'primary.main' 
+								} : {} 
+							}}
+						>
+							<RefreshOutlinedIcon sx={{ fontSize: 18, color: isBlocked_ ? '#e74c3c' : 'inherit', animation: loading ? 'spin 1s linear infinite' : 'none', '@keyframes spin': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } } }} />
 							{isBlocked_ && countdown && (
-								<Typography sx={{ fontSize: '0.67rem', fontWeight: 800, color: '#ef4444', whiteSpace: 'nowrap', lineHeight: 1 }}>{countdown}</Typography>
+								<Typography sx={{ fontSize: '0.67rem', fontWeight: 800, color: 'error.main', whiteSpace: 'nowrap', lineHeight: 1 }}>{countdown}</Typography>
 							)}
 						</Box>
 
@@ -594,8 +728,8 @@ export default function TrendingKeywordsSection() {
 				{/* ── Empty states ── */}
 				{!loading && isEmpty && (
 					<Box sx={{ textAlign: 'center', py: 10 }}>
-						<Box sx={{ width: 76, height: 76, borderRadius: '50%', background: 'linear-gradient(135deg, #fff7ed, #ffedd5)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
-							<TrendingUpOutlinedIcon sx={{ fontSize: 34, color: '#f97316' }} />
+						<Box sx={{ width: 76, height: 76, borderRadius: '50%', background: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.12)' : '#e6f7f4', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
+							<TrendingUpOutlinedIcon sx={{ fontSize: 34, color: 'primary.main' }} />
 						</Box>
 						<Typography sx={{ fontWeight: 700, fontSize: '0.95rem', mb: 0.5 }}>Chưa có dữ liệu trending</Typography>
 						<Typography sx={{ color: 'text.secondary', fontSize: '0.82rem' }}>Vui lòng quay lại sau khi hệ thống đồng bộ dữ liệu</Typography>

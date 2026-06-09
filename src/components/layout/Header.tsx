@@ -116,14 +116,16 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 	return (
 		<Box 
 			sx={{ 
+				position: 'sticky',
 				top: 0, 
 				zIndex: 50, 
 				pl: isDashboard ? `${plDashboard}px` : { xs: 2, md: 3 },
 				pr: isDashboard ? `${prDashboard}px` : { xs: 2, md: 3 },
 				pt: 2, 
-				pb: 0,
+				pb: 1.5,
 				ml: isDashboard ? { xs: 0, md: `${sidebarWidth}px` } : 0,
 				transition: 'margin-left 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+				bgcolor: 'background.default',
 			}}
 		>
 			{/* Gradient banner bar */}

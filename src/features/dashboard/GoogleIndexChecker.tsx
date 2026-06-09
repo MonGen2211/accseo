@@ -255,57 +255,89 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
       <Paper
         elevation={0}
         sx={{
-          p: { xs: 2.5, md: 3.5 },
+          p: { xs: 3, md: 4.5 },
           borderRadius: 5,
           border: '1px solid',
           borderColor: 'divider',
           bgcolor: 'background.paper',
-          boxShadow: '0 10px 30px rgba(0,0,0,0.02)',
+          boxShadow: (theme) => theme.palette.mode === 'dark' 
+            ? '0 10px 40px rgba(0,0,0,0.3)' 
+            : '0 10px 30px rgba(0,0,0,0.03)',
           mb: 4
         }}
       >
-        <Grid container spacing={3.5}>
+        <Grid container spacing={4.5}>
           
           {/* Left Column: Multiline URLs Input */}
-          <Grid item xs={12} md={7.5}>
-            <Box>
-              <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 1, textTransform: 'uppercase', letterSpacing: 0.8, display: 'flex', justifyContent: 'space-between' }}>
+          <Grid item xs={12} md={7}>
+            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, color: 'text.secondary', mb: 1.2, textTransform: 'uppercase', letterSpacing: 0.8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span>Đường dẫn cần check (URLs) <span style={{ color: '#ef4444' }}>*</span></span>
-                <span style={{ color: 'text.disabled', fontWeight: 600 }}>({parsedUrls.length}/50 URL)</span>
+                <Chip label={`${parsedUrls.length}/50 URL`} size="small" sx={{ fontWeight: 700, fontSize: '0.7rem', height: 20, bgcolor: 'action.selected' }} />
               </Typography>
               <TextField
                 fullWidth
                 multiline
-                rows={7}
+                rows={11}
                 placeholder="Nhập danh sách URL cần kiểm tra index, mỗi dòng một URL (vd: https://thuvienphapluat.vn/...)"
                 value={urlsInput}
                 onChange={(e) => setUrlsInput(e.target.value)}
                 sx={{ 
+                  flexGrow: 1,
                   '& .MuiOutlinedInput-root': { 
-                    borderRadius: 2.5, 
-                    bgcolor: 'background.default', 
+                    borderRadius: 3, 
+                    bgcolor: (theme) => theme.palette.mode === 'dark' ? '#0f172a' : '#f8fafc', 
                     fontFamily: 'monospace', 
-                    fontSize: '0.85rem' 
+                    fontSize: '0.85rem',
+                    lineHeight: 1.6,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    transition: 'all 0.15s ease-in-out',
+                    '&:hover': {
+                      borderColor: 'text.secondary',
+                    },
+                    '&.Mui-focused': {
+                      bgcolor: 'background.paper',
+                    }
                   } 
                 }}
               />
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', fontWeight: 600 }}>
-                • Các URL hợp lệ bắt buộc phải chứa protocol <code>http://</code> hoặc <code>https://</code>.<br />
-                • Hệ thống sẽ tự động lọc trùng lặp và loại bỏ khoảng trắng thừa.
-              </Typography>
+              <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                  <InfoOutlinedIcon sx={{ fontSize: 16, color: 'text.secondary', mt: 0.2 }} />
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, lineHeight: 1.4 }}>
+                    Mỗi dòng nhập một đường dẫn URL. Hệ thống hỗ trợ tối đa 50 URL trong một lần check.
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                  <InfoOutlinedIcon sx={{ fontSize: 16, color: 'text.secondary', mt: 0.2 }} />
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, lineHeight: 1.4 }}>
+                    Các URL bắt buộc phải chứa giao thức <code>http://</code> hoặc <code>https://</code>.
+                  </Typography>
+                </Box>
+              </Box>
             </Box>
           </Grid>
 
           {/* Right Column: Configuration & Actions */}
-          <Grid item xs={12} md={4.5} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          <Grid item xs={12} md={5} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             
             <Grid container spacing={2}>
               <Grid item xs={6}>
-                <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 1, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, color: 'text.secondary', mb: 1, textTransform: 'uppercase', letterSpacing: 0.8 }}>
                   Quốc gia
                 </Typography>
                 <FormControl fullWidth size="small">
-                  <Select value={location} onChange={(e) => setLocation(e.target.value)} sx={{ borderRadius: 2.5, bgcolor: 'background.default', fontWeight: 600 }}>
+                  <Select 
+                    value={location} 
+                    onChange={(e) => setLocation(e.target.value)} 
+                    sx={{ 
+                      borderRadius: 2.5, 
+                      bgcolor: (theme) => theme.palette.mode === 'dark' ? '#0f172a' : '#f8fafc',
+                      fontWeight: 700,
+                      fontSize: '0.85rem'
+                    }}
+                  >
                     <MenuItem value="VN">🇻🇳 Việt Nam</MenuItem>
                     <MenuItem value="US">🇺🇸 Hoa Kỳ</MenuItem>
                     <MenuItem value="SG">🇸🇬 Singapore</MenuItem>
@@ -313,11 +345,20 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                 </FormControl>
               </Grid>
               <Grid item xs={6}>
-                <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 1, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, color: 'text.secondary', mb: 1, textTransform: 'uppercase', letterSpacing: 0.8 }}>
                   Ngôn ngữ
                 </Typography>
                 <FormControl fullWidth size="small">
-                  <Select value={language} onChange={(e) => setLanguage(e.target.value)} sx={{ borderRadius: 2.5, bgcolor: 'background.default', fontWeight: 600 }}>
+                  <Select 
+                    value={language} 
+                    onChange={(e) => setLanguage(e.target.value)} 
+                    sx={{ 
+                      borderRadius: 2.5, 
+                      bgcolor: (theme) => theme.palette.mode === 'dark' ? '#0f172a' : '#f8fafc',
+                      fontWeight: 700,
+                      fontSize: '0.85rem'
+                    }}
+                  >
                     <MenuItem value="vi">Tiếng Việt</MenuItem>
                     <MenuItem value="en">Tiếng Anh</MenuItem>
                   </Select>
@@ -326,7 +367,7 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
             </Grid>
 
             <Box>
-              <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 1, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+              <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, color: 'text.secondary', mb: 1.2, textTransform: 'uppercase', letterSpacing: 0.8 }}>
                 Công cụ quét (Crawl Engine)
               </Typography>
               <ToggleButtonGroup
@@ -337,7 +378,7 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                 size="small"
                 fullWidth
                 sx={{ 
-                  bgcolor: 'background.default', 
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? '#0f172a' : '#f8fafc', 
                   borderRadius: 2.5,
                   p: 0.4,
                   border: '1px solid',
@@ -351,29 +392,68 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
               </ToggleButtonGroup>
 
               {/* Dynamic comparative help alert */}
-              <Box sx={{ mt: 1.5, p: 1.5, bgcolor: 'background.default', borderRadius: 2.5, border: '1px solid', borderColor: 'divider' }}>
+              <Box 
+                sx={{ 
+                  mt: 2, 
+                  p: 2, 
+                  borderRadius: 3, 
+                  border: '1px solid',
+                  transition: 'all 0.25s ease-in-out',
+                  bgcolor: (theme) => {
+                    const isDark = theme.palette.mode === 'dark';
+                    if (engine === 'local') return isDark ? 'rgba(2, 132, 199, 0.06)' : '#f0f9ff';
+                    return isDark ? 'rgba(16, 185, 129, 0.06)' : '#f0fdf4';
+                  },
+                  borderColor: (theme) => {
+                    const isDark = theme.palette.mode === 'dark';
+                    if (engine === 'local') return isDark ? 'rgba(2, 132, 199, 0.25)' : '#bae6fd';
+                    return isDark ? 'rgba(16, 185, 129, 0.25)' : '#bbf7d0';
+                  }
+                }}
+              >
                 {engine === 'local' ? (
                   <>
-                    <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                    <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, color: (theme) => theme.palette.mode === 'dark' ? '#38bdf8' : '#0284c7', display: 'flex', alignItems: 'center', gap: 0.8, mb: 1.5 }}>
                       💻 CRAWLER LOCAL (TRÌNH DUYỆT HỆ THỐNG)
                     </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.4, fontSize: '0.72rem' }}>
-                      • <strong>Tốc độ:</strong> Chậm (8-12 giây/URL, Chrome tuần tự).<br />
-                      • <strong>Chi phí:</strong> Miễn phí ($0).<br />
-                      • <strong>Rủi ro:</strong> Dễ bị Google chặn IP tạm thời hoặc gặp Captcha.
-                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>Tốc độ xử lý</Typography>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.primary' }}>Chậm (8-12s / URL, Chrome tuần tự)</Typography>
+                      </Box>
+                      <Divider sx={{ opacity: 0.5 }} />
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>Chi phí vận hành</Typography>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: '#10b981' }}>Miễn phí ($0)</Typography>
+                      </Box>
+                      <Divider sx={{ opacity: 0.5 }} />
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>Mức độ rủi ro</Typography>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: '#ef4444' }}>Dễ bị Google chặn tạm thời hoặc gặp Captcha</Typography>
+                      </Box>
+                    </Box>
                   </>
                 ) : (
                   <>
-                    <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#10b981', display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                    <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, color: (theme) => theme.palette.mode === 'dark' ? '#34d399' : '#059669', display: 'flex', alignItems: 'center', gap: 0.8, mb: 1.5 }}>
                       🚀 APIFY CLOUD (ĐÁM MÂY PREMIUM)
                     </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.4, fontSize: '0.72rem' }}>
-                      • <strong>Tốc độ:</strong> Siêu tốc (~1.7s/URL, cào song song trên đám mây).<br />
-                      • <strong>Độ ổn định:</strong> 99%+ (Không bao giờ lo captcha hay block IP).<br />
-                      • <strong>Chi phí:</strong> Rất rẻ (~$0.0045/URL, tài khoản free $5 chạy được ~1100 URL).<br />
-                      • <strong>Khuyên dùng:</strong> Khi cần quét nhanh và dữ liệu chính xác tuyệt đối.
-                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>Tốc độ xử lý</Typography>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.primary' }}>Siêu tốc (~1.7s / URL, cào song song)</Typography>
+                      </Box>
+                      <Divider sx={{ opacity: 0.5 }} />
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>Chi phí vận hành</Typography>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: '#059669' }}>Rất rẻ (~$0.0045 / URL, Free $5 test ~1100 URL)</Typography>
+                      </Box>
+                      <Divider sx={{ opacity: 0.5 }} />
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>Độ tin cậy & ổn định</Typography>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: '#10b981' }}>99%+ (Không lo block IP, cào qua Proxy sạch)</Typography>
+                      </Box>
+                    </Box>
                   </>
                 )}
               </Box>
@@ -391,32 +471,34 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                 {showAdvanced ? 'Ẩn cấu hình nâng cao' : 'Tùy chọn cấu hình nâng cao'}
               </Button>
               <Collapse in={showAdvanced} sx={{ mt: 1.5 }}>
-                <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 3, border: '1px solid', borderColor: 'divider', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Box>
+                <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? '#0f172a' : '#f8fafc', borderRadius: 3, border: '1px solid', borderColor: 'divider', display: 'flex', gap: 2 }}>
+                  <Box sx={{ flex: 1 }}>
                     <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: 'text.secondary', mb: 0.8, textTransform: 'uppercase' }}>
-                      Delay tối thiểu giữa các check (ms)
+                      Delay tối thiểu (ms)
                     </Typography>
                     <TextField
+                      fullWidth
                       size="small"
                       type="number"
-                      placeholder="Mặc định: 4000 (Range 0-20000)"
+                      placeholder="Mặc định: 4000"
                       value={minDelay}
                       onChange={(e) => setMinDelay(e.target.value)}
-                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'background.paper' } }}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'background.paper', fontSize: '0.8rem' } }}
                       inputProps={{ min: 0, max: 20000 }}
                     />
                   </Box>
-                  <Box>
+                  <Box sx={{ flex: 1 }}>
                     <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: 'text.secondary', mb: 0.8, textTransform: 'uppercase' }}>
-                      Delay tối đa giữa các check (ms)
+                      Delay tối đa (ms)
                     </Typography>
                     <TextField
+                      fullWidth
                       size="small"
                       type="number"
-                      placeholder="Mặc định: 8000 (Range 0-20000)"
+                      placeholder="Mặc định: 8000"
                       value={maxDelay}
                       onChange={(e) => setMaxDelay(e.target.value)}
-                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'background.paper' } }}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'background.paper', fontSize: '0.8rem' } }}
                       inputProps={{ min: 0, max: 20000 }}
                     />
                   </Box>
@@ -424,42 +506,61 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
               </Collapse>
             </Box>
 
-            <Box sx={{ display: 'flex', gap: 2, mt: 'auto', pt: 2 }}>
-              <Button
-                variant="contained"
-                onClick={handleCheckIndex}
-                disabled={loading}
-                startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <CloudQueueIcon sx={{ fontSize: 16 }} />}
-                sx={{
-                  flex: 1,
-                  borderRadius: 2.5,
-                  py: 1.3,
-                  fontWeight: 900,
-                  fontSize: '0.85rem',
-                  textTransform: 'none',
-                  background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
-                  boxShadow: '0 4px 14px rgba(8, 145, 178, 0.2)',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #22d3ee 0%, #0e7490 100%)',
-                    boxShadow: '0 6px 18px rgba(8, 145, 178, 0.3)'
-                  }
-                }}
-              >
-                {loading ? 'Đang kiểm tra...' : 'Bắt đầu kiểm tra'}
-              </Button>
-              <Button
-                variant="outlined"
-                color="inherit"
-                onClick={handleClear}
-                disabled={loading}
-                sx={{ borderRadius: 2.5, textTransform: 'none', fontWeight: 700, fontSize: '0.82rem', borderColor: 'divider' }}
-              >
-                Xóa
-              </Button>
-            </Box>
-
           </Grid>
         </Grid>
+
+        <Divider sx={{ my: 3.5, borderStyle: 'dashed', borderColor: 'divider' }} />
+
+        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
+          <Button
+            variant="contained"
+            onClick={handleCheckIndex}
+            disabled={loading}
+            startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <CloudQueueIcon sx={{ fontSize: 16 }} />}
+            sx={{
+              minWidth: 200,
+              borderRadius: 3,
+              py: 1.3,
+              px: 4,
+              fontWeight: 900,
+              fontSize: '0.88rem',
+              textTransform: 'none',
+              background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
+              boxShadow: '0 4px 14px rgba(8, 145, 178, 0.2)',
+              transition: 'all 0.2s ease-in-out',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #22d3ee 0%, #0e7490 100%)',
+                boxShadow: '0 6px 18px rgba(8, 145, 178, 0.3)',
+                transform: 'translateY(-1px)'
+              },
+              '&:active': {
+                transform: 'translateY(1px)'
+              }
+            }}
+          >
+            {loading ? 'Đang kiểm tra...' : 'Bắt đầu kiểm tra'}
+          </Button>
+          <Button
+            variant="outlined"
+            color="inherit"
+            onClick={handleClear}
+            disabled={loading}
+            sx={{ 
+              borderRadius: 3, 
+              px: 3,
+              textTransform: 'none', 
+              fontWeight: 700, 
+              fontSize: '0.85rem', 
+              borderColor: 'divider',
+              '&:hover': {
+                bgcolor: 'action.hover',
+                borderColor: 'text.secondary'
+              }
+            }}
+          >
+            Xóa dữ liệu
+          </Button>
+        </Box>
       </Paper>
 
       {/* SEARCH / STATS / LOADING VIEWS */}

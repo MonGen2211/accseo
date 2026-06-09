@@ -1,4 +1,3 @@
-import TrendingKeywordsSection from './TrendingKeywordsSection';
 import ActivitySection from './ActivitySection';
 import AndroidIcon from '@mui/icons-material/Android';
 import LinkIcon from '@mui/icons-material/Link';
@@ -25,15 +24,24 @@ import CloudDoneOutlinedIcon from '@mui/icons-material/CloudDoneOutlined';
 import CloudOffOutlinedIcon from '@mui/icons-material/CloudOffOutlined';
 import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import HelpOutlinedIcon from '@mui/icons-material/HelpOutlined';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import SearchIcon from '@mui/icons-material/Search';
 import SpaceDashboardIcon from '@mui/icons-material/SpaceDashboard';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import TrendingUpOutlinedIcon from '@mui/icons-material/TrendingUpOutlined';
+import CloudSyncOutlinedIcon from '@mui/icons-material/CloudSyncOutlined';
 import { useState, useEffect, lazy, Suspense } from 'react';
 import LogoImage from '../../assets/Logo/Logo.png';
 
+const TrendingKeywordsSection = lazy(() => import('./TrendingKeywordsSection'));
 const VbplSuggestionsSection = lazy(() => import('./components/vbpl/VbplSuggestionsSection'));
 const KeywordPlannerSection = lazy(() => import('./KeywordPlannerSection'));
 const QuickSerpChecker = lazy(() => import('./QuickSerpChecker'));
@@ -44,6 +52,7 @@ const ContentAnalysisSection = lazy(() => import('../content-analysis/components
 const ForceIndexUnifiedSection = lazy(() => import('../force-index/components/ForceIndexUnifiedSection'));
 const SeoAuditSection = lazy(() => import('../seo-audit/components/SeoAuditSection'));
 const GeoTagSection = lazy(() => import('../geo-tag/components/GeoTagSection'));
+const UsageStatsSection = lazy(() => import('./UsageStatsSection'));
 import { useNavigate } from 'react-router-dom';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
@@ -63,6 +72,851 @@ import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { StatusBadge, TypeBadge, getDueDateInfo } from '../requests/components/RequestBadges';
 
+// MiniButton helper for rendering miniature inline buttons in the guides
+interface MiniButtonProps {
+  label: string;
+  variant?: 'contained' | 'outlined' | 'text';
+  color?: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'grey';
+  gradient?: 'orange' | 'green' | 'blue';
+  icon?: React.ReactNode;
+  sx?: any;
+}
+
+function MiniButton({ label, variant = 'contained', color = 'primary', gradient, icon, sx }: MiniButtonProps) {
+  let bgcolor = undefined;
+  let bgGradient = undefined;
+  let textColor = 'white';
+  let border = undefined;
+
+  if (gradient === 'orange') {
+    bgGradient = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+  } else if (gradient === 'green') {
+    bgGradient = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+  } else if (gradient === 'blue') {
+    bgGradient = 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)';
+  }
+
+  if (variant === 'contained' && !bgGradient) {
+    if (color === 'primary') bgcolor = '#2563EB';
+    else if (color === 'success') bgcolor = '#10b981';
+    else if (color === 'warning') bgcolor = '#f59e0b';
+    else if (color === 'error') bgcolor = '#ef4444';
+    else if (color === 'info') bgcolor = '#38bdf8';
+    else if (color === 'grey') {
+      bgcolor = (theme: any) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)';
+      textColor = (theme: any) => theme.palette.mode === 'dark' ? '#34d399' : '#059669';
+      border = (theme: any) => theme.palette.mode === 'dark' ? '1px solid rgba(52,211,153,0.2)' : '1px solid rgba(5,150,105,0.15)';
+    }
+  } else if (variant === 'outlined') {
+    textColor = color === 'primary' ? '#2563EB' : (color === 'success' ? '#10b981' : (color === 'warning' ? '#f59e0b' : (color === 'error' ? '#ef4444' : '#38bdf8')));
+    border = `1px solid ${textColor}`;
+    bgcolor = 'transparent';
+  }
+
+  return (
+    <Box
+      component="span"
+      sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 0.5,
+        px: 1,
+        py: 0.2,
+        mx: 0.4,
+        borderRadius: 1.5,
+        fontSize: '0.7rem',
+        fontWeight: 800,
+        textTransform: 'none',
+        background: bgGradient || bgcolor,
+        color: textColor,
+        border: border,
+        boxShadow: variant === 'contained' && color !== 'grey' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+        verticalAlign: 'middle',
+        userSelect: 'none',
+        lineHeight: 1.2,
+        ...sx
+      }}
+    >
+      {icon}
+      {label}
+    </Box>
+  );
+}
+
+const TAB_GUIDES: Record<string, { title: string; content: React.ReactNode }> = {
+  overview: {
+    title: 'Tổng quan & Báo cáo (Dashboard Overview)',
+    content: (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+        <Typography variant="body1" sx={{ fontWeight: 800, color: 'primary.main' }}>
+          HƯỚNG DẪN SỬ DỤNG BẢNG ĐIỀU KHIỂN TỔNG QUAN
+        </Typography>
+        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+          Trang <strong>Tổng quan & Báo cáo</strong> là trung tâm giám sát sức khỏe SEO của toàn bộ hệ thống website. Giao diện được thiết kế gồm 3 phần chính: Hệ thống thẻ chỉ số (Stat Cards), Bảng phân tích chi tiết động (Dynamic Panel) ở bên phải, và các báo cáo lịch sử ở phía dưới.
+        </Typography>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          📊 1. HỆ THỐNG THỂ CHỈ SỐ (STAT CARDS)
+        </Typography>
+        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+          Mạng lưới 9 thẻ chỉ số tóm tắt nhanh các dữ liệu quan trọng. Trong đó có 4 thẻ <strong>tương tác được</strong> (bấm vào sẽ thay đổi nội dung hiển thị của Bảng phân tích bên phải):
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>DOMAIN QUẢN LÝ:</strong> Hiển thị tổng số tên miền đang theo dõi. 
+            <br />
+            <span style={{ color: '#00b894', fontWeight: 600 }}>👉 Hành động:</span> Nhấp chọn để mở bảng báo cáo lưu lượng truy cập Google Analytics (GA4) bên phải.
+          </li>
+          <li>
+            <strong>YÊU CẦU CẦN XỬ LÝ:</strong> Hiển thị số lượng tác vụ cào báo chí, phân tách từ khóa, hoặc tối ưu nội dung đang chờ xử lý.
+            <br />
+            <span style={{ color: '#00b894', fontWeight: 600 }}>👉 Hành động:</span> Nhấp chọn để mở hòm thư Inbox tác vụ, xem hạn chót và nhấn <MiniButton label="Xem chi tiết" color="primary" /> để chuyển hướng xử lý.
+          </li>
+          <li>
+            <strong>BÀI VIẾT ĐÃ INDEX / CHƯA INDEX:</strong> Tỷ lệ lập chỉ mục của các trang bài viết của bạn trên Google Search (Không thể click).
+          </li>
+          <li>
+            <strong>BỘ TỪ KHOÁ TRIỂN KHAI:</strong> Tổng số nhóm từ khóa đã được duyệt để viết bài SEO.
+            <br />
+            <span style={{ color: '#00b894', fontWeight: 600 }}>👉 Hành động:</span> Nhấp chọn để xem danh sách nhóm từ khóa đã triển khai bên phải theo từng tên miền.
+          </li>
+          <li>
+            <strong>BỘ TỪ KHOÁ CHỜ PHÊ DUYỆT:</strong> Số nhóm từ khóa mới tạo đang đợi admin duyệt.
+            <br />
+            <span style={{ color: '#00b894', fontWeight: 600 }}>👉 Hành động:</span> Nhấp chọn để xem chi tiết danh sách nhóm đang chờ phê duyệt.
+          </li>
+          <li>
+            <strong>CÁC THẺ KHÁC (Chỉ hiển thị dữ liệu):</strong> <em>Bài viết tối ưu chờ duyệt</em>, <em>Bài viết chờ duyệt</em>, và <em>Từ khoá phân tách chờ duyệt</em> giúp cập nhật nhanh tiến độ vận hành (Không thể click).
+          </li>
+        </Box>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          ⚡ 2. BẢNG PHÂN TÍCH ĐỘNG BÊN PHẢI (DYNAMIC PANEL)
+        </Typography>
+        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+          Hiển thị báo cáo chi tiết dựa theo thẻ chỉ số được kích hoạt ở bên trái:
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Báo cáo Google Analytics (GA4) (Kích hoạt từ thẻ DOMAIN QUẢN LÝ):</strong> 
+            <br />
+            • Chọn <strong>Tên miền</strong> và <strong>Khoảng thời gian (7 ngày, 30 ngày, 90 ngày)</strong> từ các dropdown ở góc trên của bảng.
+            <br />
+            • Bảng sẽ hiển thị biểu đồ số lượt xem trang (Pageviews), số người dùng hoạt động (Active Users), lượng truy cập tìm kiếm tự nhiên (Organic Traffic).
+          </li>
+          <li>
+            <strong>Hòm thư tác vụ (Inbox Requests) (Kích hoạt từ thẻ YÊU CẦN CẦN XỬ LÝ):</strong>
+            <br />
+            • Hiển thị danh sách các thẻ yêu cầu gồm Tên yêu cầu, Loại yêu cầu, Trạng thái (Đang chờ/Đang chạy), Hạn chót.
+            <br />
+            • Nhấn nút <MiniButton label="Xem chi tiết" color="primary" /> trên từng dòng để di chuyển thẳng tới trang cấu hình chi tiết của yêu cầu đó.
+          </li>
+          <li>
+            <strong>Quản lý Nhóm từ khóa (Kích hoạt từ thẻ BỘ TỪ KHOÁ):</strong>
+            <br />
+            • Cho phép lọc xem danh sách nhóm từ khóa theo từng Tên miền.
+            <br />
+            • Nhấn trực tiếp vào từng tên nhóm từ khóa để chuyển hướng nhanh tới trang danh sách từ khóa chi tiết của nhóm đó.
+          </li>
+        </Box>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          🔥 3. LỊCH SỬ HOẠT ĐỘNG BÊN DƯỚI
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Lịch sử hoạt động gần đây (Activity Logs):</strong> Ghi nhận nhật ký các tác vụ chạy ngầm của hệ thống (ví dụ: "Bắt đầu check index URL...", "Hoàn thành cào trang báo...") giúp bạn giám sát hoạt động thời gian thực.
+          </li>
+        </Box>
+      </Box>
+    )
+  },
+  'trending-keywords': {
+    title: 'Google Trending Keywords (Từ khóa xu hướng)',
+    content: (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+        <Typography variant="body1" sx={{ fontWeight: 800, color: 'primary.main' }}>
+          HƯỚNG DẪN XEM TỪ KHÓA XU HƯỚNG GOOGLE (TRENDING KEYWORDS)
+        </Typography>
+        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+          Trang <strong>Google Trending Keyword</strong> cập nhật liên tục các cụm từ khóa đang bùng nổ tìm kiếm tại Việt Nam trực tiếp từ Google Trends theo thời gian thực. Công cụ hỗ trợ bạn nắm bắt tâm lý thị trường để lên ý tưởng bài viết "bắt trend" nhanh nhất.
+        </Typography>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          ⚙️ 1. BỘ LỌC XU HƯỚNG ĐA NĂNG
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Bộ lọc thời gian:</strong> Chọn xem từ khóa thịnh hành trong khoảng thời gian mong muốn gồm: <strong>4 giờ</strong>, <strong>24 giờ</strong>, <strong>48 giờ</strong>, hoặc <strong>7 ngày</strong> qua.
+          </li>
+          <li>
+            <strong>Chế độ Chỉ đang trending:</strong> Bật công tắc này để lọc ra các từ khóa vẫn đang có lượng tìm kiếm tăng mạnh ở thời điểm hiện tại.
+          </li>
+          <li>
+            <strong>Lọc theo danh mục:</strong> Lọc từ khóa theo hơn 400 chủ đề khác nhau (ví dụ: Pháp luật, Thể thao, Giải trí, Công nghệ...) thông qua dropdown danh mục.
+          </li>
+        </Box>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          ⚡ 2. CÁC THAO TÁC TRÊN DANH SÁCH
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Lấy dữ liệu mới:</strong> Nhấn nút <MiniButton label="Lấy dữ liệu mới" gradient="orange" icon={<CloudSyncOutlinedIcon sx={{ fontSize: 11 }} />} /> để hệ thống chạy bot cào đồng bộ dữ liệu xu hướng mới nhất từ Google.
+          </li>
+          <li>
+            <strong>Làm mới bảng:</strong> Nhấn nút <MiniButton label="🔄" variant="outlined" color="primary" sx={{ px: 0.5, minWidth: 22, height: 20 }} /> để tải lại danh sách từ cơ sở dữ liệu hiện tại.
+          </li>
+          <li>
+            <strong>Xem bài báo liên quan:</strong> Click vào các ảnh đại diện thu nhỏ (Avatar Group) ở cột **Báo chí** để đọc các bài tin tức nguồn khơi mào cho xu hướng tìm kiếm đó.
+          </li>
+          <li>
+            <strong>Phân tích từ khóa:</strong> Bấm nút <MiniButton label="🔍" variant="outlined" color="primary" sx={{ px: 0.5, minWidth: 22, height: 20 }} /> ở cuối mỗi dòng từ khóa để tự động chuyển hướng sang công cụ **Keyword Planner** phân tích chi tiết lượng tìm kiếm và độ cạnh tranh của từ khóa đó.
+          </li>
+        </Box>
+      </Box>
+    )
+  },
+  vbpl: {
+    title: 'Gợi ý từ khóa (Google Trends & AI)',
+    content: (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+        <Typography variant="body1" sx={{ fontWeight: 800, color: 'primary.main' }}>
+          HƯỚNG DẪN TÌM Ý TƯỞNG & GỢI Ý TỪ KHÓA CHI TIẾT
+        </Typography>
+        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+          Công cụ <strong>Gợi ý từ khóa</strong> là giải pháp tích hợp giúp bạn tìm kiếm chủ đề ngách, theo dõi xu hướng thực tế của người dùng và mở rộng danh sách từ khóa triển khai SEO. Giao diện được cấu trúc làm 3 tab tính năng độc lập cùng với 1 giỏ lưu trữ từ khóa thông minh (Floating Cart) dưới chân trang.
+        </Typography>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          🔥 TAB 1: AI GỢI Ý CHỦ ĐỀ SEO (PUBLIC TRENDS)
+        </Typography>
+        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+          Mặc định hệ thống tự động cập nhật và phân tích các chủ đề xu hướng nóng nhất của danh mục <strong>Chính phủ & Luật pháp</strong> tại Việt Nam trong 3 tháng qua, hỗ trợ đắc lực cho các trang tin tức pháp lý hoặc chính sách.
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Lịch sử phân tích (Horizontal List):</strong> Danh sách các phiên quét cũ được lưu trữ ở thanh trượt ngang trên cùng. Bạn có thể nhấn vào một ngày cụ thể (ví dụ: ngày Hôm nay, hoặc các ngày trước đó) để tải lại kết quả cào cũ mà không tốn tài nguyên chạy lại.
+          </li>
+          <li>
+            <strong>Bắt đầu phân tích ngay / Phân tích mới hôm nay:</strong> Nếu ngày hôm nay chưa có bản quét mới, nút <MiniButton label="Bắt đầu phân tích ngay" gradient="orange" icon={<AutoAwesomeIcon sx={{ fontSize: 11 }} />} /> sẽ hiện ra. Hệ thống sẽ khởi chạy trình duyệt ẩn danh Puppeteer cào dữ liệu Google Trends thực tế cho 20 chủ đề hàng đầu.
+          </li>
+          <li>
+            <strong>Bảng Logs trực quan (Live Console Logs):</strong> Trong khi đang quét, hệ thống hiển thị một khung màu đen mô phỏng màn hình lệnh Terminal, cập nhật liên tục tiến trình cào từng chủ đề. Bạn có thể bấm <MiniButton label="Dừng phân tích (Cancel)" variant="outlined" color="error" /> bất cứ lúc nào để ngắt tiến trình.
+          </li>
+          <li>
+            <strong>Phân tích chi tiết biểu đồ:</strong> Click vào một chủ đề trong bảng kết quả để mở rộng phần xem biểu đồ Recharts chi tiết. Bạn sẽ thấy:
+            <br />
+            • <em>Biểu đồ dòng thời gian xu hướng (Google Trends Chart):</em> Thể hiện mức độ quan tâm của người dùng Việt Nam trong 12 tháng qua.
+            <br />
+            • <em>Chỉ số phân tích:</em> Điểm Trends hiện tại (0 - 100), Điểm trung bình cả năm, Tốc độ tăng trưởng (%) và Cảnh báo đột biến (<code>🔥 Có đột biến</code> nếu lượng tìm kiếm tăng đột ngột).
+          </li>
+          <li>
+            <strong>Nút tính năng trên bảng:</strong>
+            <br />
+            • <em>Lọc kết quả đề xuất:</em> Ô tìm kiếm nhanh cho phép lọc chủ đề theo từ khóa.
+            <br />
+            • <em>Copy:</em> Nhấn nút <MiniButton label="Copy" gradient="orange" /> để sao chép toàn bộ tên chủ đề của bảng kết quả hiện tại vào clipboard.
+            <br />
+            • <em>Tải Excel:</em> Nhấn nút <MiniButton label="Tải Excel" variant="outlined" color="success" /> để xuất danh sách chủ đề kèm đầy đủ thông tin xu hướng ra file Excel/CSV.
+            <br />
+            • <em>Chọn cả bộ / Bỏ chọn cả bộ:</em> Nhấn nút <MiniButton label="Chọn cả bộ (20)" variant="outlined" color="info" /> hoặc <MiniButton label="Bỏ chọn cả bộ" variant="outlined" color="info" /> để thêm hoặc xóa đồng loạt toàn bộ danh sách chủ đề đang hiển thị vào Giỏ từ khóa.
+            <br />
+            • <em>Thao tác lẻ:</em> Nhấn nút <MiniButton label="+" variant="outlined" color="primary" sx={{ px: 0.5, borderRadius: '50%', minWidth: 20, height: 20 }} /> hoặc dấu tick xanh lá ở cuối dòng của mỗi chủ đề để thêm/xóa chủ đề đó khỏi Giỏ.
+          </li>
+        </Box>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          ⚙️ TAB 2: AI GỢI Ý CHỦ ĐỀ SEO TỰ CHỌN (CUSTOM TRENDS)
+        </Typography>
+        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+          Phân tích xu hướng dựa trên danh sách từ khóa hạt giống (Seed Keywords) do bạn tự nhập. AI kết hợp cào Google Trends thời gian thực và gom nhóm chủ đề tự động.
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Nút "Tạo dự án mới":</strong> Bấm nút <MiniButton label="Tạo dự án mới" gradient="orange" icon="+" /> ở góc phải để mở hộp thoại cấu hình dự án quét:
+            <br />
+            • <em>Tên dự án chủ đề:</em> Đặt tên dễ nhớ (ví dụ: "Từ khóa xe ô tô điện").
+            <br />
+            • <em>Từ khóa hạt giống:</em> Nhập từ khóa gốc cần quét. Gõ phím <code>Enter</code> hoặc phẩy <code>,</code> để thêm nhiều từ khóa.
+            <br />
+            • <em>Số lượng ý tưởng AI gợi ý:</em> Chọn số chủ đề AI cần sinh ra.
+            <br />
+            • <em>Khoảng thời gian:</em> Chọn khoảng thời gian quét xu hướng (7 ngày, 30 ngày, 90 ngày).
+            <br />
+            • Bấm <MiniButton label="Bắt đầu phân tích AI" gradient="orange" /> để chạy.
+          </li>
+          <li>
+            <strong>Xem tiến trình cào:</strong> Khi dự án đang chạy ngầm, bạn có thể bấm nút <MiniButton label="Xem tiến trình" gradient="orange" /> để theo dõi trạng thái cào Puppeteer trực quan của từng từ khóa hạt giống.
+          </li>
+          <li>
+            <strong>Quản lý danh sách dự án (Sơ đồ cây - Folder Tree):</strong> Các dự án được gom nhóm theo từ khóa hạt giống dưới dạng các thư mục. Bạn có thể mở rộng thư mục để xem lịch sử các bản quét (snapshots). Nhấn <MiniButton label="Xem kết quả cào AI" gradient="green" /> để hiển thị chi tiết dự án, nhấn <MiniButton label="Xóa" color="error" variant="outlined" /> để loại bỏ bản quét, hoặc nhấn icon chiếc bút để đổi tên dự án.
+          </li>
+          <li>
+            <strong>Kết quả phân tích chi tiết:</strong> Khi mở chi tiết dự án, bạn có thể click chọn từng chủ đề đề xuất của AI để xem biểu đồ Google Trends của chủ đề đó, kèm theo **Truy vấn liên quan (Related Queries)** và **Chủ đề liên quan (Related Topics)** phổ biến nhất trên Google Search.
+          </li>
+        </Box>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          🤖 TAB 3: AI GỢI Ý TỪ KHÓA (VOLUME & INTENT)
+        </Typography>
+        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+          AI phân tích ý định tìm kiếm (Search Intent), ước tính lượng tìm kiếm hàng tháng (Volume), giá thầu CPC và vẽ biểu đồ xu hướng 12 tháng qua.
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Tạo từ khóa mới (Tab con):</strong> Nhập từ khóa chủ đề và số lượng từ khóa muốn AI gợi ý (ví dụ: 15, 30, 50 từ khóa con), sau đó bấm nút <MiniButton label="Yêu cầu AI gợi ý" gradient="green" icon={<AutoAwesomeIcon sx={{ fontSize: 11 }} />} />. Bảng kết quả sẽ hiển thị:
+            <br />
+            • <em>Từ khóa con:</em> Từ khóa ngách tương thích với bài viết SEO.
+            <br />
+            • <em>Ý định tìm kiếm (Search Intent):</em> Phân loại gồm Thông tin (Informational - Thẻ xanh dương 🔵), Giao dịch/Mua hàng (Transactional - Thẻ đỏ 🔴), Thương mại/So sánh (Commercial - Thẻ cam 🟠), Định hướng (Navigational - Thẻ lục 🟢).
+            <br />
+            • <em>Lượng tìm kiếm (Search Volume) & Giá thầu quảng cáo (CPC):</em> Số lượt tìm kiếm trung bình tháng và mức giá quảng cáo dự kiến.
+            <br />
+            • <em>Biểu đồ xu hướng (Trend 12T & 3T):</em> Cột xu hướng nhỏ biểu thị mức tăng trưởng hoặc suy giảm tìm kiếm 3 tháng gần nhất.
+          </li>
+          <li>
+            <strong>Xem lịch sử mở rộng (Tab con):</strong> Xem lại danh sách các chủ đề từ khóa bạn đã từng mở rộng trước đây để xem lại kết quả cũ một cách nhanh chóng mà không cần gọi lại AI.
+          </li>
+        </Box>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          🛒 4. GIỎ LƯU TRỮ TỪ KHÓA & TRIỂN KHAI (FLOATING DOCK)
+        </Typography>
+        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+          Khi chọn bất kỳ từ khóa nào từ các tab trên, thanh Giỏ hàng màu tối (Floating Dock) sẽ tự động hiện lên cố định ở chân trang. Đây là nơi tập kết từ khóa trước khi đẩy lên làm bộ từ khóa triển khai viết bài SEO:
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Chọn tên miền (Domain):</strong> Lựa chọn website mà bạn dự kiến triển khai bài viết cho bộ từ khóa này.
+          </li>
+          <li>
+            <strong>Nhóm từ khóa:</strong> Đặt tên nhóm mới hoặc chọn một nhóm từ khóa đã có sẵn trên hệ thống để gom chung.
+          </li>
+          <li>
+            <strong>Nút "Tạo bộ từ khóa triển khai":</strong> Nhấn nút <MiniButton label="Tạo bộ từ khóa triển khai" gradient="orange" /> để gửi bộ từ khóa này lên trang Dashboard chính. Bộ từ khóa này sẽ chuyển sang trạng thái <em>Chờ phê duyệt</em> để admin duyệt viết bài SEO hoặc tự động viết bài.
+          </li>
+          <li>
+            <strong>Nút "Xuất Excel":</strong> Nhấn nút <MiniButton label="Xuất Excel" variant="outlined" color="success" /> để tải toàn bộ từ khóa đang lưu trong giỏ hàng về máy tính dưới định dạng tệp Excel/CSV.
+          </li>
+        </Box>
+      </Box>
+    )
+  },
+  planner: {
+    title: 'Keyword Planner',
+    content: (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+        <Typography variant="body1" sx={{ fontWeight: 800, color: 'primary.main' }}>
+          HƯỚNG DẪN SỬ DỤNG BỘ LẬP KẾ HOẠCH TỪ KHÓA (KEYWORD PLANNER)
+        </Typography>
+        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+          Công cụ <strong>Keyword Planner</strong> giúp bạn phân tích sâu các chỉ số tìm kiếm của bộ từ khóa mục tiêu, ước tính hiệu quả quảng cáo và tự động gom nhóm từ khóa nhằm xây dựng cấu trúc website tối ưu nhất.
+        </Typography>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          📈 1. QUÉT CHỈ SỐ VOLUME & CPC TỪ KHÓA
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Nhập danh sách từ khóa:</strong> Dán danh sách từ khóa của bạn vào ô nhập liệu (mỗi dòng nhập một từ khóa để phân tích riêng biệt).
+          </li>
+          <li>
+            <strong>Thiết lập vùng quét:</strong> Lựa chọn Quốc gia và Ngôn ngữ từ dropdown (ví dụ: Quốc gia Việt Nam, Ngôn ngữ Tiếng Việt) để AI và hệ thống lấy dữ liệu chính xác theo thị trường mục tiêu.
+          </li>
+          <li>
+            <strong>Bắt đầu phân tích:</strong> Nhấn nút <MiniButton label="Phân tích từ khóa" gradient="blue" /> để gửi yêu cầu. Hệ thống sẽ truy vấn dữ liệu từ khóa thời gian thực.
+          </li>
+          <li>
+            <strong>Đọc bảng kết quả:</strong>
+            <br />
+            • <em>Volume (Lượng tìm kiếm):</em> Số lượt tìm kiếm trung bình hàng tháng trên Google.
+            <br />
+            • <em>CPC (Cost-Per-Click):</em> Giá thầu quảng cáo Google Ads ước tính (Thấp nhất và Cao nhất) giúp bạn đánh giá giá trị thương mại của từ khóa.
+            <br />
+            • <em>Độ cạnh tranh (Competition):</em> Mức độ khó khi triển khai SEO hoặc chạy quảng cáo (Thấp, Trung bình, Cao).
+            <br />
+            • <em>Xuuyên (Trends Chart):</em> Biểu đồ cột nhỏ mô phỏng mức độ quan tâm trong 12 tháng qua.
+          </li>
+        </Box>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          📂 2. GOM NHÓM TỪ KHÓA TỰ ĐỘNG (KEYWORD CLUSTERING)
+        </Typography>
+        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+          Chức năng giúp giải quyết bài toán cấu trúc web bằng cách tự động phân nhóm các từ khóa có cùng mục đích tìm kiếm (Search Intent).
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Cách sử dụng:</strong> Sau khi đã có danh sách từ khóa kèm chỉ số quét, nhấn nút <MiniButton label="Gom nhóm AI" gradient="orange" />.
+          </li>
+          <li>
+            <strong>Nguyên lý:</strong> Thuật toán sẽ so sánh kết quả tìm kiếm (SERP similarity) của các từ khóa. Những từ khóa nào hiển thị các kết quả giống nhau trên Google sẽ được gom chung thành một nhóm (Cluster).
+          </li>
+          <li>
+            <strong>Ứng dụng SEO:</strong> Dựa vào các nhóm này để thiết lập cấu trúc Silo (chủ đề lớn và các bài viết con) và chỉ cần viết một bài viết chuẩn SEO bao phủ toàn bộ các từ khóa trong cùng một nhóm, tránh lỗi trùng lặp nội dung giữa các trang.
+          </li>
+        </Box>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          📥 3. XUẤT DỮ LIỆU & LƯU TRỮ
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Copy nhanh:</strong> Nhấn nút <MiniButton label="Copy" color="primary" /> để sao chép nhanh toàn bộ từ khóa hoặc các nhóm từ khóa vào clipboard.
+          </li>
+          <li>
+            <strong>Xuất báo cáo:</strong> Nhấn nút <MiniButton label="Tải Excel" color="success" variant="outlined" /> để xuất file báo cáo chi tiết bao gồm từ khóa, nhóm, lượng tìm kiếm, CPC và độ cạnh tranh để gửi đối tác hoặc lưu trữ.
+          </li>
+          <li>
+            <strong>Đưa vào Giỏ hàng:</strong> Bạn có thể tích chọn các từ khóa tiềm năng nhất và nhấn nút <MiniButton label="+" variant="outlined" color="primary" sx={{ px: 0.5, borderRadius: '50%', minWidth: 20, height: 20 }} /> để đưa vào Giỏ từ khóa triển khai dưới chân trang.
+          </li>
+        </Box>
+      </Box>
+    )
+  },
+  serp: {
+    title: 'Kiểm tra thứ hạng SERP',
+    content: (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+        <Typography variant="body1" sx={{ fontWeight: 800, color: 'primary.main' }}>
+          HƯỚNG DẪN KIỂM TRA THỨ HẠNG TỪ KHÓA (SERP CHECKER)
+        </Typography>
+        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+          Công cụ <strong>Kiểm tra thứ hạng SERP</strong> giúp bạn định vị vị trí xếp hạng thực tế của website của mình cho các từ khóa mục tiêu trên trang kết quả tìm kiếm Google (SERP).
+        </Typography>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          ⚙️ 1. THIẾT LẬP THAM SỐ QUÉT
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Tên miền cần kiểm tra (Domain):</strong> Nhập tên miền website của bạn (ví dụ: <code>accseo.vn</code>) để hệ thống tìm kiếm vị trí của nó trên trang kết quả.
+          </li>
+          <li>
+            <strong>Nhập danh sách từ khóa:</strong> Điền các từ khóa bạn đang SEO hoặc muốn theo dõi thứ hạng (mỗi dòng nhập một từ khóa).
+          </li>
+          <li>
+            <strong>Chọn vùng địa lý (Geo) và Ngôn ngữ:</strong> Rất quan trọng đối với Local SEO. Bạn có thể chọn quét từ Google Việt Nam (vi), Google Mỹ (us)... để nhận kết quả chính xác theo hành vi tìm kiếm địa phương của người dùng.
+          </li>
+          <li>
+            <strong>Bắt đầu kiểm tra:</strong> Bấm nút <MiniButton label="Kiểm tra thứ hạng" gradient="blue" /> để bắt đầu quét. Hệ thống sẽ tự động gửi yêu cầu giả lập hành vi tìm kiếm thực tế.
+          </li>
+        </Box>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          📊 2. PHÂN TÍCH BẢNG THỨ HẠNG KẾT QUẢ
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Vị trí (Rank):</strong> Thứ hạng hiện tại của trang web trên Google. Thể hiện sự tăng/giảm vị trí so với phiên quét trước bằng ký hiệu mũi tên xanh/đỏ (ví dụ: <code>↑ 2</code> hoặc <code>↓ 1</code>).
+          </li>
+          <li>
+            <strong>URL xếp hạng (Ranking URL):</strong> Đường dẫn trang con cụ thể trên website được Google hiển thị cho từ khóa đó. Giúp bạn kiểm tra xem Google có nhận diện đúng trang đích cần SEO hay không.
+          </li>
+          <li>
+            <strong>Xem Top 10 đối thủ:</strong> Bấm nút <MiniButton label="🔍" color="primary" variant="outlined" sx={{ px: 0.5, minWidth: 22, height: 20 }} /> ở cuối dòng từ khóa để mở bảng phân tích Top 10 đối thủ hàng đầu đang xếp hạng trên bạn. Giúp bạn nhanh chóng nghiên cứu cấu trúc bài viết và tối ưu của đối thủ.
+          </li>
+          <li>
+            <strong>Xuất báo cáo Excel:</strong> Nhấn nút <MiniButton label="Tải Excel" color="success" variant="outlined" /> ở góc trên bảng để tải về báo cáo vị trí từ khóa làm tài liệu theo dõi tiến độ SEO hoặc gửi khách hàng.
+          </li>
+        </Box>
+      </Box>
+    )
+  },
+  'index-checker': {
+    title: 'Google Index Checker',
+    content: (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+        <Typography variant="body1" sx={{ fontWeight: 800, color: 'primary.main' }}>
+          HƯỚNG DẪN KIỂM TRA TRẠNG THÁI LẬP CHỈ MỤC (INDEX CHECKER)
+        </Typography>
+        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+          Công cụ <strong>Google Index Checker</strong> giúp bạn xác định nhanh xem các đường dẫn (URL) bài viết, sản phẩm trên website đã được Google lưu trữ (Index) và sẵn sàng hiển thị trên trang tìm kiếm chưa.
+        </Typography>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          🛠️ 1. CẤU HÌNH QUÉT URL
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Nhập danh sách URL:</strong> Hỗ trợ dán tối đa 50 đường dẫn URL đồng thời vào ô văn bản bên trái (mỗi dòng một đường dẫn).
+          </li>
+          <li>
+            <strong>Lựa chọn Crawl Engine (Bộ quét):</strong>
+            <br />
+            • <em>Local Crawler (Cục bộ):</em> Chạy hoàn toàn miễn phí thông qua hệ thống IP của máy chủ chính. Thích hợp cho số lượng URL ít, tuy nhiên nếu quét quá nhiều dễ bị Google chặn IP tạm thời (Rate Limit).
+            <br />
+            • <em>Apify Cloud (Đám mây):</em> Quét qua mạng lưới đám mây phân tán. Tốc độ quét cực nhanh (~1.7s cho mỗi URL), không bị chặn IP bởi cơ chế xoay vòng proxy, phù hợp khi cần kiểm tra số lượng link lớn.
+          </li>
+          <li>
+            <strong>Nút cào & dọn dẹp:</strong> Bấm nút <MiniButton label="Kiểm tra Index" gradient="green" /> ở chân trang cấu hình để kích hoạt bot đi kiểm tra. Bạn có thể nhấn <MiniButton label="Xóa toàn bộ" variant="outlined" color="error" /> để dọn sạch ô nhập liệu nhanh chóng.
+          </li>
+        </Box>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          📋 2. KẾT QUẢ VÀ HÀNH ĐỘNG TIẾP THEO
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Trạng thái Index:</strong>
+            <br />
+            • Thẻ màu xanh lục <code>Đã Index</code>: URL đã nằm trong bộ nhớ Google Search.
+            <br />
+            • Thẻ màu đỏ <code>Chưa Index</code>: Trang web chưa được lập chỉ mục (có thể do trang mới, lỗi robots.txt, hoặc chất lượng nội dung chưa tốt).
+          </li>
+          <li>
+            <strong>Tiêu đề và mô tả Cache:</strong> Hiển thị nội dung Title và Description thực tế mà Google đang hiển thị trên kết quả tìm kiếm của link đó.
+          </li>
+          <li>
+            <strong>Hành động tiếp theo:</strong>
+            <br />
+            • Với các URL <em>Chưa Index</em>, bạn có thể copy danh sách và chuyển sang tab **Ép Index (Google Index Booster)** để gửi yêu cầu lập chỉ mục ngay lập tức.
+            <br />
+            • Nhấn nút <MiniButton label="Tải Excel" color="success" variant="outlined" /> để xuất báo cáo kiểm tra trạng thái Index phục vụ công việc.
+          </li>
+        </Box>
+      </Box>
+    )
+  },
+  scraper: {
+    title: 'Thu thập báo chí (Press Scraper)',
+    content: (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+        <Typography variant="body1" sx={{ fontWeight: 800, color: 'primary.main' }}>
+          HƯỚNG DẪN THU THẬP BÀI BÁO TỰ ĐỘNG (PRESS SCRAPER)
+        </Typography>
+        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+          Công cụ <strong>Thu thập báo chí</strong> giúp bạn tự động quét, theo dõi và lấy nội dung bài viết từ các trang báo điện tử lớn tại Việt Nam (vnexpress.net, dantri.com.vn, cafef.vn...) theo chủ đề, phục vụ nghiên cứu thị trường và tìm kiếm ý tưởng nội dung.
+        </Typography>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          📡 1. THIẾT LẬP CHIẾN DỊCH CÀO TIN TỨC
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Chọn nguồn báo chí:</strong> Chọn trang báo mong muốn từ danh sách dropdown có sẵn.
+          </li>
+          <li>
+            <strong>Từ khóa chủ đề:</strong> Nhập từ khóa chủ đề bài báo muốn cào (ví dụ: "chính sách thuế", "lãi suất ngân hàng").
+          </li>
+          <li>
+            <strong>Phạm vi thời gian:</strong> Giới hạn ngày xuất bản của bài báo (ví dụ: cào bài viết trong 7 ngày gần đây hoặc 30 ngày gần đây) để đảm bảo thông tin luôn mới nhất.
+          </li>
+          <li>
+            <strong>Bắt đầu cào:</strong> Nhấn nút <MiniButton label="Bắt đầu cào" gradient="orange" /> để kích hoạt bot. Hệ thống sẽ cào các trường thông tin: Tiêu đề, Sapo (Mô tả), Nội dung chi tiết, Ngày xuất bản và lưu trữ vào hệ thống.
+          </li>
+        </Box>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          🤖 2. HÀNH ĐỘNG AI TÍCH HỢP & GOOGLE SHEETS
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Gen từ khóa AI:</strong> Nhấp nút <MiniButton label="Gen keyword" color="grey" icon={<PsychologyIcon sx={{ fontSize: 11, color: '#10b981' }} />} /> xuất hiện trên từng dòng bài viết cào được để yêu cầu AI đọc hiểu bài viết đó và tự động sinh ra bộ từ khóa SEO tối ưu nhất.
+          </li>
+          <li>
+            <strong>Mở Google Sheets:</strong> Sau khi AI chạy xong, nút chuyển thành <MiniButton label="mở" color="grey" sx={{ color: '#10b981', borderColor: 'rgba(16,185,129,0.3)', bgcolor: 'rgba(16,185,129,0.05)' }} /> màu xanh lục. Bấm vào đây để mở nhanh bảng tính Google Sheets lưu trữ bài viết.
+          </li>
+          <li>
+            <strong>Đồng bộ Google Sheets tự động:</strong> Toàn bộ danh sách bài viết cào được kèm theo bộ từ khóa SEO do AI đề xuất sẽ được tự động đồng bộ hóa lên file Google Sheets dùng chung của dự án, giúp đội ngũ làm nội dung dễ dàng phân chia công việc.
+          </li>
+        </Box>
+      </Box>
+    )
+  },
+  'scraper-url': {
+    title: 'URL Scraper',
+    content: (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+        <Typography variant="body1" sx={{ fontWeight: 800, color: 'primary.main' }}>
+          HƯỚNG DẪN CÀO DỮ LIỆU URL ĐA NĂNG (URL SCRAPER)
+        </Typography>
+        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+          Công cụ <strong>URL Scraper</strong> dùng để bóc tách cấu trúc HTML và trích xuất nội dung văn bản sạch của bất kỳ trang web nào, giúp bạn phân tích SEO On-page hoặc lấy thông tin bài viết gốc của đối thủ cạnh tranh.
+        </Typography>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          ⚙️ 1. CHỌN CHẾ ĐỘ CÀO & GIỚI HẠN URL
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Theo dõi link con (Follow links) - TẮT:</strong> Cho phép dán đồng thời tối đa **20 đường dẫn URL** khác nhau vào ô nhập liệu (mỗi dòng một đường dẫn). Bot sẽ quét song song và trích xuất dữ liệu của từng trang.
+          </li>
+          <li>
+            <strong>Theo dõi link con (Follow links) - BẬT:</strong> Khi chọn tính năng này, hệ thống sẽ giới hạn chỉ cho phép nhập **duy nhất 1 URL**. Bot sẽ cào URL chính này, tìm kiếm toàn bộ các liên kết nội bộ (Internal links) có trong trang đó và tự động cào tiếp tất cả các trang con. Ô nhập liệu sẽ hiển thị cảnh báo lỗi và nút cào sẽ bị vô hiệu hóa nếu bạn nhập nhiều hơn 1 URL khi bật tính năng này.
+          </li>
+          <li>
+            <strong>Bắt đầu cào:</strong> Bấm nút <MiniButton label="Bắt đầu cào URL" gradient="green" /> để kích hoạt bot Puppeteer bóc tách mã nguồn trang web.
+          </li>
+        </Box>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          📊 2. DỮ LIỆU SEO ON-PAGE TRÍCH XUẤT ĐƯỢC
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Cấu trúc Headings (H1 - H6):</strong> Liệt kê sơ đồ các thẻ tiêu đề của bài viết giúp bạn đánh giá xem bài viết đã phân bố cấu trúc logic và mạch lạc chưa.
+          </li>
+          <li>
+            <strong>Thẻ Meta Title & Meta Description:</strong> Đo lường nội dung tiêu đề và mô tả hiển thị trên Google để xem mức độ tối ưu hóa từ khóa và độ dài ký tự.
+          </li>
+          <li>
+            <strong>Mật độ từ khóa (Keyword Density):</strong> Thống kê chi tiết tỷ lệ phần trăm xuất hiện của các từ đơn, từ đôi, từ ba... giúp bạn phát hiện việc tối ưu quá đà (Over-optimization) hoặc nhồi nhét từ khóa.
+          </li>
+          <li>
+            <strong>Plain Text (Văn bản sạch):</strong> Lọc bỏ toàn bộ quảng cáo, mã JS, mã CSS và thanh menu bên lề, trả về nội dung chữ thuần túy của bài viết giúp bạn dễ dàng copy hoặc dán vào AI để viết bài mới.
+          </li>
+        </Box>
+      </Box>
+    )
+  },
+  'content-analysis': {
+    title: 'Phân tích nội dung (SEO Content Analysis)',
+    content: (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+        <Typography variant="body1" sx={{ fontWeight: 800, color: 'primary.main' }}>
+          HƯỚNG DẪN PHÂN TÍCH VÀ TỐI ƯU HÓA BÀI VIẾT (SEO CONTENT ANALYSIS)
+        </Typography>
+        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+          Công cụ <strong>SEO Content Analysis</strong> sử dụng trí tuệ nhân tạo (AI) để phân tích chất lượng bài viết của bạn đối chiếu với từ khóa mục tiêu, chỉ ra điểm số tối ưu hóa và đưa ra các đề xuất điều chỉnh cụ thể.
+        </Typography>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          ✍️ 1. CÁCH GỬI BÀI VIẾT PHÂN TÍCH
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Từ khóa chính (Focus Keyword):</strong> Nhập từ khóa quan trọng nhất mà bạn muốn bài viết này đạt thứ hạng cao trên Google (ví dụ: "cách ép index nhanh").
+          </li>
+          <li>
+            <strong>Nội dung bài viết:</strong> Dán toàn bộ tiêu đề và văn bản bài viết của bạn vào khung soạn thảo văn bản lớn.
+          </li>
+          <li>
+            <strong>Yêu cầu AI phân tích:</strong> Nhấn nút <MiniButton label="Phân tích bài viết" gradient="orange" /> để kích hoạt AI kiểm tra chất lượng SEO.
+          </li>
+        </Box>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          📊 2. PHÂN TÍCH ĐIỂM SỐ & KHUYẾN NGHỊ TỐI ƯU
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Điểm số SEO Content (Thang điểm 1 - 100):</strong>
+            <br />
+            • <em>Màu xanh lục (&gt;80 điểm):</em> Bài viết đã tối ưu rất tốt, sẵn sàng đăng tải.
+            <br />
+            • <em>Màu cam (50 - 79 điểm):</em> Mức độ trung bình, cần chỉnh sửa bổ sung một vài yếu tố SEO.
+            <br />
+            • <em>Màu đỏ (&lt;50 điểm):</em> Tối ưu kém, bài viết có nguy cơ cao không thể lọt top Google do thiếu chuẩn SEO.
+          </li>
+          <li>
+            <strong>Kiểm tra mật độ từ khóa (Keyword Density Check):</strong> AI chỉ ra tần suất xuất hiện của từ khóa chính. Nếu mật độ quá cao (trên 2.5%) sẽ cảnh báo nhồi nhét từ khóa; nếu quá thấp (dưới 0.5%) sẽ khuyến nghị chèn thêm từ khóa vào các vị trí tự nhiên.
+          </li>
+          <li>
+            <strong>Đề xuất sửa đổi thông minh của AI:</strong> Liệt kê danh sách các tác vụ cụ thể cần thực hiện để nâng điểm bài viết. Ví dụ:
+            <br />
+            • <code>"Hãy bổ sung từ khóa mục tiêu vào thẻ H1 ở đầu trang"</code>
+            <br />
+            • <code>"Đoạn văn thứ 4 quá dài (150 từ), hãy ngắt nhỏ thành các đoạn dưới 80 từ để tăng trải nghiệm đọc"</code>
+            <br />
+            • <code>"Thiếu thuộc tính mô tả ảnh (Alt text), hãy thêm từ khóa chính vào Alt ảnh sản phẩm"</code>
+          </li>
+        </Box>
+      </Box>
+    )
+  },
+  indexed: {
+    title: 'Ép Index (Google Index Booster)',
+    content: (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+        <Typography variant="body1" sx={{ fontWeight: 800, color: 'primary.main' }}>
+          HƯỚNG DẪN ÉP INDEX NHANH BÀI VIẾT (GOOGLE INDEX BOOSTER)
+        </Typography>
+        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+          Công cụ <strong>Ép Index</strong> cho phép bạn gửi trực tiếp danh sách URL bài viết mới hoặc bài viết vừa cập nhật nội dung lên Google bot thông qua kết nối API chính thức của Google Search Console, giúp đẩy nhanh tiến trình lập chỉ mục từ vài tuần xuống còn vài phút.
+        </Typography>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          ⚡ 1. QUY TRÌNH GỬI YÊU CẦU ÉP INDEX
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Nhập danh sách URL:</strong> Nhập các đường dẫn URL cần ép index (mỗi dòng nhập một URL). Bạn có thể lọc danh sách các link <em>"Chưa Index"</em> từ kết quả của công cụ **Google Index Checker** để đưa sang đây.
+          </li>
+          <li>
+            <strong>Cơ chế kết nối API:</strong> Công cụ sử dụng tài khoản dịch vụ API (Service Account Key) đã được xác minh quyền sở hữu website trong Google Search Console để gửi yêu cầu.
+          </li>
+          <li>
+            <strong>Bắt đầu ép Index:</strong> Nhấn nút <MiniButton label="Bắt đầu ép Index" gradient="green" /> để gửi hàng loạt yêu cầu. Hệ thống sẽ tự động điều phối để tránh quá tải giới hạn API của Google (200 URL/ngày cho mỗi dự án).
+          </li>
+        </Box>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          📋 2. GIÁM SÁT TRẠNG THÁI HÀNG ĐỢI (QUEUE MONITOR)
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Trạng thái hàng đợi hiển thị chi tiết:</strong>
+            <br />
+            • <code>Thành công (Success)</code>: Yêu cầu của bạn đã được API Google Search Console tiếp nhận. Google bot sẽ tiến hành thu thập thông tin trang web đó sớm nhất.
+            <br />
+            • <code>Đang chờ (Pending)</code>: URL đang nằm trong hàng đợi chờ hệ thống gọi API tuần tự.
+            <br />
+            • <code>Thất bại (Failed)</code>: Có lỗi xảy ra trong quá trình kết nối API (ví dụ: tài khoản API bị thu hồi quyền, hoặc website của bạn chưa cấu hình xác minh trong Search Console).
+          </li>
+          <li>
+            <strong>Xuất báo cáo:</strong> Nhấn nút <MiniButton label="Tải Excel" color="success" variant="outlined" /> để xuất bảng theo dõi trạng thái ép index nhằm cập nhật tiến độ công việc SEO định kỳ.
+          </li>
+        </Box>
+      </Box>
+    )
+  },
+  'seo-audit': {
+    title: 'SEO Audit Website',
+    content: (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+        <Typography variant="body1" sx={{ fontWeight: 800, color: 'primary.main' }}>
+          HƯỚNG DẪN KIỂM TRA SỨC KHỎE WEBSITE (SEO AUDIT)
+        </Typography>
+        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+          Công cụ <strong>SEO Audit Website</strong> thực hiện chẩn đoán toàn diện sức khỏe kỹ thuật của trang web, phát hiện sớm các lỗi cấu hình hệ thống, tối ưu hóa on-page và các lỗi ảnh hưởng trực tiếp đến trải nghiệm người dùng cùng thứ hạng tìm kiếm.
+        </Typography>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          🔍 1. TIẾN HÀNH QUÉT SỨC KHỎE
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Nhập địa chỉ website:</strong> Nhập đường dẫn trang chủ website cần chẩn đoán (ví dụ: <code>https://mywebsite.com</code>).
+          </li>
+          <li>
+            <strong>Bắt đầu Audit:</strong> Nhấn nút <MiniButton label="Bắt đầu Audit" gradient="orange" /> để kích hoạt bot quét. Hệ thống sẽ cào các liên kết trên trang web để tìm kiếm lỗi kỹ thuật.
+          </li>
+        </Box>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          📋 2. CÁC HẠNG MỤC PHÂN TÍCH & BÁO CÁO LỖI
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Technical SEO Audit (Kỹ thuật hệ thống):</strong> Kiểm tra cấu hình file robots.txt, sitemap.xml, tốc độ tải trang (Core Web Vitals), tính tương thích hiển thị trên điện thoại di động (Mobile Friendliness) và chứng chỉ bảo mật SSL/HTTPS.
+          </li>
+          <li>
+            <strong>Lỗi liên kết (Links & Redirects):</strong> Liệt kê các liên kết bị gãy (Lỗi 404), liên kết dẫn tới trang không tồn tại hoặc vòng lặp chuyển hướng quá nhiều lần làm hao tổn ngân sách cào của Google (Crawl Budget).
+          </li>
+          <li>
+            <strong>Lỗi thẻ SEO On-page:</strong> Phát hiện các trang con bị thiếu thẻ Meta Title, Meta Description, tiêu đề bài viết quá dài hoặc quá ngắn, hoặc bị trùng lặp tiêu đề với trang khác.
+          </li>
+          <li>
+            <strong>Phân loại mức độ lỗi:</strong> Báo cáo phân chia làm 3 nhóm chính:
+            <br />
+            • 🔴 <em>Lỗi nghiêm trọng (Critical Errors):</em> Cần sửa chữa ngay lập tức vì đây là nguyên nhân trực tiếp khiến Google phạt hoặc không index trang.
+            <br />
+            • 🟡 <em>Cảnh báo (Warnings):</em> Các lỗi tối ưu trung bình cần cải thiện dần.
+            <br />
+            • 🟢 <em>Đề xuất (Suggestions):</em> Khuyến nghị tối ưu cấu trúc nâng cao giúp nâng cao điểm chất lượng trang.
+          </li>
+        </Box>
+      </Box>
+    )
+  },
+  'geo-tag': {
+    title: 'Geo Tag Ảnh (EXIF Gps Coordinate Editor)',
+    content: (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+        <Typography variant="body1" sx={{ fontWeight: 800, color: 'primary.main' }}>
+          HƯỚNG DẪN NHÚNG TỌA ĐỘ ĐỊA LÝ VÀO HÌNH ẢNH (GEO TAG)
+        </Typography>
+        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+          Công cụ <strong>Geo Tag Ảnh</strong> giúp bạn ghi đè thông tin Kinh độ (Longitude) và Vĩ độ (Latitude) cùng dữ liệu doanh nghiệp trực tiếp vào siêu dữ liệu EXIF của hình ảnh. Đây là kỹ thuật Local SEO cực hiệu quả để giúp doanh nghiệp của bạn thăng hạng trên Google Maps và Google Images Search tại địa phương.
+        </Typography>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          📸 HƯỚNG DẪN THỰC HIỆN TỪNG BƯỚC
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Bước 1: Tải hình ảnh lên:</strong> Nhấn chọn hoặc kéo thả các tệp hình ảnh sản phẩm, dịch vụ, cửa hàng của bạn vào ô tải ảnh (hỗ trợ định dạng JPG, JPEG, PNG).
+          </li>
+          <li>
+            <strong>Bước 2: Chọn vị trí tọa độ địa lý:</strong>
+            <br />
+            • <em>Tìm kiếm địa chỉ:</em> Nhập tên doanh nghiệp hoặc địa chỉ cửa hàng của bạn vào ô tìm kiếm trên bản đồ để lấy tọa độ tự động.
+            <br />
+            • <em>Bản đồ trực quan:</em> Bạn có thể click trực tiếp lên bản đồ để chấm tọa độ chính xác. Hệ thống sẽ tự động điền các thông tin Vĩ độ (Latitude) và Kinh độ (Longitude).
+          </li>
+          <li>
+            <strong>Bước 3: Bổ sung thông tin doanh nghiệp (EXIF Metadata):</strong> Nhập các thông tin bổ sung như Tên doanh nghiệp (Brand/Owner) và Từ khóa mô tả ảnh (Tags) để tối ưu hóa SEO hình ảnh.
+          </li>
+          <li>
+            <strong>Bước 4: Nhúng dữ liệu & Tải ảnh về:</strong>
+            <br />
+            • Nhấn nút <MiniButton label="Nhúng tọa độ GPS vào ảnh" gradient="green" /> để chạy ghi đè dữ liệu.
+            <br />
+            • Sau khi hoàn thành, nhấn nút <MiniButton label="Tải xuống hàng loạt (ZIP)" gradient="green" /> để tải toàn bộ hình ảnh đã nhúng tọa độ về máy tính. Bạn có thể sử dụng các hình ảnh này để đăng tải lên website chính thức hoặc Google Business Profile nhằm tăng độ tin cậy địa lý cho doanh nghiệp.
+          </li>
+        </Box>
+      </Box>
+    )
+  }
+};
+
 type ActivePanel = 'ga4' | 'deployed' | 'pending' | 'requests';
 
 // ─── StatCard ─────────────────────────────────────────────────────────────────
@@ -77,35 +931,54 @@ interface StatCardProps {
   onClick?: () => void;
 }
 
-function StatCard({ title, value, bgColor, activeColor = '#2563EB', active, onClick }: StatCardProps) {
+function StatCard({ title, value, icon, activeColor = '#2563EB', active, onClick }: StatCardProps) {
   return (
     <Paper
       elevation={0}
       onClick={onClick}
       sx={{
-        p: 2.25, borderRadius: 3.5, bgcolor: 'background.paper',
-        display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 1.5,
-        minHeight: 110, height: '100%',
-        position: 'relative', overflow: 'hidden',
-        boxShadow: active ? `0 6px 18px ${activeColor}30` : '0 2px 12px rgba(0,0,0,0.04)',
-        border: active ? '2px solid' : '1px solid',
-        borderColor: active ? activeColor : 'divider',
+        p: 3, 
+        borderRadius: 5, 
+        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(20, 20, 25, 0.6)' : '#ffffff',
+        display: 'flex', 
+        flexDirection: 'column', 
+        justifyContent: 'center', 
+        gap: 1.5,
+        minHeight: 110, 
+        height: '100%',
+        position: 'relative', 
+        overflow: 'hidden',
+        border: '1px solid',
+        borderColor: (theme) => active 
+          ? activeColor 
+          : (theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'),
+        background: (theme) => theme.palette.mode === 'dark' 
+          ? `radial-gradient(circle at 100% 100%, ${activeColor}15 0%, rgba(20, 20, 25, 0.6) 100%)` 
+          : `radial-gradient(circle at 100% 100%, ${activeColor}0a 0%, #ffffff 100%)`,
+        backdropFilter: 'blur(10px)',
+        boxShadow: active ? `0 8px 24px ${activeColor}25` : '0 4px 16px rgba(0,0,0,0.02)',
         cursor: onClick ? 'pointer' : 'default',
-        transition: 'all 0.2s ease-in-out',
+        transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
         '&:hover': onClick ? {
           transform: 'translateY(-3px)',
-          boxShadow: '0 8px 20px rgba(0,0,0,0.09)',
+          borderColor: activeColor,
+          boxShadow: `0 12px 30px ${activeColor}25`,
         } : {},
       }}
     >
       <Box sx={{
-        position: 'absolute', top: -15, right: -15,
-        width: 100, height: 100, borderRadius: '50%',
-        background: (theme) => `linear-gradient(135deg, ${bgColor} 0%, ${theme.palette.mode === 'dark' ? 'rgba(0,0,0,0)' : 'rgba(255,255,255,0)'} 100%)`,
-        opacity: 0.6, zIndex: 0,
+        position: 'absolute', 
+        right: -12, 
+        bottom: -12, 
+        opacity: (theme) => theme.palette.mode === 'dark' ? 0.04 : 0.06, 
+        color: activeColor,
+        zIndex: 0,
+        '& svg': { fontSize: 70 },
         transition: 'transform 0.4s ease',
         '.MuiPaper-root:hover &': { transform: 'scale(1.15)' },
-      }} />
+      }}>
+        {icon}
+      </Box>
       <Box sx={{ zIndex: 1, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
         <Typography sx={{ fontSize: '0.82rem', color: 'text.primary', fontWeight: 800, letterSpacing: 0.5, lineHeight: 1.3 }}>
           {title}
@@ -473,6 +1346,7 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState(() => {
     return sessionStorage.getItem('dashboard_active_tab') || 'overview';
   });
+  const [guideOpen, setGuideOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -505,6 +1379,7 @@ export default function DashboardPage() {
     {
       title: 'Keywords',
       items: [
+        { id: 'trending-keywords', label: 'Google Trending Keyword', icon: <TrendingUpOutlinedIcon sx={{ fontSize: 20 }} /> },
         { id: 'vbpl', label: 'Gợi ý từ khóa', icon: <AutoAwesomeIcon sx={{ fontSize: 20 }} /> },
         { id: 'planner', label: 'Keyword Planner', icon: <SearchIcon sx={{ fontSize: 20 }} /> },
         { id: 'serp', label: 'Thứ hạng SERP', icon: <EmojiEventsIcon sx={{ fontSize: 20 }} /> },
@@ -530,6 +1405,30 @@ export default function DashboardPage() {
   ];
 
   const sidebarWidth = sidebarCollapsed ? 76 : 260;
+
+  const logoContainerSx = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 42,
+    height: 42,
+    borderRadius: '10px',
+    border: '1px solid',
+    borderColor: (theme: any) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+    background: (theme: any) => theme.palette.mode === 'dark' 
+      ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' 
+      : 'linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%)',
+    boxShadow: (theme: any) => theme.palette.mode === 'dark'
+      ? '0 4px 8px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
+      : '0 3px 6px rgba(0, 0, 0, 0.05), inset 0 1.5px 0 rgba(255, 255, 255, 0.9), 0 1px 2px rgba(0, 0, 0, 0.03)',
+    transition: 'all 0.25s ease-in-out',
+    '&:hover': {
+      transform: 'translateY(-1.5px)',
+      boxShadow: (theme: any) => theme.palette.mode === 'dark'
+        ? '0 6px 14px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12)'
+        : '0 5px 10px rgba(0, 0, 0, 0.1), inset 0 1.5px 0 rgba(255, 255, 255, 1)',
+    }
+  };
 
   return (
     <Box sx={{ 
@@ -587,24 +1486,28 @@ export default function DashboardPage() {
         }}>
           {!sidebarCollapsed && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Box 
-                component="img"
-                src={LogoImage}
-                alt="ACC Logo"
-                sx={{ width: 32, height: 32, objectFit: 'contain' }}
-              />
+              <Box sx={logoContainerSx}>
+                <Box 
+                  component="img"
+                  src={LogoImage}
+                  alt="ACC Logo"
+                  sx={{ width: 28, height: 28, objectFit: 'contain' }}
+                />
+              </Box>
               <Typography variant="h6" sx={{ fontWeight: 900, color: 'text.primary', letterSpacing: '-0.5px' }}>
                 ACC SEO
               </Typography>
             </Box>
           )}
           {sidebarCollapsed && (
-            <Box 
-              component="img"
-              src={LogoImage}
-              alt="ACC Logo"
-              sx={{ width: 32, height: 32, objectFit: 'contain', mb: 0.5 }}
-            />
+            <Box sx={{ ...logoContainerSx, mb: 0.5 }}>
+              <Box 
+                component="img"
+                src={LogoImage}
+                alt="ACC Logo"
+                sx={{ width: 28, height: 28, objectFit: 'contain' }}
+              />
+            </Box>
           )}
           <IconButton 
             onClick={toggleSidebar}
@@ -898,11 +1801,23 @@ export default function DashboardPage() {
             </Paper>
           </Box>
 
-          {/* Bottom section: Trending then Activity */}
-          <TrendingKeywordsSection />
+          {/* System Usage Stats Section */}
+          <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}><CircularProgress /></Box>}>
+            <UsageStatsSection />
+          </Suspense>
+
+          {/* Bottom section: Activity Logs */}
           <ActivitySection />
         </Box>
       </Box>
+
+      {activeTab === 'trending-keywords' && (
+        <Box sx={{ mt: 1 }}>
+          <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>}>
+            <TrendingKeywordsSection />
+          </Suspense>
+        </Box>
+      )}
 
       {activeTab === 'vbpl' && (
         <Box sx={{ mt: 1 }}>
@@ -985,6 +1900,100 @@ export default function DashboardPage() {
       )}
 
       </Box>
+
+      {/* Nút hướng dẫn sử dụng dạng nút tròn ở góc dưới bên phải */}
+      <Tooltip title="Hướng dẫn sử dụng" placement="left" arrow>
+        <IconButton
+          onClick={() => setGuideOpen(true)}
+          sx={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            zIndex: 1200,
+            width: 48,
+            height: 48,
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #00b894 0%, #00a884 100%)',
+            color: '#fff',
+            boxShadow: '0 4px 16px rgba(0, 184, 148, 0.3)',
+            transition: 'all 0.2s ease-in-out',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #00a884 0%, #008f6f 100%)',
+              transform: 'scale(1.08) translateY(-2px)',
+              boxShadow: '0 6px 20px rgba(0, 184, 148, 0.4)'
+            },
+            '&:active': {
+              transform: 'scale(0.95) translateY(0)'
+            }
+          }}
+        >
+          <HelpOutlinedIcon sx={{ fontSize: 24 }} />
+        </IconButton>
+      </Tooltip>
+
+      {/* Dialog Hướng dẫn sử dụng */}
+      <Dialog
+        open={guideOpen}
+        onClose={() => setGuideOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 4.5,
+            border: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
+            boxShadow: '0 24px 48px -12px rgba(0, 0, 0, 0.18)',
+            p: 1
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 900, fontSize: '1.2rem', pb: 1, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1.2 }}>
+          <Box 
+            sx={{ 
+              width: 32, 
+              height: 32, 
+              borderRadius: 2, 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              background: 'linear-gradient(135deg, #00b894 0%, #00a884 100%)',
+              color: '#fff' 
+            }}
+          >
+            <HelpOutlinedIcon sx={{ fontSize: 18 }} />
+          </Box>
+          {TAB_GUIDES[activeTab]?.title || 'Hướng dẫn sử dụng'}
+        </DialogTitle>
+        
+        <DialogContent dividers sx={{ borderColor: 'divider', py: 2.5 }}>
+          {TAB_GUIDES[activeTab]?.content || (
+            <Typography variant="body2" color="text.secondary">
+              Không có hướng dẫn chi tiết cho tính năng này.
+            </Typography>
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ px: 2, py: 1.5 }}>
+          <Button 
+            onClick={() => setGuideOpen(false)} 
+            variant="contained"
+            sx={{
+              borderRadius: 2.5,
+              fontWeight: 800,
+              textTransform: 'none',
+              px: 3,
+              py: 0.8,
+              bgcolor: '#00b894',
+              '&:hover': {
+                bgcolor: '#00a884'
+              }
+            }}
+          >
+            Đã hiểu
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
