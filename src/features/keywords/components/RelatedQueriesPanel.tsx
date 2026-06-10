@@ -34,7 +34,24 @@ export function RelatedQueriesPanel({ data, timeRange = '3-m' }: Props) {
       <Tabs
         value={tab}
         onChange={(_, v) => setTab(v)}
-        sx={{ px: 2, minHeight: 36, '& .MuiTab-root': { minHeight: 36, fontSize: 13, textTransform: 'none', py: 0.5 } }}
+        sx={{ 
+          px: 2, 
+          minHeight: 36, 
+          '& .MuiTabs-indicator': {
+            display: 'none'
+          },
+          '& .MuiTab-root': { 
+            minHeight: 36, 
+            fontSize: 13, 
+            textTransform: 'none', 
+            py: 0.5,
+            borderBottom: '2px solid transparent',
+            '&.Mui-selected': {
+              color: 'primary.main',
+              borderColor: 'primary.main',
+            }
+          } 
+        }}
       >
         <Tab icon={<TrendingUpIcon sx={{ fontSize: 15 }} />} iconPosition="start" label={`Đang tăng (${data?.rising?.length ?? 0})`} />
         <Tab icon={<BarChartIcon sx={{ fontSize: 15 }} />} iconPosition="start" label={`Hàng đầu (${data?.top?.length ?? 0})`} />

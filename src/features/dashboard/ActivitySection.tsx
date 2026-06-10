@@ -27,16 +27,16 @@ const fmtTime = (iso: string): string => {
 const getMsgColor = (msg: string): { bg: string; color: string } => {
 	const m = msg.toLowerCase();
 	if (m.includes('approve') || m.includes('complete') || m.includes('phê duyệt') || m.includes('thành công'))
-		return { bg: '#f0fdf4', color: '#16a34a' };
+		return { bg: 'rgba(0, 184, 148, 0.08)', color: 'success.main' };
 	if (m.includes('cancel') || m.includes('reject') || m.includes('từ chối') || m.includes('hủy'))
-		return { bg: '#fff5f5', color: '#dc2626' };
+		return { bg: 'rgba(231, 76, 60, 0.08)', color: 'error.main' };
 	if (m.includes('wait') || m.includes('review') || m.includes('pending') || m.includes('chờ'))
-		return { bg: '#fffbeb', color: '#d97706' };
+		return { bg: 'rgba(243, 156, 18, 0.08)', color: 'warning.main' };
 	if (m.includes('process') || m.includes('update') || m.includes('cập nhật'))
-		return { bg: '#eff6ff', color: '#2563eb' };
+		return { bg: 'rgba(52, 152, 219, 0.08)', color: 'info.main' };
 	if (m.includes('creat') || m.includes('add') || m.includes('tạo'))
-		return { bg: '#e6fcf5', color: '#00b894' };
-	return { bg: 'background.default', color: 'text.secondary' };
+		return { bg: 'rgba(0, 184, 148, 0.08)', color: 'primary.main' };
+	return { bg: 'action.hover', color: 'text.secondary' };
 };
 
 const getAvatarColor = (name: string | null | undefined): string => {
@@ -82,12 +82,12 @@ export default function ActivitySection({ onViewAll }: ActivitySectionProps) {
 
 	return (
 		<Box sx={{ flex: 1, minWidth: { xs: '100%', md: 380 }, height: { xs: 600, md: '100%' } }}>
-			<Paper elevation={0} sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider', overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', height: '100%' }}>
+			<Paper elevation={0} sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%' }}>
 
 				{/* ── Header ── */}
-				<Box sx={{ px: 3, pt: 2.5, pb: 2, background: (theme) => theme.palette.mode === 'dark' ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, transparent 70%)' : 'linear-gradient(135deg, #f0f9ff 0%, #ffffff 70%)', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+				<Box sx={{ px: 3, pt: 2.5, pb: 2, bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 					<Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-						<Box sx={{ width: 42, height: 42, borderRadius: 2.5, background: 'linear-gradient(135deg, #3b82f6, #6366f1)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(99,102,241,0.3)', flexShrink: 0 }}>
+						<Box sx={{ width: 42, height: 42, borderRadius: 1.5, bgcolor: 'primary.main', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
 							<HistoryOutlinedIcon sx={{ color: 'primary.contrastText', fontSize: 22 }} />
 						</Box>
 						<Box>
@@ -99,7 +99,7 @@ export default function ActivitySection({ onViewAll }: ActivitySectionProps) {
 							</Typography>
 						</Box>
 					</Box>
-					<Chip label="LIVE" size="small" sx={{ fontSize: 9, height: 16, bgcolor: '#3b82f6', color: 'primary.contrastText', fontWeight: 800, letterSpacing: 0.5, px: 0.25 }} />
+					<Chip label="LIVE" size="small" sx={{ fontSize: 9, height: 16, bgcolor: 'primary.main', color: 'primary.contrastText', fontWeight: 800, letterSpacing: 0.5, px: 0.25 }} />
 				</Box>
 
 				{/* ── List ── */}
@@ -153,7 +153,7 @@ export default function ActivitySection({ onViewAll }: ActivitySectionProps) {
 												<Box component="span" sx={{ fontWeight: 800, color: 'text.primary', mr: 0.5 }}>
 													{item.name}
 												</Box>
-												<Box component="span" sx={{ color, fontWeight: 600, bgcolor: bg, px: 0.6, py: 0.1, borderRadius: 0.75, fontSize: '0.82rem' }}>
+												<Box component="span" sx={{ color, bgcolor: bg, px: 0.6, py: 0.1, borderRadius: 0.75, fontSize: '0.82rem' }}>
 													{item.message}
 												</Box>
 											</Typography>
@@ -167,7 +167,7 @@ export default function ActivitySection({ onViewAll }: ActivitySectionProps) {
 
 							{/* Loading more indicator */}
 							<Box sx={{ py: 1, display: 'flex', justifyContent: 'center' }}>
-								{loadingMore && <CircularProgress size={20} sx={{ color: '#3b82f6', my: 0.5 }} />}
+								{loadingMore && <CircularProgress size={20} sx={{ my: 0.5 }} />}
 								{!loadingMore && !hasMore && items.length > 0 && (
 									<Typography sx={{ fontSize: '0.72rem', color: 'text.disabled', py: 0.5 }}>
 										Đã tải hết
@@ -186,13 +186,13 @@ export default function ActivitySection({ onViewAll }: ActivitySectionProps) {
 						borderTop: '1px solid', borderColor: 'divider',
 						display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5,
 						cursor: onViewAll ? 'pointer' : 'default',
-						bgcolor: (theme) => theme.palette.mode === 'dark' ? 'action.hover' : '#fafbfc',
+						bgcolor: 'background.default',
 						'&:hover': onViewAll ? { bgcolor: 'action.hover' } : {},
 						transition: 'background 0.15s',
 					}}
 				>
-					<Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: '#3b82f6' }}>View all</Typography>
-					<ArrowForwardIosIcon sx={{ fontSize: 11, color: '#3b82f6' }} />
+					<Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: 'primary.main' }}>View all</Typography>
+					<ArrowForwardIosIcon sx={{ fontSize: 11, color: 'primary.main' }} />
 				</Box>
 			</Paper>
 		</Box>

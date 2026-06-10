@@ -28,6 +28,7 @@ import {
   Menu,
   MenuItem,
   Collapse,
+  Link,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -49,9 +50,10 @@ import GitHubIcon from '@mui/icons-material/GitHub';
 import ArrowRightIcon from '@mui/icons-material/ArrowRight';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
-import { urlScraperService } from '../urlScraperService';
-import type { ScrapeResult, UrlScrapeResponse } from '../types';
-import { useToastify } from '../../../components/Toastify';
+import { urlScraperService } from '@/features/url-scraper/urlScraperService';
+import type { ScrapeResult, UrlScrapeResponse } from '@/features/url-scraper/types';
+import { useToastify } from '@/components/Toastify';
+import LoadingButton from '@mui/lab/LoadingButton';
 
 const LOCAL_STORAGE_KEY = 'scraper-history';
 
@@ -108,7 +110,7 @@ const getMethodBadgeColor = (method: ScrapeResult['method']) => {
   }
 };
 
-const getMethodIcon = (method: ScrapeResult['method'], sx: any = {}) => {
+const getMethodIcon = (method: ScrapeResult['method'], sx: object = {}) => {
   switch (method) {
     case 'pdf':
       return <PictureAsPdfIcon sx={sx} />;
@@ -388,9 +390,10 @@ export default function UrlScraperSection() {
       }
 
       showToast(`Cào hoàn tất! Thành công: ${res.okCount}, Thất bại: ${res.failCount}`, 'success');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('URL Scraper submit error:', err);
-      const errMsg = err?.response?.data?.message || err?.message || 'Không kết nối được server';
+      const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
+      const errMsg = errorObj.response?.data?.message || errorObj.message || 'Không kết nối được server';
       showToast(errMsg, 'danger');
       setSubmitError(errMsg);
     } finally {
@@ -458,7 +461,7 @@ export default function UrlScraperSection() {
     const rows: string[][] = [headers];
 
     // Hàm escape ký tự đặc biệt cho CSV
-    const escapeCsvValue = (val: any): string => {
+    const escapeCsvValue = (val: unknown): string => {
       if (val === null || val === undefined) return '';
       const str = String(val);
       if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
@@ -564,9 +567,10 @@ export default function UrlScraperSection() {
         });
         showToast(singleResult.ok ? 'Cào lại bằng Puppeteer thành công!' : 'Vẫn thất bại khi dùng Puppeteer', singleResult.ok ? 'success' : 'danger');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Retry single URL error:', err);
-      showToast(err?.message || 'Lỗi khi chạy lại URL', 'danger');
+      const errorObj = err as { message?: string };
+      showToast(errorObj.message || 'Lỗi khi chạy lại URL', 'danger');
     }
   };
 
@@ -594,7 +598,6 @@ export default function UrlScraperSection() {
           border: '1px solid',
           borderColor: 'divider',
           bgcolor: 'background.paper',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.02)',
         }}
       >
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -607,7 +610,7 @@ export default function UrlScraperSection() {
               variant="outlined"
               onClick={(e) => setHistoryAnchorEl(e.currentTarget)}
               startIcon={<HistoryIcon />}
-              sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+              sx={{ borderRadius: '100px', textTransform: 'none', fontWeight: 600 }}
             >
               Lịch sử ({historyList.length})
             </Button>
@@ -646,7 +649,7 @@ export default function UrlScraperSection() {
             disabled={isScraping}
             sx={{
               '& .MuiOutlinedInput-root': {
-                borderRadius: 3,
+                borderRadius: '16px',
                 fontFamily: 'monospace',
               },
             }}
@@ -657,13 +660,13 @@ export default function UrlScraperSection() {
             <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>
               CHẠY THỬ NHANH:
             </Typography>
-            <Button size="small" variant="outlined" sx={{ borderRadius: 2, textTransform: 'none', py: 0.25 }} onClick={() => handleInsertDemo('vnexpress')}>
+            <Button size="small" variant="outlined" sx={{ borderRadius: '100px', textTransform: 'none', py: 0.25 }} onClick={() => handleInsertDemo('vnexpress')}>
               VNExpress Feed (RSS)
             </Button>
-            <Button size="small" variant="outlined" sx={{ borderRadius: 2, textTransform: 'none', py: 0.25 }} onClick={() => handleInsertDemo('tvpl')}>
+            <Button size="small" variant="outlined" sx={{ borderRadius: '100px', textTransform: 'none', py: 0.25 }} onClick={() => handleInsertDemo('tvpl')}>
               Thư viện Pháp luật (HTML)
             </Button>
-            <Button size="small" variant="outlined" sx={{ borderRadius: 2, textTransform: 'none', py: 0.25 }} onClick={() => handleInsertDemo('vbpl')}>
+            <Button size="small" variant="outlined" sx={{ borderRadius: '100px', textTransform: 'none', py: 0.25 }} onClick={() => handleInsertDemo('vbpl')}>
               VBPL chi tiết (API)
             </Button>
           </Box>
@@ -731,44 +734,60 @@ export default function UrlScraperSection() {
                   slotProps={{
                     htmlInput: { min: 1, max: 20 }
                   }}
-                  sx={{ width: 80, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                  sx={{ width: 80, '& .MuiOutlinedInput-root': { borderRadius: '100px' } }}
                 />
               </Box>
             )}
           </Box>
 
           <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
-            <Button
+            <LoadingButton
               type="submit"
               variant="contained"
-              disabled={isScraping || urlsCount === 0 || urlsCount > (followLinks ? 1 : 20)}
-              startIcon={isScraping ? <CircularProgress size={16} color="inherit" /> : <SendIcon />}
+              loading={isScraping}
+              loadingPosition="start"
+              disabled={urlsCount === 0 || urlsCount > (followLinks ? 1 : 20)}
+              startIcon={<SendIcon />}
               sx={{
-                py: 1.5,
-                borderRadius: 3,
+                borderRadius: '100px',
+                height: 40,
                 fontWeight: 700,
                 textTransform: 'none',
                 px: 5,
-                background: 'linear-gradient(135deg, #00b894 0%, #009975 100%)',
-                boxShadow: '0 4px 15px rgba(0, 184, 148, 0.25)',
+                bgcolor: 'primary.main',
+                boxShadow: 'none',
+                transition: 'all 0.2s',
                 '&:hover': {
-                  background: 'linear-gradient(135deg, #3dd6a0 0%, #009975 100%)',
+                  bgcolor: 'primary.dark',
+                  boxShadow: 'none',
+                  transform: 'scale(1.02)'
                 },
+                '&.Mui-disabled': {
+                  bgcolor: 'action.disabledBackground',
+                  color: 'action.disabled'
+                }
               }}
             >
-              {isScraping ? 'Đang cào dữ liệu... (Có thể mất 15-45 giây)' : 'Bắt đầu cào ngay'}
-            </Button>
+              {isScraping ? 'Đang cào dữ liệu...' : 'Bắt đầu cào ngay'}
+            </LoadingButton>
             <Button
               variant="outlined"
               onClick={handleClearAll}
               disabled={isScraping}
               sx={{
-                borderRadius: 3,
+                borderRadius: '100px',
+                height: 40,
                 fontWeight: 700,
                 textTransform: 'none',
                 px: 3,
                 borderColor: 'divider',
                 color: 'text.secondary',
+                transition: 'all 0.2s',
+                '&:hover': {
+                  borderColor: 'divider',
+                  bgcolor: 'action.hover',
+                  transform: 'scale(1.02)'
+                }
               }}
             >
               Xoá toàn bộ
@@ -798,7 +817,7 @@ export default function UrlScraperSection() {
             elevation={0}
             sx={{
               p: 2,
-              borderRadius: 3,
+              borderRadius: '16px',
               border: '1px solid',
               borderColor: 'divider',
               bgcolor: 'background.paper',
@@ -830,18 +849,18 @@ export default function UrlScraperSection() {
                 <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider', pb: 1, width: '100%' }}>
                     <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.main' }}>
-                      📊 Đã scrape: {totalMain} URL chính + {totalChildren} URL con = {totalAll} tổng URL
+                      Đã scrape: {totalMain} URL chính + {totalChildren} URL con = {totalAll} tổng URL
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', gap: 3.5, flexWrap: 'wrap' }}>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#10b981' }}>
-                      ✓ Thành công: {okAll} ({okMain} chính + {okChildren} con)
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: 'success.main' }}>
+                      Thành công: {okAll} ({okMain} chính + {okChildren} con)
                     </Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#ef4444' }}>
-                      ✗ Thất bại: {failAll} ({failMain} chính + {failChildren} con)
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: 'error.main' }}>
+                      Thất bại: {failAll} ({failMain} chính + {failChildren} con)
                     </Typography>
                     <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.secondary' }}>
-                      ⏱ {formatDuration(totalDuration)} tổng thời gian
+                      Thời gian: {formatDuration(totalDuration)}
                     </Typography>
                   </Box>
                 </Box>
@@ -855,13 +874,13 @@ export default function UrlScraperSection() {
               {['axios-lite', 'axios-stealth', 'puppeteer', 'rss', 'vbpl-api', 'pdf', 'youtube', 'reddit', 'github'].map((m) => {
                 const count = resultsData.results.filter((r) => r.method === m).length;
                 if (count === 0) return null;
-                const badgeStyles = getMethodBadgeColor(m as any);
+                const badgeStyles = getMethodBadgeColor(m as ScrapeResult['method']);
                 return (
                   <Chip
                     key={m}
                     label={`${m} x${count}`}
                     size="small"
-                    icon={getMethodIcon(m as any, { fontSize: 14, color: 'inherit' })}
+                    icon={getMethodIcon(m as ScrapeResult['method'], { fontSize: 14, color: 'inherit' })}
                     sx={{
                       fontWeight: 600,
                       fontSize: '0.75rem',
@@ -881,7 +900,13 @@ export default function UrlScraperSection() {
               size="small"
               variant="outlined"
               onClick={handleToggleSelectAll}
-              sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+              sx={{ 
+                borderRadius: '100px', 
+                textTransform: 'none', 
+                fontWeight: 700,
+                transition: 'all 0.2s',
+                '&:hover': { transform: 'scale(1.02)' }
+              }}
             >
               {resultsData.results.every((r) => selectedUrls[r.url]) ? 'Bỏ chọn toàn bộ' : 'Chọn toàn bộ'}
             </Button>
@@ -892,24 +917,31 @@ export default function UrlScraperSection() {
                 variant="outlined"
                 startIcon={<CloudDownloadIcon />}
                 onClick={handleBulkExportJson}
-                sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+                sx={{ 
+                  borderRadius: '100px', 
+                  textTransform: 'none', 
+                  fontWeight: 700,
+                  transition: 'all 0.2s',
+                  '&:hover': { transform: 'scale(1.02)' }
+                }}
               >
                 Xuất file JSON
               </Button>
               <Button
                 size="small"
                 variant="contained"
+                color="success"
                 startIcon={<CloudDownloadIcon />}
                 onClick={handleBulkExportExcel}
                 sx={{
-                  borderRadius: 2,
+                  borderRadius: '100px',
                   textTransform: 'none',
                   fontWeight: 700,
-                  bgcolor: '#10b981',
-                  color: 'white',
-                  border: 'none',
+                  boxShadow: 'none',
+                  transition: 'all 0.2s',
                   '&:hover': {
-                    bgcolor: '#059669',
+                    boxShadow: 'none',
+                    transform: 'scale(1.02)'
                   }
                 }}
               >
@@ -920,7 +952,13 @@ export default function UrlScraperSection() {
                 variant="outlined"
                 startIcon={<ContentCopyIcon />}
                 onClick={handleBulkCopyUrls}
-                sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+                sx={{ 
+                  borderRadius: '100px', 
+                  textTransform: 'none', 
+                  fontWeight: 700,
+                  transition: 'all 0.2s',
+                  '&:hover': { transform: 'scale(1.02)' }
+                }}
               >
                 Sao chép URL đã chọn
               </Button>
@@ -1037,6 +1075,16 @@ function ResultCard({
 }: ResultCardProps) {
   const [activeSubTab, setActiveSubTab] = useState(0);
   const { showToast } = useToastify();
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  const handleRetryClick = async () => {
+    setIsRetrying(true);
+    try {
+      await onRetry(result.url);
+    } finally {
+      setIsRetrying(false);
+    }
+  };
 
 
 
@@ -1080,14 +1128,13 @@ function ResultCard({
     <Paper
       elevation={0}
       sx={{
-        borderRadius: 4,
-        border: '1px solid',
-        borderColor: result.ok ? 'divider' : '#fca5a5',
-        bgcolor: result.ok ? 'background.paper' : '#fff5f5',
-        overflow: 'hidden',
-        boxShadow: '0 4px 15px rgba(0,0,0,0.01)',
-        ml: isChild ? 4 : 0,
-        width: isChild ? 'calc(100% - 32px)' : '100%',
+         borderRadius: '16px',
+         border: '1px solid',
+         borderColor: result.ok ? 'divider' : '#fca5a5',
+         bgcolor: result.ok ? 'background.paper' : '#fff5f5',
+         overflow: 'hidden',
+         ml: isChild ? 4 : 0,
+         width: isChild ? 'calc(100% - 32px)' : '100%',
       }}
     >
       {/* CARD HEADER */}
@@ -1139,37 +1186,37 @@ function ResultCard({
                   height: 18,
                   fontSize: '0.68rem',
                   fontWeight: 800,
-                  bgcolor: '#e6fcf5',
-                  color: '#00b894',
-                  border: '1px solid #c3fae8',
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.15)' : 'rgba(0, 184, 148, 0.08)',
+                  color: 'primary.main',
+                  border: '1px solid',
+                  borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.25)' : 'rgba(0, 184, 148, 0.15)',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
                   '&:hover': {
-                    bgcolor: '#c3fae8',
+                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.25)' : 'rgba(0, 184, 148, 0.18)',
                     transform: 'scale(1.05)',
                   }
                 }}
               />
             )}
           </Typography>
-          <Typography
-            variant="caption"
+          <Link
+            href={result.url}
+            target="_blank"
+            underline="none"
+            onClick={(e) => e.stopPropagation()}
             sx={{
               color: 'primary.main',
+              fontSize: '0.75rem',
               fontWeight: 500,
-              textDecoration: 'underline',
-              cursor: 'pointer',
               display: 'inline-block',
               wordBreak: 'break-all',
               mr: 1,
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              window.open(result.url, '_blank');
+              '&:hover': { color: 'primary.dark' }
             }}
           >
             {result.url}
-          </Typography>
+          </Link>
         </Box>
 
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -1212,12 +1259,20 @@ function ResultCard({
                   borderBottom: '1px solid',
                   borderColor: 'divider',
                   minHeight: 38,
+                  '& .MuiTabs-indicator': {
+                    display: 'none'
+                  },
                   '& .MuiTab-root': {
                     textTransform: 'none',
                     fontWeight: 700,
                     fontSize: '0.85rem',
                     py: 1,
                     minHeight: 38,
+                    borderBottom: '2px solid transparent',
+                    '&.Mui-selected': {
+                      color: 'primary.main',
+                      borderColor: 'primary.main',
+                    }
                   },
                 }}
               >
@@ -1299,15 +1354,14 @@ function ResultCard({
                       <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block' }}>
                         CANONICAL URL
                       </Typography>
-                      <Typography
-                        variant="body2"
-                        component="a"
+                      <Link
                         href={data.canonical}
                         target="_blank"
-                        sx={{ color: 'primary.main', textDecoration: 'underline', fontWeight: 600, wordBreak: 'break-all' }}
+                        underline="none"
+                        sx={{ color: 'primary.main', fontSize: '0.875rem', fontWeight: 500, wordBreak: 'break-all', '&:hover': { color: 'primary.dark' } }}
                       >
                         {data.canonical}
-                      </Typography>
+                      </Link>
                     </Box>
                   )}
 
@@ -1347,7 +1401,18 @@ function ResultCard({
                           </Typography>
                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
                             {data.tags.map((tag) => (
-                              <Chip key={tag} label={tag} size="small" sx={{ bgcolor: '#e8f5e9', color: '#2e7d32', fontWeight: 600, border: '1px solid #c8e6c9' }} />
+                              <Chip 
+                                key={tag} 
+                                label={tag} 
+                                size="small" 
+                                sx={{ 
+                                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(46, 125, 50, 0.15)' : 'rgba(46, 125, 50, 0.08)', 
+                                  color: 'success.main', 
+                                  fontWeight: 600, 
+                                  border: '1px solid',
+                                  borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(46, 125, 50, 0.25)' : 'rgba(46, 125, 50, 0.15)' 
+                                }} 
+                              />
                             ))}
                           </Box>
                         </Box>
@@ -1360,7 +1425,18 @@ function ResultCard({
                           </Typography>
                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
                             {data.metaKeywords.map((kw) => (
-                              <Chip key={kw} label={kw} size="small" sx={{ bgcolor: '#f5f5f5', color: '#616161', fontWeight: 600, border: '1px solid #e0e0e0' }} />
+                              <Chip 
+                                key={kw} 
+                                label={kw} 
+                                size="small" 
+                                sx={{ 
+                                  bgcolor: 'action.selected', 
+                                  color: 'text.secondary', 
+                                  fontWeight: 600, 
+                                  border: '1px solid',
+                                  borderColor: 'divider' 
+                                }} 
+                              />
                             ))}
                           </Box>
                         </Box>
@@ -1374,7 +1450,7 @@ function ResultCard({
               {activeSubTab === 1 && (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   {!data.fullText ? (
-                    <Alert severity="info" icon={<InfoOutlinedIcon />} sx={{ borderRadius: 3 }}>
+                    <Alert severity="info" icon={<InfoOutlinedIcon />} sx={{ borderRadius: 3, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(2, 136, 209, 0.15)' : '#eef8ff', color: 'info.main' }}>
                       {result.method === 'youtube' ? (
                         'Nguồn YouTube không chứa nội dung văn bản fullText. Bạn có thể xem thông tin tóm tắt ở tab Tổng quan.'
                       ) : result.method === 'github' ? (
@@ -1400,7 +1476,7 @@ function ResultCard({
                               handleCopyText(data.fullText!);
                               showToast('Đã sao chép nội dung văn bản!', 'success');
                             }}
-                            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+                            sx={{ borderRadius: '100px', textTransform: 'none', fontWeight: 700 }}
                           >
                             Sao chép
                           </Button>
@@ -1409,7 +1485,7 @@ function ResultCard({
                             variant="outlined"
                             startIcon={<CloudDownloadIcon />}
                             onClick={() => handleDownloadTxt(`scrape_text_${Date.now()}.txt`, data.fullText!)}
-                            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+                            sx={{ borderRadius: '100px', textTransform: 'none', fontWeight: 700 }}
                           >
                             Tải file .txt
                           </Button>
@@ -1422,7 +1498,7 @@ function ResultCard({
                           bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : '#fafafa',
                           border: '1px solid',
                           borderColor: 'divider',
-                          borderRadius: 3,
+                          borderRadius: '16px',
                           maxHeight: 450,
                           overflowY: 'auto',
                         }}
@@ -1451,7 +1527,7 @@ function ResultCard({
                   <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 3 }}>
                     {/* H1 Column */}
                     <Box sx={{ minWidth: 0 }}>
-                      <Paper sx={{ p: 2, border: '1px solid', borderColor: 'divider', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fafafa', borderRadius: 3, height: '100%' }}>
+                      <Paper sx={{ p: 2, border: '1px solid', borderColor: 'divider', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fafafa', borderRadius: '16px', height: '100%' }}>
                         <Typography sx={{ fontWeight: 800, fontSize: '0.9rem', color: 'primary.main', borderBottom: '2px solid', borderColor: 'divider', pb: 1, mb: 1.5 }}>
                           THẺ H1 ({data.headings?.h1?.length ?? 0})
                         </Typography>
@@ -1472,7 +1548,7 @@ function ResultCard({
 
                     {/* H2 Column */}
                     <Box sx={{ minWidth: 0 }}>
-                      <Paper sx={{ p: 2, border: '1px solid', borderColor: 'divider', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fafafa', borderRadius: 3, height: '100%' }}>
+                      <Paper sx={{ p: 2, border: '1px solid', borderColor: 'divider', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fafafa', borderRadius: '16px', height: '100%' }}>
                         <Typography sx={{ fontWeight: 800, fontSize: '0.9rem', color: 'secondary.main', borderBottom: '2px solid', borderColor: 'divider', pb: 1, mb: 1.5 }}>
                           THẺ H2 ({data.headings?.h2?.length ?? 0})
                         </Typography>
@@ -1493,7 +1569,7 @@ function ResultCard({
 
                     {/* H3 Column */}
                     <Box sx={{ minWidth: 0 }}>
-                      <Paper sx={{ p: 2, border: '1px solid', borderColor: 'divider', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fafafa', borderRadius: 3, height: '100%' }}>
+                      <Paper sx={{ p: 2, border: '1px solid', borderColor: 'divider', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fafafa', borderRadius: '16px', height: '100%' }}>
                         <Typography sx={{ fontWeight: 800, fontSize: '0.9rem', color: '#16a34a', borderBottom: '2px solid', borderColor: 'divider', pb: 1, mb: 1.5 }}>
                           THẺ H3 ({data.headings?.h3?.length ?? 0})
                         </Typography>
@@ -1521,12 +1597,12 @@ function ResultCard({
                   {/* Open Graph */}
                   <Box>
                     <Typography sx={{ fontWeight: 800, fontSize: '0.95rem', mb: 1.5, color: 'text.primary' }}>
-                      ▼ Open Graph Meta Tags
+                      Open Graph Meta Tags
                     </Typography>
                     {(!data.openGraph || Object.keys(data.openGraph).length === 0) ? (
                       <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled', pl: 1 }}>Không phát hiện cấu trúc Open Graph</Typography>
                     ) : (
-                      <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2.5 }}>
+                      <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '16px' }}>
                         <Table size="small">
                           <TableHead sx={{ bgcolor: 'action.hover' }}>
                             <TableRow>
@@ -1550,12 +1626,12 @@ function ResultCard({
                   {/* Twitter Card */}
                   <Box>
                     <Typography sx={{ fontWeight: 800, fontSize: '0.95rem', mb: 1.5, color: 'text.primary' }}>
-                      ▼ Twitter Card Meta Tags
+                      Twitter Card Meta Tags
                     </Typography>
                     {(!data.twitterCard || Object.keys(data.twitterCard).length === 0) ? (
                       <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled', pl: 1 }}>Không phát hiện cấu trúc Twitter Card</Typography>
                     ) : (
-                      <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2.5 }}>
+                      <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '16px' }}>
                         <Table size="small">
                           <TableHead sx={{ bgcolor: 'action.hover' }}>
                             <TableRow>
@@ -1579,7 +1655,7 @@ function ResultCard({
                   {/* JSON-LD collapsible logs */}
                   <Box>
                     <Typography sx={{ fontWeight: 800, fontSize: '0.95rem', mb: 1.5, color: 'text.primary' }}>
-                      ▼ Cấu trúc Schema JSON-LD ({data.jsonLd?.length ?? 0} node)
+                      Cấu trúc Schema JSON-LD ({data.jsonLd?.length ?? 0} node)
                     </Typography>
                     {(!data.jsonLd || data.jsonLd.length === 0) ? (
                       <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled', pl: 1 }}>Không tìm thấy mã cấu trúc JSON-LD</Typography>
@@ -1596,7 +1672,7 @@ function ResultCard({
                               sx={{
                                 border: '1px solid',
                                 borderColor: 'divider',
-                                borderRadius: 2.5,
+                                borderRadius: '16px',
                                 overflow: 'hidden',
                               }}
                             >
@@ -1645,7 +1721,7 @@ function ResultCard({
                                       overflowX: 'auto',
                                       fontSize: '0.8rem',
                                       fontFamily: 'monospace',
-                                      color: '#2e7d32',
+                                      color: 'success.main',
                                       maxHeight: 250,
                                     }}
                                   >
@@ -1668,12 +1744,12 @@ function ResultCard({
                   {/* Related Links list */}
                   <Box>
                     <Typography sx={{ fontWeight: 800, fontSize: '0.95rem', mb: 1.5, color: 'text.primary' }}>
-                      ▼ Các liên kết liên quan (Related URLs)
+                      Các liên kết liên quan (Related URLs)
                     </Typography>
                     {(!data.relatedUrls || data.relatedUrls.length === 0) ? (
                       <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled', pl: 1 }}>Không phát hiện liên kết liên quan</Typography>
                     ) : (
-                      <List dense disablePadding sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2.5, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fafafa', maxH: 220, overflowY: 'auto' }}>
+                      <List dense disablePadding sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '16px', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fafafa', maxH: 220, overflowY: 'auto' }}>
                         {data.relatedUrls.map((linkUrl, idx) => (
                           <ListItem
                             key={idx}
@@ -1696,17 +1772,23 @@ function ResultCard({
                             >
                               {linkUrl}
                             </Typography>
-                            <Button
-                              size="small"
-                              variant="text"
-                              startIcon={<OpenInNewIcon sx={{ fontSize: 13 }} />}
-                              component="a"
+                            <Link
                               href={linkUrl}
                               target="_blank"
-                              sx={{ textTransform: 'none', flexShrink: 0, fontWeight: 700 }}
+                              underline="none"
+                              sx={{
+                                color: 'primary.main',
+                                fontSize: '0.85rem',
+                                fontWeight: 500,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 0.5,
+                                flexShrink: 0,
+                                '&:hover': { color: 'primary.dark' }
+                              }}
                             >
-                              Tru cập
-                            </Button>
+                              Truy cập <OpenInNewIcon sx={{ fontSize: 13 }} />
+                            </Link>
                           </ListItem>
                         ))}
                       </List>
@@ -1717,18 +1799,18 @@ function ResultCard({
                   <Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
                       <Typography sx={{ fontWeight: 800, fontSize: '0.95rem', color: 'text.primary' }}>
-                        ▼ Link trong nội dung bài viết (Body Links)
+                        Link trong nội dung bài viết (Body Links)
                       </Typography>
                       <Chip 
                         label={data.bodyLinks?.length ?? 0} 
                         size="small" 
-                        sx={{ bgcolor: '#e6fcf5', color: '#00b894', fontWeight: 700, height: 20 }} 
+                        sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.15)' : 'rgba(0, 184, 148, 0.08)', color: 'primary.main', fontWeight: 700, height: 20 }} 
                       />
                     </Box>
                     {(!data.bodyLinks || data.bodyLinks.length === 0) ? (
                       <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled', pl: 1 }}>Không phát hiện liên kết nào trong nội dung bài viết</Typography>
                     ) : (
-                      <List dense disablePadding sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2.5, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fafafa', maxH: 220, overflowY: 'auto' }}>
+                      <List dense disablePadding sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '16px', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fafafa', maxH: 220, overflowY: 'auto' }}>
                         {data.bodyLinks.map((linkUrl, idx) => (
                           <ListItem
                             key={idx}
@@ -1751,17 +1833,23 @@ function ResultCard({
                             >
                               {linkUrl}
                             </Typography>
-                            <Button
-                              size="small"
-                              variant="text"
-                              startIcon={<OpenInNewIcon sx={{ fontSize: 13 }} />}
-                              component="a"
+                            <Link
                               href={linkUrl}
                               target="_blank"
-                              sx={{ textTransform: 'none', flexShrink: 0, fontWeight: 700 }}
+                              underline="none"
+                              sx={{
+                                color: 'primary.main',
+                                fontSize: '0.85rem',
+                                fontWeight: 500,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 0.5,
+                                flexShrink: 0,
+                                '&:hover': { color: 'primary.dark' }
+                              }}
                             >
-                              Truy cập
-                            </Button>
+                              Truy cập <OpenInNewIcon sx={{ fontSize: 13 }} />
+                            </Link>
                           </ListItem>
                         ))}
                       </List>
@@ -1773,7 +1861,7 @@ function ResultCard({
                     <Box>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, flexWrap: 'wrap', gap: 1.5 }}>
                         <Typography sx={{ fontWeight: 800, fontSize: '0.95rem', color: 'text.primary' }}>
-                          ▼ Bài viết trong RSS Feed ({filteredRssItems.length} dòng)
+                          Bài viết trong RSS Feed ({filteredRssItems.length} dòng)
                         </Typography>
                         <TextField
                           placeholder="Lọc tin theo tựa đề hoặc mô tả..."
@@ -1785,14 +1873,14 @@ function ResultCard({
                               startAdornment: <SearchIcon sx={{ color: 'text.secondary', mr: 1, fontSize: 18 }} />,
                             }
                           }}
-                          sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 }, minWidth: 260 }}
+                          sx={{ '& .MuiOutlinedInput-root': { borderRadius: '100px' }, minWidth: 260 }}
                         />
                       </Box>
 
                       {filteredRssItems.length === 0 ? (
                         <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled', pl: 1 }}>Không có bài viết khớp tìm kiếm</Typography>
                       ) : (
-                        <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2.5, maxHeight: 300 }}>
+                        <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '16px', maxHeight: 300 }}>
                           <Table size="small" stickyHeader>
                             <TableHead>
                               <TableRow>
@@ -1809,15 +1897,14 @@ function ResultCard({
                                     {formatDate(item.pubDate)}
                                   </TableCell>
                                   <TableCell sx={{ py: 0.8, fontWeight: 700 }}>
-                                    <Typography
-                                      component="a"
+                                    <Link
                                       href={item.link}
                                       target="_blank"
-                                      variant="body2"
-                                      sx={{ color: 'primary.main', textDecoration: 'underline', display: 'flex', alignItems: 'center', gap: 0.5 }}
+                                      underline="none"
+                                      sx={{ color: 'primary.main', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 0.5, '&:hover': { color: 'primary.dark' } }}
                                     >
                                       {item.title} <OpenInNewIcon sx={{ fontSize: 12 }} />
-                                    </Typography>
+                                    </Link>
                                   </TableCell>
                                   <TableCell sx={{ py: 0.8 }}>
                                     {item.category && item.category.length > 0 ? (
@@ -1845,12 +1932,11 @@ function ResultCard({
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
               <Alert
                 severity="error"
-                icon={<CancelIcon sx={{ color: '#ef4444' }} />}
+                icon={<CancelIcon />}
                 sx={{
                   borderRadius: 3,
-                  bgcolor: '#fef2f2',
-                  color: '#b91c1c',
-                  border: '1px solid #fee2e2',
+                  border: '1px solid',
+                  borderColor: 'error.light',
                 }}
               >
                 <Typography variant="body2" sx={{ fontWeight: 700 }}>
@@ -1873,15 +1959,27 @@ function ResultCard({
               )}
 
               <Box>
-                <Button
+                <LoadingButton
                   variant="outlined"
                   color="primary"
-                  onClick={() => onRetry(result.url)}
+                  loading={isRetrying}
+                  loadingPosition="start"
+                  onClick={handleRetryClick}
                   startIcon={<RefreshIcon />}
-                  sx={{ borderRadius: 2.5, fontWeight: 700, textTransform: 'none', borderWidth: '1.5px', '&:hover': { borderWidth: '1.5px' } }}
+                  sx={{ 
+                    borderRadius: '100px', 
+                    fontWeight: 700, 
+                    textTransform: 'none', 
+                    borderWidth: '1.5px', 
+                    transition: 'all 0.2s',
+                    '&:hover': { 
+                      borderWidth: '1.5px',
+                      transform: 'scale(1.02)'
+                    } 
+                  }}
                 >
                   Thử lại ngay với Puppeteer (Stealth Mode)
-                </Button>
+                </LoadingButton>
               </Box>
             </Box>
           )}

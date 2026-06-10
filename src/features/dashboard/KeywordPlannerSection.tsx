@@ -403,7 +403,7 @@ export default function KeywordPlannerSection() {
                 e.stopPropagation();
                 fetchTrendForKeyword(row.keyword);
               }}
-              sx={{ textTransform: 'none', borderRadius: 2, fontSize: '0.7rem', py: 0.3, color: '#ec4899', borderColor: 'rgba(236,72,153,0.3)', '&:hover': { borderColor: '#ec4899', bgcolor: 'rgba(236,72,153,0.05)' } }}
+              sx={{ textTransform: 'none', borderRadius: '100px', fontSize: '0.7rem', py: 0.3, color: '#ec4899', borderColor: 'rgba(236,72,153,0.3)', '&:hover': { borderColor: '#ec4899', bgcolor: 'rgba(236,72,153,0.05)' } }}
             >
               Phân tích
             </Button>
@@ -486,17 +486,15 @@ export default function KeywordPlannerSection() {
       <Box sx={{ 
         pt: 4, pb: 6, px: 2, 
         display: 'flex', flexDirection: 'column', alignItems: 'center',
-        background: (theme) => theme.palette.mode === 'dark' 
-          ? 'radial-gradient(circle at top, rgba(37,99,235,0.1) 0%, transparent 50%)' 
-          : 'radial-gradient(circle at top, #eff6ff 0%, transparent 50%)'
+        bgcolor: 'background.default',
+        borderBottom: '1px solid',
+        borderColor: 'divider'
       }}>
         <Typography sx={{ 
           fontSize: { xs: '2rem', md: '2.5rem' }, 
           fontWeight: 900, 
           textAlign: 'center',
-          background: 'linear-gradient(90deg, #00b894, #00cec9, #0984e3)', 
-          WebkitBackgroundClip: 'text', 
-          color: 'transparent',
+          color: 'primary.main',
           mb: 1
         }}>
           Keyword Research Tool
@@ -514,9 +512,9 @@ export default function KeywordPlannerSection() {
             size="medium"
             sx={{ 
               bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', 
-              borderRadius: 8, 
+              borderRadius: '100px', 
               p: 0.5,
-              '& .MuiToggleButton-root': { border: 'none', borderRadius: 8, px: 3, fontWeight: 600, textTransform: 'none' },
+              '& .MuiToggleButton-root': { border: 'none', borderRadius: '100px', px: 3, fontWeight: 600, textTransform: 'none' },
               '& .Mui-selected': { bgcolor: 'primary.main', color: 'primary.contrastText', '&:hover': { bgcolor: 'primary.dark' } }
             }}
           >
@@ -543,13 +541,13 @@ export default function KeywordPlannerSection() {
                 startAdornment: <SearchIcon sx={{ color: 'text.secondary', mr: 1, fontSize: 24 }} />,
               }
             }}
-            sx={{ mb: 3, '& .MuiOutlinedInput-root': { fontSize: '1.1rem', borderRadius: 3, bgcolor: 'background.default', '& fieldset': { borderColor: 'divider' } } }}
+            sx={{ mb: 3, '& .MuiOutlinedInput-root': { fontSize: '1.1rem', borderRadius: '100px', bgcolor: 'background.default', '& fieldset': { borderColor: 'divider' } } }}
           />
 
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3, mb: 3 }}>
             <FormControl fullWidth size="small">
-              <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: 'text.secondary', mb: 0.5, ml: 1, textTransform: 'uppercase' }}>Location</Typography>
-              <Select value={location} onChange={(e) => setLocation(e.target.value)} sx={{ borderRadius: 2, bgcolor: 'background.default' }}>
+              <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: 'text.secondary', mb: 0.5, ml: 1.5, textTransform: 'uppercase' }}>Location</Typography>
+              <Select value={location} onChange={(e) => setLocation(e.target.value)} sx={{ borderRadius: '100px', bgcolor: 'background.default', '& .MuiOutlinedInput-root': { borderRadius: '100px' } }}>
                 <MenuItem value="VN"><span style={{ marginRight: 8 }}>🇻🇳</span> Vietnam</MenuItem>
                 <MenuItem value="US"><span style={{ marginRight: 8 }}>🇺🇸</span> United States</MenuItem>
                 <MenuItem value="GB"><span style={{ marginRight: 8 }}>🇬🇧</span> United Kingdom</MenuItem>
@@ -568,8 +566,8 @@ export default function KeywordPlannerSection() {
               </Select>
             </FormControl>
             <FormControl fullWidth size="small">
-              <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: 'text.secondary', mb: 0.5, ml: 1, textTransform: 'uppercase' }}>Language</Typography>
-              <Select value={language} onChange={(e) => setLanguage(e.target.value)} sx={{ borderRadius: 2, bgcolor: 'background.default' }}>
+              <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: 'text.secondary', mb: 0.5, ml: 1.5, textTransform: 'uppercase' }}>Language</Typography>
+              <Select value={language} onChange={(e) => setLanguage(e.target.value)} sx={{ borderRadius: '100px', bgcolor: 'background.default', '& .MuiOutlinedInput-root': { borderRadius: '100px' } }}>
                 <MenuItem value="vi">Vietnamese</MenuItem>
                 <MenuItem value="en">English</MenuItem>
                 <MenuItem value="ja">Japanese</MenuItem>
@@ -592,7 +590,7 @@ export default function KeywordPlannerSection() {
               type="number"
               value={minVolume}
               onChange={(e) => setMinVolume(e.target.value)}
-              sx={{ width: 100, '& .MuiOutlinedInput-root': { bgcolor: 'background.default', borderRadius: 2 } }}
+              sx={{ width: 100, '& .MuiOutlinedInput-root': { bgcolor: 'background.default', borderRadius: '100px' } }}
             />
             <TextField
               size="small"
@@ -600,7 +598,7 @@ export default function KeywordPlannerSection() {
               type="number"
               value={maxVolume}
               onChange={(e) => setMaxVolume(e.target.value)}
-              sx={{ width: 100, '& .MuiOutlinedInput-root': { bgcolor: 'background.default', borderRadius: 2 } }}
+              sx={{ width: 100, '& .MuiOutlinedInput-root': { bgcolor: 'background.default', borderRadius: '100px' } }}
             />
             <FormControl size="small" sx={{ width: 160 }}>
               <Select
@@ -609,7 +607,7 @@ export default function KeywordPlannerSection() {
                 value={competition}
                 onChange={(e) => setCompetition(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
                 renderValue={(selected) => selected.length === 0 ? 'Competition (All)' : selected.join(', ')}
-                sx={{ borderRadius: 2, bgcolor: 'background.default' }}
+                sx={{ borderRadius: '100px', bgcolor: 'background.default', '& .MuiOutlinedInput-root': { borderRadius: '100px' } }}
               >
                 {['LOW', 'MEDIUM', 'HIGH'].map((comp) => (
                   <MenuItem key={comp} value={comp}>
@@ -628,10 +626,11 @@ export default function KeywordPlannerSection() {
               disabled={loading}
               startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SearchIcon />}
               sx={{ 
-                borderRadius: 2, px: 4, py: 1.2, fontWeight: 700, fontSize: '1rem',
-                background: 'linear-gradient(90deg, #00b894, #00cec9)',
-                boxShadow: '0 8px 24px rgba(0, 184, 148, 0.3)',
-                '&:hover': { background: 'linear-gradient(90deg, #009975, #00cec9)', boxShadow: '0 12px 32px rgba(0, 184, 148, 0.4)' }
+                borderRadius: '100px', height: 40, px: 4, fontWeight: 700, fontSize: '0.95rem',
+                bgcolor: 'primary.main',
+                boxShadow: 'none',
+                textTransform: 'none',
+                '&:hover': { bgcolor: 'primary.dark', boxShadow: 'none' }
               }}
             >
               {loading ? 'Analyzing...' : 'Find Keywords'}
@@ -640,7 +639,7 @@ export default function KeywordPlannerSection() {
               variant="text" 
               color="inherit" 
               onClick={() => { setInputValue(''); setData([]); setTotal(0); }}
-              sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'none' }}
+              sx={{ color: 'text.secondary', height: 40, borderRadius: '100px', px: 2.5, fontWeight: 600, textTransform: 'none' }}
             >
               Xóa kết quả
             </Button>
@@ -658,7 +657,7 @@ export default function KeywordPlannerSection() {
               startIcon={downloadingCsv ? <CircularProgress size={16} /> : <FileDownloadIcon />}
               onClick={handleDownloadCsv}
               disabled={downloadingCsv || data.length === 0}
-              sx={{ borderRadius: 2, fontWeight: 600, textTransform: 'none' }}
+              sx={{ borderRadius: '100px', height: 36, px: 2.5, fontWeight: 600, textTransform: 'none' }}
             >
               {downloadingCsv ? 'Đang tải...' : 'Tải CSV'}
             </Button>

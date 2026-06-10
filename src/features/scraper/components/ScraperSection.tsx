@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
@@ -29,14 +29,9 @@ import Switch from '@mui/material/Switch';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import Tooltip from '@mui/material/Tooltip';
-import Accordion from '@mui/material/Accordion';
-import AccordionSummary from '@mui/material/AccordionSummary';
-import AccordionDetails from '@mui/material/AccordionDetails';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PsychologyIcon from '@mui/icons-material/Psychology';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import LibraryAddCheckIcon from '@mui/icons-material/LibraryAddCheck';
 import BusinessIcon from '@mui/icons-material/Business';
 import PersonIcon from '@mui/icons-material/Person';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
@@ -44,7 +39,6 @@ import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import LinkIcon from '@mui/icons-material/Link';
 import GavelIcon from '@mui/icons-material/Gavel';
-import GridOnIcon from '@mui/icons-material/GridOn';
 import { useAppSelector } from '../../../app/store';
 
 import CustomTable from '../../../components/custom-table/CustomTable';
@@ -136,8 +130,6 @@ export default function ScraperSection() {
   const [showCategoryDetails, setShowCategoryDetails] = useState(false);
   const [showTagDetails, setShowTagDetails] = useState(false);
   const [articleType, setArticleType] = useState<'all' | 'news' | 'document'>('all');
-  const [tagsList, setTagsList] = useState<string[]>([]);
-  const [categoriesList, setCategoriesList] = useState<string[]>([]);
   const debouncedQ = useDebounce(q, 500);
 
   // --- Table State ---
@@ -153,8 +145,6 @@ export default function ScraperSection() {
 
   // --- AI Keyword Generator State ---
   const [aiLoadingId, setAiLoadingId] = useState<string | null>(null);
-  const [selectedArticleForAi, setSelectedArticleForAi] = useState<ScraperArticle | null>(null);
-  const [openAiConfirmDialog, setOpenAiConfirmDialog] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBatchGenerating, setIsBatchGenerating] = useState(false);
 
@@ -314,7 +304,7 @@ export default function ScraperSection() {
 
       showToast(`Đã tải xuống thành công ${data.items.length} dòng dữ liệu!`, 'success');
       setOpenDownloadDialog(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       showToast('Đã xảy ra lỗi khi chuẩn bị file tải xuống', 'danger');
     } finally {
@@ -332,22 +322,14 @@ export default function ScraperSection() {
         articleType: activeSite === 'luatvietnam' && articleType !== 'all' ? articleType : undefined
       });
       setSummary(data);
-    } catch (err: any) {
-      showToast(err.response?.data?.message || 'Lỗi tải thống kê', 'danger');
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      showToast((err as { response?: { data?: { message?: string } } }).response?.data?.message || errMsg || 'Lỗi tải thống kê', 'danger');
     } finally {
       setLoadingSummary(false);
     }
   };
 
-  const loadTags = async () => {
-    try {
-      const k = await scraperService.getTags({ source: activeSite });
-      setTagsList(k?.tags || []);
-      setCategoriesList(k?.categories || []);
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
   const loadSchedule = async () => {
     try {
@@ -385,38 +367,41 @@ export default function ScraperSection() {
       });
       setItems(data.items);
       setTotal(data.total);
-    } catch (err: any) {
-      showToast(err.response?.data?.message || 'Lỗi tải danh sách', 'danger');
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      showToast((err as { response?: { data?: { message?: string } } }).response?.data?.message || errMsg || 'Lỗi tải danh sách', 'danger');
     } finally {
       setLoadingTable(false);
     }
   };
 
   useEffect(() => {
-    setSection('');
-    setTag('');
-    setDate('');
-    setQ('');
-    setOnlyNew(false);
-    setScope('');
-    setEffStatusCode('');
-    setNganh('');
-    setLinhVuc('');
-    setDocTypeCode('');
-    setSheetStatus('all');
-    setArticleType('all');
-    setShowSectionDetails(false);
-    setShowCategoryDetails(false);
-    setShowTagDetails(false);
-    // loadTags(); // Tạm tắt để giảm lag
-    loadSchedule();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    Promise.resolve().then(() => {
+      setSection('');
+      setTag('');
+      setDate('');
+      setQ('');
+      setOnlyNew(false);
+      setScope('');
+      setEffStatusCode('');
+      setNganh('');
+      setLinhVuc('');
+      setDocTypeCode('');
+      setSheetStatus('all');
+      setArticleType('all');
+      setShowSectionDetails(false);
+      setShowCategoryDetails(false);
+      setShowTagDetails(false);
+      loadSchedule();
+    });
   }, [activeSite]);
 
   useEffect(() => {
-    loadSummary();
-    loadArticles(0, limit);
-    setPage(0);
+    Promise.resolve().then(() => {
+      loadSummary();
+      loadArticles(0, limit);
+      setPage(0);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSite, section, tag, date, debouncedQ, onlyNew, scope, effStatusCode, nganh, linhVuc, docTypeCode, sheetStatus, articleType]);
 
@@ -441,8 +426,9 @@ export default function ScraperSection() {
       loadSummary();
       loadArticles(0, limit);
       // loadTags(); // Tạm tắt để giảm lag
-    } catch (err: any) {
-      showToast(err.response?.data?.message || 'Lỗi khi cào bài', 'danger');
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      showToast((err as { response?: { data?: { message?: string } } }).response?.data?.message || errMsg || 'Lỗi khi cào bài', 'danger');
     } finally {
       setIsTriggering(false);
     }
@@ -455,8 +441,9 @@ export default function ScraperSection() {
       showToast(res.message || 'Cập nhật lịch thành công', 'success');
       setOpenScheduleDialog(false);
       loadSchedule();
-    } catch (err: any) {
-      showToast(err.response?.data?.message || 'Lỗi cập nhật lịch', 'danger');
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      showToast((err as { response?: { data?: { message?: string } } }).response?.data?.message || errMsg || 'Lỗi cập nhật lịch', 'danger');
     } finally {
       setIsUpdatingSchedule(false);
     }
@@ -474,18 +461,19 @@ export default function ScraperSection() {
         showToast('Đã tắt lịch tự động', 'success');
       }
       loadSchedule();
-    } catch (err: any) {
-      showToast(err.response?.data?.message || 'Lỗi khi thay đổi trạng thái', 'danger');
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      showToast((err as { response?: { data?: { message?: string } } }).response?.data?.message || errMsg || 'Lỗi khi thay đổi trạng thái', 'danger');
     } finally {
       setIsUpdatingSchedule(false);
     }
   };
 
   // --- AI Keyword Generator Handlers ---
-  const handleAiError = (err: any) => {
-    const errorData = err.response?.data;
+  const handleAiError = useCallback((err: unknown) => {
+    const errorData = (err as { response?: { data?: { code?: string; message?: string } } }).response?.data;
     const code = errorData?.code || '';
-    const message = errorData?.message || err.message || 'Lỗi không xác định';
+    const message = errorData?.message || (err instanceof Error ? err.message : String(err)) || 'Lỗi không xác định';
 
     switch (code) {
       case 'INVALID_ARTICLE_ID':
@@ -515,9 +503,9 @@ export default function ScraperSection() {
       default:
         showToast(message, 'danger');
     }
-  };
+  }, [showToast]);
 
-  const handleAiGenerate = async (article: ScraperArticle, force = false) => {
+  const handleAiGenerate = useCallback(async (article: ScraperArticle, force = false) => {
     setAiLoadingId(article._id);
     try {
       const res = await scraperService.aiGenerate(article._id, force);
@@ -536,36 +524,13 @@ export default function ScraperSection() {
       } else {
         showToast(`Đã tạo ${res.data.keywordCount} từ khóa và push lên Sheet · Batch #${res.data.batchNumber}`, 'success');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       handleAiError(err);
     } finally {
       setAiLoadingId(null);
     }
-  };
+  }, [handleAiError, showToast]);
 
-  const handleResetArticleAiState = async (article: ScraperArticle) => {
-    if (!window.confirm('Bạn có chắc chắn muốn reset trạng thái AI/Sheet cho bài viết này về "chưa gen"?')) {
-      return;
-    }
-    setAiLoadingId(article._id);
-    try {
-      await scraperService.resetAiState(undefined, article._id);
-      
-      const updatedArticle = {
-        ...article,
-        sheetUrl: null,
-        sheetPushedAt: null,
-        sheetLastBatch: 0
-      };
-      
-      setItems(prev => prev.map(item => item._id === article._id ? updatedArticle : item));
-      showToast('Đã reset trạng thái AI/Sheet cho bài viết này!', 'success');
-    } catch (err: any) {
-      showToast(err.response?.data?.message || 'Lỗi khi reset trạng thái AI', 'danger');
-    } finally {
-      setAiLoadingId(null);
-    }
-  };
 
   const handleResetSourceAiState = async (source: string) => {
     const siteName = SITE_SOURCES.find(s => s.id === source)?.name || source;
@@ -577,8 +542,9 @@ export default function ScraperSection() {
       const res = await scraperService.resetAiState(source);
       showToast(res.message || `Đã reset trạng thái cho toàn bộ bài viết nguồn ${siteName}!`, 'success');
       loadArticles(0, limit);
-    } catch (err: any) {
-      showToast(err.response?.data?.message || 'Lỗi khi reset trạng thái nguồn', 'danger');
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      showToast((err as { response?: { data?: { message?: string } } }).response?.data?.message || errMsg || 'Lỗi khi reset trạng thái nguồn', 'danger');
     } finally {
       setLoadingTable(false);
     }
@@ -619,7 +585,7 @@ export default function ScraperSection() {
           
           setItems(prev => prev.map(item => item._id === article._id ? updatedArticle : item));
           successCount++;
-        } catch (err: any) {
+        } catch (err: unknown) {
           console.error(`Error generating AI for ${article._id}:`, err);
           failCount++;
         }
@@ -643,178 +609,13 @@ export default function ScraperSection() {
   };
 
   useEffect(() => {
-    setSelectedIds([]);
+    Promise.resolve().then(() => {
+      setSelectedIds([]);
+    });
   }, [activeSite, page, section, tag, date, q, scope, effStatusCode, nganh, linhVuc, docTypeCode]);
 
-  const handleAiClick = async (article: ScraperArticle) => {
-    const id = article._id || article.id;
-    setExpandedRowId(prev => prev === id ? null : String(id));
-  };
 
-  const handleAiForceConfirm = () => {
-    if (!selectedArticleForAi) return;
-    setOpenAiConfirmDialog(false);
-    handleAiGenerate(selectedArticleForAi, true);
-  };
-
-  const renderAiKeywordsCard = (item: ScraperArticle) => {
-    const isGenerating = aiLoadingId === item._id;
-    const sheetUrl = item.sheetUrl;
-    const sheetLastBatch = item.sheetLastBatch;
-    const sheetPushedAt = item.sheetPushedAt;
-
-    return (
-      <Paper 
-        sx={{ 
-          p: 2, 
-          borderRadius: 2, 
-          border: '1px solid', 
-          borderColor: 'divider', 
-          bgcolor: 'background.paper', 
-          boxShadow: 'none', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          gap: 1.2,
-          position: 'relative',
-          overflow: 'hidden'
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 0.75, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <PsychologyIcon sx={{ color: '#00b894', fontSize: 18 }} />
-          <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.primary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-            AI Keywords (SEO)
-          </Typography>
-        </Box>
-
-        {isGenerating ? (
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 2, gap: 1 }}>
-            <CircularProgress size={20} sx={{ color: '#00b894' }} />
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-              Đang gọi AI và push Sheet... (5-15s)
-            </Typography>
-          </Box>
-        ) : sheetUrl ? (
-          /* Case 2: Đã generated */
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1, borderRadius: 1.5, bgcolor: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.15)' }}>
-              <GridOnIcon sx={{ color: '#10b981', fontSize: 20 }} />
-              <Box>
-                <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.primary', display: 'block' }}>
-                  Đã push lên Sheet
-                </Typography>
-                <Typography variant="caption" sx={{ fontSize: '0.68rem', color: 'text.secondary', display: 'block', mt: 0.25 }}>
-                  Batch #{sheetLastBatch} · Cập nhật: {sheetPushedAt ? safeFormat(sheetPushedAt, 'dd/MM/yyyy HH:mm') : '-'}
-                </Typography>
-              </Box>
-            </Box>
-
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button
-                  variant="contained"
-                  color="success"
-                  onClick={() => window.open(sheetUrl, '_blank', 'noopener,noreferrer')}
-                  startIcon={<GridOnIcon sx={{ fontSize: 14 }} />}
-                  fullWidth
-                  size="small"
-                  sx={{ 
-                    borderRadius: 1.5, 
-                    textTransform: 'none', 
-                    fontWeight: 700, 
-                    fontSize: '0.75rem',
-                    bgcolor: '#10b981',
-                    boxShadow: 'none',
-                    '&:hover': { bgcolor: '#059669', boxShadow: 'none' }
-                  }}
-                >
-                  Mở Sheet
-                </Button>
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  onClick={() => {
-                    setSelectedArticleForAi(item);
-                    setOpenAiConfirmDialog(true);
-                  }}
-                  startIcon={<AutoAwesomeIcon sx={{ fontSize: 14 }} />}
-                  fullWidth
-                  size="small"
-                  sx={{ 
-                    borderRadius: 1.5, 
-                    textTransform: 'none', 
-                    fontWeight: 700, 
-                    fontSize: '0.75rem',
-                    borderColor: 'divider',
-                    color: 'text.primary',
-                    '&:hover': { bgcolor: 'action.hover', borderColor: 'text.primary' }
-                  }}
-                >
-                  Gen lại AI
-                </Button>
-              </Box>
-
-              {isAdmin && (
-                <Button
-                  variant="outlined"
-                  color="error"
-                  onClick={() => handleResetArticleAiState(item)}
-                  fullWidth
-                  size="small"
-                  sx={{ 
-                    borderRadius: 1.5, 
-                    textTransform: 'none', 
-                    fontWeight: 700, 
-                    fontSize: '0.75rem',
-                    borderColor: 'rgba(239, 68, 68, 0.4)',
-                    color: '#ef4444',
-                    '&:hover': {
-                      borderColor: '#ef4444',
-                      bgcolor: 'rgba(239, 68, 68, 0.04)',
-                    }
-                  }}
-                >
-                  Reset AI State (Admin)
-                </Button>
-              )}
-            </Box>
-          </Box>
-        ) : (
-          /* Case 1: Chưa generated */
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500, lineHeight: 1.4, display: 'block' }}>
-              AI tự sinh keyword + đẩy lên Sheet team chỉnh
-            </Typography>
-
-            <Tooltip title="Sẽ block 5-15s, vui lòng đợi">
-              <Button
-                variant="contained"
-                onClick={() => handleAiGenerate(item, false)}
-                startIcon={<AutoAwesomeIcon sx={{ fontSize: 14 }} />}
-                fullWidth
-                size="small"
-                sx={{ 
-                  borderRadius: 1.5, 
-                  textTransform: 'none', 
-                  fontWeight: 700, 
-                  fontSize: '0.75rem',
-                  background: 'linear-gradient(135deg, #00b894 0%, #009975 100%)',
-                  boxShadow: 'none',
-                  '&:hover': { 
-                    background: 'linear-gradient(135deg, #3dd6a0 0%, #009975 100%)',
-                    boxShadow: 'none'
-                  }
-                }}
-              >
-                Gen AI & Push Sheet
-              </Button>
-            </Tooltip>
-          </Box>
-        )}
-      </Paper>
-    );
-  };
-
-  const renderInlineAiKeywords = (item: ScraperArticle) => {
+  const renderInlineAiKeywords = useCallback((item: ScraperArticle) => {
     const isGenerating = aiLoadingId === item._id;
     const sheetUrl = item.sheetUrl;
     const sheetLastBatch = item.sheetLastBatch;
@@ -921,7 +722,7 @@ export default function ScraperSection() {
         </Button>
       </Tooltip>
     );
-  };
+  }, [aiLoadingId, handleAiGenerate]);
 
   // --- Columns ---
   const columns = useMemo<TableField[]>(() => {
@@ -1370,7 +1171,7 @@ export default function ScraperSection() {
         }
       ];
     }
-  }, [activeSite, aiLoadingId, selectedIds, items]);
+  }, [activeSite, selectedIds, items, renderInlineAiKeywords]);
 
   const displayedItems = useMemo(() => {
     if (activeSite !== 'luatvietnam' || articleType === 'all') return items;
@@ -1423,7 +1224,7 @@ export default function ScraperSection() {
                   }
                 }}
               >
-                {/* Background Tint - Softened in dark mode */}
+                {/* Background Tint - Softened in dark mode, hidden when inactive */}
                 <Box 
                   sx={{ 
                     position: 'absolute', 
@@ -1434,7 +1235,7 @@ export default function ScraperSection() {
                     background: (theme) => theme.palette.mode === 'dark' 
                       ? `linear-gradient(90deg, transparent, ${site.color}15)` 
                       : `linear-gradient(90deg, transparent, ${site.bg})`, 
-                    opacity: isActive ? 1 : 0.4, 
+                    opacity: isActive ? 1 : 0, 
                     transition: 'opacity 0.3s' 
                   }} 
                 />
@@ -1445,7 +1246,9 @@ export default function ScraperSection() {
                       sx={{ 
                         p: 0.5, 
                         borderRadius: 1.5, 
-                        bgcolor: (theme) => theme.palette.mode === 'dark' ? `${site.color}25` : site.bg, 
+                        bgcolor: (theme) => theme.palette.mode === 'dark' 
+                          ? `${site.color}25` 
+                          : isActive ? site.bg : `${site.color}12`, 
                         color: (theme) => theme.palette.mode === 'dark' ? getDarkThemeColor(site.id) : site.color, 
                         display: 'flex', 
                         alignItems: 'center', 
@@ -2700,38 +2503,6 @@ export default function ScraperSection() {
         </DialogActions>
       </Dialog>
 
-      {/* AI Force Regenerate Confirmation Dialog */}
-      <Dialog 
-        open={openAiConfirmDialog} 
-        onClose={() => setOpenAiConfirmDialog(false)}
-        maxWidth="xs"
-        fullWidth
-        PaperProps={{ sx: { borderRadius: 3.5 } }}
-      >
-        <DialogTitle sx={{ fontWeight: 800 }}>⚠️ Xác nhận tạo lại từ khóa</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.primary" sx={{ lineHeight: 1.5 }}>
-            Sẽ gọi AI lại + thêm 1 batch mới xuống cuối Sheet, tốn quota. Tiếp tục?
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button 
-            variant="outlined" 
-            onClick={() => setOpenAiConfirmDialog(false)}
-            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
-          >
-            Hủy
-          </Button>
-          <Button 
-            variant="contained" 
-            color="warning" 
-            onClick={handleAiForceConfirm}
-            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 800 }}
-          >
-            Đồng ý, tạo lại
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 }

@@ -148,7 +148,7 @@ export default function CreateRequestPage() {
   };
 
   return (
-    <Box sx={{ p: 3, pb: 10, maxWidth: 720, mx: 'auto' }}>
+    <Box sx={{ p: 3, pb: 10, maxWidth: 720, mx: 'auto', zoom: 0.8 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
         <IconButton onClick={() => navigate(-1)}><ArrowBackIcon /></IconButton>
         <Typography variant="h5" sx={{ fontWeight: 700 }}>Tạo yêu cầu mới</Typography>
@@ -299,8 +299,8 @@ export default function CreateRequestPage() {
         </Box>
 
         <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-          <Button variant="outlined" onClick={() => navigate(-1)}>Huỷ</Button>
-          <Button variant="contained" onClick={handleSubmit} disabled={actionLoading}>
+          <Button variant="outlined" onClick={() => navigate(-1)} sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>Huỷ</Button>
+          <Button variant="contained" onClick={handleSubmit} disabled={actionLoading} sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>
             {actionLoading ? 'Đang gửi...' : 'Tạo yêu cầu'}
           </Button>
         </Box>

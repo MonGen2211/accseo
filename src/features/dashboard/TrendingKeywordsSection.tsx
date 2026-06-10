@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTheme } from '@mui/material/styles';
 import type { PaletteMode } from '@mui/material';
 import api from '../../utils/api';
@@ -232,7 +232,8 @@ function ExpandPanel({ item }: { item: TrendItem }) {
 									bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.15)' : '#ecfdf5', 
 									color: (theme) => theme.palette.mode === 'dark' ? '#34d399' : '#059669', 
 									border: (theme) => theme.palette.mode === 'dark' ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid #a7f3d0', 
-									fontWeight: 600 
+									fontWeight: 600,
+									borderRadius: '100px'
 								}} 
 							/>
 						))}
@@ -252,7 +253,8 @@ function ExpandPanel({ item }: { item: TrendItem }) {
 									height: 20, 
 									bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9', 
 									color: (theme) => theme.palette.mode === 'dark' ? '#cbd5e1' : '#475569', 
-									border: (theme) => theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #e2e8f0' 
+									border: (theme) => theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #e2e8f0',
+									borderRadius: '100px'
 								}} 
 							/>
 						))}
@@ -271,24 +273,29 @@ function ExpandPanel({ item }: { item: TrendItem }) {
 					) : (
 						<Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
 							{item.relatedQueries.map((q, i) => (
-								<Link key={i} href={q.link} target="_blank" rel="noopener noreferrer"
-									sx={{ 
-										fontSize: '0.84rem', 
-										color: (theme) => theme.palette.mode === 'dark' ? '#3dd6a0' : '#009975', 
-										fontWeight: 500, 
-										display: 'flex', 
-										alignItems: 'flex-start', 
-										gap: 0.5, 
-										textDecoration: 'none', 
-										lineHeight: 1.4, 
-										'&:hover': { 
-											color: 'primary.main', 
-											textDecoration: 'underline' 
-										} 
-									}}>
-									<OpenInNewIcon sx={{ fontSize: 12, mt: '3px', flexShrink: 0 }} />
-									{q.query}
-								</Link>
+								<Tooltip key={i} title={q.query} arrow placement="top">
+									<Link href={q.link} target="_blank" rel="noopener noreferrer"
+										sx={{ 
+											fontSize: '0.84rem', 
+											color: (theme) => theme.palette.mode === 'dark' ? '#3dd6a0' : '#009975', 
+											fontWeight: 500, 
+											display: 'inline-flex', 
+											alignItems: 'center', 
+											gap: 0.5, 
+											textDecoration: 'none', 
+											lineHeight: 1.4, 
+											maxWidth: '100%',
+											'&:hover': { 
+												color: 'primary.main', 
+												textDecoration: 'underline' 
+											} 
+										}}>
+										<OpenInNewIcon sx={{ fontSize: 12, flexShrink: 0 }} />
+										<Typography sx={{ fontSize: '0.84rem', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+											{q.query}
+										</Typography>
+									</Link>
+								</Tooltip>
 							))}
 						</Box>
 					)}
@@ -316,13 +323,15 @@ function ExpandPanel({ item }: { item: TrendItem }) {
 								<Link key={i} href={article.link} target="_blank" rel="noopener noreferrer"
 									sx={{ display: 'flex', gap: 1.25, textDecoration: 'none', '&:hover .art-title': { color: 'primary.main' } }}>
 									<Avatar src={article.thumbnail ?? undefined} variant="rounded"
-										sx={{ width: 52, height: 52, flexShrink: 0, bgcolor: 'action.hover', borderRadius: 1.5 }}>
+										sx={{ width: 52, height: 52, flexShrink: 0, bgcolor: 'action.hover', borderRadius: 1 }}>
 										<ArticleOutlinedIcon sx={{ fontSize: 22, color: 'text.secondary' }} />
 									</Avatar>
 									<Box sx={{ flex: 1, minWidth: 0 }}>
-										<Typography className="art-title" sx={{ fontSize: '0.82rem', fontWeight: 600, color: 'text.primary', lineHeight: 1.4, transition: 'color 0.15s', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-											{article.title}
-										</Typography>
+										<Tooltip title={article.title} arrow placement="top">
+											<Typography className="art-title" sx={{ fontSize: '0.82rem', fontWeight: 600, color: 'text.primary', lineHeight: 1.4, transition: 'color 0.15s', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+												{article.title}
+											</Typography>
+										</Tooltip>
 										<Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', mt: 0.25 }}>
 											{article.source} · {(() => {
 												try {
@@ -356,6 +365,7 @@ export default function TrendingKeywordsSection() {
 	const [countdown, setCountdown] = useState('');
 	const [isSyncing, setIsSyncing] = useState(false);
 	const { showToast } = useToastify();
+	const tableContainerRef = useRef<HTMLDivElement>(null);
 
 	const updateFilter = useCallback((updates: Partial<QP>) => {
 		setQp(prev => ({ ...prev, ...updates, page: 1 }));
@@ -375,6 +385,12 @@ export default function TrendingKeywordsSection() {
 		const id = setInterval(update, 1000);
 		return () => clearInterval(id);
 	}, [syncBlockedUntil]);
+
+	useEffect(() => {
+		if (tableContainerRef.current) {
+			tableContainerRef.current.scrollTop = 0;
+		}
+	}, [qp.page]);
 
 	const fetchTrending = useCallback(async () => {
 		setLoading(true);
@@ -425,8 +441,10 @@ export default function TrendingKeywordsSection() {
 				showToast(res.data.message || 'Đồng bộ thất bại', 'danger');
 			}
 		} catch (err: any) {
-			const data = err.response?.data;
-			showToast(data?.message || 'Lỗi kết nối khi đồng bộ', 'danger');
+			const friendlyMessage = err.response?.status === 403
+				? 'Bạn không có quyền thực hiện đồng bộ dữ liệu.'
+				: 'Không thể kết nối đến máy chủ để đồng bộ. Vui lòng thử lại sau!';
+			showToast(friendlyMessage, 'danger');
 		} finally {
 			setIsSyncing(false);
 		}
@@ -442,8 +460,8 @@ export default function TrendingKeywordsSection() {
 			renderCell: (row: TableRowData) => {
 				const ps = posStyle(row.position as number, theme.palette.mode);
 				return (
-					<Box sx={{ width: 36, height: 36, borderRadius: 2, bgcolor: ps.bg, border: ps.border, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-						<Typography sx={{ fontWeight: ps.fw, fontSize: (row.position as number) <= 3 ? '1rem' : '0.88rem', color: ps.color, lineHeight: 1 }}>{row.position}</Typography>
+					<Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: ps.bg, border: ps.border, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+						<Typography sx={{ fontWeight: ps.fw, fontSize: (row.position as number) <= 3 ? '0.9rem' : '0.82rem', color: ps.color, lineHeight: 1 }}>{row.position}</Typography>
 					</Box>
 				);
 			},
@@ -454,9 +472,21 @@ export default function TrendingKeywordsSection() {
 				const item = row as unknown as TrendItem;
 				const activeBadge = getActiveBadge(item.active);
 				return (
-				<Box sx={{ minWidth: 0 }}>
-					<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.4, flexWrap: 'wrap' }}>
-						<Typography sx={{ fontWeight: 700, fontSize: '0.94rem', lineHeight: 1.3 }} noWrap>{item.keyword}</Typography>
+				<Box sx={{ minWidth: 0, maxWidth: 280, overflow: 'hidden' }}>
+					<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.4, flexWrap: 'wrap', maxWidth: '100%' }}>
+						<Tooltip title={item.keyword} arrow placement="top">
+							<Typography sx={{ 
+								fontWeight: 700, 
+								fontSize: '0.94rem', 
+								lineHeight: 1.3,
+								whiteSpace: 'nowrap',
+								overflow: 'hidden',
+								textOverflow: 'ellipsis',
+								maxWidth: 180
+							}}>
+								{item.keyword}
+							</Typography>
+						</Tooltip>
 						{activeBadge && (
 							<Chip 
 								label={activeBadge.label} 
@@ -465,6 +495,7 @@ export default function TrendingKeywordsSection() {
 									height: 18, 
 									fontSize: 10, 
 									fontWeight: 700, 
+									borderRadius: '100px',
 									color: (theme) => {
 										const isDark = theme.palette.mode === 'dark';
 										if (activeBadge.variant === 'success') return isDark ? '#4ade80' : '#16a34a';
@@ -514,7 +545,7 @@ export default function TrendingKeywordsSection() {
 						label={isBreakout ? '🔥 +1,000%+' : `+${val.toLocaleString()}%`} 
 						size="small" 
 						sx={{ 
-							fontWeight: 700, fontSize: '0.85rem', height: 24, 
+							fontWeight: 700, fontSize: '0.85rem', height: 24, borderRadius: '100px',
 							bgcolor: (theme) => {
 								const isDark = theme.palette.mode === 'dark';
 								if (isBreakout) return isDark ? 'rgba(231, 76, 60, 0.12)' : '#fdf2f2';
@@ -571,19 +602,19 @@ export default function TrendingKeywordsSection() {
 
 	return (
 		<Box sx={{ width: '100%', height: 750 }}>
-			<Paper elevation={0} sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider', overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', height: '100%' }}>
+			<Paper elevation={0} sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%' }}>
 				{/* ── Header ── */}
-				<Box sx={{ px: 3, pt: 2.5, pb: 2, background: (theme) => theme.palette.mode === 'dark' ? 'linear-gradient(135deg, rgba(0, 184, 148, 0.05) 0%, transparent 70%)' : 'linear-gradient(135deg, #e6f7f4 0%, #ffffff 70%)', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+				<Box sx={{ px: 3, pt: 2.5, pb: 2, bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
 					<Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-						<Box sx={{ width: 42, height: 42, borderRadius: 2.5, background: 'linear-gradient(135deg, #00b894, #009975)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0, 184, 148, 0.25)', flexShrink: 0, animation: 'pulse 2s infinite', '@keyframes pulse': { '0%': { boxShadow: '0 4px 12px rgba(0, 184, 148, 0.25)' }, '50%': { boxShadow: '0 4px 20px rgba(0, 184, 148, 0.45)' }, '100%': { boxShadow: '0 4px 12px rgba(0, 184, 148, 0.25)' } } }}>
-							<WhatshotIcon sx={{ color: 'primary.contrastText', fontSize: 22 }} />
+						<Box sx={{ width: 40, height: 40, borderRadius: '50%', bgcolor: 'primary.main', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+							<WhatshotIcon sx={{ color: 'primary.contrastText', fontSize: 20 }} />
 						</Box>
 						<Box>
 							<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
 								<Typography sx={{ fontWeight: 800, fontSize: '1.05rem', lineHeight: 1.2 }}>
 									Trending Keywords
 								</Typography>
-								<Chip label="LIVE" size="small" sx={{ fontSize: 9, height: 16, bgcolor: 'error.main', color: 'error.contrastText', fontWeight: 800, letterSpacing: 0.5, px: 0.5, borderRadius: 1 }} />
+								<Chip label="LIVE" size="small" sx={{ fontSize: 9, height: 16, bgcolor: 'error.main', color: 'error.contrastText', fontWeight: 800, letterSpacing: 0.5, px: 0.5, borderRadius: '100px' }} />
 							</Box>
 							<Typography sx={{ fontSize: '0.75rem', color: 'text.secondary', mt: 0.1 }}>Từ khoá bùng nổ tại Việt Nam · Nguồn Google Trends</Typography>
 						</Box>
@@ -591,9 +622,9 @@ export default function TrendingKeywordsSection() {
 
 					<Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
 						{/* Time pills */}
-						<Box sx={{ display: 'flex', gap: 0.5, p: 0.5, bgcolor: 'action.hover', borderRadius: 2 }}>
+						<Box sx={{ display: 'flex', gap: 0.5, p: 0.5, bgcolor: 'action.hover', borderRadius: '100px' }}>
 							{TIME_OPTS.map(opt => (
-								<Box key={opt.value} onClick={() => updateFilter({ hours: opt.value })} sx={{ px: 1.5, py: 0.5, borderRadius: 1.5, cursor: 'pointer', bgcolor: qp.hours === opt.value ? 'background.paper' : 'transparent', boxShadow: qp.hours === opt.value ? '0 1px 4px rgba(0,0,0,0.12)' : 'none', color: qp.hours === opt.value ? 'primary.main' : 'text.secondary', fontWeight: qp.hours === opt.value ? 700 : 500, fontSize: '0.78rem', transition: 'all 0.15s', userSelect: 'none', whiteSpace: 'nowrap' }}>
+								<Box key={opt.value} onClick={() => updateFilter({ hours: opt.value })} sx={{ px: 1.5, py: 0.5, borderRadius: '100px', cursor: 'pointer', bgcolor: qp.hours === opt.value ? 'background.paper' : 'transparent', boxShadow: qp.hours === opt.value ? '0 1px 4px rgba(0,0,0,0.08)' : 'none', color: qp.hours === opt.value ? 'primary.main' : 'text.secondary', fontWeight: qp.hours === opt.value ? 700 : 500, fontSize: '0.78rem', transition: 'all 0.15s', userSelect: 'none', whiteSpace: 'nowrap' }}>
 									{opt.label}
 								</Box>
 							))}
@@ -612,7 +643,7 @@ export default function TrendingKeywordsSection() {
 								value={qp.categoryId || '0'}
 								onChange={(e) => updateFilter({ categoryId: e.target.value as string })}
 								displayEmpty
-								sx={{ fontSize: '0.8rem', height: 32, borderRadius: 1.5, bgcolor: 'background.paper', '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' } }}
+								sx={{ fontSize: '0.8rem', height: 32, borderRadius: '100px', bgcolor: 'background.paper', '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' } }}
 							>
 								<MenuItem value="0" sx={{ fontSize: '0.8rem', fontWeight: 600 }}>
 									Tất cả danh mục {data?.totalAll !== undefined ? `(${data.totalAll})` : ''}
@@ -642,13 +673,13 @@ export default function TrendingKeywordsSection() {
 								textTransform: 'none',
 								fontWeight: 600,
 								fontSize: '0.78rem',
-								borderRadius: 1.5,
-								boxShadow: '0 2px 6px rgba(0, 184, 148, 0.15)',
-								background: 'linear-gradient(135deg, #00b894, #009975)',
+								borderRadius: '100px',
+								boxShadow: 'none',
+								bgcolor: 'primary.main',
 								color: 'primary.contrastText',
 								'&:hover': { 
-									background: 'linear-gradient(135deg, #3dd6a0, #009975)',
-									boxShadow: '0 4px 12px rgba(0, 184, 148, 0.3)' 
+									bgcolor: 'primary.dark',
+									boxShadow: 'none'
 								}
 							}}
 						>
@@ -661,8 +692,9 @@ export default function TrendingKeywordsSection() {
 							sx={{ 
 								minWidth: 34, 
 								height: 34, 
+								width: 34,
 								px: isBlocked_ && countdown ? 1 : 0, 
-								borderRadius: 2, 
+								borderRadius: '50%', 
 								border: '1px solid', 
 								borderColor: (theme) => {
 									const isDark = theme.palette.mode === 'dark';
@@ -707,7 +739,7 @@ export default function TrendingKeywordsSection() {
 				</Box>
 
 				{/* ── Body (scrollable) ── */}
-				<Box sx={{ flex: 1, overflowY: 'auto' }}>
+				<Box ref={tableContainerRef} sx={{ flex: 1, overflowY: 'auto' }}>
 				{/* ── Skeleton ── */}
 				{loading && (
 					<Box>
@@ -737,11 +769,19 @@ export default function TrendingKeywordsSection() {
 				)}
 				{!loading && !isEmpty && data && displayItems.length === 0 && (
 					<Box sx={{ textAlign: 'center', py: 8 }}>
-						<Box sx={{ width: 64, height: 64, borderRadius: '50%', background: 'linear-gradient(135deg, #f1f5f9, #e2e8f0)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
+						<Box sx={{ width: 64, height: 64, borderRadius: '50%', bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
 							<TrendingUpOutlinedIcon sx={{ fontSize: 28, color: 'text.secondary' }} />
 						</Box>
-						<Typography sx={{ fontWeight: 700, fontSize: '0.9rem', mb: 0.5 }}>Không có kết quả</Typography>
+						<Typography sx={{ fontWeight: 700, fontSize: '0.9rem', mb: 0.5 }}>Không tìm thấy từ khóa phù hợp với bộ lọc</Typography>
 						<Typography sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>Thử điều chỉnh bộ lọc hoặc chọn khung thời gian khác</Typography>
+						<Button
+							variant="outlined"
+							size="small"
+							onClick={() => setQp(DEFAULT_QP)}
+							sx={{ mt: 2, borderRadius: '100px', textTransform: 'none', fontWeight: 600 }}
+						>
+							Đặt lại bộ lọc
+						</Button>
 					</Box>
 				)}
 

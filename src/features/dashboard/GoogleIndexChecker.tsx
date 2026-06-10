@@ -23,12 +23,36 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import LaunchIcon from '@mui/icons-material/Launch';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import SearchIcon from '@mui/icons-material/Search';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import TuneIcon from '@mui/icons-material/Tune';
+import type { Theme } from '@mui/material';
 
-import { useToastify } from '../../components/Toastify';
+import { useToastify } from '@/components/Toastify';
+import LoadingButton from '@mui/lab/LoadingButton';
 import { serpService } from './serpService';
+
+interface IndexCheckItem {
+  url: string;
+  indexed: boolean | null;
+  firstResult: string;
+  title: string;
+  snippet: string;
+  error?: string | null;
+  searchResultCount?: number;
+  tookMs?: number;
+  query?: string;
+  foundCount?: number;
+}
+
+interface IndexCheckResult {
+  summary: {
+    total: number;
+    indexed: number;
+    notIndexed: number;
+    failed: number;
+  };
+  tookMs: number;
+  results: IndexCheckItem[];
+}
 
 interface GoogleIndexCheckerProps {
   isActive?: boolean;
@@ -45,7 +69,7 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
   const [maxDelay, setMaxDelay] = useState('8000');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<IndexCheckResult | null>(null);
   const [engine, setEngine] = useState<'local' | 'apify'>('local');
 
   // Search and tabs filter
@@ -70,9 +94,11 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (loading && parsedUrls.length > 0 && isActive) {
-      setSimulatedProgress(0);
-      setSimulatedIndex(0);
-      setSimulatedUrl(parsedUrls[0]);
+      Promise.resolve().then(() => {
+        setSimulatedProgress(0);
+        setSimulatedIndex(0);
+        setSimulatedUrl(parsedUrls[0]);
+      });
 
       // Calculate approximate total delay
       const avgDelayPerUrl = engine === 'apify' 
@@ -157,8 +183,10 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
       } else {
         showToast(res.message || 'Lỗi kiểm tra Google Index', 'danger');
       }
-    } catch (err: any) {
-      showToast(err.response?.data?.message || err.message || 'Lỗi kết nối máy chủ Index Checker', 'danger');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Lỗi kết nối máy chủ Index Checker';
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      showToast(axiosError.response?.data?.message || errorMsg, 'danger');
     } finally {
       setLoading(false);
     }
@@ -177,7 +205,7 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
   const filteredResults = useMemo(() => {
     if (!result?.results) return [];
 
-    return result.results.filter((item: any) => {
+    return result.results.filter((item: IndexCheckItem) => {
       // 1. Tab filters
       if (tabFilter === 'indexed' && item.indexed !== true) return false;
       if (tabFilter === 'notIndexed' && item.indexed !== false) return false;
@@ -195,7 +223,7 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
   const handleDownloadCsv = () => {
     if (!result?.results) return;
     const headers = ['URL', 'Trạng thái Index', 'Google site: Query', 'Số lượng kết quả Google', 'URL đầu tiên trả về', 'Mã lỗi'];
-    const rows = result.results.map((item: any) => {
+    const rows = result.results.map((item: IndexCheckItem) => {
       const statusStr = item.indexed === true ? 'Đã Index' : item.indexed === false ? 'Chưa Index' : 'Không xác định (Lỗi)';
       return [
         item.url,
@@ -208,7 +236,7 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
     });
 
     const csvContent = "\uFEFF" // Add BOM for Excel Vietnamese language support
-      + [headers.join(','), ...rows.map((r: any[]) => r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))].join('\n');
+      + [headers.join(','), ...rows.map((r: string[]) => r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -230,12 +258,12 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
           sx={{ 
             width: 44, 
             height: 44, 
-            borderRadius: 3, 
+            borderRadius: '12px', 
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center', 
-            background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)', 
-            boxShadow: '0 4px 14px rgba(8, 145, 178, 0.3)', 
+            bgcolor: 'primary.main', 
+            boxShadow: 'none', 
             mr: 2 
           }}
         >
@@ -243,7 +271,7 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
         </Box>
         <Box>
           <Typography variant="h5" sx={{ fontWeight: 900, letterSpacing: '-0.5px', color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            Google Index Checker
+            Check Index
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.1, fontWeight: 500, fontSize: '0.85rem' }}>
             Kiểm tra trạng thái lập chỉ mục (index) của URL trên Google Search
@@ -260,9 +288,6 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
           border: '1px solid',
           borderColor: 'divider',
           bgcolor: 'background.paper',
-          boxShadow: (theme) => theme.palette.mode === 'dark' 
-            ? '0 10px 40px rgba(0,0,0,0.3)' 
-            : '0 10px 30px rgba(0,0,0,0.03)',
           mb: 4
         }}
       >
@@ -285,7 +310,7 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                 sx={{ 
                   flexGrow: 1,
                   '& .MuiOutlinedInput-root': { 
-                    borderRadius: 3, 
+                    borderRadius: '16px', 
                     bgcolor: (theme) => theme.palette.mode === 'dark' ? '#0f172a' : '#f8fafc', 
                     fontFamily: 'monospace', 
                     fontSize: '0.85rem',
@@ -332,15 +357,16 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                     value={location} 
                     onChange={(e) => setLocation(e.target.value)} 
                     sx={{ 
-                      borderRadius: 2.5, 
+                      borderRadius: '100px', 
                       bgcolor: (theme) => theme.palette.mode === 'dark' ? '#0f172a' : '#f8fafc',
                       fontWeight: 700,
-                      fontSize: '0.85rem'
+                      fontSize: '0.85rem',
+                      '& .MuiOutlinedInput-root': { borderRadius: '100px' }
                     }}
                   >
-                    <MenuItem value="VN">🇻🇳 Việt Nam</MenuItem>
-                    <MenuItem value="US">🇺🇸 Hoa Kỳ</MenuItem>
-                    <MenuItem value="SG">🇸🇬 Singapore</MenuItem>
+                    <MenuItem value="VN">Việt Nam</MenuItem>
+                    <MenuItem value="US">Hoa Kỳ</MenuItem>
+                    <MenuItem value="SG">Singapore</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -353,10 +379,11 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                     value={language} 
                     onChange={(e) => setLanguage(e.target.value)} 
                     sx={{ 
-                      borderRadius: 2.5, 
+                      borderRadius: '100px', 
                       bgcolor: (theme) => theme.palette.mode === 'dark' ? '#0f172a' : '#f8fafc',
                       fontWeight: 700,
-                      fontSize: '0.85rem'
+                      fontSize: '0.85rem',
+                      '& .MuiOutlinedInput-root': { borderRadius: '100px' }
                     }}
                   >
                     <MenuItem value="vi">Tiếng Việt</MenuItem>
@@ -379,16 +406,16 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                 fullWidth
                 sx={{ 
                   bgcolor: (theme) => theme.palette.mode === 'dark' ? '#0f172a' : '#f8fafc', 
-                  borderRadius: 2.5,
+                  borderRadius: '100px',
                   p: 0.4,
                   border: '1px solid',
                   borderColor: 'divider',
-                  '& .MuiToggleButton-root': { border: 'none', borderRadius: 2, py: 0.8, fontWeight: 700, textTransform: 'none', fontSize: '0.78rem' },
+                  '& .MuiToggleButton-root': { border: 'none', borderRadius: '100px', py: 0.8, fontWeight: 700, textTransform: 'none', fontSize: '0.78rem' },
                   '& .Mui-selected': { bgcolor: 'primary.main', color: 'primary.contrastText', '&:hover': { bgcolor: 'primary.dark' } }
                 }}
               >
-                <ToggleButton value="local">💻 Local Crawler (Mặc định)</ToggleButton>
-                <ToggleButton value="apify">🚀 Apify Cloud (Cao cấp)</ToggleButton>
+                <ToggleButton value="local">Local Crawler (Mặc định)</ToggleButton>
+                <ToggleButton value="apify">Apify Cloud (Cao cấp)</ToggleButton>
               </ToggleButtonGroup>
 
               {/* Dynamic comparative help alert */}
@@ -414,7 +441,7 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                 {engine === 'local' ? (
                   <>
                     <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, color: (theme) => theme.palette.mode === 'dark' ? '#38bdf8' : '#0284c7', display: 'flex', alignItems: 'center', gap: 0.8, mb: 1.5 }}>
-                      💻 CRAWLER LOCAL (TRÌNH DUYỆT HỆ THỐNG)
+                      CRAWLER LOCAL (TRÌNH DUYỆT HỆ THỐNG)
                     </Typography>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -436,7 +463,7 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                 ) : (
                   <>
                     <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, color: (theme) => theme.palette.mode === 'dark' ? '#34d399' : '#059669', display: 'flex', alignItems: 'center', gap: 0.8, mb: 1.5 }}>
-                      🚀 APIFY CLOUD (ĐÁM MÂY PREMIUM)
+                      APIFY CLOUD (ĐÁM MÂY PREMIUM)
                     </Typography>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -471,7 +498,7 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                 {showAdvanced ? 'Ẩn cấu hình nâng cao' : 'Tùy chọn cấu hình nâng cao'}
               </Button>
               <Collapse in={showAdvanced} sx={{ mt: 1.5 }}>
-                <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? '#0f172a' : '#f8fafc', borderRadius: 3, border: '1px solid', borderColor: 'divider', display: 'flex', gap: 2 }}>
+                <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? '#0f172a' : '#f8fafc', borderRadius: '16px', border: '1px solid', borderColor: 'divider', display: 'flex', gap: 2 }}>
                   <Box sx={{ flex: 1 }}>
                     <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: 'text.secondary', mb: 0.8, textTransform: 'uppercase' }}>
                       Delay tối thiểu (ms)
@@ -483,7 +510,7 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                       placeholder="Mặc định: 4000"
                       value={minDelay}
                       onChange={(e) => setMinDelay(e.target.value)}
-                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'background.paper', fontSize: '0.8rem' } }}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '100px', bgcolor: 'background.paper', fontSize: '0.8rem' } }}
                       inputProps={{ min: 0, max: 20000 }}
                     />
                   </Box>
@@ -498,7 +525,7 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                       placeholder="Mặc định: 8000"
                       value={maxDelay}
                       onChange={(e) => setMaxDelay(e.target.value)}
-                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'background.paper', fontSize: '0.8rem' } }}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '100px', bgcolor: 'background.paper', fontSize: '0.8rem' } }}
                       inputProps={{ min: 0, max: 20000 }}
                     />
                   </Box>
@@ -512,49 +539,54 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
         <Divider sx={{ my: 3.5, borderStyle: 'dashed', borderColor: 'divider' }} />
 
         <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
-          <Button
+          <LoadingButton
             variant="contained"
             onClick={handleCheckIndex}
-            disabled={loading}
-            startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <CloudQueueIcon sx={{ fontSize: 16 }} />}
+            loading={loading}
+            loadingPosition="start"
+            startIcon={<CloudQueueIcon sx={{ fontSize: 16 }} />}
             sx={{
               minWidth: 200,
-              borderRadius: 3,
-              py: 1.3,
-              px: 4,
+              borderRadius: '100px',
+              height: 40,
               fontWeight: 900,
               fontSize: '0.88rem',
               textTransform: 'none',
-              background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
-              boxShadow: '0 4px 14px rgba(8, 145, 178, 0.2)',
-              transition: 'all 0.2s ease-in-out',
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+              boxShadow: 'none',
+              transition: 'all 0.2s',
               '&:hover': {
-                background: 'linear-gradient(135deg, #22d3ee 0%, #0e7490 100%)',
-                boxShadow: '0 6px 18px rgba(8, 145, 178, 0.3)',
-                transform: 'translateY(-1px)'
+                bgcolor: 'primary.dark',
+                transform: 'scale(1.02)',
+                boxShadow: 'none'
               },
-              '&:active': {
-                transform: 'translateY(1px)'
+              '&.Mui-disabled': {
+                bgcolor: 'action.disabledBackground',
+                color: 'action.disabled'
               }
             }}
           >
             {loading ? 'Đang kiểm tra...' : 'Bắt đầu kiểm tra'}
-          </Button>
+          </LoadingButton>
           <Button
             variant="outlined"
             color="inherit"
             onClick={handleClear}
             disabled={loading}
             sx={{ 
-              borderRadius: 3, 
+              borderRadius: '100px', 
+              height: 40,
               px: 3,
               textTransform: 'none', 
               fontWeight: 700, 
               fontSize: '0.85rem', 
               borderColor: 'divider',
+              transition: 'all 0.2s',
               '&:hover': {
                 bgcolor: 'action.hover',
-                borderColor: 'text.secondary'
+                borderColor: 'divider',
+                transform: 'scale(1.02)'
               }
             }}
           >
@@ -596,7 +628,7 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                   sx={{ 
                     height: '100%', 
                     width: `${simulatedProgress}%`, 
-                    background: 'linear-gradient(90deg, #06b6d4 0%, #0891b2 100%)', 
+                    bgcolor: 'primary.main', 
                     borderRadius: 3,
                     transition: 'width 0.5s ease-out' 
                   }} 
@@ -609,7 +641,7 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                   : `Đang check ${simulatedIndex + 1}/${parsedUrls.length} URL (${simulatedProgress}%)`}
               </Typography>
               <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 500, lineHeight: 1.5, wordBreak: 'break-all', fontFamily: 'monospace' }}>
-                🔎 {simulatedUrl}
+                {simulatedUrl}
               </Typography>
               {engine === 'apify' && (
                 <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 1, maxWidth: 450, lineHeight: 1.4 }}>
@@ -623,18 +655,18 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
               {/* SUMMARY KPI METRICS CARDS */}
               <Grid container spacing={2} sx={{ mb: 3.5 }}>
                 {[
-                  { label: 'TỔNG URL', val: result.summary.total, color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.25)', icon: '📃' },
-                  { label: 'ĐÃ INDEX', val: result.summary.indexed, color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.25)', icon: '✅' },
-                  { label: 'CHƯA INDEX', val: result.summary.notIndexed, color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.25)', icon: '✕' },
-                  { label: 'KHÔNG XÁC ĐỊNH / LỖI', val: result.summary.failed, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.25)', icon: '⚠️' },
-                  { label: 'THỜI GIAN CHẠY', val: `${(result.tookMs / 1000).toFixed(1)}s`, color: '#00b894', bg: 'rgba(0, 184, 148, 0.15)', border: 'rgba(0, 184, 148, 0.25)', icon: '⏱️' }
+                  { label: 'TỔNG URL', val: result.summary.total, color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.25)' },
+                  { label: 'ĐÃ INDEX', val: result.summary.indexed, color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.25)' },
+                  { label: 'CHƯA INDEX', val: result.summary.notIndexed, color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.25)' },
+                  { label: 'KHÔNG XÁC ĐỊNH / LỖI', val: result.summary.failed, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.25)' },
+                  { label: 'THỜI GIAN CHẠY', val: `${(result.tookMs / 1000).toFixed(1)}s`, color: '#64748b', bg: 'rgba(100, 116, 139, 0.12)', border: 'rgba(100, 116, 139, 0.2)' }
                 ].map((card, i) => (
                   <Grid item xs={6} sm={2.4} key={i}>
                     <Paper 
                       elevation={0}
                       sx={{ 
                         p: 2.2, 
-                        borderRadius: 3.5, 
+                        borderRadius: '16px', 
                         border: '1px solid', 
                         borderColor: card.border, 
                         bgcolor: card.bg, 
@@ -643,7 +675,7 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                       }}
                     >
                       <Typography sx={{ color: card.color, fontWeight: 900, fontSize: '1.25rem', fontFamily: 'monospace', mb: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.8 }}>
-                        <span style={{ fontSize: '0.88rem' }}>{card.icon}</span> {card.val}
+                        {card.val}
                       </Typography>
                       <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                         {card.label}
@@ -662,14 +694,13 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                   border: '1px solid',
                   borderColor: 'divider',
                   bgcolor: 'background.paper',
-                  boxShadow: '0 2px 12px rgba(0,0,0,0.01)',
                   mb: 4
                 }}
               >
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: { xs: 'stretch', md: 'center' }, justifyContent: 'space-between', gap: 2, mb: 2.5 }}>
                   
                   {/* Status Tab Filters */}
-                  <Box sx={{ display: 'flex', bgcolor: 'background.default', p: 0.5, borderRadius: 2.5, border: '1px solid', borderColor: 'divider', flexWrap: 'wrap', gap: 0.5 }}>
+                  <Box sx={{ display: 'flex', bgcolor: 'background.default', p: 0.5, borderRadius: '100px', border: '1px solid', borderColor: 'divider', flexWrap: 'wrap', gap: 0.5 }}>
                     {[
                       { key: 'all', label: `Tất cả (${result.summary.total})` },
                       { key: 'indexed', label: `Đã Index (${result.summary.indexed})` },
@@ -679,18 +710,20 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                       <Button
                         key={tab.key}
                         size="small"
-                        onClick={() => setTabFilter(tab.key as any)}
+                        onClick={() => setTabFilter(tab.key as 'all' | 'indexed' | 'notIndexed' | 'failed')}
                         sx={{ 
-                          borderRadius: 2, 
+                          borderRadius: '100px', 
                           px: 2, 
                           py: 0.6,
                           fontWeight: 700, 
                           fontSize: '0.78rem',
                           textTransform: 'none',
                           color: tabFilter === tab.key ? 'primary.contrastText' : 'text.secondary',
-                          bgcolor: tabFilter === tab.key ? '#0891b2' : 'transparent',
+                          bgcolor: tabFilter === tab.key ? 'primary.main' : 'transparent',
+                          transition: 'all 0.2s',
                           '&:hover': {
-                            bgcolor: tabFilter === tab.key ? '#0e7490' : 'action.hover'
+                            bgcolor: tabFilter === tab.key ? 'primary.dark' : 'action.hover',
+                            transform: 'scale(1.02)'
                           }
                         }}
                       >
@@ -711,7 +744,7 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                       }}
                       sx={{ 
                         '& .MuiOutlinedInput-root': { 
-                          borderRadius: 2, 
+                          borderRadius: '100px', 
                           fontSize: '0.8rem', 
                           bgcolor: 'background.default',
                           width: { xs: '100%', sm: 180 }
@@ -725,16 +758,19 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                       startIcon={<FileDownloadIcon sx={{ fontSize: 14 }} />}
                       onClick={handleDownloadCsv}
                       sx={{
-                        borderRadius: 2,
+                        borderRadius: '100px',
                         fontWeight: 700,
                         textTransform: 'none',
                         fontSize: '0.75rem',
                         height: 38,
+                        px: 2.5,
                         color: '#10b981',
                         borderColor: 'rgba(16, 185, 129, 0.4)',
+                        transition: 'all 0.2s',
                         '&:hover': {
                           borderColor: '#10b981',
-                          bgcolor: 'rgba(16, 185, 129, 0.04)'
+                          bgcolor: 'rgba(16, 185, 129, 0.04)',
+                          transform: 'scale(1.02)'
                         }
                       }}
                     >
@@ -765,7 +801,7 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                       </Typography>
                     </Box>
                   ) : (
-                    filteredResults.map((item: any, idx: number) => {
+                    filteredResults.map((item: IndexCheckItem, idx: number) => {
                       const isRowExpanded = !!expandedRows[item.url];
                       
                       let statusBadge = (
@@ -773,16 +809,16 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                       );
                       if (item.indexed === true) {
                         statusBadge = (
-                          <Chip label="Indexed ✅" size="small" sx={{ bgcolor: 'rgba(16, 185, 129, 0.15)', color: '#10b981', fontWeight: 800, border: '1px solid rgba(16, 185, 129, 0.2)', height: 22, fontSize: '0.7rem' }} />
+                          <Chip label="Đã Index" size="small" sx={{ bgcolor: 'rgba(16, 185, 129, 0.15)', color: '#10b981', fontWeight: 800, border: '1px solid rgba(16, 185, 129, 0.2)', height: 22, fontSize: '0.7rem' }} />
                         );
                       } else if (item.indexed === false) {
                         statusBadge = (
-                          <Chip label="Not Indexed ❌" size="small" sx={{ bgcolor: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', fontWeight: 800, border: '1px solid rgba(239, 68, 68, 0.2)', height: 22, fontSize: '0.7rem' }} />
+                          <Chip label="Chưa Index" size="small" sx={{ bgcolor: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', fontWeight: 800, border: '1px solid rgba(239, 68, 68, 0.2)', height: 22, fontSize: '0.7rem' }} />
                         );
                       }
 
                       const rowBg = item.indexed === null
-                        ? ((theme: any) => theme.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.04)' : 'rgba(245, 158, 11, 0.01)')
+                        ? ((theme: Theme) => theme.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.04)' : 'rgba(245, 158, 11, 0.01)')
                         : 'background.default';
 
                       return (
@@ -793,14 +829,13 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                             display: 'flex',
                             flexDirection: 'column',
                             p: 2,
-                            borderRadius: 3,
+                            borderRadius: '16px',
                             border: '1px solid',
                             borderColor: item.indexed === null ? 'warning.light' : isRowExpanded ? 'primary.light' : 'divider',
                             bgcolor: rowBg,
                             transition: 'all 0.2s',
                             '&:hover': {
-                              borderColor: item.indexed === null ? 'warning.main' : 'primary.light',
-                              boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
+                              borderColor: item.indexed === null ? 'warning.main' : 'primary.light'
                             }
                           }}
                         >
@@ -842,16 +877,16 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                                   <Link 
                                     href={item.firstResult} 
                                     target="_blank" 
+                                    underline="none"
                                     sx={{ 
                                       color: 'primary.main', 
                                       fontSize: '0.8rem', 
-                                      fontWeight: 700, 
+                                      fontWeight: 500, 
                                       display: 'inline-flex', 
                                       alignItems: 'center', 
                                       gap: 0.8, 
-                                      textDecoration: 'none', 
                                       maxWidth: '100%',
-                                      '&:hover': { textDecoration: 'underline' } 
+                                      '&:hover': { color: 'primary.dark' } 
                                     }}
                                   >
                                     <LaunchIcon sx={{ fontSize: 12, flexShrink: 0 }} />
@@ -880,7 +915,7 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                                 size="small"
                                 variant="outlined"
                                 onClick={() => setExpandedRows(prev => ({ ...prev, [item.url]: !isRowExpanded }))}
-                                sx={{ borderRadius: 2, fontSize: '0.68rem', py: 0.3, textTransform: 'none', fontWeight: 800 }}
+                                sx={{ borderRadius: '100px', fontSize: '0.68rem', py: 0.3, textTransform: 'none', fontWeight: 800 }}
                               >
                                 {isRowExpanded ? 'Thu gọn' : 'Chi tiết'}
                               </Button>
@@ -894,7 +929,7 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                             <Box sx={{ pl: { xs: 0, md: 5 }, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                               
                               <Typography variant="caption" sx={{ fontWeight: 800, textTransform: 'uppercase', color: 'text.secondary', letterSpacing: 0.5 }}>
-                                📑 Chi tiết kiểm tra từ Google Search
+                                Chi tiết kiểm tra từ Google Search
                               </Typography>
 
                               <Grid container spacing={2}>
@@ -928,7 +963,18 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                                   <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, display: 'block', mb: 0.2 }}>
                                     Verified First Result Link:
                                   </Typography>
-                                  <Link href={item.firstResult} target="_blank" sx={{ color: 'primary.main', fontSize: '0.78rem', fontWeight: 700, wordBreak: 'break-all' }}>
+                                  <Link 
+                                    href={item.firstResult} 
+                                    target="_blank" 
+                                    underline="none"
+                                    sx={{ 
+                                      color: 'primary.main', 
+                                      fontSize: '0.78rem', 
+                                      fontWeight: 500, 
+                                      wordBreak: 'break-all',
+                                      '&:hover': { color: 'primary.dark' }
+                                    }}
+                                  >
                                     {item.firstResult}
                                   </Link>
                                 </Box>

@@ -17,7 +17,7 @@ export interface Criterion {
   message: string;
   recommendation?: string;
   fixGuide?: FixGuide | null;
-  evidence?: any | null;
+  evidence?: unknown | null;
 }
 
 export interface ReportSection {

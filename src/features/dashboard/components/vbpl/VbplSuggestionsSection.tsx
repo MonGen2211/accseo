@@ -39,7 +39,8 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Switch
+  Switch,
+  Stack
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
@@ -132,6 +133,14 @@ const STANDARD_CATEGORIES = [
   { id: '45', name: 'Kinh doanh & Công nghiệp' },
   { id: '8', name: 'Sức khỏe' }
 ];
+
+const formatDefensiveNumber = (num: number): string => {
+  if (isNaN(num) || num === null || num === undefined) return '-';
+  if (num >= 1e9) {
+    return num.toExponential(2); // Tránh bug tràn số
+  }
+  return new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(num);
+};
 
 interface PublicTrendStreamLog {
   step: string;
@@ -928,6 +937,9 @@ export default function VbplSuggestionsSection() {
   // Load snapshots list (paginated)
   const fetchCustomSnapshots = async (targetPage = 1) => {
     setCtSnapshotsLoading(true);
+    if (targetPage > 1) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     try {
       const res = await vbplSuggestionsService.getCustomTrendSuggestions(targetPage, 10);
       const snapshotItems = res.items || [];
@@ -1093,6 +1105,9 @@ export default function VbplSuggestionsSection() {
 
   const fetchSnapshotsList = async (targetPage = 1) => {
     setSnapshotsLoading(true);
+    if (targetPage > 1) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     try {
       const res = await vbplSuggestionsService.getAiExpandSnapshots(targetPage, 20);
       setSnapshots(res.items || []);
@@ -1108,6 +1123,9 @@ export default function VbplSuggestionsSection() {
 
   const fetchSnapshotDetail = async (id: string, targetPage = 1) => {
     setExpansionLoading(true);
+    if (targetPage > 1) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     try {
       const res = await vbplSuggestionsService.getAiExpandSnapshotDetail(id, targetPage, expansionLimit);
       
@@ -1518,6 +1536,7 @@ export default function VbplSuggestionsSection() {
         loading: false,
         currentStep: 'idle'
       });
+      showToast(`Tải thành công: ${res?.suggestions?.length || 0} đề xuất`, 'success');
     } catch (err: any) {
       const errMsg = err.response?.data?.message || err.message || `Lỗi tải dữ liệu cho ngày ${dateStr}`;
       showToast(errMsg, 'danger');
@@ -1751,16 +1770,16 @@ export default function VbplSuggestionsSection() {
               justifyContent: 'space-between', 
               px: 2,
               py: 1.5,
-              borderRadius: 2, 
+              borderRadius: '12px', 
               border: '1px solid', 
               borderColor: 'divider' 
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
-              <Skeleton variant="rectangular" width={24} height={20} sx={{ borderRadius: 0.5 }} />
-              <Skeleton variant="rectangular" width="60%" height={18} sx={{ borderRadius: 1 }} />
+              <Skeleton variant="rectangular" width={24} height={20} sx={{ borderRadius: '4px' }} />
+              <Skeleton variant="rectangular" width="60%" height={18} sx={{ borderRadius: '4px' }} />
             </Box>
-            <Skeleton variant="rectangular" width={16} height={16} sx={{ borderRadius: 0.5 }} />
+            <Skeleton variant="rectangular" width={16} height={16} sx={{ borderRadius: '4px' }} />
           </Box>
         ))}
       </Box>
@@ -1781,7 +1800,7 @@ export default function VbplSuggestionsSection() {
           justifyContent: 'space-between',
           px: 2,
           py: 1.5,
-          borderRadius: 2,
+          borderRadius: '12px', // M3 small/medium card radius
           border: '1px solid',
           borderColor: 'divider',
           bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.01)',
@@ -1803,26 +1822,29 @@ export default function VbplSuggestionsSection() {
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0, flex: 1, mr: 2 }}>
-          {/* Monospace index badge */}
-          <Typography 
-            variant="caption" 
-            sx={{ 
-              fontWeight: 800, 
+          {/* Monospace circular index badge (M3) */}
+          <Box
+            sx={{
+              width: 28,
+              height: 28,
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 800,
               color: (theme) => isVbpl
                 ? (theme.palette.mode === 'dark' ? '#55efc4' : '#009975')
                 : (theme.palette.mode === 'dark' ? '#fbcfe8' : '#db2777'),
               bgcolor: (theme) => isVbpl
                 ? (theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.15)' : 'rgba(0, 184, 148, 0.06)')
                 : (theme.palette.mode === 'dark' ? 'rgba(236, 72, 153, 0.15)' : 'rgba(236, 72, 153, 0.06)'),
-              px: 1,
-              py: 0.25,
-              borderRadius: 1,
-              fontSize: '0.72rem',
-              fontFamily: 'monospace'
+              fontSize: '0.7rem',
+              fontFamily: 'monospace',
+              flexShrink: 0
             }}
           >
             {displayIndex}
-          </Typography>
+          </Box>
 
           {/* Keyword text with ellipsis */}
           <Typography 
@@ -1845,18 +1867,23 @@ export default function VbplSuggestionsSection() {
             handleToggleCart(keyword);
           }}
           sx={{
-            p: 0.5,
-            color: cartItems.some(k => k.name === keyword) ? '#10b981' : 'text.secondary',
-            opacity: cartItems.some(k => k.name === keyword) ? 1 : 0.4,
-            transition: 'all 0.2s',
+            width: 28,
+            height: 28,
+            borderRadius: '50%',
+            p: 0,
+            border: '1px solid',
+            borderColor: cartItems.some(k => k.name === keyword) ? '#10b981' : 'divider',
+            color: cartItems.some(k => k.name === keyword) ? '#ffffff' : 'text.secondary',
+            bgcolor: cartItems.some(k => k.name === keyword) ? '#10b981' : 'transparent',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
             '&:hover': {
-              opacity: 1,
-              color: cartItems.some(k => k.name === keyword) ? '#059669' : '#f59e0b',
-              transform: 'scale(1.1)'
+              bgcolor: cartItems.some(k => k.name === keyword) ? '#059669' : 'action.hover',
+              borderColor: cartItems.some(k => k.name === keyword) ? '#059669' : 'text.secondary',
+              transform: 'scale(1.05)'
             }
           }}
         >
-          {cartItems.some(k => k.name === keyword) ? <CheckIcon sx={{ fontSize: 16 }} /> : <AddIcon sx={{ fontSize: 16 }} />}
+          {cartItems.some(k => k.name === keyword) ? <CheckIcon sx={{ fontSize: 14 }} /> : <AddIcon sx={{ fontSize: 14 }} />}
         </IconButton>
       </Box>
     );
@@ -1882,7 +1909,7 @@ export default function VbplSuggestionsSection() {
           boxSizing: 'border-box',
           px: 2.5,
           py: 2,
-          borderRadius: 3,
+          borderRadius: '16px', // M3 Card Radius
           border: '1px solid',
           borderColor: isExpanded
             ? (theme) => theme.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.5)' : 'rgba(245, 158, 11, 0.4)'
@@ -1919,23 +1946,26 @@ export default function VbplSuggestionsSection() {
           }}
         >
           {/* Left Block: Basic Details */}
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, minWidth: 0, flex: 1 }}>
-            <Typography 
-              variant="caption" 
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0, flex: 1 }}>
+            {/* Monospace circular index badge (M3) */}
+            <Box 
               sx={{ 
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 fontWeight: 800, 
                 color: '#f59e0b',
                 bgcolor: 'rgba(245, 158, 11, 0.12)',
-                px: 1,
-                py: 0.5,
-                borderRadius: 1,
                 fontSize: '0.75rem',
                 fontFamily: 'monospace',
-                mt: 0.25
+                flexShrink: 0
               }}
             >
               {displayIndex}
-            </Typography>
+            </Box>
 
             <Box sx={{ minWidth: 0, flex: 1 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', mb: 0.75 }}>
@@ -1944,22 +1974,28 @@ export default function VbplSuggestionsSection() {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  style={{ textDecoration: 'none', color: 'inherit' }}
+                  style={{ textDecoration: 'none', color: 'inherit', display: 'inline-flex', maxWidth: '100%' }}
                 >
-                  <Typography 
-                    variant="body1" 
-                    sx={{ 
-                      fontWeight: 800, 
-                      color: 'text.primary',
-                      fontSize: '0.95rem',
-                      '&:hover': {
-                        color: '#f59e0b',
-                        textDecoration: 'underline'
-                      }
-                    }}
-                  >
-                    {item.name}
-                  </Typography>
+                  <Tooltip title={item.name} arrow placement="top">
+                    <Typography 
+                      variant="body1" 
+                      sx={{ 
+                        fontWeight: 800, 
+                        color: 'text.primary',
+                        fontSize: '0.95rem',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        maxWidth: { xs: 200, sm: 300, md: 450, lg: 550 },
+                        '&:hover': {
+                          color: '#f59e0b',
+                          textDecoration: 'underline'
+                        }
+                      }}
+                    >
+                      {item.name}
+                    </Typography>
+                  </Tooltip>
                 </a>
 
                 <Tooltip title="Phân tích volume trong Keyword Research Tool" arrow>
@@ -1973,7 +2009,7 @@ export default function VbplSuggestionsSection() {
                       p: 0.5,
                       color: 'primary.main',
                       bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.05)',
-                      borderRadius: 1.5,
+                      borderRadius: '8px',
                       border: '1px solid rgba(59, 130, 246, 0.2)',
                       '&:hover': {
                         bgcolor: 'primary.main',
@@ -2002,7 +2038,7 @@ export default function VbplSuggestionsSection() {
                       gap: 0.5,
                       px: 1.2,
                       py: 0.25,
-                      borderRadius: 5,
+                      borderRadius: '100px',
                       border: '1px solid',
                       borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(139, 92, 246, 0.3)' : 'rgba(139, 92, 246, 0.2)',
                       bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.03)',
@@ -2047,24 +2083,28 @@ export default function VbplSuggestionsSection() {
             )}
 
             {item.searchVolume !== null && item.searchVolume !== undefined && item.searchVolume > 0 && (
-              <Box sx={{ textAlign: { xs: 'left', md: 'right' }, minWidth: 60 }}>
+              <Box sx={{ textAlign: { xs: 'left', md: 'right' }, minWidth: 60, maxWidth: 90, overflow: 'hidden' }}>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.68rem' }}>
                   Volume
                 </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 800, color: '#10b981', fontFamily: 'monospace' }}>
-                  {item.searchVolume.toLocaleString()}
-                </Typography>
+                <Tooltip title={item.searchVolume.toLocaleString()} arrow placement="top">
+                  <Typography variant="body2" sx={{ fontWeight: 800, color: '#10b981', fontFamily: 'monospace', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'help' }}>
+                    {formatDefensiveNumber(item.searchVolume)}
+                  </Typography>
+                </Tooltip>
               </Box>
             )}
 
             {item.increasePercentage !== null && item.increasePercentage !== undefined && item.increasePercentage > 0 && (
-              <Box sx={{ textAlign: { xs: 'left', md: 'right' }, minWidth: 70 }}>
+              <Box sx={{ textAlign: { xs: 'left', md: 'right' }, minWidth: 70, maxWidth: 100, overflow: 'hidden' }}>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.68rem' }}>
                   Tăng trưởng
                 </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 800, color: '#ef4444', fontFamily: 'monospace' }}>
-                  +{item.increasePercentage.toLocaleString()}%
-                </Typography>
+                <Tooltip title={`+${item.increasePercentage.toLocaleString()}%`} arrow placement="top">
+                  <Typography variant="body2" sx={{ fontWeight: 800, color: '#ef4444', fontFamily: 'monospace', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'help' }}>
+                    +{formatDefensiveNumber(item.increasePercentage)}%
+                  </Typography>
+                </Tooltip>
               </Box>
             )}
 
@@ -2097,7 +2137,7 @@ export default function VbplSuggestionsSection() {
                           border: '1px solid rgba(239, 68, 68, 0.3)',
                           px: 1,
                           py: 0.25,
-                          borderRadius: 1
+                          borderRadius: '8px'
                         }}
                       >
                         <Typography variant="caption" sx={{ fontWeight: 800, color: '#ef4444', fontSize: '0.68rem' }}>
@@ -2108,7 +2148,7 @@ export default function VbplSuggestionsSection() {
                   </>
                 ) : (
                   <Tooltip title={item.scrape.failReasons?.join(', ') || 'Lỗi cào dữ liệu Google Trends'}>
-                    <Box sx={{ bgcolor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', px: 1, py: 0.5, borderRadius: 1.5 }}>
+                    <Box sx={{ bgcolor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', px: 1, py: 0.5, borderRadius: '8px' }}>
                       <Typography variant="caption" sx={{ fontWeight: 700, color: '#ef4444', fontSize: '0.68rem' }}>
                         ⚠️ Lỗi quét
                       </Typography>
@@ -2125,12 +2165,19 @@ export default function VbplSuggestionsSection() {
                 handleToggleCart(item);
               }}
               sx={{ 
-                color: cartItems.some(k => k.name === item.name) ? '#10b981' : 'text.secondary',
-                opacity: cartItems.some(k => k.name === item.name) ? 1 : 0.5,
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                p: 0,
+                border: '1px solid',
+                borderColor: cartItems.some(k => k.name === item.name) ? '#10b981' : 'divider',
+                color: cartItems.some(k => k.name === item.name) ? '#ffffff' : 'text.secondary',
+                bgcolor: cartItems.some(k => k.name === item.name) ? '#10b981' : 'transparent',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                 '&:hover': {
-                  opacity: 1,
-                  color: cartItems.some(k => k.name === item.name) ? '#059669' : '#10b981',
-                  bgcolor: 'action.hover'
+                  bgcolor: cartItems.some(k => k.name === item.name) ? '#059669' : 'action.hover',
+                  borderColor: cartItems.some(k => k.name === item.name) ? '#059669' : 'text.secondary',
+                  transform: 'scale(1.05)'
                 }
               }} 
             >
@@ -2160,7 +2207,7 @@ export default function VbplSuggestionsSection() {
  
                 {item.scrape ? (
                   item.scrape.success && item.scrape.trendTimeline && item.scrape.trendTimeline.length > 0 ? (
-                    <Box sx={{ width: '100%', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.01)', p: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', position: 'relative', boxSizing: 'border-box' }}>
+                    <Box sx={{ width: '100%', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.01)', p: 2, borderRadius: '12px', border: '1px solid', borderColor: 'divider', position: 'relative', boxSizing: 'border-box' }}>
                       <TrendLineChart 
                         data={item.scrape.trendTimeline} 
                         currentScore={item.scrape.currentScore ?? undefined}
@@ -2170,14 +2217,14 @@ export default function VbplSuggestionsSection() {
                       />
                     </Box>
                   ) : (
-                    <Box sx={{ py: 6, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: 2, width: '100%', boxSizing: 'border-box' }}>
+                    <Box sx={{ py: 6, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: '12px', width: '100%', boxSizing: 'border-box' }}>
                       <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
                         Không có dữ liệu dòng thời gian xu hướng (Timeline).
                       </Typography>
                     </Box>
                   )
                 ) : (
-                  <Box sx={{ py: 6, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: 2, width: '100%', boxSizing: 'border-box' }}>
+                  <Box sx={{ py: 6, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: '12px', width: '100%', boxSizing: 'border-box' }}>
                     <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
                       Chủ đề chưa được quét chỉ số Google Trends.
                     </Typography>
@@ -2197,7 +2244,7 @@ export default function VbplSuggestionsSection() {
                     flexDirection: 'column', 
                     gap: 1.8,
                     p: 2.5,
-                    borderRadius: 2.5,
+                    borderRadius: '12px',
                     bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)',
                     border: '1px solid',
                     borderColor: 'divider',
@@ -2316,7 +2363,7 @@ export default function VbplSuggestionsSection() {
           boxSizing: 'border-box',
           px: 2.5,
           py: 2,
-          borderRadius: 3,
+          borderRadius: '16px', // M3 Card Radius
           border: '1px solid',
           borderColor: isExpanded
             ? (theme) => theme.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.5)' : 'rgba(245, 158, 11, 0.4)'
@@ -2353,47 +2400,56 @@ export default function VbplSuggestionsSection() {
           }}
         >
           {/* Left Block: Basic Details */}
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, minWidth: 0, flex: 1 }}>
-            <Typography 
-              variant="caption" 
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0, flex: 1 }}>
+            {/* Monospace circular index badge (M3) */}
+            <Box 
               sx={{ 
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 fontWeight: 800, 
                 color: '#f59e0b',
                 bgcolor: 'rgba(245, 158, 11, 0.12)',
-                px: 1,
-                py: 0.5,
-                borderRadius: 1,
                 fontSize: '0.75rem',
                 fontFamily: 'monospace',
-                mt: 0.25
+                flexShrink: 0
               }}
             >
               {displayIndex}
-            </Typography>
+            </Box>
 
             <Box sx={{ minWidth: 0, flex: 1 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', mb: 0.75 }}>
-                <a
+                 <a
                   href={`https://trends.google.com/trends/explore?date=today%203-m&geo=VN&q=${encodeURIComponent(item.name)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  style={{ textDecoration: 'none', color: 'inherit' }}
+                  style={{ textDecoration: 'none', color: 'inherit', display: 'inline-flex', maxWidth: '100%' }}
                 >
-                  <Typography 
-                    variant="body1" 
-                    sx={{ 
-                      fontWeight: 800, 
-                      color: 'text.primary',
-                      fontSize: '0.95rem',
-                      '&:hover': {
-                        color: '#f59e0b',
-                        textDecoration: 'underline'
-                      }
-                    }}
-                  >
-                    {item.name}
-                  </Typography>
+                  <Tooltip title={item.name} arrow placement="top">
+                    <Typography 
+                      variant="body1" 
+                      sx={{ 
+                        fontWeight: 800, 
+                        color: 'text.primary',
+                        fontSize: '0.95rem',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        maxWidth: { xs: 200, sm: 300, md: 450, lg: 550 },
+                        '&:hover': {
+                          color: '#f59e0b',
+                          textDecoration: 'underline'
+                        }
+                      }}
+                    >
+                      {item.name}
+                    </Typography>
+                  </Tooltip>
                 </a>
 
                 <Tooltip title="Phân tích volume trong Keyword Research Tool" arrow>
@@ -2407,7 +2463,7 @@ export default function VbplSuggestionsSection() {
                       p: 0.5,
                       color: 'primary.main',
                       bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.05)',
-                      borderRadius: 1.5,
+                      borderRadius: '8px',
                       border: '1px solid rgba(59, 130, 246, 0.2)',
                       '&:hover': {
                         bgcolor: 'primary.main',
@@ -2436,7 +2492,7 @@ export default function VbplSuggestionsSection() {
                       gap: 0.5,
                       px: 1.2,
                       py: 0.25,
-                      borderRadius: 5,
+                      borderRadius: '100px',
                       border: '1px solid',
                       borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(56, 189, 248, 0.3)' : 'rgba(14, 165, 233, 0.2)',
                       bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(56, 189, 248, 0.1)' : 'rgba(14, 165, 233, 0.03)',
@@ -2498,7 +2554,7 @@ export default function VbplSuggestionsSection() {
                           border: '1px solid rgba(239, 68, 68, 0.3)',
                           px: 1,
                           py: 0.25,
-                          borderRadius: 1
+                          borderRadius: '8px'
                         }}
                       >
                         <Typography variant="caption" sx={{ fontWeight: 800, color: '#ef4444', fontSize: '0.68rem' }}>
@@ -2509,7 +2565,7 @@ export default function VbplSuggestionsSection() {
                   </>
                 ) : (
                   <Tooltip title={item.scrape.failReasons?.join(', ') || 'Lỗi cào dữ liệu Google Trends'}>
-                    <Box sx={{ bgcolor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', px: 1, py: 0.5, borderRadius: 1.5 }}>
+                    <Box sx={{ bgcolor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', px: 1, py: 0.5, borderRadius: '8px' }}>
                       <Typography variant="caption" sx={{ fontWeight: 700, color: '#ef4444', fontSize: '0.68rem' }}>
                         ⚠️ Lỗi quét
                       </Typography>
@@ -2526,12 +2582,19 @@ export default function VbplSuggestionsSection() {
                 handleToggleCart(item);
               }}
               sx={{ 
-                color: cartItems.some(k => k.name === item.name) ? '#10b981' : 'text.secondary',
-                opacity: cartItems.some(k => k.name === item.name) ? 1 : 0.5,
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                p: 0,
+                border: '1px solid',
+                borderColor: cartItems.some(k => k.name === item.name) ? '#10b981' : 'divider',
+                color: cartItems.some(k => k.name === item.name) ? '#ffffff' : 'text.secondary',
+                bgcolor: cartItems.some(k => k.name === item.name) ? '#10b981' : 'transparent',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                 '&:hover': {
-                  opacity: 1,
-                  color: cartItems.some(k => k.name === item.name) ? '#059669' : '#10b981',
-                  bgcolor: 'action.hover'
+                  bgcolor: cartItems.some(k => k.name === item.name) ? '#059669' : 'action.hover',
+                  borderColor: cartItems.some(k => k.name === item.name) ? '#059669' : 'text.secondary',
+                  transform: 'scale(1.05)'
                 }
               }} 
             >
@@ -2561,7 +2624,7 @@ export default function VbplSuggestionsSection() {
  
                 {item.scrape ? (
                   item.scrape.success && item.scrape.trendTimeline && item.scrape.trendTimeline.length > 0 ? (
-                    <Box sx={{ width: '100%', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.01)', p: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', position: 'relative', boxSizing: 'border-box' }}>
+                    <Box sx={{ width: '100%', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.01)', p: 2, borderRadius: '12px', border: '1px solid', borderColor: 'divider', position: 'relative', boxSizing: 'border-box' }}>
                       <TrendLineChart 
                         data={item.scrape.trendTimeline} 
                         currentScore={item.scrape.currentScore ?? undefined}
@@ -2571,14 +2634,14 @@ export default function VbplSuggestionsSection() {
                       />
                     </Box>
                   ) : (
-                    <Box sx={{ py: 6, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: 2, width: '100%', boxSizing: 'border-box' }}>
+                    <Box sx={{ py: 6, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: '12px', width: '100%', boxSizing: 'border-box' }}>
                       <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
                         Không có dữ liệu dòng thời gian xu hướng (Timeline).
                       </Typography>
                     </Box>
                   )
                 ) : (
-                  <Box sx={{ py: 6, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: 2, width: '100%', boxSizing: 'border-box' }}>
+                  <Box sx={{ py: 6, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: '12px', width: '100%', boxSizing: 'border-box' }}>
                     <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
                       Chủ đề chưa được quét chỉ số Google Trends.
                     </Typography>
@@ -2598,7 +2661,7 @@ export default function VbplSuggestionsSection() {
                     flexDirection: 'column', 
                     gap: 1.8,
                     p: 2.5,
-                    borderRadius: 2.5,
+                    borderRadius: '12px',
                     bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)',
                     border: '1px solid',
                     borderColor: 'divider',
@@ -2626,7 +2689,7 @@ export default function VbplSuggestionsSection() {
                       <Typography variant="body2" color="text.secondary">Tốc độ tăng trưởng:</Typography>
                       {item.scrape.success && item.scrape.slope !== undefined ? (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <Typography 
+                           <Typography 
                             variant="body2" 
                             sx={{ 
                               fontWeight: 800, 
@@ -2672,7 +2735,7 @@ export default function VbplSuggestionsSection() {
  
                     {/* Fail reasons if any */}
                     {!item.scrape.success && item.scrape.failReasons && item.scrape.failReasons.length > 0 && (
-                      <Box sx={{ p: 1.5, bgcolor: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: 2 }}>
+                      <Box sx={{ p: 1.5, bgcolor: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '12px' }}>
                         <Typography variant="caption" sx={{ fontWeight: 800, color: '#ef4444', display: 'block', mb: 0.5 }}>
                           CHI TIẾT LỖI CÀO DỮ LIỆU:
                         </Typography>
@@ -2683,7 +2746,7 @@ export default function VbplSuggestionsSection() {
                     )}
                   </Box>
                 ) : (
-                  <Box sx={{ py: 4, textAlign: 'center', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)', border: '1px solid', borderColor: 'divider', borderRadius: 2.5, width: '100%', boxSizing: 'border-box' }}>
+                  <Box sx={{ py: 4, textAlign: 'center', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)', border: '1px solid', borderColor: 'divider', borderRadius: '12px', width: '100%', boxSizing: 'border-box' }}>
                     <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>
                       Chưa có dữ liệu cào
                     </Typography>
@@ -2701,9 +2764,12 @@ export default function VbplSuggestionsSection() {
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5 }}>
       {/* Title */}
       <Box>
-        <Typography variant="h5" sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
-          <AutoAwesomeIcon sx={{ color: '#f59e0b' }} /> Gợi ý từ khóa
-        </Typography>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <AutoAwesomeIcon sx={{ color: '#f59e0b', fontSize: '1.75rem' }} />
+          <Typography variant="h5" sx={{ fontWeight: 800 }}>
+            Gợi ý từ khóa
+          </Typography>
+        </Stack>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
           Duyệt danh sách từ khoá và chủ đề gợi ý bởi AI giúp tối ưu hoá nội dung SEO
         </Typography>
@@ -2733,18 +2799,36 @@ export default function VbplSuggestionsSection() {
             textColor="primary"
             indicatorColor="primary"
             sx={{
+              '& .MuiTabs-indicator': {
+                display: 'none'
+              },
               '& .MuiTab-root': {
                 fontWeight: 700,
                 textTransform: 'none',
                 fontSize: '0.98rem',
                 minHeight: 48,
                 px: 3,
-                gap: 1
+                display: 'inline-flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 1,
+                borderBottom: '2px solid transparent',
+                '&.Mui-selected': {
+                  color: 'primary.main',
+                  borderColor: 'primary.main'
+                },
+                '& .MuiTab-iconWrapper': {
+                  margin: '0 !important',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }
               }
             }}
           >
             <Tab 
-              icon={<AutoAwesomeIcon sx={{ fontSize: 18 }} />} 
+              icon={<AutoAwesomeIcon sx={{ fontSize: '1.25rem' }} />} 
               iconPosition="start" 
               label="AI Gợi ý Chủ đề SEO" 
               id="suggestions-tab-0"
@@ -2752,9 +2836,9 @@ export default function VbplSuggestionsSection() {
             <Tab 
               icon={
                 ctState.loading ? (
-                  <CircularProgress size={16} sx={{ color: '#f59e0b' }} />
+                  <CircularProgress size={20} sx={{ color: '#f59e0b' }} />
                 ) : (
-                  <PsychologyIcon sx={{ fontSize: 18 }} />
+                  <PsychologyIcon sx={{ fontSize: '1.25rem' }} />
                 )
               } 
               iconPosition="start" 
@@ -2764,9 +2848,9 @@ export default function VbplSuggestionsSection() {
             <Tab 
               icon={
                 expansionLoading ? (
-                  <CircularProgress size={16} sx={{ color: '#10b981' }} />
+                  <CircularProgress size={20} sx={{ color: '#10b981' }} />
                 ) : (
-                  <AutoAwesomeIcon sx={{ fontSize: 18 }} />
+                  <AutoAwesomeIcon sx={{ fontSize: '1.25rem' }} />
                 )
               } 
               iconPosition="start" 
@@ -2791,7 +2875,7 @@ export default function VbplSuggestionsSection() {
                     elevation={0}
                     sx={{
                       p: 2,
-                      borderRadius: 3.5,
+                      borderRadius: '16px',
                       border: '1px solid rgba(245, 158, 11, 0.3)',
                       background: (theme) => theme.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.08)' : 'rgba(245, 158, 11, 0.03)',
                       display: 'flex',
@@ -2822,7 +2906,7 @@ export default function VbplSuggestionsSection() {
                       sx={{
                         textTransform: 'none',
                         fontWeight: 800,
-                        borderRadius: 2,
+                        borderRadius: '100px',
                         background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
                         color: 'white',
                         boxShadow: '0 2px 8px rgba(245, 158, 11, 0.2)'
@@ -2836,9 +2920,12 @@ export default function VbplSuggestionsSection() {
                 {/* Header intro & Create Button */}
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
                   <Box>
-                    <Typography variant="h6" sx={{ fontWeight: 850, display: 'flex', alignItems: 'center', gap: 1.2, color: 'text.primary' }}>
-                      <PsychologyIcon sx={{ color: '#f59e0b', fontSize: 26 }} /> AI Gợi ý Chủ đề SEO Tự Chọn
-                    </Typography>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <PsychologyIcon sx={{ color: '#f59e0b', fontSize: '1.5rem' }} />
+                      <Typography variant="h6" sx={{ fontWeight: 850, color: 'text.primary' }}>
+                        AI Gợi ý Chủ đề SEO Tự Chọn
+                      </Typography>
+                    </Stack>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                       Phân tích thị trường bằng danh sách từ khóa của bạn. Hệ thống sẽ cào Google Trends thời gian thực và tự động mở rộng chủ đề SEO.
                     </Typography>
@@ -2860,10 +2947,10 @@ export default function VbplSuggestionsSection() {
                       background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
                       color: 'white',
                       fontWeight: 800,
-                      borderRadius: 3,
+                      borderRadius: '100px', // M3 Pill Button
                       textTransform: 'none',
                       px: 3.5,
-                      py: 1.2,
+                      py: 1,
                       boxShadow: '0 4px 14px rgba(245, 158, 11, 0.25)',
                       transition: 'all 0.2s ease-in-out',
                       '&:hover': {
@@ -2878,7 +2965,7 @@ export default function VbplSuggestionsSection() {
                 </Box>
 
                 {/* Filter and pagination header */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.015)' : 'rgba(0,0,0,0.005)', p: 1.5, borderRadius: 2.5, border: '1px solid', borderColor: 'divider' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.015)' : 'rgba(0,0,0,0.005)', p: 1.5, borderRadius: '16px', border: '1px solid', borderColor: 'divider' }}>
                   <TextField
                     placeholder="Tìm nhanh dự án hoặc bản cào..."
                     value={customSearchQuery}
@@ -2895,8 +2982,9 @@ export default function VbplSuggestionsSection() {
                       maxWidth: 350,
                       width: '100%',
                       '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                        bgcolor: 'background.paper'
+                        borderRadius: '28px', // M3 Search Input Radius
+                        bgcolor: 'background.paper',
+                        px: 2
                       }
                     }}
                   />
@@ -2909,7 +2997,7 @@ export default function VbplSuggestionsSection() {
                         variant="outlined" 
                         disabled={ctPage <= 1 || ctSnapshotsLoading}
                         onClick={() => fetchCustomSnapshots(ctPage - 1)}
-                        sx={{ minWidth: 0, px: 2, py: 0.5, textTransform: 'none', borderRadius: 2, fontWeight: 700 }}
+                        sx={{ minWidth: 0, px: 2, py: 0.5, textTransform: 'none', borderRadius: '100px', fontWeight: 700, height: 32 }}
                       >
                         Trước
                       </Button>
@@ -2921,7 +3009,7 @@ export default function VbplSuggestionsSection() {
                         variant="outlined" 
                         disabled={ctPage >= Math.ceil(ctTotal / 10) || ctSnapshotsLoading}
                         onClick={() => fetchCustomSnapshots(ctPage + 1)}
-                        sx={{ minWidth: 0, px: 2, py: 0.5, textTransform: 'none', borderRadius: 2, fontWeight: 700 }}
+                        sx={{ minWidth: 0, px: 2, py: 0.5, textTransform: 'none', borderRadius: '100px', fontWeight: 700, height: 32 }}
                       >
                         Sau
                       </Button>
@@ -2933,11 +3021,11 @@ export default function VbplSuggestionsSection() {
                 {ctSnapshotsLoading ? (
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     {[1, 2, 3].map((i) => (
-                      <Skeleton key={i} variant="rectangular" height={90} sx={{ borderRadius: 3 }} />
+                      <Skeleton key={i} variant="rectangular" height={90} sx={{ borderRadius: '16px' }} />
                     ))}
                   </Box>
                 ) : projectGroups.length === 0 ? (
-                  <Box sx={{ p: 7, textAlign: 'center', border: '2px dashed', borderColor: 'divider', borderRadius: 4, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.005)' }}>
+                  <Box sx={{ p: 7, textAlign: 'center', border: '2px dashed', borderColor: 'divider', borderRadius: '16px', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.005)' }}>
                     <PsychologyIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2, opacity: 0.5 }} />
                     <Typography variant="body1" sx={{ fontWeight: 800, color: 'text.secondary' }}>
                       Chưa có dự án gợi ý tự chọn nào
@@ -2958,10 +3046,18 @@ export default function VbplSuggestionsSection() {
 
                       if (filteredGroups.length === 0) {
                         return (
-                          <Box sx={{ py: 6, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: 3 }}>
-                            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                              Không tìm thấy dự án hoặc snapshot nào khớp với từ khóa tìm kiếm.
+                          <Box sx={{ py: 6, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: '16px', bgcolor: 'background.paper' }}>
+                            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', mb: 1.5 }}>
+                              Không tìm thấy dự án hoặc bản cào nào khớp với từ khóa tìm kiếm.
                             </Typography>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              onClick={() => setCustomSearchQuery('')}
+                              sx={{ borderRadius: '100px', textTransform: 'none', fontWeight: 600 }}
+                            >
+                              Xóa tìm kiếm
+                            </Button>
                           </Box>
                         );
                       }
@@ -2974,7 +3070,7 @@ export default function VbplSuggestionsSection() {
                             key={group.baseName}
                             elevation={0}
                             sx={{
-                              borderRadius: 3.5,
+                              borderRadius: '16px',
                               border: '1px solid',
                               borderColor: isExpanded ? 'rgba(245, 158, 11, 0.25)' : 'divider',
                               overflow: 'hidden',
@@ -3060,7 +3156,7 @@ export default function VbplSuggestionsSection() {
                                     }
                                   }}
                                   sx={{
-                                    borderRadius: 2.2,
+                                    borderRadius: '100px',
                                     textTransform: 'none',
                                     fontWeight: 750,
                                     px: 2,
@@ -3104,7 +3200,7 @@ export default function VbplSuggestionsSection() {
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'space-between',
-                                        borderRadius: 2,
+                                        borderRadius: '12px',
                                         border: '1px solid',
                                         borderColor: isLoading ? 'rgba(245, 158, 11, 0.25)' : 'transparent',
                                         bgcolor: isLoading 
@@ -3186,7 +3282,7 @@ export default function VbplSuggestionsSection() {
                                             textTransform: 'none', 
                                             fontWeight: 800, 
                                             fontSize: '0.75rem',
-                                            borderRadius: 1.8,
+                                            borderRadius: '100px',
                                             px: 2,
                                             py: 0.4,
                                             boxShadow: 'none',
@@ -3227,7 +3323,7 @@ export default function VbplSuggestionsSection() {
                                             }}
                                             sx={{ 
                                               opacity: 0.5, 
-                                              borderRadius: 2,
+                                              borderRadius: '50%',
                                               '&:hover': { 
                                                 opacity: 1, 
                                                 bgcolor: 'error.lighter', 
@@ -3265,7 +3361,7 @@ export default function VbplSuggestionsSection() {
                       setCustomViewMode('list');
                       fetchCustomSnapshots(ctPage);
                     }}
-                    sx={{ textTransform: 'none', fontWeight: 800, borderRadius: 2, px: 2, py: 0.8 }}
+                    sx={{ textTransform: 'none', fontWeight: 800, borderRadius: '100px', px: 2, py: 0.8 }}
                   >
                     Quay lại danh sách dự án
                   </Button>
@@ -3439,7 +3535,7 @@ export default function VbplSuggestionsSection() {
                                     setRegenTimeRange('3-m');
                                     setRegenModalOpen(true);
                                   }}
-                                  sx={{ textTransform: 'none', fontWeight: 800, py: 0.3, borderRadius: 2 }}
+                                  sx={{ textTransform: 'none', fontWeight: 800, py: 0.3, borderRadius: '100px' }}
                                 >
                                   Cào mới (Regen)
                                 </Button>
@@ -3462,7 +3558,7 @@ export default function VbplSuggestionsSection() {
                                   size="small"
                                   sx={{ 
                                     fontWeight: 700, 
-                                    borderRadius: 1.5,
+                                    borderRadius: '100px',
                                     bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(56, 189, 248, 0.1)' : 'rgba(14, 165, 233, 0.05)',
                                     color: '#38bdf8',
                                     border: '1px solid',
@@ -3494,7 +3590,7 @@ export default function VbplSuggestionsSection() {
                           maxWidth: 300,
                           width: '100%',
                           '& .MuiOutlinedInput-root': {
-                            borderRadius: 2.2,
+                            borderRadius: '28px',
                             bgcolor: 'background.paper'
                           }
                         }}
@@ -3512,10 +3608,10 @@ export default function VbplSuggestionsSection() {
                             showToast(`Đã copy tất cả ${ctSnapshotDetail.suggestions.length} đề xuất chủ đề vào clipboard!`, 'success');
                           }}
                           sx={{ 
-                            borderRadius: 2.5, 
+                            borderRadius: '100px', 
                             fontWeight: 800, 
                             textTransform: 'none',
-                            height: 38,
+                            height: 40,
                             px: 2.5
                           }}
                         >
@@ -3529,10 +3625,10 @@ export default function VbplSuggestionsSection() {
                           startIcon={<FileDownloadIcon sx={{ fontSize: 13 }} />}
                           onClick={handleExportCustomTrendsExcel}
                           sx={{ 
-                            borderRadius: 2.5, 
+                            borderRadius: '100px', 
                             fontWeight: 800, 
                             textTransform: 'none',
-                            height: 38,
+                            height: 40,
                             px: 2.5,
                             color: '#10b981',
                             borderColor: 'rgba(16, 185, 129, 0.4)',
@@ -3580,10 +3676,10 @@ export default function VbplSuggestionsSection() {
                             }
                           }}
                           sx={{ 
-                            borderRadius: 2.5, 
+                            borderRadius: '100px', 
                             fontWeight: 800, 
                             textTransform: 'none',
-                            height: 38,
+                            height: 40,
                             px: 2.5,
                             color: '#38bdf8',
                             borderColor: 'rgba(56, 189, 248, 0.4)',
@@ -3622,7 +3718,7 @@ export default function VbplSuggestionsSection() {
 
                         if (filtered.length === 0) {
                           return (
-                            <Box sx={{ py: 6, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: 3 }}>
+                            <Box sx={{ py: 6, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: '16px' }}>
                               <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
                                 Không tìm thấy gợi ý nào khớp với "{customSearchQuery}"
                               </Typography>
@@ -3647,13 +3743,21 @@ export default function VbplSuggestionsSection() {
             {/* ========================================================================= */}
             <Dialog 
               open={createModalOpen} 
-              onClose={() => {
+              onClose={(event, reason) => {
+                const isDirty = inputName || inputDescription || tagsInput.length > 0;
+                if (isDirty && (reason === 'backdropClick' || reason === 'escapeKeyDown')) {
+                  return;
+                }
                 if (!ctState.loading) setCreateModalOpen(false);
               }}
-              PaperProps={{ sx: { borderRadius: 4, width: '100%', maxWidth: 580, p: 1 } }}
+              disableEscapeKeyDown={!!(inputName || inputDescription || tagsInput.length > 0)}
+              PaperProps={{ sx: { borderRadius: '28px', width: '100%', maxWidth: 580, p: 2 } }}
             >
-              <DialogTitle sx={{ fontWeight: 900, pb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <PsychologyIcon sx={{ color: '#f59e0b' }} /> Cấu hình cào AI gợi ý tự chọn
+              <DialogTitle sx={{ fontWeight: 900, pb: 1 }}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <PsychologyIcon sx={{ color: '#f59e0b', fontSize: '1.5rem' }} />
+                  <span>Cấu hình cào AI gợi ý tự chọn</span>
+                </Stack>
               </DialogTitle>
               
               <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: 1.5 }}>
@@ -3668,7 +3772,7 @@ export default function VbplSuggestionsSection() {
                   onChange={(e) => setInputName(e.target.value)}
                   fullWidth
                   size="small"
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
                 />
                 
                 <TextField
@@ -3678,7 +3782,7 @@ export default function VbplSuggestionsSection() {
                   onChange={(e) => setInputDescription(e.target.value)}
                   fullWidth
                   size="small"
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
                 />
 
                 {/* Smart tags chip input component container */}
@@ -3695,7 +3799,7 @@ export default function VbplSuggestionsSection() {
                         flexWrap: 'wrap', 
                         gap: 0.8, 
                         p: 1.5, 
-                        borderRadius: 2, 
+                        borderRadius: '12px', 
                         bgcolor: 'background.default',
                         border: '1px solid',
                         borderColor: 'divider',
@@ -3713,7 +3817,7 @@ export default function VbplSuggestionsSection() {
                           }}
                           sx={{ 
                             fontWeight: 700, 
-                            borderRadius: 1.5,
+                            borderRadius: '100px', // M3 Pill chip
                             bgcolor: 'action.selected',
                             color: 'text.primary'
                           }}
@@ -3761,7 +3865,7 @@ export default function VbplSuggestionsSection() {
                     }}
                     fullWidth
                     size="small"
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
                   />
                   <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic', pl: 0.5 }}>
                     💡 Hỗ trợ copy/paste cả danh sách từ Excel, notepad (cách nhau bởi phẩy hoặc xuống dòng).
@@ -3778,7 +3882,7 @@ export default function VbplSuggestionsSection() {
                         value={inputCount}
                         label="Số lượng ý tưởng AI gợi ý"
                         onChange={(e) => setInputCount(Number(e.target.value))}
-                        sx={{ borderRadius: 2 }}
+                        sx={{ borderRadius: '12px' }}
                       >
                         <MenuItem value={5}>5 ý tưởng</MenuItem>
                         <MenuItem value={10}>10 ý tưởng</MenuItem>
@@ -3799,7 +3903,7 @@ export default function VbplSuggestionsSection() {
                         value={inputTimeRange}
                         label="Dòng thời gian Google Trends"
                         onChange={(e) => setInputTimeRange(e.target.value as '3-m' | '1-m')}
-                        sx={{ borderRadius: 2 }}
+                        sx={{ borderRadius: '12px' }}
                       >
                         <MenuItem value="3-m">3 tháng qua (Khuyên dùng)</MenuItem>
                         <MenuItem value="1-m">1 tháng qua</MenuItem>
@@ -3813,7 +3917,7 @@ export default function VbplSuggestionsSection() {
                 <Button 
                   onClick={() => setCreateModalOpen(false)} 
                   variant="outlined"
-                  sx={{ textTransform: 'none', borderRadius: 2, fontWeight: 700 }}
+                  sx={{ textTransform: 'none', borderRadius: '100px', fontWeight: 700, height: 40, px: 3 }}
                 >
                   Hủy bỏ
                 </Button>
@@ -3869,8 +3973,10 @@ export default function VbplSuggestionsSection() {
                   variant="contained"
                   sx={{ 
                     textTransform: 'none', 
-                    borderRadius: 2, 
+                    borderRadius: '100px', // M3 Pill button
                     fontWeight: 800,
+                    height: 40,
+                    px: 3,
                     background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
                     color: 'white',
                     '&:hover': {
@@ -3891,7 +3997,7 @@ export default function VbplSuggestionsSection() {
               onClose={() => {
                 if (!ctState.loading) setRegenModalOpen(false);
               }}
-              PaperProps={{ sx: { borderRadius: 4, width: '100%', maxWidth: 500, p: 1 } }}
+              PaperProps={{ sx: { borderRadius: '28px', width: '100%', maxWidth: 500, p: 2 } }}
             >
               <DialogTitle sx={{ fontWeight: 900, pb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
                 <RefreshIcon sx={{ color: '#f59e0b' }} /> Phục hồi & Tạo snapshot cào mới
@@ -3919,7 +4025,7 @@ export default function VbplSuggestionsSection() {
                         flexWrap: 'wrap', 
                         gap: 0.8, 
                         p: 1.5, 
-                        borderRadius: 2, 
+                        borderRadius: '12px', 
                         bgcolor: 'background.default',
                         border: '1px solid',
                         borderColor: 'divider',
@@ -3932,7 +4038,7 @@ export default function VbplSuggestionsSection() {
                           key={i}
                           label={kw}
                           size="small"
-                          sx={{ fontWeight: 700, borderRadius: 1.2 }}
+                          sx={{ fontWeight: 700, borderRadius: '100px' }} // M3 Pill chip
                         />
                       ))}
                     </Box>
@@ -3948,7 +4054,7 @@ export default function VbplSuggestionsSection() {
                         value={regenCount}
                         label="Số lượng ý tưởng"
                         onChange={(e) => setRegenCount(Number(e.target.value))}
-                        sx={{ borderRadius: 2 }}
+                        sx={{ borderRadius: '12px' }}
                       >
                         <MenuItem value={5}>5 ý tưởng</MenuItem>
                         <MenuItem value={10}>10 ý tưởng</MenuItem>
@@ -3968,7 +4074,7 @@ export default function VbplSuggestionsSection() {
                         value={regenTimeRange}
                         label="Google Trends"
                         onChange={(e) => setRegenTimeRange(e.target.value as '3-m' | '1-m')}
-                        sx={{ borderRadius: 2 }}
+                        sx={{ borderRadius: '12px' }}
                       >
                         <MenuItem value="3-m">3 tháng qua</MenuItem>
                         <MenuItem value="1-m">1 tháng qua</MenuItem>
@@ -3982,7 +4088,7 @@ export default function VbplSuggestionsSection() {
                 <Button 
                   onClick={() => setRegenModalOpen(false)} 
                   variant="outlined"
-                  sx={{ textTransform: 'none', borderRadius: 2, fontWeight: 700 }}
+                  sx={{ textTransform: 'none', borderRadius: '100px', fontWeight: 700, height: 40, px: 3 }}
                 >
                   Hủy bỏ
                 </Button>
@@ -4015,8 +4121,10 @@ export default function VbplSuggestionsSection() {
                   variant="contained"
                   sx={{ 
                     textTransform: 'none', 
-                    borderRadius: 2, 
+                    borderRadius: '100px', // M3 Pill button
                     fontWeight: 800,
+                    height: 40,
+                    px: 3,
                     background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
                     color: 'white',
                     '&:hover': {
@@ -4039,8 +4147,8 @@ export default function VbplSuggestionsSection() {
               fullWidth
               PaperProps={{
                 sx: {
-                  borderRadius: 4.5,
-                  p: 1.5,
+                  borderRadius: '28px', // M3 Dialog Radius
+                  p: 2.5,
                   bgcolor: (theme) => theme.palette.mode === 'dark' ? '#111827' : 'background.paper',
                   border: '1px solid',
                   borderColor: 'divider'
@@ -4071,7 +4179,7 @@ export default function VbplSuggestionsSection() {
                     flexDirection: 'column', 
                     gap: 2, 
                     p: 2.2, 
-                    borderRadius: 3.5, 
+                    borderRadius: '16px', // M3 Inner Card Radius
                     bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.015)' : 'rgba(0,0,0,0.005)',
                     border: '1px solid',
                     borderColor: 'divider'
@@ -4281,7 +4389,7 @@ export default function VbplSuggestionsSection() {
                     <Button
                       variant="outlined"
                       onClick={() => setProgressModalOpen(false)}
-                      sx={{ textTransform: 'none', borderRadius: 2.5, fontWeight: 700, px: 3 }}
+                      sx={{ textTransform: 'none', borderRadius: '100px', fontWeight: 700, px: 3, height: 40 }}
                     >
                       Chạy ẩn (Chạy nền)
                     </Button>
@@ -4292,10 +4400,10 @@ export default function VbplSuggestionsSection() {
                       startIcon={<StopIcon />}
                       sx={{ 
                         fontWeight: 850, 
-                        borderRadius: 2.5, 
+                        borderRadius: '100px', 
                         textTransform: 'none',
                         px: 3,
-                        py: 1
+                        height: 40
                       }}
                     >
                       Hủy & Dừng cào
@@ -4306,7 +4414,7 @@ export default function VbplSuggestionsSection() {
                     <Button
                       variant="outlined"
                       onClick={() => setProgressModalOpen(false)}
-                      sx={{ textTransform: 'none', borderRadius: 2.5, fontWeight: 700, px: 3 }}
+                      sx={{ textTransform: 'none', borderRadius: '100px', fontWeight: 700, px: 3, height: 40 }}
                     >
                       Đóng cửa sổ
                     </Button>
@@ -4324,9 +4432,10 @@ export default function VbplSuggestionsSection() {
                         }}
                         sx={{ 
                           textTransform: 'none', 
-                          borderRadius: 2.5, 
+                          borderRadius: '100px', 
                           fontWeight: 800,
                           px: 4,
+                          height: 40,
                           background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                           color: 'white',
                           '&:hover': {
@@ -4398,7 +4507,7 @@ export default function VbplSuggestionsSection() {
               elevation={0} 
               sx={{ 
                 p: 3, 
-                borderRadius: 3.5, 
+                borderRadius: '24px', // M3 Card Radius
                 border: '1px solid', 
                 borderColor: 'divider',
                 bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.002)'
@@ -4407,9 +4516,12 @@ export default function VbplSuggestionsSection() {
               <Grid container spacing={3}>
                 <Grid item xs={12}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <AutoAwesomeIcon sx={{ color: '#10b981', fontSize: 18 }} /> Từ khóa hạt giống (Seed keywords - 1 đến 30 từ, tối đa 200 ký tự mỗi từ)
-                    </Typography>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <AutoAwesomeIcon sx={{ color: '#10b981', fontSize: '1.25rem' }} />
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                        Từ khóa hạt giống (Seed keywords - 1 đến 30 từ, tối đa 200 ký tự mỗi từ)
+                      </Typography>
+                    </Stack>
                     <Tooltip title="Nhập danh sách từ khóa gốc của bạn để AI phân tích và tìm các từ khóa mở rộng liên quan để viết bài." arrow>
                       <IconButton size="small"><InfoIcon sx={{ fontSize: 16 }} /></IconButton>
                     </Tooltip>
@@ -4424,7 +4536,7 @@ export default function VbplSuggestionsSection() {
                         gap: 0.8, 
                         p: 1.5, 
                         mb: 1.5,
-                        borderRadius: 2, 
+                        borderRadius: '12px', 
                         bgcolor: 'background.default',
                         border: '1px solid',
                         borderColor: 'divider',
@@ -4442,7 +4554,7 @@ export default function VbplSuggestionsSection() {
                           }}
                           sx={{ 
                             fontWeight: 700, 
-                            borderRadius: 1.5,
+                            borderRadius: '100px', // M3 Pill chip
                             bgcolor: 'action.selected',
                             color: 'text.primary'
                           }}
@@ -4516,7 +4628,7 @@ export default function VbplSuggestionsSection() {
                     }}
                     error={!!validationError}
                     helperText={validationError || `${seedKeywords.length}/30 từ khóa đã thêm`}
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3, bgcolor: 'background.default' } }}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: 'background.default' } }}
                   />
                 </Grid>
 
@@ -4530,7 +4642,7 @@ export default function VbplSuggestionsSection() {
                       placeholder="Ví dụ: đất đai, lao động, hôn nhân gia đình..."
                       value={context}
                       onChange={(e) => setContext(e.target.value.substring(0, 300))}
-                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'background.default' } }}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: 'background.default' } }}
                     />
                   </FormControl>
                 </Grid>
@@ -4543,7 +4655,7 @@ export default function VbplSuggestionsSection() {
                     <Select
                       value={outputCount}
                       onChange={(e) => setOutputCount(Number(e.target.value))}
-                      sx={{ borderRadius: 2, bgcolor: 'background.default' }}
+                      sx={{ borderRadius: '12px', bgcolor: 'background.default' }}
                     >
                       {[5, 10, 15, 20, 25, 30, 35, 40, 45, 50].map((num) => (
                         <MenuItem key={num} value={num}>{num} topic</MenuItem>
@@ -4563,7 +4675,7 @@ export default function VbplSuggestionsSection() {
                       value={perSeed}
                       onChange={(e) => setPerSeed(Math.min(50, Math.max(1, Number(e.target.value))))}
                       slotProps={{ htmlInput: { min: 1, max: 50 } }}
-                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'background.default' } }}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: 'background.default' } }}
                     />
                   </FormControl>
                 </Grid>
@@ -4575,7 +4687,7 @@ export default function VbplSuggestionsSection() {
                     sx={{ 
                       border: '1px solid',
                       borderColor: 'divider',
-                      borderRadius: '10px !important',
+                      borderRadius: '16px !important', // M3 Accordion Radius
                       bgcolor: 'background.default',
                       '&:before': { display: 'none' }
                     }}
@@ -4584,7 +4696,7 @@ export default function VbplSuggestionsSection() {
                       expandIcon={<ExpandMoreIcon />}
                       sx={{
                         bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)',
-                        borderRadius: '10px !important',
+                        borderRadius: '16px !important',
                         px: 2,
                         minHeight: 40,
                         '&.Mui-expanded': { minHeight: 40 },
@@ -4606,7 +4718,7 @@ export default function VbplSuggestionsSection() {
                         <Grid item xs={12} sm={6} md={3}>
                           <FormControl fullWidth size="small">
                             <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Quốc gia</Typography>
-                            <Select value={locationCode} onChange={(e) => setLocationCode(e.target.value)} sx={{ borderRadius: 2, bgcolor: 'background.default' }}>
+                            <Select value={locationCode} onChange={(e) => setLocationCode(e.target.value)} sx={{ borderRadius: '12px', bgcolor: 'background.default' }}>
                               <MenuItem value="VN"><span style={{ marginRight: 8 }}>🇻🇳</span> Vietnam</MenuItem>
                               <MenuItem value="US"><span style={{ marginRight: 8 }}>🇺🇸</span> United States</MenuItem>
                               <MenuItem value="GB"><span style={{ marginRight: 8 }}>🇬🇧</span> United Kingdom</MenuItem>
@@ -4629,7 +4741,7 @@ export default function VbplSuggestionsSection() {
                         <Grid item xs={12} sm={6} md={3}>
                           <FormControl fullWidth size="small">
                             <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ngôn ngữ</Typography>
-                            <Select value={languageCode} onChange={(e) => setLanguageCode(e.target.value)} sx={{ borderRadius: 2, bgcolor: 'background.default' }}>
+                            <Select value={languageCode} onChange={(e) => setLanguageCode(e.target.value)} sx={{ borderRadius: '12px', bgcolor: 'background.default' }}>
                               <MenuItem value="vi">Vietnamese</MenuItem>
                               <MenuItem value="en">English</MenuItem>
                               <MenuItem value="ja">Japanese</MenuItem>
@@ -4648,7 +4760,7 @@ export default function VbplSuggestionsSection() {
                         <Grid item xs={12} sm={6} md={3}>
                           <FormControl fullWidth size="small">
                             <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'text.secondary', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sắp xếp Volume con</Typography>
-                            <Select value={sortOrder} onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')} sx={{ borderRadius: 2, bgcolor: 'background.default' }}>
+                            <Select value={sortOrder} onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')} sx={{ borderRadius: '12px', bgcolor: 'background.default' }}>
                               <MenuItem value="desc">Giảm dần (Volume cao &rarr; thấp)</MenuItem>
                               <MenuItem value="asc">Tăng dần (Volume thấp &rarr; cao)</MenuItem>
                             </Select>
@@ -4681,7 +4793,7 @@ export default function VbplSuggestionsSection() {
                               placeholder="Ví dụ: 100"
                               value={minVolume}
                               onChange={(e) => setMinVolume(e.target.value === '' ? '' : Number(e.target.value))}
-                              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'background.default' } }}
+                              sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: 'background.default' } }}
                             />
                           </FormControl>
                         </Grid>
@@ -4695,7 +4807,7 @@ export default function VbplSuggestionsSection() {
                               placeholder="Ví dụ: 50000"
                               value={maxVolume}
                               onChange={(e) => setMaxVolume(e.target.value === '' ? '' : Number(e.target.value))}
-                              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'background.default' } }}
+                              sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: 'background.default' } }}
                             />
                           </FormControl>
                         </Grid>
@@ -4709,7 +4821,7 @@ export default function VbplSuggestionsSection() {
                               value={competitionFilters}
                               onChange={(e) => setCompetitionFilters(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
                               renderValue={(selected) => selected.length === 0 ? 'Tất cả độ cạnh tranh' : selected.join(', ')}
-                              sx={{ borderRadius: 2, bgcolor: 'background.default' }}
+                              sx={{ borderRadius: '12px', bgcolor: 'background.default' }}
                             >
                               {['LOW', 'MEDIUM', 'HIGH'].map((comp) => (
                                 <MenuItem key={comp} value={comp}>
@@ -4732,7 +4844,7 @@ export default function VbplSuggestionsSection() {
                     disabled={expansionLoading}
                     startIcon={expansionLoading ? <CircularProgress size={20} color="inherit" /> : <AutoAwesomeIcon />}
                     sx={{ 
-                      borderRadius: 2.5, px: 4, py: 1.2, fontWeight: 800, fontSize: '0.95rem',
+                      borderRadius: '100px', px: 4, py: 1.2, fontWeight: 800, fontSize: '0.95rem',
                       background: 'linear-gradient(90deg, #10b981, #059669)',
                       boxShadow: '0 8px 24px rgba(16, 185, 129, 0.25)',
                       textTransform: 'none',
@@ -4749,9 +4861,9 @@ export default function VbplSuggestionsSection() {
                       onClick={() => handleExpandKeywords(1, true)} 
                       disabled={expansionLoading}
                       startIcon={expansionLoading ? <CircularProgress size={20} color="inherit" /> : <RefreshIcon />}
-                      sx={{ borderRadius: 2.5, px: 3, py: 1.2, fontWeight: 700, fontSize: '0.95rem', height: 43, textTransform: 'none' }}
+                      sx={{ borderRadius: '100px', px: 3, py: 1.2, fontWeight: 700, fontSize: '0.95rem', height: 43, textTransform: 'none' }}
                     >
-                      Sinh lại (Bỏ cache)
+                      Tạo lại từ khóa
                     </Button>
                   )}
                 </Grid>
@@ -4779,10 +4891,10 @@ export default function VbplSuggestionsSection() {
                 <CircularProgress size={45} sx={{ color: '#10b981' }} />
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="body1" sx={{ fontWeight: 800, color: 'text.primary', mb: 1 }}>
-                    ⚡ AI đang sinh từ khoá và kiểm tra volume, có thể mất tới 1 phút...
+                    ⚡ Hệ thống đang phân tích và tìm kiếm từ khóa, có thể mất khoảng 1 phút...
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 500, mx: 'auto', fontStyle: 'italic' }}>
-                    Hệ thống đang gọi AI và kiểm tra volume thực tế từ Google Ads. Lần gọi đầu (chưa có cache) có thể chậm vì backend gọi Google Ads nhiều lần. Vui lòng giữ kết nối và không đóng trình duyệt!
+                    Chúng tôi đang kết nối với AI và thu thập lượt tìm kiếm thực tế từ Google. Quá trình kiểm tra ban đầu có thể cần thêm thời gian để phân tích chuyên sâu. Vui lòng giữ kết nối và không đóng trình duyệt!
                   </Typography>
                 </Box>
               </Paper>
@@ -4825,9 +4937,12 @@ export default function VbplSuggestionsSection() {
                     }}
                   >
                     <Box>
-                      <Typography sx={{ fontWeight: 850, fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <AutoAwesomeIcon sx={{ color: '#10b981', fontSize: 20 }} /> Danh sách nhóm chủ đề từ khóa AI
-                      </Typography>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <AutoAwesomeIcon sx={{ color: '#10b981', fontSize: '1.25rem' }} />
+                        <Typography sx={{ fontWeight: 850, fontSize: '1.15rem' }}>
+                          Danh sách nhóm chủ đề từ khóa AI
+                        </Typography>
+                      </Stack>
                       <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
                         Tổng từ khóa con AI sinh được: <strong style={{ color: '#10b981' }}>{expandedGenerated}</strong> · Hiển thị {processedTopics.length} chủ đề cha sau lọc
                       </Typography>
@@ -4840,12 +4955,13 @@ export default function VbplSuggestionsSection() {
                         startIcon={<AddIcon sx={{ fontSize: 13 }} />}
                         onClick={handleAddAllToCart}
                         sx={{ 
-                          borderRadius: 2, 
+                          borderRadius: '100px', // M3 Pill shape
+                          height: 40,
                           fontWeight: 800, 
                           textTransform: 'none',
                           color: 'primary.main',
                           borderColor: 'primary.main',
-                          px: 2
+                          px: 2.5
                         }}
                       >
                         {(() => {
@@ -4860,7 +4976,13 @@ export default function VbplSuggestionsSection() {
                         color="primary"
                         startIcon={<ContentCopyIcon sx={{ fontSize: 13 }} />}
                         onClick={handleCopySelected}
-                        sx={{ borderRadius: 2, fontWeight: 800, textTransform: 'none', px: 2 }}
+                        sx={{ 
+                          borderRadius: '100px', // M3 Pill shape
+                          height: 40,
+                          fontWeight: 800, 
+                          textTransform: 'none', 
+                          px: 2.5 
+                        }}
                       >
                         Copy đã chọn
                       </Button>
@@ -4871,7 +4993,8 @@ export default function VbplSuggestionsSection() {
                         startIcon={<FileDownloadIcon />}
                         onClick={handleExportCsv}
                         sx={{ 
-                          borderRadius: 2, 
+                          borderRadius: '100px', // M3 Pill shape
+                          height: 40,
                           fontWeight: 800, 
                           textTransform: 'none',
                           background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
@@ -4880,7 +5003,7 @@ export default function VbplSuggestionsSection() {
                             background: 'linear-gradient(135deg, #34d399 0%, #059669 100%)',
                             boxShadow: 'none'
                           },
-                          px: 2.5
+                          px: 3
                         }}
                       >
                         Tải CSV
@@ -4922,7 +5045,12 @@ export default function VbplSuggestionsSection() {
                           color={intentFilter === opt.value ? 'primary' : 'default'}
                           variant={intentFilter === opt.value ? 'default' : 'outlined'}
                           onClick={() => setIntentFilter(opt.value)}
-                          sx={{ fontWeight: 800, px: 0.5, borderRadius: 2 }}
+                          sx={{ 
+                            fontWeight: 800, 
+                            px: 1, 
+                            borderRadius: '100px', // M3 Pill chip
+                            transition: 'all 0.2s ease-in-out'
+                          }}
                         />
                       ))}
                     </Box>
@@ -4944,7 +5072,12 @@ export default function VbplSuggestionsSection() {
                           color={clientSortBy === opt.value ? 'secondary' : 'default'}
                           variant={clientSortBy === opt.value ? 'default' : 'outlined'}
                           onClick={() => setClientSortBy(opt.value)}
-                          sx={{ fontWeight: 800, px: 0.5, borderRadius: 2 }}
+                          sx={{ 
+                            fontWeight: 800, 
+                            px: 1, 
+                            borderRadius: '100px', // M3 Pill chip
+                            transition: 'all 0.2s ease-in-out'
+                          }}
                         />
                       ))}
                     </Box>
@@ -5161,7 +5294,7 @@ export default function VbplSuggestionsSection() {
                                                   bgcolor: '#10b981', 
                                                   color: 'white',
                                                   px: 0.5,
-                                                  borderRadius: 1
+                                                  borderRadius: '100px'
                                                 }} 
                                               />
                                             )}
@@ -5189,7 +5322,8 @@ export default function VbplSuggestionsSection() {
                                                 height: 20, 
                                                 bgcolor: intentBg, 
                                                 color: intentColor,
-                                                border: `1px solid ${intentColor}25`
+                                                border: `1px solid ${intentColor}25`,
+                                                borderRadius: '100px'
                                               }}
                                             />
                                           ) : '—'}
@@ -5226,7 +5360,7 @@ export default function VbplSuggestionsSection() {
                                             <Chip 
                                               label={childCompLabel} 
                                               size="small" 
-                                              sx={{ fontWeight: 700, fontSize: 10, height: 18, bgcolor: `${childCompColor}10`, color: childCompColor, border: `1px solid ${childCompColor}20` }}
+                                              sx={{ fontWeight: 700, fontSize: 10, height: 18, bgcolor: `${childCompColor}10`, color: childCompColor, border: `1px solid ${childCompColor}20`, borderRadius: '100px' }}
                                             />
                                           </Box>
                                         </TableCell>
@@ -5253,7 +5387,7 @@ export default function VbplSuggestionsSection() {
                         size="small"
                         disabled={expansionPage === 1}
                         onClick={() => handleExpandKeywords(expansionPage - 1, false)}
-                        sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+                        sx={{ borderRadius: '100px', height: 36, px: 2.5, textTransform: 'none', fontWeight: 700 }}
                       >
                         Trang trước
                       </Button>
@@ -5265,7 +5399,7 @@ export default function VbplSuggestionsSection() {
                         size="small"
                         disabled={expansionPage >= expandedTotalPages}
                         onClick={() => handleExpandKeywords(expansionPage + 1, false)}
-                        sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+                        sx={{ borderRadius: '100px', height: 36, px: 2.5, textTransform: 'none', fontWeight: 700 }}
                       >
                         Trang sau
                       </Button>
@@ -5281,7 +5415,7 @@ export default function VbplSuggestionsSection() {
                 elevation={0} 
                 sx={{ 
                   p: 3, 
-                  borderRadius: 3.5, 
+                  borderRadius: '24px', 
                   border: '1px solid', 
                   borderColor: 'divider',
                   bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.002)'
@@ -5293,18 +5427,18 @@ export default function VbplSuggestionsSection() {
                 {snapshotsLoading ? (
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, py: 3 }}>
                     {[1, 2, 3].map((i) => (
-                      <Skeleton key={i} variant="rectangular" height={60} sx={{ borderRadius: 2 }} />
+                      <Skeleton key={i} variant="rectangular" height={60} sx={{ borderRadius: '12px' }} />
                     ))}
                   </Box>
                 ) : snapshots.length === 0 ? (
-                  <Box sx={{ p: 6, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: 4 }}>
+                  <Box sx={{ p: 6, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: '16px' }}>
                     <Typography variant="body1" color="text.secondary" sx={{ fontStyle: 'italic' }}>
                       Chưa có lịch sử mở rộng từ khóa nào. Hãy tạo từ khóa mới!
                     </Typography>
                   </Box>
                 ) : (
                   <Box>
-                    <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, overflow: 'hidden', mb: 2 }}>
+                    <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '16px', overflow: 'hidden', mb: 2 }}>
                       <Table>
                         <TableHead>
                           <TableRow sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)' }}>
@@ -5323,11 +5457,11 @@ export default function VbplSuggestionsSection() {
                               <TableCell>
                                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, maxWidth: 400 }}>
                                   {s.seeds && s.seeds.slice(0, 3).map((seed, idx) => (
-                                    <Chip key={idx} label={seed} size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
+                                    <Chip key={idx} label={seed} size="small" sx={{ fontWeight: 600, borderRadius: '100px' }} />
                                   ))}
                                   {s.seeds && s.seeds.length > 3 && (
                                     <Tooltip title={s.seeds.join(', ')} arrow>
-                                      <Chip label={`+${s.seeds.length - 3}`} size="small" sx={{ fontWeight: 700, borderRadius: 1, bgcolor: 'action.selected' }} />
+                                      <Chip label={`+${s.seeds.length - 3}`} size="small" sx={{ fontWeight: 700, borderRadius: '100px', bgcolor: 'action.selected' }} />
                                     </Tooltip>
                                   )}
                                 </Box>
@@ -5363,7 +5497,7 @@ export default function VbplSuggestionsSection() {
                                   variant="contained"
                                   color="primary"
                                   onClick={() => fetchSnapshotDetail(s.id, 1)}
-                                  sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 1.5 }}
+                                  sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '100px', px: 2 }}
                                 >
                                   Xem chi tiết
                                 </Button>
@@ -5382,7 +5516,7 @@ export default function VbplSuggestionsSection() {
                           size="small"
                           disabled={snapshotsPage === 1}
                           onClick={() => fetchSnapshotsList(snapshotsPage - 1)}
-                          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+                          sx={{ borderRadius: '100px', height: 36, px: 2.5, textTransform: 'none', fontWeight: 700 }}
                         >
                           Trang trước
                         </Button>
@@ -5394,7 +5528,7 @@ export default function VbplSuggestionsSection() {
                           size="small"
                           disabled={snapshotsPage >= snapshotsTotalPages}
                           onClick={() => fetchSnapshotsList(snapshotsPage + 1)}
-                          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+                          sx={{ borderRadius: '100px', height: 36, px: 2.5, textTransform: 'none', fontWeight: 700 }}
                         >
                           Trang sau
                         </Button>
@@ -5459,9 +5593,9 @@ export default function VbplSuggestionsSection() {
                           display: 'flex',
                           alignItems: 'center',
                           gap: 1.5,
-                          px: 2.2,
-                          py: 1.2,
-                          borderRadius: 2.5,
+                          px: 2.5,
+                          py: 1,
+                          borderRadius: '100px', // M3 Pill shape for Filter Chips
                           border: '1px solid',
                           borderColor: isSelected ? 'warning.main' : 'divider',
                           bgcolor: (theme) => {
@@ -5510,7 +5644,7 @@ export default function VbplSuggestionsSection() {
                                   fontWeight: 800, 
                                   px: 0.6, 
                                   py: 0.05, 
-                                  borderRadius: 0.5,
+                                  borderRadius: '4px',
                                   bgcolor: 'rgba(16, 185, 129, 0.15)',
                                   color: '#10b981'
                                 }}
@@ -5536,7 +5670,7 @@ export default function VbplSuggestionsSection() {
             <Box sx={{ width: '100%', boxSizing: 'border-box' }}>
               {ptDetailLoading ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%', boxSizing: 'border-box' }}>
-                  <Skeleton variant="rectangular" height={80} sx={{ borderRadius: 3 }} />
+                  <Skeleton variant="rectangular" height={80} sx={{ borderRadius: '16px' }} />
                   <SkeletonLoading />
                 </Box>
               ) : (
@@ -5549,7 +5683,7 @@ export default function VbplSuggestionsSection() {
                         py: 6, 
                         px: 4, 
                         textAlign: 'center', 
-                        borderRadius: 4, 
+                        borderRadius: '24px', 
                         border: '1px dashed',
                         borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(245, 158, 11, 0.2)',
                         bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.015)' : 'rgba(245, 158, 11, 0.005)',
@@ -5622,7 +5756,7 @@ export default function VbplSuggestionsSection() {
                         startIcon={<AutoAwesomeIcon />}
                         sx={{ 
                           mt: 1, 
-                          borderRadius: 3, 
+                          borderRadius: '100px', 
                           fontWeight: 800, 
                           textTransform: 'none', 
                           px: 4, 
@@ -5743,10 +5877,11 @@ export default function VbplSuggestionsSection() {
                           color="error" 
                           onClick={stopPublicTrendSuggestionsStream}
                           sx={{ 
-                            borderRadius: 2.5, 
+                            borderRadius: '100px', 
                             textTransform: 'none', 
                             fontWeight: 700,
                             px: 3,
+                            height: 40,
                             borderColor: 'rgba(239, 68, 68, 0.4)',
                             '&:hover': {
                               borderColor: '#ef4444',
@@ -5772,7 +5907,7 @@ export default function VbplSuggestionsSection() {
                           alignItems: { xs: 'stretch', lg: 'center' }, 
                           gap: 2,
                           p: 2,
-                          borderRadius: 3,
+                          borderRadius: '16px',
                           bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.005)',
                           border: '1px solid',
                           borderColor: 'divider'
@@ -5827,8 +5962,9 @@ export default function VbplSuggestionsSection() {
                             sx={{
                               maxWidth: 180,
                               '& .MuiOutlinedInput-root': {
-                                borderRadius: 2,
-                                bgcolor: 'background.default'
+                                borderRadius: '28px', // M3 Search Input Radius
+                                bgcolor: 'background.default',
+                                px: 2
                               }
                             }}
                           />
@@ -5841,10 +5977,11 @@ export default function VbplSuggestionsSection() {
                             onClick={() => startPublicTrendSuggestionsStream(showToast, () => fetchDates(false))}
                             disabled={ptDatesData?.hasToday && selectedDate === ptDatesData.today}
                             sx={{ 
-                              borderRadius: 2, 
+                              borderRadius: '100px', // M3 Pill button
                               fontWeight: 700, 
                               textTransform: 'none',
-                              height: 38
+                              height: 40,
+                              px: 2.5
                             }}
                           >
                             Phân tích mới hôm nay
@@ -5857,10 +5994,11 @@ export default function VbplSuggestionsSection() {
                             startIcon={<FileCopyIcon sx={{ fontSize: 13 }} />}
                             onClick={handleCopyAllPublicTrends}
                             sx={{ 
-                              borderRadius: 2, 
+                              borderRadius: '100px', // M3 Pill button
                               fontWeight: 800, 
                               textTransform: 'none',
-                              height: 38,
+                              height: 40,
+                              px: 2.5,
                               background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
                               color: 'white',
                               boxShadow: 'none',
@@ -5880,10 +6018,11 @@ export default function VbplSuggestionsSection() {
                             startIcon={<FileDownloadIcon sx={{ fontSize: 13 }} />}
                             onClick={handleExportPublicTrendsExcel}
                             sx={{ 
-                              borderRadius: 2, 
+                              borderRadius: '100px', // M3 Pill button
                               fontWeight: 800, 
                               textTransform: 'none',
-                              height: 38,
+                              height: 40,
+                              px: 2.5,
                               color: '#10b981',
                               borderColor: 'rgba(16, 185, 129, 0.4)',
                               '&:hover': {
@@ -5922,10 +6061,11 @@ export default function VbplSuggestionsSection() {
                               }
                             }}
                             sx={{ 
-                              borderRadius: 2, 
+                              borderRadius: '100px', // M3 Pill button
                               fontWeight: 800, 
                               textTransform: 'none',
-                              height: 38,
+                              height: 40,
+                              px: 2.5,
                               color: '#38bdf8',
                               borderColor: 'rgba(56, 189, 248, 0.4)',
                               '&:hover': {
@@ -5943,10 +6083,18 @@ export default function VbplSuggestionsSection() {
 
                       {/* Suggestions List */}
                       {filteredPublicTrendSuggestions.length === 0 ? (
-                        <Box sx={{ py: 6, textAlign: 'center' }}>
-                          <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                        <Box sx={{ py: 6, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: '16px', bgcolor: 'background.paper' }}>
+                          <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', mb: 1.5 }}>
                             Không có đề xuất nào khớp với "{publicTrendSearchQuery}"
                           </Typography>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => setPublicTrendSearchQuery('')}
+                            sx={{ borderRadius: '100px', textTransform: 'none', fontWeight: 600 }}
+                          >
+                            Xóa tìm kiếm
+                          </Button>
                         </Box>
                       ) : (
                         <Box 
@@ -6014,7 +6162,7 @@ export default function VbplSuggestionsSection() {
                 bgcolor: 'rgba(56, 189, 248, 0.15)', 
                 color: '#38bdf8', 
                 p: 1, 
-                borderRadius: 2.5,
+                borderRadius: '12px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -6053,7 +6201,7 @@ export default function VbplSuggestionsSection() {
                 onChange={(e) => setSelectedCartDomainId(e.target.value)}
                 displayEmpty
                 sx={{
-                  borderRadius: 2,
+                  borderRadius: '100px',
                   bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.03)',
                   fontSize: '0.85rem',
                   fontWeight: 700
@@ -6072,7 +6220,7 @@ export default function VbplSuggestionsSection() {
               onClick={handleAddCartToDomain}
               disabled={isAddingToDomain || !selectedCartDomainId}
               sx={{
-                borderRadius: 2.5,
+                borderRadius: '100px',
                 fontWeight: 800,
                 textTransform: 'none',
                 height: 38,

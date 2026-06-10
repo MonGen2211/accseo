@@ -117,10 +117,18 @@ export default function UserForm({
 		const fetchBranches = async () => {
 			setLoadingBranches(true);
 			try {
-				const response = await api.get('/branches');
+				const response = await api.get('/branches', { params: { isActive: 'true', limit: 100 } });
 				const branchData = response.data?.data?.items || response.data?.data || response.data || [];
 				if (Array.isArray(branchData)) {
-					setBranches(branchData.map((b: { id?: string; _id?: string; name?: string; branchName?: string }) => ({
+					interface RawBranch {
+						id?: string;
+						_id?: string;
+						name?: string;
+						branchName?: string;
+						isActive?: boolean;
+					}
+					const activeBranches = (branchData as RawBranch[]).filter((b) => b.isActive !== false);
+					setBranches(activeBranches.map((b) => ({
 						id: b.id || b._id || b.name || '',
 						name: b.name || b.branchName || ''
 					})));
@@ -134,7 +142,14 @@ export default function UserForm({
 		const fetchRoles = async () => {
 			try {
 				const data = await roleService.getAll();
-				setRoles(data);
+				const filtered = data.filter(
+					(r) =>
+						r.name !== 'ADMIN' &&
+						r.name.toUpperCase() !== 'ADMINISTRATOR' &&
+						!r.label?.toLowerCase().includes('quản trị') &&
+						!r.label?.toLowerCase().includes('admin')
+				);
+				setRoles(filtered);
 			} catch {
 				// fallback: roles stay empty, form still usable
 			}
@@ -291,6 +306,20 @@ export default function UserForm({
 					fullWidth
 					disabled={loadingBranches}
 					sx={{ mb: 3 }}
+					SelectProps={{
+						MenuProps: {
+							variant: 'menu',
+							disableAutoFocusItem: true,
+							anchorOrigin: {
+								vertical: 'bottom',
+								horizontal: 'left',
+							},
+							transformOrigin: {
+								vertical: 'top',
+								horizontal: 'left',
+							},
+						},
+					}}
 				>
 					{branches.map((branch) => (
 						<MenuItem key={branch.id} value={branch.name}>
@@ -308,6 +337,20 @@ export default function UserForm({
 					onChange={(e) => handleChange('role', e.target.value as UserRole)}
 					fullWidth
 					sx={{ mb: 3 }}
+					SelectProps={{
+						MenuProps: {
+							variant: 'menu',
+							disableAutoFocusItem: true,
+							anchorOrigin: {
+								vertical: 'bottom',
+								horizontal: 'left',
+							},
+							transformOrigin: {
+								vertical: 'top',
+								horizontal: 'left',
+							},
+						},
+					}}
 				>
 					{roles.map((r) => (
 						<MenuItem key={r._id} value={r.name}>

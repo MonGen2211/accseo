@@ -122,10 +122,10 @@ export default function GroupsPage({ tabsNode }: { tabsNode?: React.ReactNode })
 							startIcon={<AddOutlinedIcon />}
 							onClick={() => navigate('/groups/create')}
 							sx={{
-								borderRadius: 2, fontWeight: 700, ml: 0.5,
-								background: 'linear-gradient(135deg, #00b894, #00cec9)',
-								boxShadow: '0 2px 8px rgba(22,163,74,0.3)',
-								'&:hover': { boxShadow: '0 4px 14px rgba(22,163,74,0.4)' },
+								borderRadius: '100px', height: 36, px: 2.5, fontWeight: 700, ml: 0.5, textTransform: 'none',
+								boxShadow: 'none',
+								transition: 'all 0.2s',
+								'&:hover': { boxShadow: 'none', transform: 'scale(1.02)' },
 							}}
 						>
 							Tạo nhóm
@@ -146,11 +146,11 @@ export default function GroupsPage({ tabsNode }: { tabsNode?: React.ReactNode })
 				<Box sx={{ textAlign: 'center', py: 12 }}>
 					<Box sx={{
 						width: 80, height: 80, borderRadius: '50%',
-						background: 'linear-gradient(135deg, #e6f8f4, #cbf2e8)',
+						bgcolor: 'primary.light',
 						display: 'flex', alignItems: 'center', justifyContent: 'center',
 						mx: 'auto', mb: 2,
 					}}>
-						<GroupsOutlinedIcon sx={{ fontSize: 36, color: '#16a34a' }} />
+						<GroupsOutlinedIcon sx={{ fontSize: 36, color: 'primary.main' }} />
 					</Box>
 					<Typography sx={{ fontWeight: 700, fontSize: '1rem', mb: 0.5 }}>Chưa có nhóm nào</Typography>
 					<Typography sx={{ color: 'text.secondary', fontSize: '0.85rem', mb: 2.5 }}>
@@ -158,7 +158,7 @@ export default function GroupsPage({ tabsNode }: { tabsNode?: React.ReactNode })
 					</Typography>
 					{isAdmin && (
 						<Button variant="contained" startIcon={<AddOutlinedIcon />} onClick={() => navigate('/groups/create')}
-							sx={{ borderRadius: 2, fontWeight: 700, background: 'linear-gradient(135deg, #00b894, #00cec9)' }}>
+							sx={{ borderRadius: '100px', height: 40, px: 3, fontWeight: 700, textTransform: 'none', transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>
 							Tạo nhóm đầu tiên
 						</Button>
 					)}
@@ -193,9 +193,7 @@ export default function GroupsPage({ tabsNode }: { tabsNode?: React.ReactNode })
 								{/* Colored header */}
 								<Box sx={{
 									p: 2.5, pb: 2,
-									background: group.isActive
-										? 'linear-gradient(135deg, #00b894, #00cec9)'
-										: 'linear-gradient(135deg, #94a3b8, #cbd5e1)',
+									bgcolor: group.isActive ? 'primary.main' : 'secondary.main',
 									display: 'flex',
 									justifyContent: 'space-between',
 									alignItems: 'flex-start',
@@ -270,7 +268,7 @@ export default function GroupsPage({ tabsNode }: { tabsNode?: React.ReactNode })
 									<Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
 										<AvatarGroup
 											max={5}
-											sx={{ '& .MuiAvatar-root': { width: 28, height: 28, fontSize: 11, border: '2px solid #fff', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' } }}
+											sx={{ '& .MuiAvatar-root': { width: 28, height: 28, fontSize: 11, border: (theme) => `2px solid ${theme.palette.background.paper}`, boxShadow: '0 1px 3px rgba(0,0,0,0.1)' } }}
 										>
 											{group.members.map((m) => (
 												<Avatar key={m.id} src={m.imgAvatar} title={m.name}>{m.name?.[0]}</Avatar>
@@ -316,13 +314,11 @@ export default function GroupsPage({ tabsNode }: { tabsNode?: React.ReactNode })
 
 			{/* Member list dialog */}
 			<Dialog open={!!expandedGroup} onClose={() => setExpandedGroup(null)} maxWidth="sm" fullWidth
-				slotProps={{ paper: { sx: { borderRadius: 3, overflow: 'hidden' } } }}>
+				PaperProps={{ sx: { borderRadius: '28px', overflow: 'hidden' } }}>
 				{expandedGroup && (
 					<Box sx={{
 						p: 3, pb: 2,
-						background: expandedGroup.isActive
-							? 'linear-gradient(135deg, #00b894, #00cec9)'
-							: 'linear-gradient(135deg, #94a3b8, #cbd5e1)',
+						bgcolor: expandedGroup.isActive ? 'primary.main' : 'secondary.main',
 						display: 'flex', alignItems: 'center', gap: 1.5,
 					}}>
 						<Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -336,7 +332,7 @@ export default function GroupsPage({ tabsNode }: { tabsNode?: React.ReactNode })
 						</Box>
 					</Box>
 				)}
-				<DialogContent sx={{ p: 0 }}>
+				<DialogContent sx={{ p: 0, maxHeight: '70vh', overflowY: 'auto' }}>
 					{expandedGroup?.members.map((m, i) => (
 						<Box
 							key={m.id}
@@ -363,31 +359,31 @@ export default function GroupsPage({ tabsNode }: { tabsNode?: React.ReactNode })
 					))}
 				</DialogContent>
 				<Divider />
-				<DialogActions sx={{ px: 3, py: 1.5, gap: 1 }}>
+				<DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
 					{isAdmin && expandedGroup && (
 						<Button
 							onClick={() => { navigate(`/groups/${expandedGroup.id}/edit`); setExpandedGroup(null); }}
 							startIcon={<EditOutlinedIcon />}
-							sx={{ borderRadius: 2, fontWeight: 600 }}
+							sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}
 						>
 							Chỉnh sửa
 						</Button>
 					)}
-					<Button onClick={() => setExpandedGroup(null)} variant="outlined" sx={{ borderRadius: 2 }}>Đóng</Button>
+					<Button onClick={() => setExpandedGroup(null)} variant="outlined" sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>Đóng</Button>
 				</DialogActions>
 			</Dialog>
 
 			{/* Delete confirm */}
-			<Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
-				<DialogTitle sx={{ fontWeight: 700 }}>Xoá nhóm</DialogTitle>
+			<Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} PaperProps={{ sx: { borderRadius: '28px' } }}>
+				<DialogTitle sx={{ fontWeight: 800 }}>Xoá nhóm</DialogTitle>
 				<Divider />
-				<DialogContent sx={{ pt: 2 }}>
+				<DialogContent sx={{ pt: 2, maxHeight: '70vh', overflowY: 'auto' }}>
 					<Typography>Bạn có chắc muốn xoá nhóm <strong>"{deleteTarget?.name}"</strong>?</Typography>
 				</DialogContent>
-				<DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
-					<Button onClick={() => setDeleteTarget(null)} sx={{ borderRadius: 2 }}>Huỷ</Button>
+				<DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
+					<Button onClick={() => setDeleteTarget(null)} sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>Huỷ</Button>
 					<Button variant="contained" color="error" onClick={handleDelete} disabled={actionLoading}
-						sx={{ borderRadius: 2, fontWeight: 700 }}>Xoá</Button>
+						sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>Xoá</Button>
 				</DialogActions>
 			</Dialog>
 		</Box>

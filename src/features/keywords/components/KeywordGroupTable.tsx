@@ -10,7 +10,6 @@ import { TrendLineChart } from './TrendLineChart';
 import { RelatedQueriesPanel } from './RelatedQueriesPanel';
 import { RelatedTopicsPanel } from './RelatedTopicsPanel';
 import AddIcon from '@mui/icons-material/Add';
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import TravelExploreIcon from '@mui/icons-material/TravelExplore';
 import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import DoNotDisturbAltOutlinedIcon from '@mui/icons-material/DoNotDisturbAltOutlined';
@@ -94,11 +93,20 @@ function UserCell({ user }: { user?: { name?: string; imgAvatar?: string } }) {
 
 
 const aiScrapeButtonSx = (isLoading: boolean) => ({
-	borderRadius: 2, textTransform: 'none' as const, fontWeight: 700,
-	background: isLoading ? '#94a3b8' : 'linear-gradient(45deg, #0ea5e9 30%, #06b6d4 90%)',
-	boxShadow: isLoading ? 'none' : '0 3px 5px 2px rgba(14,165,233,.3)',
-	color: 'white',
-	'&:hover': { background: 'linear-gradient(45deg, #06b6d4 30%, #0ea5e9 90%)' },
+	borderRadius: '100px',
+	height: 40,
+	px: 2.5,
+	textTransform: 'none' as const,
+	fontWeight: 700,
+	bgcolor: isLoading ? 'action.disabledBackground' : 'rgba(0, 184, 148, 0.1)',
+	color: isLoading ? 'text.disabled' : 'primary.main',
+	border: '1px solid rgba(0, 184, 148, 0.3)',
+	boxShadow: 'none',
+	'&:hover': {
+		bgcolor: 'rgba(0, 184, 148, 0.2)',
+		borderColor: 'primary.main',
+		boxShadow: 'none',
+	},
 	...(isLoading && { animation: 'aiPulse 1.5s ease-in-out infinite', '@keyframes aiPulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.6 } } }),
 });
 
@@ -409,7 +417,7 @@ export function KeywordGroupTable({
 					{generateAiScrapeLoading ? 'AI Scrape đang chạy... (Xem tiến trình)' : hasAiScrapeSuggestions ? 'Xem kết quả AI Scrape' : 'AI Scrape'}
 				</Button>
 			)}
-			<Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={onOpenCreate} sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}>
+			<Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={onOpenCreate} sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700 }}>
 				Tạo mới
 			</Button>
 		</Box>
@@ -444,8 +452,8 @@ export function KeywordGroupTable({
 			/>
 
 			{/* Approve / Reject dialog */}
-			<Dialog open={!!approveDialog} onClose={() => setApproveDialog(null)} maxWidth="sm" fullWidth>
-				<DialogTitle>
+			<Dialog open={!!approveDialog} onClose={() => setApproveDialog(null)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '28px' } }}>
+				<DialogTitle sx={{ fontWeight: 800 }}>
 					{approveDialog?.action === 'approve' ? '✅ Duyệt bộ keywords' : '❌ Từ chối bộ keywords'}
 				</DialogTitle>
 				<DialogContent>
@@ -462,13 +470,14 @@ export function KeywordGroupTable({
 						placeholder={approveDialog?.action === 'approve' ? 'Nội dung ổn, đồng ý triển khai...' : 'Từ khoá chưa phù hợp với chiến lược...'}
 					/>
 				</DialogContent>
-				<DialogActions>
-					<Button onClick={() => setApproveDialog(null)}>Huỷ</Button>
+				<DialogActions sx={{ px: 3, py: 2 }}>
+					<Button onClick={() => setApproveDialog(null)} sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700 }}>Huỷ</Button>
 					<Button
 						variant="contained"
 						color={approveDialog?.action === 'approve' ? 'success' : 'error'}
 						onClick={handleConfirmAction}
 						disabled={!!approveLoadingId}
+						sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700 }}
 					>
 						{approveDialog?.action === 'approve' ? 'Xác nhận duyệt' : 'Xác nhận từ chối'}
 					</Button>

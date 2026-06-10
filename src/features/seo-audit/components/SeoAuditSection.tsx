@@ -27,7 +27,9 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Link,
 } from '@mui/material';
+import LoadingButton from '@mui/lab/LoadingButton';
 
 // Icons
 import SendIcon from '@mui/icons-material/Send';
@@ -41,11 +43,30 @@ import HistoryIcon from '@mui/icons-material/History';
 import SpeedIcon from '@mui/icons-material/Speed';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import ArticleIcon from '@mui/icons-material/Article';
+
+// New Icons replacing emojis
+import SearchIcon from '@mui/icons-material/Search';
+import ImageIcon from '@mui/icons-material/Image';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import LockIcon from '@mui/icons-material/Lock';
+import PhoneIphoneIcon from '@mui/icons-material/PhoneIphone';
+import WarningIcon from '@mui/icons-material/Warning';
+import LinkIcon from '@mui/icons-material/Link';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import PaletteIcon from '@mui/icons-material/Palette';
+import StraightenIcon from '@mui/icons-material/Straighten';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import FlashOnIcon from '@mui/icons-material/FlashOn';
+import InboxIcon from '@mui/icons-material/Inbox';
+import SaveIcon from '@mui/icons-material/Save';
+import LayersIcon from '@mui/icons-material/Layers';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+
 import { saveAs } from 'file-saver';
 
-import { seoAuditService } from '../seoAuditService';
-import type { SeoReport, Criterion } from '../types';
-import { useToastify } from '../../../components/Toastify';
+import { seoAuditService } from '@/features/seo-audit/seoAuditService';
+import type { SeoReport, Criterion } from '@/features/seo-audit/types';
+import { useToastify } from '@/components/Toastify';
 
 // Vietnamese Time Formatter
 const formatVnTime = (dateStr: string | undefined | null) => {
@@ -82,15 +103,15 @@ const getScoreColor = (score: number) => {
 };
 
 // Emojis mapping for 8 sections
-const SECTION_CONFIGS: Record<string, { label: string; icon: string }> = {
-  seo_basic: { label: 'SEO Cơ Bản', icon: '🔍' },
-  images: { label: 'Tối Ưu Hình Ảnh', icon: '🖼️' },
-  performance: { label: 'Tốc Độ & Hiệu Năng', icon: '⚡' },
-  core_web_vitals: { label: 'Core Web Vitals', icon: '📈' },
-  security: { label: 'Bảo Mật', icon: '🔒' },
-  mobile: { label: 'Mobile & UX', icon: '📱' },
-  errors: { label: 'Lỗi & Console', icon: '⚠️' },
-  url_redirect: { label: 'URL & Redirect', icon: '🔗' },
+const SECTION_CONFIGS: Record<string, { label: string; icon: React.ReactNode }> = {
+  seo_basic: { label: 'SEO Cơ Bản', icon: <SearchIcon /> },
+  images: { label: 'Tối Ưu Hình Ảnh', icon: <ImageIcon /> },
+  performance: { label: 'Tốc Độ & Hiệu Năng', icon: <SpeedIcon /> },
+  core_web_vitals: { label: 'Core Web Vitals', icon: <TrendingUpIcon /> },
+  security: { label: 'Bảo Mật', icon: <LockIcon /> },
+  mobile: { label: 'Mobile & UX', icon: <PhoneIphoneIcon /> },
+  errors: { label: 'Lỗi & Console', icon: <WarningIcon /> },
+  url_redirect: { label: 'URL & Redirect', icon: <LinkIcon /> },
 };
 
 // Sort Criteria: fail -> warn -> pass
@@ -100,21 +121,24 @@ const sortCriteria = (criteria: Criterion[]) => {
 };
 
 // Formatter for Word Document (.doc) Evidence
-const formatEvidenceForDoc = (key: string, evidence: any): string => {
+const formatEvidenceForDoc = (key: string, evidence: unknown): string => {
   if (evidence === null || evidence === undefined) return '';
   try {
     switch (key) {
       case 'title': {
-        const val = evidence.value || '';
-        const len = evidence.length || val.length || 0;
+        const ev = evidence as { value?: string; length?: number };
+        const val = ev.value || '';
+        const len = ev.length || val.length || 0;
         return `<div><strong>Nội dung thẻ Title:</strong> "${val}" (${len} ký tự)</div>`;
       }
       case 'meta_description': {
-        const val = evidence.value || '';
-        const len = evidence.length || val.length || 0;
+        const ev = evidence as { value?: string; length?: number };
+        const val = ev.value || '';
+        const len = ev.length || val.length || 0;
         return `<div><strong>Nội dung Meta Description:</strong> "${val}" (${len} ký tự)</div>`;
       }
       case 'headings': {
+        const ev = evidence as { h1?: string[]; h2?: string[]; h3?: string[]; h4?: string[] };
         let html = '';
         const renderList = (tag: string, arr: string[] | undefined) => {
           if (!arr || arr.length === 0) return '';
@@ -122,44 +146,51 @@ const formatEvidenceForDoc = (key: string, evidence: any): string => {
             arr.map(h => `<li>${h}</li>`).join('') +
             '</ul></div>';
         };
-        html += renderList('h1', evidence.h1);
-        html += renderList('h2', evidence.h2);
-        html += renderList('h3', evidence.h3);
-        html += renderList('h4', evidence.h4);
+        html += renderList('h1', ev.h1);
+        html += renderList('h2', ev.h2);
+        html += renderList('h3', ev.h3);
+        html += renderList('h4', ev.h4);
         return html;
       }
       case 'canonical':
       case 'favicon': {
-        return `<div><strong>Đường dẫn:</strong> <a href="${evidence.href}">${evidence.href}</a></div>`;
+        const ev = evidence as { href?: string };
+        return `<div><strong>Đường dẫn:</strong> <a href="${ev.href}">${ev.href}</a></div>`;
       }
       case 'robots_txt': {
-        return `<div><strong>Đường dẫn Robots.txt:</strong> <a href="${evidence.url}">${evidence.url}</a></div>`;
+        const ev = evidence as { url?: string };
+        return `<div><strong>Đường dẫn Robots.txt:</strong> <a href="${ev.url}">${ev.url}</a></div>`;
       }
       case 'sitemap': {
-        if (!evidence.urls || evidence.urls.length === 0) return 'Không tìm thấy sitemap';
+        const ev = evidence as { urls?: string[] };
+        if (!ev.urls || ev.urls.length === 0) return 'Không tìm thấy sitemap';
         return `<div><strong>Sitemap URLs:</strong><ul style="margin: 3px 0 3px 20px; padding: 0;">` +
-          evidence.urls.map((u: any) => `<li><a href="${u}">${u}</a></li>`).join('') +
+          ev.urls.map((u: string) => `<li><a href="${u}">${u}</a></li>`).join('') +
           '</ul></div>';
       }
       case 'keyword_density': {
-        const items = Array.isArray(evidence) ? evidence : [];
+        const items = (Array.isArray(evidence) ? evidence : []) as Array<{ keyword: string; count: number; density: number }>;
         if (items.length === 0) return '';
         return '<strong>Mật độ từ khóa:</strong><table style="width: auto; border: 1px solid #ddd; border-collapse: collapse; margin-top: 5px;">' +
           '<tr><th style="padding: 4px 8px; border: 1px solid #ddd; background-color: #f8fafc;">Từ khóa</th><th style="padding: 4px 8px; border: 1px solid #ddd; background-color: #f8fafc;">Số lượng</th><th style="padding: 4px 8px; border: 1px solid #ddd; background-color: #f8fafc;">Mật độ</th></tr>' +
-          items.slice(0, 10).map((x: any) => `<tr><td style="padding: 4px 8px; border: 1px solid #ddd;">${x.keyword}</td><td style="padding: 4px 8px; border: 1px solid #ddd; text-align: center;">${x.count}</td><td style="padding: 4px 8px; border: 1px solid #ddd; text-align: center;">${(x.density * 100).toFixed(2)}%</td></tr>`).join('') +
+          items.slice(0, 10).map((x: { keyword: string; count: number; density: number }) => `<tr><td style="padding: 4px 8px; border: 1px solid #ddd;">${x.keyword}</td><td style="padding: 4px 8px; border: 1px solid #ddd; text-align: center;">${x.count}</td><td style="padding: 4px 8px; border: 1px solid #ddd; text-align: center;">${(x.density * 100).toFixed(2)}%</td></tr>`).join('') +
           '</table>';
       }
       case 'images_alt_missing': {
-        const list = Array.isArray(evidence.images) ? evidence.images : [];
+        const ev = evidence as { images?: Array<{ src?: string } | string> };
+        const list = Array.isArray(ev.images) ? ev.images : [];
         if (list.length === 0) return 'Không có ảnh thiếu Alt';
         return `<div><strong>Danh sách ảnh thiếu thẻ ALT (${list.length}):</strong><ul style="margin: 3px 0 3px 20px; padding: 0;">` +
-          list.slice(0, 10).map((img: any) => `<li><a href="${img.src || img}">${img.src || img}</a></li>`).join('') +
+          list.slice(0, 10).map((img: { src?: string } | string) => {
+            const src = typeof img === 'string' ? img : (img.src || '');
+            return `<li><a href="${src}">${src}</a></li>`;
+          }).join('') +
           (list.length > 10 ? `<li>... và ${list.length - 10} ảnh khác</li>` : '') +
           '</ul></div>';
       }
       default: {
-        if (typeof evidence === 'object') {
-          const entries = Object.entries(evidence).filter(([_, v]) => typeof v !== 'object' && v !== null && v !== undefined);
+        if (typeof evidence === 'object' && evidence !== null) {
+          const entries = Object.entries(evidence).filter((entry) => typeof entry[1] !== 'object' && entry[1] !== null && entry[1] !== undefined);
           if (entries.length > 0) {
             return '<div style="margin-top: 5px;">' +
               entries.map(([k, v]) => `<strong>${k}:</strong> ${v}`).join('<br/>') +
@@ -176,15 +207,16 @@ const formatEvidenceForDoc = (key: string, evidence: any): string => {
 };
 
 // Dynamic Evidence Renderer based on key
-const renderEvidence = (key: string, evidence: any) => {
+const renderEvidence = (key: string, evidence: unknown) => {
   if (evidence === null || evidence === undefined) return null;
 
   try {
     switch (key) {
       case 'title': {
-        const val = evidence.value || '';
-        const len = evidence.length || val.length || 0;
-        const max = evidence.max || 60;
+        const ev = evidence as { value?: string; length?: number; max?: number };
+        const val = ev.value || '';
+        const len = ev.length || val.length || 0;
+        const max = ev.max || 60;
         const ratio = Math.min((len / max) * 100, 100);
         return (
           <Box sx={{ mt: 1.5, p: 2, bgcolor: 'action.hover', borderRadius: 2.5, border: '1px solid', borderColor: 'divider' }}>
@@ -203,8 +235,9 @@ const renderEvidence = (key: string, evidence: any) => {
       }
 
       case 'meta_description': {
-        const val = evidence.value || '';
-        const len = evidence.length || val.length || 0;
+        const ev = evidence as { value?: string; length?: number };
+        const val = ev.value || '';
+        const len = ev.length || val.length || 0;
         return (
           <Box sx={{ mt: 1.5, p: 2, bgcolor: 'action.hover', borderRadius: 2.5, border: '1px solid', borderColor: 'divider' }}>
             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 0.8 }}>Dữ liệu Meta Description:</Typography>
@@ -219,15 +252,16 @@ const renderEvidence = (key: string, evidence: any) => {
       }
 
       case 'social_meta': {
-        const og = evidence.openGraph || {};
-        const twitter = evidence.twitterCard || {};
-        const renderTable = (title: string, obj: Record<string, any>) => {
+        const ev = evidence as { openGraph?: Record<string, string>; twitterCard?: Record<string, string> };
+        const og = ev.openGraph || {};
+        const twitter = ev.twitterCard || {};
+        const renderTable = (title: string, obj: Record<string, string>) => {
           const entries = Object.entries(obj);
           if (entries.length === 0) return null;
           return (
             <Box sx={{ flex: 1, minWidth: 280 }}>
               <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', display: 'block', mb: 1 }}>{title}</Typography>
-              <Box sx={{ maxHeight: 220, overflowY: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+              <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 220, overflowY: 'auto', overflowX: 'auto', borderRadius: 2.5 }}>
                 <Table size="small" stickyHeader>
                   <TableBody>
                     {entries.map(([k, v]) => (
@@ -238,7 +272,7 @@ const renderEvidence = (key: string, evidence: any) => {
                     ))}
                   </TableBody>
                 </Table>
-              </Box>
+              </TableContainer>
             </Box>
           );
         };
@@ -251,18 +285,19 @@ const renderEvidence = (key: string, evidence: any) => {
       }
 
       case 'google_preview': {
+        const ev = evidence as { title?: string; url?: string; description?: string };
         return (
           <Box sx={{ mt: 1.5, p: 2.5, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'action.hover' : '#ffffff', border: '1px solid', borderColor: 'divider', borderRadius: 2.5, maxWidth: 600 }}>
             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 1.5 }}>Xem trước hiển thị Google Tìm Kiếm (SERP Preview):</Typography>
             <Box sx={{ fontFamily: 'Arial, sans-serif', textAlign: 'left' }}>
               <Typography sx={{ color: (theme) => theme.palette.mode === 'dark' ? '#8ab4f8' : '#1a0dab', fontSize: '1.2rem', lineHeight: 1.3, mb: 0.25, '&:hover': { textDecoration: 'underline', cursor: 'pointer' } }}>
-                {evidence.title || 'Chưa cấu hình Title'}
+                {ev.title || 'Chưa cấu hình Title'}
               </Typography>
               <Typography sx={{ color: (theme) => theme.palette.mode === 'dark' ? '#81c784' : '#006621', fontSize: '0.85rem', mb: 0.5, wordBreak: 'break-all' }}>
-                {evidence.url || 'https://example.com'}
+                {ev.url || 'https://example.com'}
               </Typography>
               <Typography sx={{ color: (theme) => theme.palette.mode === 'dark' ? '#bdc1c6' : '#545454', fontSize: '0.82rem', lineHeight: 1.4 }}>
-                {evidence.description || 'Chưa cấu hình thẻ Meta Description.'}
+                {ev.description || 'Chưa cấu hình thẻ Meta Description.'}
               </Typography>
             </Box>
           </Box>
@@ -271,13 +306,14 @@ const renderEvidence = (key: string, evidence: any) => {
 
       case 'top_keywords':
       case 'keyword_cloud': {
-        const list = evidence.keywords || [];
+        const ev = evidence as { keywords?: Array<{ word: string; count: number }> };
+        const list = ev.keywords || [];
         if (list.length === 0) return null;
         return (
           <Box sx={{ mt: 1.5, p: 2, bgcolor: 'action.hover', borderRadius: 2.5, border: '1px solid', borderColor: 'divider' }}>
             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 1.5 }}>Mật độ từ khóa phổ biến:</Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              {list.map((kw: any, idx: number) => {
+              {list.map((kw: { word: string; count: number }, idx: number) => {
                 let col: 'primary' | 'secondary' | 'default' = 'default';
                 if (kw.count >= 8) col = 'primary';
                 else if (kw.count >= 4) col = 'secondary';
@@ -288,7 +324,7 @@ const renderEvidence = (key: string, evidence: any) => {
                     color={col}
                     size="small"
                     variant="outlined"
-                    sx={{ fontWeight: 700, borderRadius: 2 }}
+                    sx={{ fontWeight: 700, borderRadius: '100px' }}
                   />
                 );
               })}
@@ -298,12 +334,13 @@ const renderEvidence = (key: string, evidence: any) => {
       }
 
       case 'keyword_distribution': {
-        const rows = evidence.table || [];
+        const ev = evidence as { table?: Array<{ keyword: string; inTitle: boolean; inDescription: boolean; inHeadings: boolean }> };
+        const rows = ev.table || [];
         if (rows.length === 0) return null;
         return (
           <Box sx={{ mt: 1.5 }}>
             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 1 }}>Sự phân bố của các từ khóa chính:</Typography>
-            <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2.5 }}>
+            <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2.5, overflowX: 'auto' }}>
               <Table size="small">
                 <TableHead>
                   <TableRow sx={{ bgcolor: 'action.hover' }}>
@@ -314,7 +351,7 @@ const renderEvidence = (key: string, evidence: any) => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {rows.map((row: any, idx: number) => (
+                  {rows.map((row: { keyword: string; inTitle: boolean; inDescription: boolean; inHeadings: boolean }, idx: number) => (
                     <TableRow key={idx} hover>
                       <TableCell sx={{ fontSize: '0.75rem', fontWeight: 700 }}>{row.keyword}</TableCell>
                       <TableCell align="center" sx={{ fontSize: '0.75rem' }}>{row.inTitle ? '✅' : '❌'}</TableCell>
@@ -330,6 +367,7 @@ const renderEvidence = (key: string, evidence: any) => {
       }
 
       case 'headings': {
+        const ev = evidence as { h1?: string[]; h2?: string[]; h3?: string[]; h4?: string[] };
         const renderList = (tag: string, arr: string[] | undefined) => {
           if (!arr || arr.length === 0) return null;
           return (
@@ -349,19 +387,20 @@ const renderEvidence = (key: string, evidence: any) => {
         };
         return (
           <Box sx={{ mt: 1.5, p: 2, bgcolor: 'action.hover', borderRadius: 2.5, border: '1px solid', borderColor: 'divider' }}>
-            {renderList('h1', evidence.h1)}
-            {renderList('h2', evidence.h2)}
-            {renderList('h3', evidence.h3)}
-            {renderList('h4', evidence.h4)}
+            {renderList('h1', ev.h1)}
+            {renderList('h2', ev.h2)}
+            {renderList('h3', ev.h3)}
+            {renderList('h4', ev.h4)}
           </Box>
         );
       }
 
       case 'robots_txt': {
-        if (!evidence.url) return null;
+        const ev = evidence as { url?: string };
+        if (!ev.url) return null;
         return (
           <Box sx={{ mt: 1.5 }}>
-            <Button variant="outlined" size="small" href={evidence.url} target="_blank" rel="noopener noreferrer" startIcon={<OpenInNewIcon />} sx={{ textTransform: 'none', borderRadius: 2 }}>
+            <Button variant="outlined" size="small" href={ev.url} target="_blank" rel="noopener noreferrer" startIcon={<OpenInNewIcon />} sx={{ textTransform: 'none', borderRadius: '100px' }}>
               Mở link Robots.txt
             </Button>
           </Box>
@@ -370,65 +409,71 @@ const renderEvidence = (key: string, evidence: any) => {
 
       case 'canonical':
       case 'favicon': {
-        if (!evidence.href) return null;
+        const ev = evidence as { href?: string };
+        if (!ev.href) return null;
         return (
           <Box sx={{ mt: 1.5 }}>
             <Typography variant="caption" color="text.secondary" sx={{ mr: 1, fontWeight: 700 }}>Đường dẫn:</Typography>
-            <Typography variant="body2" component="a" href={evidence.href} target="_blank" rel="noopener noreferrer" sx={{ color: 'primary.main', textDecoration: 'underline', fontSize: '0.78rem', wordBreak: 'break-all' }}>
-              {evidence.href}
-            </Typography>
+            <Link href={ev.href} target="_blank" rel="noopener noreferrer" underline="none" sx={{ color: 'primary.main', fontWeight: 500, fontSize: '0.78rem', wordBreak: 'break-all', '&:hover': { textDecoration: 'underline' } }}>
+              {ev.href}
+            </Link>
           </Box>
         );
       }
 
       case 'structured_data': {
-        const types = evidence.types || [];
+        const ev = evidence as { types?: string[] };
+        const types = ev.types || [];
         if (types.length === 0) return null;
         return (
           <Box sx={{ mt: 1.5, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
             {types.map((type: string, idx: number) => (
-              <Chip key={idx} label={type} size="small" color="primary" sx={{ fontWeight: 700, borderRadius: 2 }} />
+              <Chip key={idx} label={type} size="small" color="primary" sx={{ fontWeight: 700, borderRadius: '100px' }} />
             ))}
           </Box>
         );
       }
 
       case 'charset': {
-        if (!evidence.value) return null;
+        const ev = evidence as { value?: string };
+        if (!ev.value) return null;
         return (
           <Box sx={{ mt: 1.5 }}>
-            <Typography variant="body2" sx={{ fontWeight: 700 }}>Kiểu mã hóa: <Chip label={evidence.value} size="small" color="secondary" sx={{ fontWeight: 700 }} /></Typography>
+            <Typography variant="body2" sx={{ fontWeight: 700 }}>Kiểu mã hóa: <Chip label={ev.value} size="small" color="secondary" sx={{ fontWeight: 700, borderRadius: '100px' }} /></Typography>
           </Box>
         );
       }
 
       case 'compression': {
-        if (!evidence.algo) return null;
+        const ev = evidence as { algo?: string };
+        if (!ev.algo) return null;
         return (
           <Box sx={{ mt: 1.5 }}>
-            <Typography variant="body2" sx={{ fontWeight: 700 }}>Chuẩn nén truyền tải: <Chip label={evidence.algo} size="small" color="success" sx={{ fontWeight: 700 }} /></Typography>
+            <Typography variant="body2" sx={{ fontWeight: 700 }}>Chuẩn nén truyền tải: <Chip label={ev.algo} size="small" color="success" sx={{ fontWeight: 700, borderRadius: '100px' }} /></Typography>
           </Box>
         );
       }
 
       case 'viewport': {
-        if (!evidence.content) return null;
+        const ev = evidence as { content?: string };
+        if (!ev.content) return null;
         return (
           <Box sx={{ mt: 1.5, p: 1.5, bgcolor: 'action.hover', borderRadius: 2, fontFamily: 'monospace', fontSize: '0.75rem', border: '1px solid', borderColor: 'divider' }}>
-            {evidence.content}
+            {ev.content}
           </Box>
         );
       }
 
       case 'deprecated_tags': {
-        const tags = evidence.tags || [];
+        const ev = evidence as { tags?: string[] };
+        const tags = ev.tags || [];
         if (tags.length === 0) return null;
         return (
           <Box sx={{ mt: 1.5 }}>
             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 0.8 }}>Các thẻ HTML lỗi thời:</Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
               {tags.map((t: string, idx: number) => (
-                <Chip key={idx} label={`<${t}>`} size="small" color="error" variant="outlined" sx={{ fontWeight: 700 }} />
+                <Chip key={idx} label={`<${t}>`} size="small" color="error" variant="outlined" sx={{ fontWeight: 700, borderRadius: '100px' }} />
               ))}
             </Box>
           </Box>
@@ -436,16 +481,17 @@ const renderEvidence = (key: string, evidence: any) => {
       }
 
       case 'modern_image_format': {
-        const legacy = evidence.legacy || [];
+        const ev = evidence as { legacy?: string[] };
+        const legacy = ev.legacy || [];
         if (legacy.length === 0) return null;
         return (
           <Box sx={{ mt: 1.5 }}>
             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 0.8 }}>Ảnh định dạng cũ cần tối ưu hóa:</Typography>
             <List sx={{ p: 0, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
               {legacy.slice(0, 5).map((url: string, idx: number) => (
-                <Typography key={idx} variant="caption" component="a" href={url} target="_blank" rel="noopener noreferrer" sx={{ display: 'block', color: 'primary.main', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', '&:hover': { textDecoration: 'underline' } }}>
+                <Link key={idx} href={url} target="_blank" rel="noopener noreferrer" underline="none" sx={{ display: 'block', color: 'primary.main', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', fontWeight: 500, fontSize: '0.75rem', '&:hover': { textDecoration: 'underline' } }}>
                   - {url}
-                </Typography>
+                </Link>
               ))}
               {legacy.length > 5 && (
                 <Typography variant="caption" color="text.disabled" sx={{ fontStyle: 'italic', display: 'block', mt: 0.5 }}>
@@ -459,12 +505,13 @@ const renderEvidence = (key: string, evidence: any) => {
 
       case 'aspect_ratio':
       case 'image_size': {
-        const items = evidence.items || [];
+        const ev = evidence as { items?: Array<{ src: string; display: string; natural: string }> };
+        const items = ev.items || [];
         if (items.length === 0) return null;
         return (
           <Box sx={{ mt: 1.5 }}>
             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 1 }}>Kích thước ảnh thực tế:</Typography>
-            <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2.5 }}>
+            <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2.5, overflowX: 'auto' }}>
               <Table size="small">
                 <TableHead>
                   <TableRow sx={{ bgcolor: 'action.hover' }}>
@@ -474,16 +521,16 @@ const renderEvidence = (key: string, evidence: any) => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {items.slice(0, 5).map((row: any, idx: number) => (
+                  {items.slice(0, 5).map((row: { src: string; display: string; natural: string }, idx: number) => (
                     <TableRow key={idx} hover>
                       <TableCell sx={{ py: 1 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Box sx={{ width: 32, height: 32, borderRadius: 1, border: '1px solid', borderColor: 'divider', overflow: 'hidden', bgcolor: 'action.hover', flexShrink: 0 }}>
                             <img src={row.src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           </Box>
-                          <Typography variant="caption" component="a" href={row.src} target="_blank" rel="noopener noreferrer" sx={{ display: 'inline-block', color: 'primary.main', maxWidth: 200, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', '&:hover': { textDecoration: 'underline' } }}>
+                          <Link href={row.src} target="_blank" rel="noopener noreferrer" underline="none" sx={{ display: 'inline-block', color: 'primary.main', maxWidth: 200, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', fontWeight: 500, fontSize: '0.75rem', '&:hover': { textDecoration: 'underline' } }}>
                             {row.src}
-                          </Typography>
+                          </Link>
                         </Box>
                       </TableCell>
                       <TableCell align="center" sx={{ fontSize: '0.72rem' }}>{row.display}</TableCell>
@@ -503,8 +550,9 @@ const renderEvidence = (key: string, evidence: any) => {
       }
 
       case 'render_blocking': {
-        const count = evidence.count || 0;
-        const urls = evidence.urls || [];
+        const ev = evidence as { count?: number; urls?: string[] };
+        const count = ev.count || 0;
+        const urls = ev.urls || [];
         return (
           <Box sx={{ mt: 1.5 }}>
             <Typography variant="body2" sx={{ fontWeight: 700, mb: 1 }}>
@@ -513,9 +561,9 @@ const renderEvidence = (key: string, evidence: any) => {
             {urls.length > 0 && (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, pl: 1.5, borderLeft: '2px solid', borderColor: 'divider' }}>
                 {urls.slice(0, 5).map((url: string, idx: number) => (
-                  <Typography key={idx} variant="caption" component="a" href={url} target="_blank" rel="noopener noreferrer" sx={{ color: 'primary.main', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', '&:hover': { textDecoration: 'underline' } }}>
+                  <Link key={idx} href={url} target="_blank" rel="noopener noreferrer" underline="none" sx={{ color: 'primary.main', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', fontWeight: 500, fontSize: '0.75rem', '&:hover': { textDecoration: 'underline' } }}>
                     - {url}
-                  </Typography>
+                  </Link>
                 ))}
                 {urls.length > 5 && (
                   <Typography variant="caption" color="text.disabled" sx={{ fontStyle: 'italic', mt: 0.5 }}>
@@ -529,9 +577,10 @@ const renderEvidence = (key: string, evidence: any) => {
       }
 
       case 'http_requests': {
-        const count = evidence.count || 0;
-        const b = evidence.bytes || {};
-        const total = Object.values(b).reduce((acc: number, cur: any) => acc + (Number(cur) || 0), 0) as number;
+        const ev = evidence as { count?: number; bytes?: Record<string, number> };
+        const count = ev.count || 0;
+        const b = ev.bytes || {};
+        const total = Object.values(b).reduce((acc: number, cur: unknown) => acc + (Number(cur) || 0), 0) as number;
         const categories = [
           { key: 'image', label: 'Hình ảnh', color: '#10ac84', val: b.image || 0 },
           { key: 'javascript', label: 'JS Scripts', color: '#ff9f43', val: b.javascript || 0 },
@@ -583,10 +632,11 @@ const renderEvidence = (key: string, evidence: any) => {
       case 'ttfb':
       case 'fcp':
       case 'lcp': {
-        const isMs = typeof evidence.valueMs === 'number';
-        const val = isMs ? evidence.valueMs : (evidence.value || 0);
-        const goodMax = isMs ? evidence.goodMaxMs : (evidence.goodLimit || 0.1);
-        const warnMax = isMs ? evidence.warnMaxMs : (evidence.warnLimit || 0.25);
+        const ev = evidence as { valueMs?: number; value?: number; goodMaxMs?: number; goodLimit?: number; warnMaxMs?: number; warnLimit?: number };
+        const isMs = typeof ev.valueMs === 'number';
+        const val = isMs ? ev.valueMs : (ev.value || 0);
+        const goodMax = isMs ? ev.goodMaxMs : (ev.goodLimit || 0.1);
+        const warnMax = isMs ? ev.warnMaxMs : (ev.warnLimit || 0.25);
         
         let color = '#d63031'; // Red
         let scoreLabel = 'Kém';
@@ -622,19 +672,21 @@ const renderEvidence = (key: string, evidence: any) => {
       }
 
       case 'cls': {
-        const val = typeof evidence.value === 'number' ? evidence.value : 0;
+        const ev = evidence as { value?: number };
+        const val = typeof ev.value === 'number' ? ev.value : 0;
         return (
           <Box sx={{ mt: 1.5 }}>
             <Typography variant="body2" sx={{ fontWeight: 700 }}>
-              Điểm tích lũy thay đổi bố cục (CLS): <Chip label={val} size="small" color={val <= 0.1 ? 'success' : 'error'} sx={{ fontWeight: 700 }} />
+              Điểm tích lũy thay đổi bố cục (CLS): <Chip label={val} size="small" color={val <= 0.1 ? 'success' : 'error'} sx={{ fontWeight: 700, borderRadius: '100px' }} />
             </Typography>
           </Box>
         );
       }
 
       case 'html_size': {
-        const kb = evidence.kb || 0;
-        const avgKb = evidence.avgKb || 100;
+        const ev = evidence as { kb?: number; avgKb?: number };
+        const kb = ev.kb || 0;
+        const avgKb = ev.avgKb || 100;
         return (
           <Box sx={{ mt: 1.5 }}>
             <Typography variant="body2" sx={{ fontWeight: 700 }}>
@@ -645,8 +697,9 @@ const renderEvidence = (key: string, evidence: any) => {
       }
 
       case 'dom_size': {
-        const nodes = evidence.nodes || 0;
-        const limit = evidence.limit || 1500;
+        const ev = evidence as { nodes?: number; limit?: number };
+        const nodes = ev.nodes || 0;
+        const limit = ev.limit || 1500;
         return (
           <Box sx={{ mt: 1.5 }}>
             <Typography variant="body2" sx={{ fontWeight: 700 }}>
@@ -659,8 +712,9 @@ const renderEvidence = (key: string, evidence: any) => {
       case 'cache_images':
       case 'cache_js':
       case 'cache_css': {
-        const cached = evidence.cached || 0;
-        const total = evidence.total || 0;
+        const ev = evidence as { cached?: number; total?: number };
+        const cached = ev.cached || 0;
+        const total = ev.total || 0;
         const ratio = total > 0 ? Math.round((cached / total) * 100) : 0;
         return (
           <Box sx={{ mt: 1.5 }}>
@@ -673,11 +727,12 @@ const renderEvidence = (key: string, evidence: any) => {
 
       // Default count fallback for specific count keys
       default: {
-        if (typeof evidence.count === 'number') {
+        const ev = evidence as { count?: number };
+        if (typeof ev.count === 'number') {
           return (
             <Box sx={{ mt: 1.5 }}>
               <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                Số lượng phát hiện: <span style={{ color: evidence.count === 0 ? '#00b894' : '#d63031' }}>{evidence.count}</span>
+                Số lượng phát hiện: <span style={{ color: ev.count === 0 ? '#00b894' : '#d63031' }}>{ev.count}</span>
               </Typography>
             </Box>
           );
@@ -694,7 +749,7 @@ const renderEvidence = (key: string, evidence: any) => {
 // Metric Card interface and renderer
 interface MetricCardProps {
   title: string;
-  icon: string;
+  icon: React.ReactNode;
   value: string;
   statusLabel: string;
   statusColor: string;
@@ -720,19 +775,19 @@ const MetricCard = ({ title, icon, value, statusLabel, statusColor, isUnavailabl
         justifyContent: 'space-between',
         transition: 'all 0.2s',
         '&:hover': {
-          boxShadow: isUnavailable ? 'none' : `0 4px 12px ${statusColor}10`,
           borderColor: isUnavailable
             ? 'divider'
             : statusColor === 'text.primary' || statusColor === 'text.secondary'
             ? 'primary.main'
             : statusColor,
+          transform: isUnavailable ? 'none' : 'scale(1.02)',
         },
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 1 }}>
-        <Typography variant="body2" sx={{ fontSize: '1.1rem', lineHeight: 1 }}>
+        <Box sx={{ display: 'flex', color: isUnavailable ? 'text.disabled' : statusColor === 'text.secondary' || statusColor === 'text.primary' ? 'text.secondary' : statusColor, '& svg': { fontSize: '1.25rem' } }}>
           {icon}
-        </Typography>
+        </Box>
         <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', letterSpacing: 0.2 }}>
           {title}
         </Typography>
@@ -890,10 +945,11 @@ export default function SeoAuditSection() {
       setUrlInput('');
       mutateHistory();
       showToast('Phân tích SEO Audit hoàn tất!', 'success');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('SEO Audit run failed:', err);
-      const code = err?.response?.data?.code || err?.code;
-      const msg = err?.response?.data?.message || err?.message || 'Gặp lỗi khi chạy phân tích SEO';
+      const errorResponse = err as { response?: { data?: { code?: string; message?: string } }; code?: string; message?: string };
+      const code = errorResponse.response?.data?.code || errorResponse.code;
+      const msg = errorResponse.response?.data?.message || errorResponse.message || 'Gặp lỗi khi chạy phân tích SEO';
 
       if (code === 'INVALID_URL' || code === 'PRIVATE_URL_NOT_ALLOWED') {
         setSubmitError(msg);
@@ -923,10 +979,11 @@ export default function SeoAuditSection() {
       setActiveReport(res);
       mutateHistory();
       showToast('Chạy lại phân tích SEO hoàn tất!', 'success');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('SEO Audit re-run failed:', err);
-      const code = err?.response?.data?.code || err?.code;
-      const msg = err?.response?.data?.message || err?.message || 'Gặp lỗi khi chạy lại phân tích';
+      const errorResponse = err as { response?: { data?: { code?: string; message?: string } }; code?: string; message?: string };
+      const code = errorResponse.response?.data?.code || errorResponse.code;
+      const msg = errorResponse.response?.data?.message || errorResponse.message || 'Gặp lỗi khi chạy lại phân tích';
       
       if (code === 'INVALID_URL' || code === 'PRIVATE_URL_NOT_ALLOWED') {
         setSubmitError(msg);
@@ -947,14 +1004,15 @@ export default function SeoAuditSection() {
       const detail = await seoAuditService.getAuditDetail(id);
       setActiveReport(detail);
       showToast('Đã mở báo cáo thành công!', 'success');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Load details failed:', err);
-      const code = err?.response?.data?.code || err?.code;
+      const errorResponse = err as { response?: { data?: { code?: string; message?: string } }; code?: string; message?: string };
+      const code = errorResponse.response?.data?.code || errorResponse.code;
       if (code === 'AUDIT_NOT_FOUND' || code === 'INVALID_AUDIT_ID') {
         showToast('Báo cáo không tồn tại hoặc đã bị xóa. Đang cập nhật lại lịch sử...', 'warning');
         mutateHistory();
       } else {
-        showToast(err?.response?.data?.message || err?.message || 'Không thể mở báo cáo này', 'danger');
+        showToast(errorResponse.response?.data?.message || errorResponse.message || 'Không thể mở báo cáo này', 'danger');
       }
     }
   };
@@ -1120,7 +1178,7 @@ export default function SeoAuditSection() {
 
     // Add Performance Metrics if available
     if (activeReport.metrics) {
-      const getPerformanceRating = (key: string, val: any) => {
+      const getPerformanceRating = (key: string, val: number | null | undefined) => {
         if (val === null || val === undefined) return { label: 'không đo được', class: 'badge-low' };
         if (key === 'ttfbMs') return val <= 800 ? { label: 'Tốt', class: 'badge-pass' } : val <= 1800 ? { label: 'Cần cải thiện', class: 'badge-warn' } : { label: 'Kém', class: 'badge-fail' };
         if (key === 'fcpMs') return val <= 1800 ? { label: 'Tốt', class: 'badge-pass' } : val <= 3000 ? { label: 'Cần cải thiện', class: 'badge-warn' } : { label: 'Kém', class: 'badge-fail' };
@@ -1129,7 +1187,7 @@ export default function SeoAuditSection() {
         return { label: 'Bình thường', class: 'badge-pass' };
       };
       
-      const formatValue = (key: string, val: any) => {
+      const formatValue = (key: string, val: number | null | undefined) => {
         if (val === null || val === undefined) return '—';
         if (['ttfbMs', 'fcpMs', 'lcpMs', 'loadMs'].includes(key)) return `${(val / 1000).toFixed(2)}s`;
         if (key === 'totalBytes') return `${(val / 1048576).toFixed(2)} MB`;
@@ -1266,7 +1324,7 @@ export default function SeoAuditSection() {
               bgcolor: 'rgba(0, 184, 148, 0.1)',
               color: '#00b894',
               border: '1px solid rgba(0, 184, 148, 0.3)',
-              borderRadius: 2,
+              borderRadius: '100px',
             }}
           />
         );
@@ -1281,7 +1339,7 @@ export default function SeoAuditSection() {
               bgcolor: 'rgba(241, 196, 15, 0.1)',
               color: '#f1c40f',
               border: '1px solid rgba(241, 196, 15, 0.3)',
-              borderRadius: 2,
+              borderRadius: '100px',
             }}
           />
         );
@@ -1296,7 +1354,7 @@ export default function SeoAuditSection() {
               bgcolor: 'rgba(214, 48, 49, 0.1)',
               color: '#d63031',
               border: '1px solid rgba(214, 48, 49, 0.3)',
-              borderRadius: 2,
+              borderRadius: '100px',
             }}
           />
         );
@@ -1422,27 +1480,30 @@ export default function SeoAuditSection() {
                   }}
                 />
 
-                <Button
+                <LoadingButton
                   type="submit"
                   variant="contained"
-                  disabled={isSubmitting || !urlInput.trim()}
-                  startIcon={isSubmitting ? <CircularProgress size={18} color="inherit" /> : <SendIcon sx={{ transform: 'rotate(-45deg)' }} />}
+                  loading={isSubmitting}
+                  loadingPosition="start"
+                  disabled={!urlInput.trim()}
+                  startIcon={<SendIcon sx={{ transform: 'rotate(-45deg)' }} />}
                   sx={{
                     py: 1.8,
                     px: 4,
-                    borderRadius: 3,
+                    borderRadius: '100px',
                     fontWeight: 800,
                     fontSize: '0.95rem',
                     textTransform: 'none',
-                    background: 'linear-gradient(135deg, #00b894 0%, #009975 100%)',
-                    boxShadow: '0 4px 15px rgba(0, 184, 148, 0.25)',
+                    bgcolor: 'primary.main',
+                    transition: 'all 0.2s',
                     '&:hover': {
-                      background: 'linear-gradient(135deg, #3dd6a0 0%, #009975 100%)',
+                      bgcolor: 'primary.dark',
+                      transform: 'scale(1.02)',
                     },
                   }}
                 >
-                  {isSubmitting ? 'Đang phân tích...' : 'Phân tích'}
-                </Button>
+                  Phân tích
+                </LoadingButton>
               </Box>
 
               {submitError && (
@@ -1498,7 +1559,7 @@ export default function SeoAuditSection() {
               >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, flexWrap: 'wrap', gap: 2 }}>
                   <Typography variant="h5" sx={{ fontWeight: 800 }}>
-                    🔍 SEO Audit Report
+                    SEO Audit Report
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', '@media print': { display: 'none' } }}>
                     <Button
@@ -1507,13 +1568,15 @@ export default function SeoAuditSection() {
                       startIcon={<ArticleIcon />}
                       sx={{
                         fontWeight: 700,
-                        borderRadius: 2.5,
+                        borderRadius: '100px',
                         textTransform: 'none',
                         borderColor: 'divider',
                         color: 'text.primary',
+                        transition: 'all 0.2s',
                         '&:hover': {
                           bgcolor: 'action.hover',
-                          borderColor: 'text.secondary'
+                          borderColor: 'text.secondary',
+                          transform: 'scale(1.02)',
                         }
                       }}
                     >
@@ -1525,13 +1588,14 @@ export default function SeoAuditSection() {
                       startIcon={<PictureAsPdfIcon />}
                       sx={{
                         fontWeight: 700,
-                        borderRadius: 2.5,
+                        borderRadius: '100px',
                         textTransform: 'none',
-                        bgcolor: '#00b894',
+                        bgcolor: 'primary.main',
                         color: '#ffffff',
-                        boxShadow: '0 4px 12px rgba(0, 184, 148, 0.2)',
+                        transition: 'all 0.2s',
                         '&:hover': {
-                          bgcolor: '#009975',
+                          bgcolor: 'primary.dark',
+                          transform: 'scale(1.02)',
                         }
                       }}
                     >
@@ -1541,16 +1605,14 @@ export default function SeoAuditSection() {
                 </Box>
                 
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3, flexWrap: 'wrap' }}>
-                  <Typography
-                    variant="body2"
-                    component="a"
+                  <Link
                     href={activeReport.url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    underline="none"
                     sx={{
-                      fontWeight: 700,
+                      fontWeight: 500,
                       color: 'primary.main',
-                      textDecoration: 'none',
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: 0.5,
@@ -1560,7 +1622,7 @@ export default function SeoAuditSection() {
                     }}
                   >
                     {activeReport.url} <OpenInNewIcon sx={{ fontSize: 13 }} />
-                  </Typography>
+                  </Link>
                   
                   <Divider orientation="vertical" flexItem sx={{ mx: 1, display: { xs: 'none', sm: 'block' } }} />
                   
@@ -1572,7 +1634,7 @@ export default function SeoAuditSection() {
                 {/* Redirect indicator */}
                 {activeReport.finalUrl && activeReport.finalUrl !== activeReport.url && (
                   <Alert severity="warning" variant="outlined" sx={{ borderRadius: 3, mb: 3, borderStyle: 'dashed' }}>
-                    ↪ Redirect tới: <strong>{activeReport.finalUrl}</strong>
+                    Redirect tới: <strong>{activeReport.finalUrl}</strong>
                   </Alert>
                 )}
 
@@ -1589,7 +1651,6 @@ export default function SeoAuditSection() {
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        boxShadow: `0 0 24px ${getScoreColor(activeReport.score)}22`,
                       }}
                     >
                       <Typography variant="h3" sx={{ fontWeight: 900, color: getScoreColor(activeReport.score), lineHeight: 1 }}>
@@ -1619,7 +1680,7 @@ export default function SeoAuditSection() {
                             {activeReport.summary.pass}
                           </Typography>
                           <Typography variant="caption" sx={{ fontWeight: 800, color: '#00b894', display: 'block', mt: 0.5 }}>
-                            🟢 Đạt
+                            Đạt
                           </Typography>
                         </Paper>
                       </Grid>
@@ -1639,7 +1700,7 @@ export default function SeoAuditSection() {
                             {activeReport.summary.warn}
                           </Typography>
                           <Typography variant="caption" sx={{ fontWeight: 800, color: '#f1c40f', display: 'block', mt: 0.5 }}>
-                            🟡 Cần cải thiện
+                            Cần cải thiện
                           </Typography>
                         </Paper>
                       </Grid>
@@ -1659,7 +1720,7 @@ export default function SeoAuditSection() {
                             {activeReport.summary.fail}
                           </Typography>
                           <Typography variant="caption" sx={{ fontWeight: 800, color: '#d63031', display: 'block', mt: 0.5 }}>
-                            🔴 Không đạt
+                            Không đạt
                           </Typography>
                         </Paper>
                       </Grid>
@@ -1675,7 +1736,7 @@ export default function SeoAuditSection() {
                   <>
                     <Divider sx={{ my: 3.5 }} />
                     <Typography variant="subtitle2" sx={{ fontWeight: 950, mb: 2, color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 1 }}>
-                      📊 Các chỉ số hiệu năng (Core Web Vitals & Page Metrics)
+                      Các chỉ số hiệu năng (Core Web Vitals & Page Metrics)
                     </Typography>
                     <Grid container spacing={2}>
                       <Grid size={{ xs: 6, sm: 3 }}>
@@ -1686,7 +1747,7 @@ export default function SeoAuditSection() {
                           return (
                             <MetricCard
                               title="TTFB"
-                              icon="⏱️"
+                              icon={<AccessTimeIcon />}
                               value={status.text}
                               statusLabel={status.label}
                               statusColor={status.color}
@@ -1703,7 +1764,7 @@ export default function SeoAuditSection() {
                           return (
                             <MetricCard
                               title="FCP"
-                              icon="🎨"
+                              icon={<PaletteIcon />}
                               value={status.text}
                               statusLabel={status.label}
                               statusColor={status.color}
@@ -1720,7 +1781,7 @@ export default function SeoAuditSection() {
                           return (
                             <MetricCard
                               title="LCP"
-                              icon="📐"
+                              icon={<StraightenIcon />}
                               value={status.text}
                               statusLabel={status.label}
                               statusColor={status.color}
@@ -1737,7 +1798,7 @@ export default function SeoAuditSection() {
                           return (
                             <MetricCard
                               title="CLS"
-                              icon="📊"
+                              icon={<BarChartIcon />}
                               value={status.text}
                               statusLabel={status.label}
                               statusColor={status.color}
@@ -1754,7 +1815,7 @@ export default function SeoAuditSection() {
                           return (
                             <MetricCard
                               title="Tải trang"
-                              icon="⚡"
+                              icon={<FlashOnIcon />}
                               value={status.text}
                               statusLabel={status.label}
                               statusColor={status.color}
@@ -1771,7 +1832,7 @@ export default function SeoAuditSection() {
                           return (
                             <MetricCard
                               title="HTTP Requests"
-                              icon="📦"
+                              icon={<InboxIcon />}
                               value={isNull ? '—' : status.text}
                               statusLabel={isNull ? 'không đo được' : 'Số yêu cầu'}
                               statusColor={status.color}
@@ -1788,7 +1849,7 @@ export default function SeoAuditSection() {
                           return (
                             <MetricCard
                               title="Dung lượng"
-                              icon="💾"
+                              icon={<SaveIcon />}
                               value={isNull ? '—' : status.text}
                               statusLabel={isNull ? 'không đo được' : 'Tổng dung lượng'}
                               statusColor={status.color}
@@ -1805,7 +1866,7 @@ export default function SeoAuditSection() {
                           return (
                             <MetricCard
                               title="DOM Nodes"
-                              icon="🏗️"
+                              icon={<LayersIcon />}
                               value={isNull ? '—' : status.text}
                               statusLabel={isNull ? 'không đo được' : status.label}
                               statusColor={status.color}
@@ -1831,32 +1892,32 @@ export default function SeoAuditSection() {
                   onClick={() => setFilterStatus('all')}
                   variant={filterStatus === 'all' ? 'filled' : 'outlined'}
                   color={filterStatus === 'all' ? 'primary' : 'default'}
-                  sx={{ fontWeight: 700, borderRadius: 2.5 }}
+                  sx={{ fontWeight: 700, borderRadius: '100px' }}
                 />
                 
                 <Chip
-                  label="Chỉ Không Đạt (🔴)"
+                  label="Chỉ Không Đạt"
                   clickable
                   onClick={() => setFilterStatus('fail')}
                   variant={filterStatus === 'fail' ? 'filled' : 'outlined'}
                   color={filterStatus === 'fail' ? 'error' : 'default'}
-                  sx={{ fontWeight: 700, borderRadius: 2.5 }}
+                  sx={{ fontWeight: 700, borderRadius: '100px' }}
                 />
 
                 <Chip
-                  label="Chỉ Cần Cải Thiện (🟡)"
+                  label="Chỉ Cần Cải Thiện"
                   clickable
                   onClick={() => setFilterStatus('warn')}
                   variant={filterStatus === 'warn' ? 'filled' : 'outlined'}
                   color={filterStatus === 'warn' ? 'warning' : 'default'}
-                  sx={{ fontWeight: 700, borderRadius: 2.5 }}
+                  sx={{ fontWeight: 700, borderRadius: '100px' }}
                 />
               </Box>
 
               {/* Sections & Nested Criteria Render */}
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
                 {visibleSections.map((sec) => {
-                  const config = SECTION_CONFIGS[sec.key] || { label: sec.label, icon: '📋' };
+                  const config = SECTION_CONFIGS[sec.key] || { label: sec.label, icon: <AssignmentIcon /> };
 
                   return (
                     <Accordion
@@ -1884,9 +1945,9 @@ export default function SeoAuditSection() {
                       >
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', pr: 1.5, flexWrap: 'wrap', gap: 1.5 }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                            <Typography sx={{ fontSize: '1.25rem', lineHeight: 1 }}>
+                            <Box sx={{ display: 'flex', color: 'primary.main', '& svg': { fontSize: '1.5rem' } }}>
                               {config.icon}
-                            </Typography>
+                            </Box>
                             <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary' }}>
                               {config.label}
                             </Typography>
@@ -1927,9 +1988,15 @@ export default function SeoAuditSection() {
                               <AccordionSummary expandIcon={<KeyboardArrowDownIcon />}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', pr: 1.5, flexWrap: 'wrap', gap: 1.5 }}>
                                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1, minWidth: 220 }}>
-                                    <Typography sx={{ fontSize: '1.1rem', lineHeight: 1 }}>
-                                      {c.status === 'pass' ? '✅' : c.status === 'warn' ? '⚠️' : '❌'}
-                                    </Typography>
+                                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                      {c.status === 'pass' ? (
+                                        <CheckCircleIcon sx={{ fontSize: 20, color: 'success.main' }} />
+                                      ) : c.status === 'warn' ? (
+                                        <WarningAmberIcon sx={{ fontSize: 20, color: 'warning.main' }} />
+                                      ) : (
+                                        <CancelIcon sx={{ fontSize: 20, color: 'error.main' }} />
+                                      )}
+                                    </Box>
                                     <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
                                       {c.name}
                                     </Typography>
@@ -1943,6 +2010,7 @@ export default function SeoAuditSection() {
                                         height: 18,
                                         fontSize: '0.62rem',
                                         fontWeight: 800,
+                                        borderRadius: '100px',
                                         bgcolor: (theme) => {
                                           const isDark = theme.palette.mode === 'dark';
                                           if (c.importance === 'critical') return isDark ? 'rgba(255, 118, 117, 0.15)' : 'rgba(214, 48, 49, 0.08)';
@@ -1986,7 +2054,7 @@ export default function SeoAuditSection() {
                                 <Box>
                                   <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 0.5 }}>Mô tả tiêu chuẩn:</Typography>
                                   <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.5 }}>
-                                    💡 {c.description}
+                                    {c.description}
                                   </Typography>
                                 </Box>
 
@@ -2005,7 +2073,7 @@ export default function SeoAuditSection() {
                                 {c.fixGuide && (
                                   <Box sx={{ mt: 2, p: 2.5, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'action.hover' : '#f8fafc', border: '1px solid', borderColor: 'divider', borderRadius: 3.5 }}>
                                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'success.main', display: 'flex', alignItems: 'center', gap: 0.8, mb: 1.5 }}>
-                                      💡 Hướng dẫn cách sửa đổi
+                                      Hướng dẫn cách sửa đổi
                                     </Typography>
                                     
                                     {c.fixGuide.summary && (
@@ -2100,17 +2168,25 @@ export default function SeoAuditSection() {
                   Thời gian phản hồi: {activeReport.responseMs ? (activeReport.responseMs / 1000).toFixed(2) : '0.00'}s
                 </Typography>
                 
-                <Button
+                <LoadingButton
                   className="no-print"
                   variant="outlined"
                   size="small"
                   onClick={() => handleReRunAudit(activeReport.url)}
-                  disabled={isSubmitting}
-                  startIcon={isSubmitting ? <CircularProgress size={14} color="inherit" /> : <RefreshIcon />}
-                  sx={{ textTransform: 'none', borderRadius: 2.5, fontWeight: 700 }}
+                  loading={isSubmitting}
+                  startIcon={<RefreshIcon />}
+                  sx={{
+                    textTransform: 'none',
+                    borderRadius: '100px',
+                    fontWeight: 700,
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      transform: 'scale(1.02)',
+                    }
+                  }}
                 >
-                  🔄 Chạy lại
-                </Button>
+                  Chạy lại
+                </LoadingButton>
               </Paper>
 
             </Box>
@@ -2134,7 +2210,7 @@ export default function SeoAuditSection() {
                 textAlign: 'center'
               }}
             >
-              <Box sx={{ fontSize: 50, opacity: 0.8 }}>🔍</Box>
+              <SearchIcon sx={{ fontSize: 50, opacity: 0.8, color: 'text.secondary' }} />
               <Typography variant="h6" sx={{ fontWeight: 800 }}>Chưa có báo cáo phân tích nào</Typography>
               <Typography variant="body2" color="text.secondary">
                 Vui lòng nhập URL trang web ở trên để tiến hành cào dữ liệu và phân tích On-page,<br />
@@ -2227,6 +2303,7 @@ export default function SeoAuditSection() {
                               bgcolor: `${getScoreColor(item.score)}15`,
                               color: getScoreColor(item.score),
                               border: `1px solid ${getScoreColor(item.score)}50`,
+                              borderRadius: '100px',
                             }}
                           />
                         </Box>

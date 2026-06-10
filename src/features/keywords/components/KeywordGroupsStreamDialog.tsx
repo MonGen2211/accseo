@@ -71,8 +71,8 @@ export function KeywordGroupsStreamDialog({ open, logs, onCancel, onHide }: Keyw
 	}, [logs]);
 
 	return (
-		<Dialog open={open} maxWidth="sm" fullWidth onClose={() => { }}>
-			<DialogTitle sx={{ fontWeight: 600, pb: 1, bgcolor: 'background.paper', color: '#000000' }}>
+		<Dialog open={open} maxWidth="sm" fullWidth onClose={() => { }} PaperProps={{ sx: { borderRadius: '28px' } }}>
+			<DialogTitle sx={{ fontWeight: 600, pb: 1, bgcolor: 'background.paper', color: 'text.primary' }}>
 				<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
 					<Box
 						sx={{
@@ -110,11 +110,11 @@ export function KeywordGroupsStreamDialog({ open, logs, onCancel, onHide }: Keyw
 
 			<DialogActions sx={{ px: 3, py: 2 }}>
 				{onHide && (
-					<Button onClick={onHide} color="primary" variant="outlined">
+					<Button onClick={onHide} color="primary" variant="outlined" sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700 }}>
 						Chạy nền
 					</Button>
 				)}
-				<Button onClick={onCancel} color="error" variant="outlined">
+				<Button onClick={onCancel} color="error" variant="outlined" sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700 }}>
 					Huỷ
 				</Button>
 			</DialogActions>

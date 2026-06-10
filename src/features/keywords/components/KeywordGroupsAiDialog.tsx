@@ -55,7 +55,7 @@ export function KeywordGroupsAiDialog({ open, loading, onClose, onConfirm }: Key
 	};
 
 	return (
-		<Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+		<Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '28px' } }}>
 			<DialogTitle sx={{ fontWeight: 600, pb: loading ? 0 : undefined }}>Cấu hình AI Gợi ý theo nhóm</DialogTitle>
 			{loading && (
 				<Box sx={{ px: 3, pt: 1.5, pb: 0.5 }}>
@@ -140,10 +140,10 @@ export function KeywordGroupsAiDialog({ open, loading, onClose, onConfirm }: Key
 					</Box>
 				</DialogContent>
 				<DialogActions sx={{ px: 3, py: 2 }}>
-					<Button onClick={onClose} color="inherit">
+					<Button onClick={onClose} color="inherit" sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700 }}>
 						{loading ? 'Đóng (vẫn xử lý nền)' : 'Hủy'}
 					</Button>
-					<Button type="submit" variant="contained" disabled={loading}>
+					<Button type="submit" variant="contained" disabled={loading} sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700 }}>
 						{loading ? 'Đang tạo...' : 'Xác nhận tạo'}
 					</Button>
 				</DialogActions>

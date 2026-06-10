@@ -239,7 +239,7 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 
 	return (
 		<>
-			<Dialog open={open} onClose={!loading && !generateLoading ? onClose : undefined} maxWidth="lg" fullWidth>
+			<Dialog open={open} onClose={!loading && !generateLoading ? onClose : undefined} maxWidth="lg" fullWidth PaperProps={{ sx: { borderRadius: '28px' } }}>
 				<DialogTitle sx={{ fontWeight: 600, pb: generateLoading ? 0 : undefined }}>Kết quả gợi ý bộ từ khóa từ AI</DialogTitle>
 				{generateLoading && (
 					<Box sx={{ px: 3, pt: 1.5, pb: 0.5 }}>
@@ -363,12 +363,12 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 				</DialogContent>
 				<DialogActions sx={{ px: 3, py: 2 }}>
 					{onExit && !generateLoading && (
-						<Button onClick={onExit} color="error" variant="outlined" disabled={loading} sx={{ mr: 'auto' }}>
+						<Button onClick={onExit} color="error" variant="outlined" disabled={loading} sx={{ mr: 'auto', borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700 }}>
 							Thoát
 						</Button>
 					)}
 					{generateLoading && (
-						<Button onClick={onClose} color="inherit" sx={{ mr: 'auto' }}>
+						<Button onClick={onClose} color="inherit" sx={{ mr: 'auto', borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700 }}>
 							Đóng (vẫn xử lý nền)
 						</Button>
 					)}
@@ -385,7 +385,7 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 								<ToggleButton value="1-m">1 tháng</ToggleButton>
 								<ToggleButton value="3-m">3 tháng</ToggleButton>
 							</ToggleButtonGroup>
-							<Button onClick={handleRetryClick} disabled={loading || generateLoading} color="secondary">
+							<Button onClick={handleRetryClick} disabled={loading || generateLoading} color="secondary" sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700 }}>
 								{generateLoading ? 'Đang tạo lại...' : 'Tạo lại AI (Retry)'}
 							</Button>
 						</Box>
@@ -394,6 +394,7 @@ export function KeywordAiResultDialog({ open, loading, generateLoading, suggesti
 						onClick={handleSubmit}
 						variant="contained"
 						disabled={loading || generateLoading || selected.length === 0}
+						sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700 }}
 					>
 						{loading ? 'Đang tạo...' : `Xác nhận tạo (${selected.length})`}
 					</Button>

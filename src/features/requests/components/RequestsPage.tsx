@@ -12,20 +12,14 @@ const TABS = [
   {
     label: 'Hộp thư đến',
     icon: <InboxOutlinedIcon sx={{ fontSize: 17 }} />,
-    activeColor: '#00b894',
-    activeBg: 'linear-gradient(135deg, #00b894, #00cec9)',
   },
   {
     label: 'Đã gửi',
     icon: <SendOutlinedIcon sx={{ fontSize: 17 }} />,
-    activeColor: '#00b894',
-    activeBg: 'linear-gradient(135deg, #00b894, #00cec9)',
   },
   {
     label: 'Nhóm',
     icon: <GroupsOutlinedIcon sx={{ fontSize: 17 }} />,
-    activeColor: '#00b894',
-    activeBg: 'linear-gradient(135deg, #00b894, #00cec9)',
   },
 ];
 
@@ -59,12 +53,12 @@ export default function RequestsPage() {
 						borderRadius: '10px',
 						cursor: 'pointer',
 						transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
-						background: tab === i ? t.activeBg : 'transparent',
-						boxShadow: tab === i ? '0 2px 8px rgba(0,0,0,0.15)' : 'none',
-						color: tab === i ? '#fff' : '#64748b',
+						bgcolor: tab === i ? 'primary.main' : 'transparent',
+						boxShadow: tab === i ? '0 2px 8px rgba(0, 184, 148, 0.25)' : 'none',
+						color: tab === i ? 'primary.contrastText' : 'text.secondary',
 						userSelect: 'none',
 						'&:hover': tab !== i
-							? { bgcolor: 'rgba(255,255,255,0.7)', color: 'text.primary' }
+							? { bgcolor: 'rgba(255,255,255,0.08)', color: 'text.primary' }
 							: {},
 					}}
 				>
@@ -78,7 +72,7 @@ export default function RequestsPage() {
 	);
 
 	return (
-		<Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+		<Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', zoom: 0.8 }}>
 			{/* Content */}
 			<Box sx={{ flex: 1, overflow: 'auto' }}>
 				{tab === 0 && <InboxPage tabsNode={tabsNode} />}

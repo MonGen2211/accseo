@@ -18,6 +18,7 @@ import UserTable from './UserTable';
 import UserForm from './UserForm';
 import RoleManagementTab from './RoleManagementTab';
 import RolePermissionsTab from './RolePermissionsTab';
+import BranchManagementTab from './BranchManagementTab';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -32,11 +33,13 @@ import PersonAddOutlinedIcon from '@mui/icons-material/PersonAddOutlined';
 import CloseIcon from '@mui/icons-material/Close';
 import { useToastify } from '../../../components/Toastify';
 
-type TabValue = 'users' | 'roles' | 'permissions';
+type TabValue = 'users' | 'roles' | 'permissions' | 'branches';
 
 export default function UserPage() {
 	const dispatch = useAppDispatch();
 	const { users, selectedUser, loading, error, pagination, sortField, sortOrder } = useAppSelector((state) => state.users);
+	const currentUser = useAppSelector((state) => state.auth.user);
+	const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.roles?.includes('ADMIN');
 	const [tab, setTab] = useState<TabValue>('users');
 	const [showForm, setShowForm] = useState(false);
 	const [search, setSearch] = useState('');
@@ -149,7 +152,7 @@ export default function UserPage() {
 	};
 
 	return (
-		<Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 3, zoom: 0.9 }}>
+		<Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 3, zoom: 0.8 }}>
 			<Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
 				<Box sx={{ px: 3, pt: 3, pb: 0 }}>
 					<Tabs
@@ -166,14 +169,23 @@ export default function UserPage() {
 							value="users" 
 							sx={{ '&.Mui-selected': { borderBottom: '2px solid', borderColor: 'primary.main', mb: '-1px' } }} 
 						/>
+						{isAdmin && (
+							<Tab 
+								label="Tạo phân quyền" 
+								value="roles" 
+								sx={{ '&.Mui-selected': { borderBottom: '2px solid', borderColor: 'primary.main', mb: '-1px' } }} 
+							/>
+						)}
+						{isAdmin && (
+							<Tab 
+								label="Phân quyền theo vai trò" 
+								value="permissions" 
+								sx={{ '&.Mui-selected': { borderBottom: '2px solid', borderColor: 'primary.main', mb: '-1px' } }} 
+							/>
+						)}
 						<Tab 
-							label="Tạo phân quyền" 
-							value="roles" 
-							sx={{ '&.Mui-selected': { borderBottom: '2px solid', borderColor: 'primary.main', mb: '-1px' } }} 
-						/>
-						<Tab 
-							label="Phân quyền theo vai trò" 
-							value="permissions" 
+							label="Quản lý chi nhánh" 
+							value="branches" 
 							sx={{ '&.Mui-selected': { borderBottom: '2px solid', borderColor: 'primary.main', mb: '-1px' } }} 
 						/>
 					</Tabs>
@@ -205,9 +217,11 @@ export default function UserPage() {
 						/>
 					)}
 
-					{tab === 'roles' && <RoleManagementTab />}
+					{tab === 'roles' && isAdmin && <RoleManagementTab />}
 
-					{tab === 'permissions' && <RolePermissionsTab />}
+					{tab === 'permissions' && isAdmin && <RolePermissionsTab />}
+
+					{tab === 'branches' && <BranchManagementTab />}
 				</Box>
 			</Paper>
 

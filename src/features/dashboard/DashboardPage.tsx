@@ -4,6 +4,7 @@ import LinkIcon from '@mui/icons-material/Link';
 import PlaceIcon from '@mui/icons-material/Place';
 import PsychologyIcon from '@mui/icons-material/Psychology';
 import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
@@ -39,6 +40,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import TrendingUpOutlinedIcon from '@mui/icons-material/TrendingUpOutlined';
 import CloudSyncOutlinedIcon from '@mui/icons-material/CloudSyncOutlined';
 import { useState, useEffect, lazy, Suspense } from 'react';
+import type { Theme, SxProps } from '@mui/material';
 import LogoImage from '../../assets/Logo/Logo.png';
 
 const TrendingKeywordsSection = lazy(() => import('./TrendingKeywordsSection'));
@@ -79,14 +81,14 @@ interface MiniButtonProps {
   color?: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'grey';
   gradient?: 'orange' | 'green' | 'blue';
   icon?: React.ReactNode;
-  sx?: any;
+  sx?: SxProps<Theme>;
 }
 
 function MiniButton({ label, variant = 'contained', color = 'primary', gradient, icon, sx }: MiniButtonProps) {
-  let bgcolor = undefined;
+  let bgcolor: string | ((theme: Theme) => string) | undefined = undefined;
   let bgGradient = undefined;
-  let textColor = 'white';
-  let border = undefined;
+  let textColor: string | ((theme: Theme) => string) = 'white';
+  let border: string | ((theme: Theme) => string) | undefined = undefined;
 
   if (gradient === 'orange') {
     bgGradient = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
@@ -103,9 +105,9 @@ function MiniButton({ label, variant = 'contained', color = 'primary', gradient,
     else if (color === 'error') bgcolor = '#ef4444';
     else if (color === 'info') bgcolor = '#38bdf8';
     else if (color === 'grey') {
-      bgcolor = (theme: any) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)';
-      textColor = (theme: any) => theme.palette.mode === 'dark' ? '#34d399' : '#059669';
-      border = (theme: any) => theme.palette.mode === 'dark' ? '1px solid rgba(52,211,153,0.2)' : '1px solid rgba(5,150,105,0.15)';
+      bgcolor = (theme: Theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)';
+      textColor = (theme: Theme) => theme.palette.mode === 'dark' ? '#34d399' : '#059669';
+      border = (theme: Theme) => theme.palette.mode === 'dark' ? '1px solid rgba(52,211,153,0.2)' : '1px solid rgba(5,150,105,0.15)';
     }
   } else if (variant === 'outlined') {
     textColor = color === 'primary' ? '#2563EB' : (color === 'success' ? '#10b981' : (color === 'warning' ? '#f59e0b' : (color === 'error' ? '#ef4444' : '#38bdf8')));
@@ -168,12 +170,12 @@ const TAB_GUIDES: Record<string, { title: string; content: React.ReactNode }> = 
           <li>
             <strong>DOMAIN QUẢN LÝ:</strong> Hiển thị tổng số tên miền đang theo dõi. 
             <br />
-            <span style={{ color: '#00b894', fontWeight: 600 }}>👉 Hành động:</span> Nhấp chọn để mở bảng báo cáo lưu lượng truy cập Google Analytics (GA4) bên phải.
+            <span style={{ color: '#2563eb', fontWeight: 600 }}>👉 Hành động:</span> Nhấp chọn để mở bảng báo cáo lưu lượng truy cập Google Analytics (GA4) bên phải.
           </li>
           <li>
             <strong>YÊU CẦU CẦN XỬ LÝ:</strong> Hiển thị số lượng tác vụ cào báo chí, phân tách từ khóa, hoặc tối ưu nội dung đang chờ xử lý.
             <br />
-            <span style={{ color: '#00b894', fontWeight: 600 }}>👉 Hành động:</span> Nhấp chọn để mở hòm thư Inbox tác vụ, xem hạn chót và nhấn <MiniButton label="Xem chi tiết" color="primary" /> để chuyển hướng xử lý.
+            <span style={{ color: '#2563eb', fontWeight: 600 }}>👉 Hành động:</span> Nhấp chọn để mở hòm thư Inbox tác vụ, xem hạn chót và nhấn <MiniButton label="Xem chi tiết" color="primary" /> để chuyển hướng xử lý.
           </li>
           <li>
             <strong>BÀI VIẾT ĐÃ INDEX / CHƯA INDEX:</strong> Tỷ lệ lập chỉ mục của các trang bài viết của bạn trên Google Search (Không thể click).
@@ -181,12 +183,12 @@ const TAB_GUIDES: Record<string, { title: string; content: React.ReactNode }> = 
           <li>
             <strong>BỘ TỪ KHOÁ TRIỂN KHAI:</strong> Tổng số nhóm từ khóa đã được duyệt để viết bài SEO.
             <br />
-            <span style={{ color: '#00b894', fontWeight: 600 }}>👉 Hành động:</span> Nhấp chọn để xem danh sách nhóm từ khóa đã triển khai bên phải theo từng tên miền.
+            <span style={{ color: '#2563eb', fontWeight: 600 }}>👉 Hành động:</span> Nhấp chọn để xem danh sách nhóm từ khóa đã triển khai bên phải theo từng tên miền.
           </li>
           <li>
             <strong>BỘ TỪ KHOÁ CHỜ PHÊ DUYỆT:</strong> Số nhóm từ khóa mới tạo đang đợi admin duyệt.
             <br />
-            <span style={{ color: '#00b894', fontWeight: 600 }}>👉 Hành động:</span> Nhấp chọn để xem chi tiết danh sách nhóm đang chờ phê duyệt.
+            <span style={{ color: '#2563eb', fontWeight: 600 }}>👉 Hành động:</span> Nhấp chọn để xem chi tiết danh sách nhóm đang chờ phê duyệt.
           </li>
           <li>
             <strong>CÁC THẺ KHÁC (Chỉ hiển thị dữ liệu):</strong> <em>Bài viết tối ưu chờ duyệt</em>, <em>Bài viết chờ duyệt</em>, và <em>Từ khoá phân tách chờ duyệt</em> giúp cập nhật nhanh tiến độ vận hành (Không thể click).
@@ -501,20 +503,20 @@ const TAB_GUIDES: Record<string, { title: string; content: React.ReactNode }> = 
     )
   },
   serp: {
-    title: 'Kiểm tra thứ hạng SERP',
+    title: 'check Ranking',
     content: (
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
         <Typography variant="body1" sx={{ fontWeight: 800, color: 'primary.main' }}>
           HƯỚNG DẪN KIỂM TRA THỨ HẠNG TỪ KHÓA (SERP CHECKER)
         </Typography>
         <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
-          Công cụ <strong>Kiểm tra thứ hạng SERP</strong> giúp bạn định vị vị trí xếp hạng thực tế của website của mình cho các từ khóa mục tiêu trên trang kết quả tìm kiếm Google (SERP).
+          Công cụ <strong>Kiểm tra thứ hạng SERP (check Ranking)</strong> giúp bạn định vị vị trí xếp hạng thực tế của website của mình cho các từ khóa mục tiêu trên trang kết quả tìm kiếm Google (SERP).
         </Typography>
 
         <Divider />
 
         <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
-          ⚙️ 1. THIẾT LẬP THAM SỐ QUÉT
+          1. THIẾT LẬP THAM SỐ QUÉT
         </Typography>
         <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
           <li>
@@ -527,14 +529,14 @@ const TAB_GUIDES: Record<string, { title: string; content: React.ReactNode }> = 
             <strong>Chọn vùng địa lý (Geo) và Ngôn ngữ:</strong> Rất quan trọng đối với Local SEO. Bạn có thể chọn quét từ Google Việt Nam (vi), Google Mỹ (us)... để nhận kết quả chính xác theo hành vi tìm kiếm địa phương của người dùng.
           </li>
           <li>
-            <strong>Bắt đầu kiểm tra:</strong> Bấm nút <MiniButton label="Kiểm tra thứ hạng" gradient="blue" /> để bắt đầu quét. Hệ thống sẽ tự động gửi yêu cầu giả lập hành vi tìm kiếm thực tế.
+            <strong>Bắt đầu kiểm tra:</strong> Bấm nút <MiniButton label="Kiểm tra thứ hạng" color="primary" /> để bắt đầu quét. Hệ thống sẽ tự động gửi yêu cầu giả lập hành vi tìm kiếm thực tế.
           </li>
         </Box>
 
         <Divider />
 
         <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
-          📊 2. PHÂN TÍCH BẢNG THỨ HẠNG KẾT QUẢ
+          2. PHÂN TÍCH BẢNG THỨ HẠNG KẾT QUẢ
         </Typography>
         <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
           <li>
@@ -554,20 +556,20 @@ const TAB_GUIDES: Record<string, { title: string; content: React.ReactNode }> = 
     )
   },
   'index-checker': {
-    title: 'Google Index Checker',
+    title: 'Check Index',
     content: (
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
         <Typography variant="body1" sx={{ fontWeight: 800, color: 'primary.main' }}>
-          HƯỚNG DẪN KIỂM TRA TRẠNG THÁI LẬP CHỈ MỤC (INDEX CHECKER)
+          HƯỚNG DẪN KIỂM TRA TRẠNG THÁI LẬP CHỈ MỤC (CHECK INDEX)
         </Typography>
         <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
-          Công cụ <strong>Google Index Checker</strong> giúp bạn xác định nhanh xem các đường dẫn (URL) bài viết, sản phẩm trên website đã được Google lưu trữ (Index) và sẵn sàng hiển thị trên trang tìm kiếm chưa.
+          Công cụ <strong>Check Index</strong> giúp bạn xác định nhanh xem các đường dẫn (URL) bài viết, sản phẩm trên website đã được Google lưu trữ (Index) và sẵn sàng hiển thị trên trang tìm kiếm chưa.
         </Typography>
 
         <Divider />
 
         <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
-          🛠️ 1. CẤU HÌNH QUÉT URL
+          1. CẤU HÌNH QUÉT URL
         </Typography>
         <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
           <li>
@@ -581,14 +583,14 @@ const TAB_GUIDES: Record<string, { title: string; content: React.ReactNode }> = 
             • <em>Apify Cloud (Đám mây):</em> Quét qua mạng lưới đám mây phân tán. Tốc độ quét cực nhanh (~1.7s cho mỗi URL), không bị chặn IP bởi cơ chế xoay vòng proxy, phù hợp khi cần kiểm tra số lượng link lớn.
           </li>
           <li>
-            <strong>Nút cào & dọn dẹp:</strong> Bấm nút <MiniButton label="Kiểm tra Index" gradient="green" /> ở chân trang cấu hình để kích hoạt bot đi kiểm tra. Bạn có thể nhấn <MiniButton label="Xóa toàn bộ" variant="outlined" color="error" /> để dọn sạch ô nhập liệu nhanh chóng.
+            <strong>Nút cào & dọn dẹp:</strong> Bấm nút <MiniButton label="Kiểm tra Index" color="success" /> ở chân trang cấu hình để kích hoạt bot đi kiểm tra. Bạn có thể nhấn <MiniButton label="Xóa toàn bộ" variant="outlined" color="error" /> để dọn sạch ô nhập liệu nhanh chóng.
           </li>
         </Box>
 
         <Divider />
 
         <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
-          📋 2. KẾT QUẢ VÀ HÀNH ĐỘNG TIẾP THEO
+          2. KẾT QUẢ VÀ HÀNH ĐỘNG TIẾP THEO
         </Typography>
         <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
           <li>
@@ -676,7 +678,7 @@ const TAB_GUIDES: Record<string, { title: string; content: React.ReactNode }> = 
         <Divider />
 
         <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
-          ⚙️ 1. CHỌN CHẾ ĐỘ CÀO & GIỚI HẠN URL
+          1. CHỌN CHẾ ĐỘ CÀO & GIỚI HẠN URL
         </Typography>
         <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
           <li>
@@ -686,14 +688,14 @@ const TAB_GUIDES: Record<string, { title: string; content: React.ReactNode }> = 
             <strong>Theo dõi link con (Follow links) - BẬT:</strong> Khi chọn tính năng này, hệ thống sẽ giới hạn chỉ cho phép nhập **duy nhất 1 URL**. Bot sẽ cào URL chính này, tìm kiếm toàn bộ các liên kết nội bộ (Internal links) có trong trang đó và tự động cào tiếp tất cả các trang con. Ô nhập liệu sẽ hiển thị cảnh báo lỗi và nút cào sẽ bị vô hiệu hóa nếu bạn nhập nhiều hơn 1 URL khi bật tính năng này.
           </li>
           <li>
-            <strong>Bắt đầu cào:</strong> Bấm nút <MiniButton label="Bắt đầu cào URL" gradient="green" /> để kích hoạt bot Puppeteer bóc tách mã nguồn trang web.
+            <strong>Bắt đầu cào:</strong> Bấm nút <MiniButton label="Bắt đầu cào URL" color="success" /> để kích hoạt bot Puppeteer bóc tách mã nguồn trang web.
           </li>
         </Box>
 
         <Divider />
 
         <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
-          📊 2. DỮ LIỆU SEO ON-PAGE TRÍCH XUẤT ĐƯỢC
+          2. DỮ LIỆU SEO ON-PAGE TRÍCH XUẤT ĐƯỢC
         </Typography>
         <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
           <li>
@@ -713,59 +715,50 @@ const TAB_GUIDES: Record<string, { title: string; content: React.ReactNode }> = 
     )
   },
   'content-analysis': {
-    title: 'Phân tích nội dung (SEO Content Analysis)',
+    title: 'Tạo Outline (SEO Outline Creator)',
     content: (
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
         <Typography variant="body1" sx={{ fontWeight: 800, color: 'primary.main' }}>
-          HƯỚNG DẪN PHÂN TÍCH VÀ TỐI ƯU HÓA BÀI VIẾT (SEO CONTENT ANALYSIS)
+          HƯỚNG DẪN TẠO OUTLINE BÀI VIẾT (SEO OUTLINE CREATOR)
         </Typography>
         <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
-          Công cụ <strong>SEO Content Analysis</strong> sử dụng trí tuệ nhân tạo (AI) để phân tích chất lượng bài viết của bạn đối chiếu với từ khóa mục tiêu, chỉ ra điểm số tối ưu hóa và đưa ra các đề xuất điều chỉnh cụ thể.
+          Công cụ <strong>Tạo Outline</strong> sử dụng trí tuệ nhân tạo (AI) để phân tích cấu trúc của các đối thủ hàng đầu trên kết quả tìm kiếm Google (SERP), từ đó đưa ra các đề xuất về độ dài bài viết, số lượng headings, hình ảnh, mật độ từ khóa NLP và tự động thiết kế một bản dàn ý (brief outline) tối ưu nhất.
         </Typography>
 
         <Divider />
 
         <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
-          ✍️ 1. CÁCH GỬI BÀI VIẾT PHÂN TÍCH
+          1. CÁCH KHỞI TẠO PHIÊN PHÂN TÍCH OUTLINE
         </Typography>
         <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
           <li>
-            <strong>Từ khóa chính (Focus Keyword):</strong> Nhập từ khóa quan trọng nhất mà bạn muốn bài viết này đạt thứ hạng cao trên Google (ví dụ: "cách ép index nhanh").
+            <strong>Từ khóa phân tích:</strong> Nhập từ khóa quan trọng mà bạn muốn lên dàn ý viết bài (ví dụ: &ldquo;thủ tục ly hôn thuận tình&rdquo;).
           </li>
           <li>
-            <strong>Nội dung bài viết:</strong> Dán toàn bộ tiêu đề và văn bản bài viết của bạn vào khung soạn thảo văn bản lớn.
+            <strong>Thiết lập vùng quét:</strong> Lựa chọn Vị trí địa lý và Ngôn ngữ tìm kiếm để nhận kết quả chính xác theo thị trường mục tiêu.
           </li>
           <li>
-            <strong>Yêu cầu AI phân tích:</strong> Nhấn nút <MiniButton label="Phân tích bài viết" gradient="orange" /> để kích hoạt AI kiểm tra chất lượng SEO.
+            <strong>Số đối thủ cào quét:</strong> Chọn số lượng đối thủ trên Top SERP (từ 5 đến 15 trang) để bot thu thập dữ liệu cấu trúc.
+          </li>
+          <li>
+            <strong>Bắt đầu phân tích:</strong> Nhấn nút <MiniButton label="Phân tích từ khóa" color="primary" /> để đưa phiên phân tích vào hàng đợi cào quét.
           </li>
         </Box>
 
         <Divider />
 
         <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
-          📊 2. PHÂN TÍCH ĐIỂM SỐ & KHUYẾN NGHỊ TỐI ƯU
+          2. KẾT QUẢ VÀ CÁC THAO TÁC HỖ TRỢ
         </Typography>
         <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
           <li>
-            <strong>Điểm số SEO Content (Thang điểm 1 - 100):</strong>
-            <br />
-            • <em>Màu xanh lục (&gt;80 điểm):</em> Bài viết đã tối ưu rất tốt, sẵn sàng đăng tải.
-            <br />
-            • <em>Màu cam (50 - 79 điểm):</em> Mức độ trung bình, cần chỉnh sửa bổ sung một vài yếu tố SEO.
-            <br />
-            • <em>Màu đỏ (&lt;50 điểm):</em> Tối ưu kém, bài viết có nguy cơ cao không thể lọt top Google do thiếu chuẩn SEO.
+            <strong>Đề xuất cấu trúc chuẩn SEO:</strong> AI tổng hợp và tính toán số từ lý tưởng, số lượng thẻ H2, số ảnh cần thiết và mật độ từ khóa của đối thủ.
           </li>
           <li>
-            <strong>Kiểm tra mật độ từ khóa (Keyword Density Check):</strong> AI chỉ ra tần suất xuất hiện của từ khóa chính. Nếu mật độ quá cao (trên 2.5%) sẽ cảnh báo nhồi nhét từ khóa; nếu quá thấp (dưới 0.5%) sẽ khuyến nghị chèn thêm từ khóa vào các vị trí tự nhiên.
+            <strong>Dàn ý bài viết tối ưu bằng AI:</strong> Hiển thị cấu trúc H2, H3, H4 gợi ý kèm theo các từ khóa NLP tương ứng. Bạn có thể bật công tắc Chế độ tối giản, copy outline hoặc tải file Markdown (.md).
           </li>
           <li>
-            <strong>Đề xuất sửa đổi thông minh của AI:</strong> Liệt kê danh sách các tác vụ cụ thể cần thực hiện để nâng điểm bài viết. Ví dụ:
-            <br />
-            • <code>"Hãy bổ sung từ khóa mục tiêu vào thẻ H1 ở đầu trang"</code>
-            <br />
-            • <code>"Đoạn văn thứ 4 quá dài (150 từ), hãy ngắt nhỏ thành các đoạn dưới 80 từ để tăng trải nghiệm đọc"</code>
-            <br />
-            • <code>"Thiếu thuộc tính mô tả ảnh (Alt text), hãy thêm từ khóa chính vào Alt ảnh sản phẩm"</code>
+            <strong>Xuất Google Doc:</strong> Nhấp nút <MiniButton label="Xuất Google Doc" color="primary" /> để tự động tạo và xuất dàn ý ra trang văn bản Google Docs để bắt đầu viết bài trực tiếp.
           </li>
         </Box>
       </Box>
@@ -789,7 +782,7 @@ const TAB_GUIDES: Record<string, { title: string; content: React.ReactNode }> = 
         </Typography>
         <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
           <li>
-            <strong>Nhập danh sách URL:</strong> Nhập các đường dẫn URL cần ép index (mỗi dòng nhập một URL). Bạn có thể lọc danh sách các link <em>"Chưa Index"</em> từ kết quả của công cụ **Google Index Checker** để đưa sang đây.
+            <strong>Nhập danh sách URL:</strong> Nhập các đường dẫn URL cần ép index (mỗi dòng nhập một URL). Bạn có thể lọc danh sách các link <em>"Chưa Index"</em> từ kết quả của công cụ **Check Index** để đưa sang đây.
           </li>
           <li>
             <strong>Cơ chế kết nối API:</strong> Công cụ sử dụng tài khoản dịch vụ API (Service Account Key) đã được xác minh quyền sở hữu website trong Google Search Console để gửi yêu cầu.
@@ -835,21 +828,21 @@ const TAB_GUIDES: Record<string, { title: string; content: React.ReactNode }> = 
         <Divider />
 
         <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
-          🔍 1. TIẾN HÀNH QUÉT SỨC KHỎE
+          1. TIẾN HÀNH QUÉT SỨC KHỎE
         </Typography>
         <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
           <li>
             <strong>Nhập địa chỉ website:</strong> Nhập đường dẫn trang chủ website cần chẩn đoán (ví dụ: <code>https://mywebsite.com</code>).
           </li>
           <li>
-            <strong>Bắt đầu Audit:</strong> Nhấn nút <MiniButton label="Bắt đầu Audit" gradient="orange" /> để kích hoạt bot quét. Hệ thống sẽ cào các liên kết trên trang web để tìm kiếm lỗi kỹ thuật.
+            <strong>Bắt đầu Audit:</strong> Nhấn nút <MiniButton label="Phân tích" color="primary" /> để kích hoạt bot quét. Hệ thống sẽ cào các liên kết trên trang web để tìm kiếm lỗi kỹ thuật.
           </li>
         </Box>
 
         <Divider />
 
         <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
-          📋 2. CÁC HẠNG MỤC PHÂN TÍCH & BÁO CÁO LỖI
+          2. CÁC HẠNG MỤC PHÂN TÍCH & BÁO CÁO LỖI
         </Typography>
         <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
           <li>
@@ -864,11 +857,11 @@ const TAB_GUIDES: Record<string, { title: string; content: React.ReactNode }> = 
           <li>
             <strong>Phân loại mức độ lỗi:</strong> Báo cáo phân chia làm 3 nhóm chính:
             <br />
-            • 🔴 <em>Lỗi nghiêm trọng (Critical Errors):</em> Cần sửa chữa ngay lập tức vì đây là nguyên nhân trực tiếp khiến Google phạt hoặc không index trang.
+            • <em>Lỗi nghiêm trọng (Critical Errors):</em> Cần sửa chữa ngay lập tức vì đây là nguyên nhân trực tiếp khiến Google phạt hoặc không index trang.
             <br />
-            • 🟡 <em>Cảnh báo (Warnings):</em> Các lỗi tối ưu trung bình cần cải thiện dần.
+            • <em>Cảnh báo (Warnings):</em> Các lỗi tối ưu trung bình cần cải thiện dần.
             <br />
-            • 🟢 <em>Đề xuất (Suggestions):</em> Khuyến nghị tối ưu cấu trúc nâng cao giúp nâng cao điểm chất lượng trang.
+            • <em>Đề xuất (Suggestions):</em> Khuyến nghị tối ưu cấu trúc nâng cao giúp nâng cao điểm chất lượng trang.
           </li>
         </Box>
       </Box>
@@ -919,6 +912,14 @@ const TAB_GUIDES: Record<string, { title: string; content: React.ReactNode }> = 
 
 type ActivePanel = 'ga4' | 'deployed' | 'pending' | 'requests';
 
+const formatDefensiveNumber = (num: number): string => {
+  if (isNaN(num) || num === null || num === undefined) return '-';
+  if (num >= 1e9) {
+    return num.toExponential(2); // Tránh bug tràn số
+  }
+  return new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(num);
+};
+
 // ─── StatCard ─────────────────────────────────────────────────────────────────
 interface StatCardProps {
   title: string;
@@ -938,31 +939,22 @@ function StatCard({ title, value, icon, activeColor = '#2563EB', active, onClick
       onClick={onClick}
       sx={{
         p: 3, 
-        borderRadius: 5, 
-        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(20, 20, 25, 0.6)' : '#ffffff',
-        display: 'flex', 
-        flexDirection: 'column', 
-        justifyContent: 'center', 
-        gap: 1.5,
+        borderRadius: 2, 
+        bgcolor: 'background.paper',
         minHeight: 110, 
         height: '100%',
         position: 'relative', 
         overflow: 'hidden',
         border: '1px solid',
-        borderColor: (theme) => active 
-          ? activeColor 
-          : (theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'),
-        background: (theme) => theme.palette.mode === 'dark' 
-          ? `radial-gradient(circle at 100% 100%, ${activeColor}15 0%, rgba(20, 20, 25, 0.6) 100%)` 
-          : `radial-gradient(circle at 100% 100%, ${activeColor}0a 0%, #ffffff 100%)`,
-        backdropFilter: 'blur(10px)',
-        boxShadow: active ? `0 8px 24px ${activeColor}25` : '0 4px 16px rgba(0,0,0,0.02)',
+        borderColor: active ? activeColor : 'divider',
         cursor: onClick ? 'pointer' : 'default',
-        transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+        transition: 'all 0.2s ease-in-out',
         '&:hover': onClick ? {
-          transform: 'translateY(-3px)',
+          transform: 'translateY(-2px)',
           borderColor: activeColor,
-          boxShadow: `0 12px 30px ${activeColor}25`,
+          boxShadow: (theme) => theme.palette.mode === 'dark' 
+            ? '0 4px 12px rgba(0,0,0,0.5)' 
+            : '0 4px 12px rgba(0,0,0,0.05)',
         } : {},
       }}
     >
@@ -975,18 +967,30 @@ function StatCard({ title, value, icon, activeColor = '#2563EB', active, onClick
         zIndex: 0,
         '& svg': { fontSize: 70 },
         transition: 'transform 0.4s ease',
-        '.MuiPaper-root:hover &': { transform: 'scale(1.15)' },
+        '.MuiPaper-root:hover &': { transform: 'scale(1.1)' },
       }}>
         {icon}
       </Box>
-      <Box sx={{ zIndex: 1, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-        <Typography sx={{ fontSize: '0.82rem', color: 'text.primary', fontWeight: 800, letterSpacing: 0.5, lineHeight: 1.3 }}>
+      <Stack spacing={1} sx={{ zIndex: 1, overflow: 'hidden', width: '100%' }}>
+        <Typography sx={{ fontSize: '0.82rem', color: 'text.secondary', fontWeight: 800, letterSpacing: 0.5, lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {title}
         </Typography>
-        <Typography sx={{ fontSize: '2.5rem', fontWeight: 900, color: 'text.primary', lineHeight: 1 }}>
-          {value}
-        </Typography>
-      </Box>
+        <Tooltip title={value.toLocaleString('en-US')} arrow placement="top">
+          <Typography sx={{ 
+            fontSize: '2.5rem', 
+            fontWeight: 900, 
+            color: 'text.primary', 
+            lineHeight: 1, 
+            cursor: 'help',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            maxWidth: '100%'
+          }}>
+            {formatDefensiveNumber(value)}
+          </Typography>
+        </Tooltip>
+      </Stack>
     </Paper>
   );
 }
@@ -1160,25 +1164,25 @@ function Ga4Panel({ domains, selectedDomainId, onDomainChange, selectedDays, onD
         {ga4Data && ga4Data.trend?.length > 0 && (
           <Box sx={{
             textAlign: 'right',
-            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.1)' : '#f0fdf4',
+            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.08)' : 'rgba(0, 184, 148, 0.04)',
             p: 2,
-            borderRadius: 3,
+            borderRadius: 2,
             border: '1px solid',
-            borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.25)' : '#bbf7d0'
+            borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.25)' : 'rgba(0, 184, 148, 0.15)'
           }}>
-            <Typography sx={{ fontSize: '1.8rem', fontWeight: 800, color: (theme) => theme.palette.mode === 'dark' ? '#00b894' : '#166534', lineHeight: 1 }}>
+            <Typography sx={{ fontSize: '1.8rem', fontWeight: 800, color: 'primary.main', lineHeight: 1 }}>
               {new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short' }).format(ga4Data.summary.screenPageViews)}
             </Typography>
-            <Typography sx={{ fontSize: '0.8rem', color: (theme) => theme.palette.mode === 'dark' ? '#3dd6a0' : '#15803d', fontWeight: 600, mt: 0.5 }}>Tổng lượt views</Typography>
+            <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary', fontWeight: 600, mt: 0.5 }}>Tổng lượt views</Typography>
           </Box>
         )}
       </Box>
-
+ 
       <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1.5, height: 200, pt: 2, position: 'relative', overflow: 'hidden' }}>
         <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 20, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', zIndex: 0, pointerEvents: 'none' }}>
           {[...Array(4)].map((_, i) => <Box key={i} sx={{ borderBottom: '1px dashed', borderColor: 'divider', width: '100%' }} />)}
         </Box>
-
+ 
         {loadingGa4 ? (
           <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}><CircularProgress size={30} /></Box>
         ) : (!ga4Data || !ga4Data.trend || ga4Data.trend.length === 0) ? (
@@ -1205,7 +1209,7 @@ function Ga4Panel({ domains, selectedDomainId, onDomainChange, selectedDays, onD
           }
           const maxViews = Math.max(...chartData.map(c => c.value), 1);
           const fmt = (v: number) => v === 0 ? '' : new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short', maximumFractionDigits: 1 }).format(v);
-
+ 
           const BAR_MAX_PX = 130;
           return chartData.map((item) => {
             const barH = Math.max((item.value / maxViews) * BAR_MAX_PX, 3);
@@ -1215,7 +1219,18 @@ function Ga4Panel({ domains, selectedDomainId, onDomainChange, selectedDays, onD
                   {fmt(item.value)}
                 </Typography>
                 <Box
-                  sx={{ width: '100%', maxWidth: 36, height: `${barH}px`, background: 'linear-gradient(to top, #3b82f6, #60a5fa)', borderRadius: '6px 6px 3px 3px', transition: 'all 0.3s', boxShadow: '0 2px 8px rgba(59,130,246,0.2)', '&:hover': { background: 'linear-gradient(to top, #2563eb, #3b82f6)', boxShadow: '0 4px 12px rgba(59,130,246,0.4)' }, cursor: 'pointer' }}
+                  sx={{ 
+                    width: '100%', 
+                    maxWidth: 36, 
+                    height: `${barH}px`, 
+                    bgcolor: 'primary.main', 
+                    borderRadius: '4px 4px 0 0', 
+                    transition: 'all 0.2s ease-in-out', 
+                    '&:hover': { 
+                      bgcolor: 'primary.dark' 
+                    }, 
+                    cursor: 'pointer' 
+                  }}
                   title={`${item.label}: ${item.value} views`}
                 />
                 <Typography sx={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600, mt: 0.5, whiteSpace: 'nowrap' }}>{item.label}</Typography>
@@ -1347,8 +1362,6 @@ export default function DashboardPage() {
     return sessionStorage.getItem('dashboard_active_tab') || 'overview';
   });
   const [guideOpen, setGuideOpen] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     return sessionStorage.getItem('sidebar_collapsed') === 'true';
@@ -1379,16 +1392,16 @@ export default function DashboardPage() {
     {
       title: 'Keywords',
       items: [
-        { id: 'trending-keywords', label: 'Google Trending Keyword', icon: <TrendingUpOutlinedIcon sx={{ fontSize: 20 }} /> },
+        { id: 'trending-keywords', label: 'Trending Keyword', icon: <TrendingUpOutlinedIcon sx={{ fontSize: 20 }} /> },
         { id: 'vbpl', label: 'Gợi ý từ khóa', icon: <AutoAwesomeIcon sx={{ fontSize: 20 }} /> },
         { id: 'planner', label: 'Keyword Planner', icon: <SearchIcon sx={{ fontSize: 20 }} /> },
-        { id: 'serp', label: 'Thứ hạng SERP', icon: <EmojiEventsIcon sx={{ fontSize: 20 }} /> },
+        { id: 'serp', label: 'check Ranking', icon: <EmojiEventsIcon sx={{ fontSize: 20 }} /> },
       ]
     },
     {
       title: 'Services',
       items: [
-        { id: 'index-checker', label: 'Google Index Checker', icon: <CloudDoneOutlinedIcon sx={{ fontSize: 20 }} /> },
+        { id: 'index-checker', label: 'Check Index', icon: <CloudDoneOutlinedIcon sx={{ fontSize: 20 }} /> },
         { id: 'scraper', label: 'Thu thập báo chí', icon: <ArticleOutlinedIcon sx={{ fontSize: 20 }} /> },
         { id: 'scraper-url', label: 'URL Scraper', icon: <LinkIcon sx={{ fontSize: 20 }} /> },
         { id: 'indexed', label: 'Ép Index', icon: <AndroidIcon sx={{ fontSize: 20 }} /> },
@@ -1397,7 +1410,7 @@ export default function DashboardPage() {
     {
       title: 'Developers',
       items: [
-        { id: 'content-analysis', label: 'Phân tích nội dung', icon: <PsychologyIcon sx={{ fontSize: 20 }} /> },
+        { id: 'content-analysis', label: 'Tạo Outline', icon: <PsychologyIcon sx={{ fontSize: 20 }} /> },
         { id: 'seo-audit', label: 'SEO Audit', icon: <AssessmentOutlinedIcon sx={{ fontSize: 20 }} /> },
         { id: 'geo-tag', label: 'Geo Tag Ảnh', icon: <PlaceIcon sx={{ fontSize: 20 }} /> },
       ]
@@ -1414,17 +1427,17 @@ export default function DashboardPage() {
     height: 42,
     borderRadius: '10px',
     border: '1px solid',
-    borderColor: (theme: any) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-    background: (theme: any) => theme.palette.mode === 'dark' 
+    borderColor: (theme: Theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+    background: (theme: Theme) => theme.palette.mode === 'dark' 
       ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' 
       : 'linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%)',
-    boxShadow: (theme: any) => theme.palette.mode === 'dark'
+    boxShadow: (theme: Theme) => theme.palette.mode === 'dark'
       ? '0 4px 8px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
       : '0 3px 6px rgba(0, 0, 0, 0.05), inset 0 1.5px 0 rgba(255, 255, 255, 0.9), 0 1px 2px rgba(0, 0, 0, 0.03)',
     transition: 'all 0.25s ease-in-out',
     '&:hover': {
       transform: 'translateY(-1.5px)',
-      boxShadow: (theme: any) => theme.palette.mode === 'dark'
+      boxShadow: (theme: Theme) => theme.palette.mode === 'dark'
         ? '0 6px 14px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12)'
         : '0 5px 10px rgba(0, 0, 0, 0.1), inset 0 1.5px 0 rgba(255, 255, 255, 1)',
     }
@@ -1524,7 +1537,7 @@ export default function DashboardPage() {
             {sidebarCollapsed ? <ChevronRightIcon sx={{ fontSize: 18 }} /> : <ChevronLeftIcon sx={{ fontSize: 18 }} />}
           </IconButton>
         </Box>
-        <Divider sx={{ mb: 2, mr: sidebarCollapsed ? 0 : 2, borderStyle: 'dashed', borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)' }} />
+        <Divider sx={{ mb: 2, mr: sidebarCollapsed ? 0 : 2, borderStyle: 'solid', borderColor: 'divider' }} />
 
         <Box 
           sx={{ 
@@ -1564,10 +1577,10 @@ export default function DashboardPage() {
               {catIdx > 0 && (
                 <Divider 
                   sx={{ 
-                    borderStyle: 'dashed', 
+                    borderStyle: 'solid', 
                     mb: 1.5, 
                     mt: 0.5,
-                    borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)' 
+                    borderColor: 'divider' 
                   }} 
                 />
               )}
@@ -1579,8 +1592,8 @@ export default function DashboardPage() {
                     fontWeight: 700, 
                     fontSize: '0.68rem', 
                     color: 'text.disabled', 
-                    letterSpacing: '1px', 
-                    px: 1.5, 
+                    letterSpacing: '1.2px', 
+                    px: 2, 
                     mb: 0.8,
                     textTransform: 'uppercase'
                   }}
@@ -1602,30 +1615,49 @@ export default function DashboardPage() {
                       gap: sidebarCollapsed ? 0 : 2,
                       py: 1.2,
                       px: sidebarCollapsed ? 0 : 2,
-                      width: sidebarCollapsed ? 44 : 'auto',
-                      height: sidebarCollapsed ? 44 : 'auto',
+                      width: sidebarCollapsed ? 46 : 'auto',
+                      height: 46,
                       mx: sidebarCollapsed ? 'auto' : 0,
-                      borderRadius: 2,
+                      borderRadius: '100px',
                       cursor: 'pointer',
-                      color: isActive ? '#00b894' : 'text.secondary',
+                      color: isActive ? 'primary.main' : 'text.secondary',
                       bgcolor: isActive 
-                        ? (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.08)' : 'rgba(0, 184, 148, 0.04)'
+                        ? (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.09)' : 'rgba(0, 184, 148, 0.06)'
                         : 'transparent',
-                      border: '1px solid',
-                      borderColor: isActive 
-                        ? (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.25)' : 'rgba(0, 184, 148, 0.15)'
-                        : 'transparent',
-                      transition: 'all 0.15s ease-in-out',
+                      border: 'none',
+                      position: 'relative',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                       fontWeight: isActive ? 700 : 500,
-                      fontSize: '0.92rem',
+                      fontSize: '0.9rem',
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        left: 8,
+                        width: 4,
+                        height: isActive ? 16 : 0,
+                        borderRadius: '2px',
+                        bgcolor: 'primary.main',
+                        transition: 'height 0.2s ease-in-out',
+                      },
                       '&:hover': {
-                        color: isActive ? '#00b894' : 'text.primary',
+                        color: isActive ? 'primary.main' : 'text.primary',
                         bgcolor: isActive 
                           ? (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.12)' : 'rgba(0, 184, 148, 0.08)'
                           : 'action.hover',
+                        transform: (!isActive && !sidebarCollapsed) ? 'translateX(4px)' : 'none',
+                        '& .MuiSvgIcon-root': {
+                          color: isActive ? 'primary.main' : 'text.primary',
+                          transform: 'scale(1.05)',
+                        }
                       },
                       '&:active': {
-                        transform: 'scale(0.98)'
+                        transform: 'scale(0.97)'
+                      },
+                      '& .MuiSvgIcon-root': {
+                        fontSize: 20,
+                        color: isActive ? 'primary.main' : 'text.secondary',
+                        transition: 'all 0.2s ease-in-out',
+                        ml: sidebarCollapsed ? 0 : 0.5,
                       }
                     }}
                   >
@@ -1666,33 +1698,33 @@ export default function DashboardPage() {
 
       {/* Tab Content Panels */}
       <Box sx={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <Stack spacing={4}>
           {/* Header */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <Box>
+          <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+            <Stack spacing={1}>
               <Typography variant="h4" sx={{ letterSpacing: '-0.5px', fontWeight: 800, mb: 1 }}>
                 Xin chào, {user?.name || 'Admin'}! 👋
               </Typography>
 
               {unreadNotifs.length > 0 ? (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
+                <Stack spacing={0.8}>
                   {unreadNotifs.map(n => (
-                    <Box key={n._id} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <NotificationsNoneOutlinedIcon sx={{ fontSize: 16, color: '#00b894' }} />
+                    <Stack key={n._id} direction="row" alignItems="center" spacing={1}>
+                      <NotificationsNoneOutlinedIcon sx={{ fontSize: 16, color: 'primary.main' }} />
                       <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }} noWrap>{n.title}</Typography>
                       <Typography variant="caption" sx={{ color: 'text.disabled', flexShrink: 0 }}>
                         {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: vi })}
                       </Typography>
-                    </Box>
+                    </Stack>
                   ))}
-                </Box>
+                </Stack>
               ) : (
                 <Typography variant="body1" sx={{ color: 'text.secondary', fontWeight: 500 }}>
                   Không có thông báo mới
                 </Typography>
               )}
-            </Box>
-          </Box>
+            </Stack>
+          </Stack>
 
           {/* Cards + Panel */}
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 4, alignItems: 'start' }}>
@@ -1710,9 +1742,9 @@ export default function DashboardPage() {
               <StatCard
                 title="YÊU CẦU CẦN XỬ LÝ"
                 value={stats.pendingRequests}
-                icon={<InboxOutlinedIcon sx={{ color: '#00b894', fontSize: 22 }} />}
-                bgColor="#e6fcf5" iconBgColor="#c3fae8"
-                activeColor="#00b894"
+                icon={<InboxOutlinedIcon sx={{ color: '#4f46e5', fontSize: 22 }} />}
+                bgColor="#c7d2fe" iconBgColor="#e0e7ff"
+                activeColor="#4f46e5"
                 active={activePanel === 'requests'}
                 onClick={() => handleCardClick('requests')}
               />
@@ -1733,23 +1765,23 @@ export default function DashboardPage() {
               <StatCard
                 title="BÀI VIẾT TỐI ƯU CHỜ DUYỆT"
                 value={stats.pendingOptimizedArticles}
-                icon={<TuneOutlinedIcon sx={{ color: '#0D9488', fontSize: 22 }} />}
-                bgColor="#99f6e4" iconBgColor="#ccfbf1"
-                activeColor="#0D9488"
+                icon={<TuneOutlinedIcon sx={{ color: '#6366f1', fontSize: 22 }} />}
+                bgColor="#e0e7ff" iconBgColor="#c7d2fe"
+                activeColor="#6366f1"
               />
               <StatCard
                 title="BÀI VIẾT CHỜ DUYỆT"
                 value={stats.pendingArticles}
-                icon={<ArticleOutlinedIcon sx={{ color: '#DB2777', fontSize: 22 }} />}
-                bgColor="#fbcfe8" iconBgColor="#fce7f3"
-                activeColor="#DB2777"
+                icon={<ArticleOutlinedIcon sx={{ color: '#8b5cf6', fontSize: 22 }} />}
+                bgColor="#ede9fe" iconBgColor="#ddd6fe"
+                activeColor="#8b5cf6"
               />
               <StatCard
                 title="BỘ TỪ KHOÁ TRIỂN KHAI"
                 value={stats.deployedKeywords}
-                icon={<DraftsOutlinedIcon sx={{ color: '#059669', fontSize: 22 }} />}
-                bgColor="#a7f3d0" iconBgColor="#d1fae5"
-                activeColor="#059669"
+                icon={<DraftsOutlinedIcon sx={{ color: '#4f46e5', fontSize: 22 }} />}
+                bgColor="#e0e7ff" iconBgColor="#c7d2fe"
+                activeColor="#4f46e5"
                 active={activePanel === 'deployed'}
                 onClick={() => handleCardClick('deployed')}
               />
@@ -1808,7 +1840,7 @@ export default function DashboardPage() {
 
           {/* Bottom section: Activity Logs */}
           <ActivitySection />
-        </Box>
+        </Stack>
       </Box>
 
       {activeTab === 'trending-keywords' && (
@@ -1913,14 +1945,12 @@ export default function DashboardPage() {
             width: 48,
             height: 48,
             borderRadius: '50%',
-            background: 'linear-gradient(135deg, #00b894 0%, #00a884 100%)',
+            bgcolor: 'primary.main',
             color: '#fff',
-            boxShadow: '0 4px 16px rgba(0, 184, 148, 0.3)',
             transition: 'all 0.2s ease-in-out',
             '&:hover': {
-              background: 'linear-gradient(135deg, #00a884 0%, #008f6f 100%)',
+              bgcolor: 'primary.dark',
               transform: 'scale(1.08) translateY(-2px)',
-              boxShadow: '0 6px 20px rgba(0, 184, 148, 0.4)'
             },
             '&:active': {
               transform: 'scale(0.95) translateY(0)'
@@ -1979,14 +2009,14 @@ export default function DashboardPage() {
             onClick={() => setGuideOpen(false)} 
             variant="contained"
             sx={{
-              borderRadius: 2.5,
+              borderRadius: '100px',
               fontWeight: 800,
               textTransform: 'none',
               px: 3,
               py: 0.8,
-              bgcolor: '#00b894',
+              bgcolor: 'primary.main',
               '&:hover': {
-                bgcolor: '#00a884'
+                bgcolor: 'primary.dark'
               }
             }}
           >

@@ -62,13 +62,21 @@ export default function ForceIndexUnifiedSection({ isActive = true }: ForceIndex
             textColor="primary"
             indicatorColor="primary"
             sx={{
+              '& .MuiTabs-indicator': {
+                display: 'none'
+              },
               '& .MuiTab-root': {
                 fontWeight: 700,
                 textTransform: 'none',
                 fontSize: '0.98rem',
                 minHeight: 48,
                 px: 3,
-                gap: 1
+                gap: 1,
+                borderBottom: '2px solid transparent',
+                '&.Mui-selected': {
+                  color: 'primary.main',
+                  borderColor: 'primary.main'
+                }
               }
             }}
           >

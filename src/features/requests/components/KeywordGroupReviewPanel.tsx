@@ -11,6 +11,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TextField from '@mui/material/TextField';
+import Divider from '@mui/material/Divider';
 import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import DoNotDisturbAltOutlinedIcon from '@mui/icons-material/DoNotDisturbAltOutlined';
 import { keywordGroupService } from '../../keywords/keywordGroupService';
@@ -262,6 +263,7 @@ export default function KeywordGroupReviewPanel({ refId, requestId, requestStatu
               startIcon={actionLoading ? <CircularProgress size={14} color="inherit" /> : <CheckCircleOutlinedIcon />}
               onClick={handleApprove}
               disabled={actionLoading}
+              sx={{ borderRadius: '100px', height: 36, px: 2.5, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}
             >
               Phê duyệt
             </Button>
@@ -272,6 +274,7 @@ export default function KeywordGroupReviewPanel({ refId, requestId, requestStatu
               startIcon={<DoNotDisturbAltOutlinedIcon />}
               onClick={() => { setRejectReason(''); setRejectOpen(true); }}
               disabled={actionLoading}
+              sx={{ borderRadius: '100px', height: 36, px: 2.5, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}
             >
               Từ chối
             </Button>
@@ -280,9 +283,10 @@ export default function KeywordGroupReviewPanel({ refId, requestId, requestStatu
       </Paper>
 
       {/* Reject Dialog */}
-      <Dialog open={rejectOpen} onClose={() => setRejectOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Từ chối bộ keyword</DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
+      <Dialog open={rejectOpen} onClose={() => setRejectOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '28px' } }}>
+        <DialogTitle sx={{ fontWeight: 800 }}>Từ chối bộ keyword</DialogTitle>
+        <Divider />
+        <DialogContent sx={{ pt: 2.5, maxHeight: '70vh', overflowY: 'auto' }}>
           <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
             Bộ: <strong>{group.name}</strong>
           </Typography>
@@ -294,15 +298,18 @@ export default function KeywordGroupReviewPanel({ refId, requestId, requestStatu
             value={rejectReason}
             onChange={(e) => setRejectReason(e.target.value)}
             placeholder="Từ khoá chưa phù hợp với chiến lược..."
+            sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setRejectOpen(false)}>Huỷ</Button>
+        <Divider />
+        <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
+          <Button onClick={() => setRejectOpen(false)} sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>Huỷ</Button>
           <Button
             variant="contained"
             color="error"
             onClick={handleReject}
             disabled={actionLoading || !rejectReason.trim()}
+            sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}
           >
             {actionLoading ? 'Đang từ chối...' : 'Xác nhận từ chối'}
           </Button>

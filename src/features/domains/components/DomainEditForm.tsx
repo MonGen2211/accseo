@@ -32,8 +32,11 @@ export default function DomainEditForm({ open, domain, users, loading, usersLoad
 	const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>(preSelected);
 
 	// Sync khi dialog mở với domain/users mới
-	// eslint-disable-next-line react-hooks/set-state-in-effect
-	useEffect(() => { setSelectedUsers(preSelected); }, [preSelected]);
+	useEffect(() => {
+		Promise.resolve().then(() => {
+			setSelectedUsers(preSelected);
+		});
+	}, [preSelected]);
 
 	const handleSubmit = () => {
 		if (!domain) return;
@@ -42,14 +45,14 @@ export default function DomainEditForm({ open, domain, users, loading, usersLoad
 	};
 
 	return (
-		<Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+		<Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '28px' } }}>
 			<DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 				Quản lý người phụ trách
 				<IconButton size="small" onClick={onClose} disabled={loading}>
 					<CloseIcon />
 				</IconButton>
 			</DialogTitle>
-			<DialogContent dividers>
+			<DialogContent dividers sx={{ maxHeight: '70vh', overflowY: 'auto' }}>
 				{domain && (
 					<Box sx={{ mb: 3 }}>
 						<Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
@@ -80,10 +83,10 @@ export default function DomainEditForm({ open, domain, users, loading, usersLoad
 				/>
 
 				<Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-					<Button variant="text" color="inherit" onClick={onClose} disabled={loading}>
+					<Button variant="text" color="inherit" onClick={onClose} disabled={loading} sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>
 						Hủy
 					</Button>
-					<Button variant="contained" onClick={handleSubmit} disabled={loading}>
+					<Button variant="contained" onClick={handleSubmit} disabled={loading} sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>
 						{loading ? 'Đang lưu...' : 'Lưu'}
 					</Button>
 				</Box>

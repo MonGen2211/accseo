@@ -16,6 +16,7 @@
     "@emotion/styled": "^11.14.1",
     "@microsoft/fetch-event-source": "^2.0.1",
     "@mui/icons-material": "^9.0.0",
+    "@mui/lab": "^9.0.0-beta.4",
     "@mui/material": "^9.0.0",
     "@reduxjs/toolkit": "^2.11.2",
     "@types/file-saver": "^2.0.7",

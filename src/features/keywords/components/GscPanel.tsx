@@ -179,12 +179,20 @@ export function GscPanel({ domainId }: GscPanelProps) {
 					onChange={handleTabChange}
 					sx={{
 						minHeight: 36,
+						'& .MuiTabs-indicator': {
+							display: 'none'
+						},
 						'& .MuiTab-root': {
 							textTransform: 'none',
 							fontWeight: 600,
 							fontSize: 13,
 							minHeight: 36,
 							px: 2,
+							borderBottom: '2px solid transparent',
+							'&.Mui-selected': {
+								color: 'primary.main',
+								borderColor: 'primary.main',
+							}
 						},
 					}}
 				>

@@ -1,20 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Box,
   Paper,
   Typography,
   TextField,
   Button,
-  CircularProgress,
   LinearProgress,
-  List,
-  ListItem,
   Chip,
-  Tooltip,
   IconButton,
   Alert,
-  Card,
-  CardContent,
   Divider,
   Grid,
   Select,
@@ -32,7 +26,6 @@ import {
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import DeleteIcon from '@mui/icons-material/Delete';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import PlaceIcon from '@mui/icons-material/Place';
 import SearchIcon from '@mui/icons-material/Search';
 import ShuffleIcon from '@mui/icons-material/Shuffle';
@@ -41,14 +34,14 @@ import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import LabelIcon from '@mui/icons-material/Label';
 import SettingsIcon from '@mui/icons-material/Settings';
 import CodeIcon from '@mui/icons-material/Code';
-import AssignmentIcon from '@mui/icons-material/Assignment';
 import HelpOutlinedIcon from '@mui/icons-material/HelpOutlined';
 
 // Third party libs
 import * as piexif from 'piexifjs';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import { useToastify } from '../../../components/Toastify';
+import LoadingButton from '@mui/lab/LoadingButton';
+import { useToastify } from '@/components/Toastify';
 
 interface ImageFile {
   id: string;
@@ -267,18 +260,6 @@ export default function GeoTagSection() {
   // Saved Stats State
   const [savedStats, setSavedStats] = useState<{ originalSize: number; optimizedSize: number; count: number } | null>(null);
 
-  // Reset stats when images change
-  useEffect(() => {
-    setSavedStats(null);
-  }, [images]);
-
-  // Set default model on make change
-  useEffect(() => {
-    if (CAMERA_MODELS[cameraMake]) {
-      setCameraModel(CAMERA_MODELS[cameraMake][0]);
-    }
-  }, [cameraMake]);
-
   // Dropzone drag-drop handlers
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -305,6 +286,7 @@ export default function GeoTagSection() {
       });
     }
     setImages((prev) => [...prev, ...newImages]);
+    setSavedStats(null);
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -323,6 +305,7 @@ export default function GeoTagSection() {
   const handleDeleteImage = (id: string, url: string) => {
     setImages((prev) => prev.filter((img) => img.id !== id));
     URL.revokeObjectURL(url);
+    setSavedStats(null);
   };
 
   // Preset loading helpers
@@ -353,9 +336,7 @@ export default function GeoTagSection() {
     const randSoftware = EDITING_SOFTWARES[Math.floor(Math.random() * EDITING_SOFTWARES.length)];
 
     setCameraMake(randMake);
-    setTimeout(() => {
-      setCameraModel(randModel);
-    }, 50);
+    setCameraModel(randModel);
     setEditingSoftware(randSoftware);
     showToast('Đã điền ngẫu nhiên thông tin camera!', 'success');
   };
@@ -457,7 +438,7 @@ export default function GeoTagSection() {
             if (exifData && exifData["0th"] && exifData["0th"][piexif.ImageIFD.Orientation]) {
               originalOrientation = exifData["0th"][piexif.ImageIFD.Orientation];
             }
-          } catch (e) {
+          } catch {
             // No EXIF orientation or parsing failed
           }
         }
@@ -556,9 +537,9 @@ export default function GeoTagSection() {
         }
 
         // 4. Generate EXIF structure
-        const zeroth: any = {};
-        const exif: any = {};
-        const gps: any = {};
+        const zeroth: Record<number | string, unknown> = {};
+        const exif: Record<number | string, unknown> = {};
+        const gps: Record<number | string, unknown> = {};
 
         // Version ID
         gps[piexif.GPSIFD.GPSVersionID] = [2, 3, 0, 0];
@@ -645,7 +626,7 @@ export default function GeoTagSection() {
         totalOptimizedSize += blob.size;
 
         // Target File Name transformations
-        let targetName = imgFile.name;
+        const targetName = imgFile.name;
         const dotIndex = targetName.lastIndexOf('.');
         let nameWithoutExt = dotIndex !== -1 ? targetName.substring(0, dotIndex) : targetName;
 
@@ -708,9 +689,10 @@ export default function GeoTagSection() {
       });
 
       showToast('Đã xử lý và tải ảnh thành công!', 'success');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Process error:', err);
-      showToast(err.message || 'Gặp lỗi trong quá trình xử lý ảnh', 'danger');
+      const errMsg = err instanceof Error ? err.message : String(err);
+      showToast(errMsg || 'Gặp lỗi trong quá trình xử lý ảnh', 'danger');
     } finally {
       setProgress(null);
     }
@@ -724,7 +706,7 @@ export default function GeoTagSection() {
           
           {/* Static privacy banner */}
           <Alert severity="success" variant="outlined" sx={{ borderRadius: 3, borderStyle: 'dashed' }}>
-            🔒 <strong>100% riêng tư:</strong> Ảnh được xử lý hoàn toàn trong bộ nhớ trình duyệt của bạn, không upload lên bất kỳ máy chủ nào.
+            <strong>100% riêng tư:</strong> Ảnh được xử lý hoàn toàn trong bộ nhớ trình duyệt của bạn, không upload lên bất kỳ máy chủ nào.
           </Alert>
 
           {/* 1. File Upload Dropzone */}
@@ -816,7 +798,7 @@ export default function GeoTagSection() {
           {/* 2. GPS Location Configuration */}
           <Paper elevation={0} sx={{ p: 3.5, borderRadius: 4, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
             <Typography variant="h6" sx={{ fontWeight: 800, mb: 2.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <PlaceIcon color="primary" /> 📍 Vị trí GPS & Địa điểm
+              <PlaceIcon color="primary" /> Vĩ độ & Kinh độ GPS
             </Typography>
 
             <Grid container spacing={2.5} sx={{ mb: 3 }}>
@@ -890,7 +872,7 @@ export default function GeoTagSection() {
                     clickable
                     onClick={() => handleApplyPreset(preset)}
                     variant="outlined"
-                    sx={{ borderRadius: 2, fontWeight: 600 }}
+                    sx={{ borderRadius: '100px', fontWeight: 600 }}
                   />
                 ))}
                 {filteredPresets.length === 0 && (
@@ -906,7 +888,7 @@ export default function GeoTagSection() {
           <Paper elevation={0} sx={{ p: 3.5, borderRadius: 4, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 2.5 }}>
               <Typography variant="h6" sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <LabelIcon color="primary" /> 🏷️ Thông tin SEO Metadata
+                <LabelIcon color="primary" /> Thông tin SEO Metadata
               </Typography>
               <Box sx={{ display: 'flex', gap: 1.25 }}>
                 <Button
@@ -914,7 +896,7 @@ export default function GeoTagSection() {
                   variant="outlined"
                   startIcon={<ShuffleIcon />}
                   onClick={handleRandomSeo}
-                  sx={{ textTransform: 'none', borderRadius: 2.5, fontWeight: 700 }}
+                  sx={{ textTransform: 'none', borderRadius: '100px', fontWeight: 700 }}
                 >
                   Random SEO
                 </Button>
@@ -923,7 +905,7 @@ export default function GeoTagSection() {
                   variant="outlined"
                   startIcon={<ShuffleIcon />}
                   onClick={handleRandomAll}
-                  sx={{ textTransform: 'none', borderRadius: 2.5, fontWeight: 700 }}
+                  sx={{ textTransform: 'none', borderRadius: '100px', fontWeight: 700 }}
                 >
                   Random tất cả
                 </Button>
@@ -943,7 +925,7 @@ export default function GeoTagSection() {
                 />
                 <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                   {SEO_PRESETS.titles.slice(0, 3).map((t, idx) => (
-                    <Chip key={idx} label={t} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem' }} onClick={() => !useFileNameAsTitle && setTitle(t)} />
+                    <Chip key={idx} label={t} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: '100px' }} onClick={() => !useFileNameAsTitle && setTitle(t)} />
                   ))}
                 </Box>
               </Grid>
@@ -958,7 +940,7 @@ export default function GeoTagSection() {
                 />
                 <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                   {SEO_PRESETS.subjects.slice(0, 3).map((s, idx) => (
-                    <Chip key={idx} label={s} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem' }} onClick={() => setSubject(s)} />
+                    <Chip key={idx} label={s} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: '100px' }} onClick={() => setSubject(s)} />
                   ))}
                 </Box>
               </Grid>
@@ -973,7 +955,7 @@ export default function GeoTagSection() {
                 />
                 <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                   {SEO_PRESETS.keywords.slice(0, 3).map((k, idx) => (
-                    <Chip key={idx} label={k.substring(0, 40) + '...'} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem' }} onClick={() => setKeywords(k)} />
+                    <Chip key={idx} label={k.substring(0, 40) + '...'} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: '100px' }} onClick={() => setKeywords(k)} />
                   ))}
                 </Box>
               </Grid>
@@ -1022,7 +1004,7 @@ export default function GeoTagSection() {
                 />
                 <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                   {SEO_PRESETS.authors.slice(0, 3).map((a, idx) => (
-                    <Chip key={idx} label={a} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem' }} onClick={() => setAuthor(a)} />
+                    <Chip key={idx} label={a} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: '100px' }} onClick={() => setAuthor(a)} />
                   ))}
                 </Box>
               </Grid>
@@ -1037,7 +1019,7 @@ export default function GeoTagSection() {
                 />
                 <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                   {SEO_PRESETS.copyrights.slice(0, 3).map((c, idx) => (
-                    <Chip key={idx} label={c} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem' }} onClick={() => setCopyright(c)} />
+                    <Chip key={idx} label={c} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: '100px' }} onClick={() => setCopyright(c)} />
                   ))}
                 </Box>
               </Grid>
@@ -1048,14 +1030,14 @@ export default function GeoTagSection() {
           <Paper elevation={0} sx={{ p: 3.5, borderRadius: 4, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 2.5 }}>
               <Typography variant="h6" sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <CameraAltIcon color="primary" /> 📷 Thông tin Thiết bị & Camera
+                <CameraAltIcon color="primary" /> Thông tin Thiết bị & Camera
               </Typography>
               <Button
                 size="small"
                 variant="outlined"
                 startIcon={<ShuffleIcon />}
                 onClick={handleRandomDevice}
-                sx={{ textTransform: 'none', borderRadius: 2.5, fontWeight: 700 }}
+                sx={{ textTransform: 'none', borderRadius: '100px', fontWeight: 700 }}
               >
                 Random thiết bị
               </Button>
@@ -1068,7 +1050,13 @@ export default function GeoTagSection() {
                   <Select
                     value={cameraMake}
                     label="Hãng Camera"
-                    onChange={(e) => setCameraMake(e.target.value)}
+                    onChange={(e) => {
+                      const newMake = e.target.value;
+                      setCameraMake(newMake);
+                      if (CAMERA_MODELS[newMake]) {
+                        setCameraModel(CAMERA_MODELS[newMake][0]);
+                      }
+                    }}
                     sx={{ borderRadius: 2 }}
                   >
                     {Object.keys(CAMERA_MODELS).map((make) => (
@@ -1113,7 +1101,7 @@ export default function GeoTagSection() {
           {/* 5. Advanced Config switches */}
           <Paper elevation={0} sx={{ p: 3.5, borderRadius: 4, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
             <Typography variant="h6" sx={{ fontWeight: 800, mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <SettingsIcon color="primary" /> ⚙️ Tùy chọn nâng cao khi Xuất
+              <SettingsIcon color="primary" /> Tùy chọn nâng cao khi Xuất
             </Typography>
 
             <Grid container spacing={3}>
@@ -1194,7 +1182,7 @@ export default function GeoTagSection() {
               <Grid item xs={12} sm={6}>
                 <FormControlLabel
                   control={<Switch checked={resizeImage} onChange={(e) => setResizeImage(e.target.checked)} />}
-                  label={<Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main' }}>📐 Kích hoạt Resize ảnh tối ưu SEO</Typography>}
+                  label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Kích hoạt Resize ảnh tối ưu SEO</Typography>}
                 />
               </Grid>
 
@@ -1295,7 +1283,7 @@ export default function GeoTagSection() {
                   <Select
                     value={outputFormat}
                     label="Định dạng ảnh xuất"
-                    onChange={(e) => setOutputFormat(e.target.value as any)}
+                    onChange={(e) => setOutputFormat(e.target.value as 'jpeg' | 'webp' | 'png')}
                     sx={{ borderRadius: 2 }}
                   >
                     <MenuItem value="jpeg">JPEG (.jpg) - Lưu đầy đủ EXIF SEO (Khuyên dùng)</MenuItem>
@@ -1311,7 +1299,7 @@ export default function GeoTagSection() {
                   <Select
                     value={filenamePattern}
                     label="Đặt tên file chuẩn SEO"
-                    onChange={(e) => setFilenamePattern(e.target.value as any)}
+                    onChange={(e) => setFilenamePattern(e.target.value as 'original' | 'seo-title' | 'seo-keywords')}
                     sx={{ borderRadius: 2 }}
                   >
                     <MenuItem value="original">Giữ tên gốc (Bỏ dấu & thay cách = gạch ngang)</MenuItem>
@@ -1329,7 +1317,7 @@ export default function GeoTagSection() {
               <Grid item xs={12} sm={6}>
                 <FormControlLabel
                   control={<Switch checked={addWatermark} onChange={(e) => setAddWatermark(e.target.checked)} />}
-                  label={<Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main' }}>✍️ Đóng dấu ảnh (Watermark)</Typography>}
+                  label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Đóng dấu ảnh (Watermark)</Typography>}
                 />
               </Grid>
 
@@ -1357,7 +1345,7 @@ export default function GeoTagSection() {
                           <Select
                             value={watermarkPosition}
                             label="Vị trí đóng dấu"
-                            onChange={(e) => setWatermarkPosition(e.target.value as any)}
+                            onChange={(e) => setWatermarkPosition(e.target.value as 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | 'center')}
                             sx={{ borderRadius: 2 }}
                           >
                             <MenuItem value="bottom-right">Góc dưới - Phải</MenuItem>
@@ -1393,7 +1381,7 @@ export default function GeoTagSection() {
               {outputFormat !== 'jpeg' && (
                 <Grid item xs={12}>
                   <Alert severity="warning" sx={{ borderRadius: 3 }}>
-                    ⚠️ <strong>Lưu ý quan trọng:</strong> Metadata EXIF (như tọa độ GPS, từ khóa, camera) chỉ được hỗ trợ ghi mới trên định dạng <strong>JPEG (.jpg)</strong>. Định dạng <strong>{outputFormat.toUpperCase()}</strong> bạn vừa chọn sẽ bỏ qua việc chèn EXIF để ưu tiên tối ưu hóa dung lượng tải trang.
+                    <strong>Lưu ý quan trọng:</strong> Metadata EXIF (như tọa độ GPS, từ khóa, camera) chỉ được hỗ trợ ghi mới trên định dạng <strong>JPEG (.jpg)</strong>. Định dạng <strong>{outputFormat.toUpperCase()}</strong> bạn vừa chọn sẽ bỏ qua việc chèn EXIF để ưu tiên tối ưu hóa dung lượng tải trang.
                   </Alert>
                 </Grid>
               )}
@@ -1409,28 +1397,32 @@ export default function GeoTagSection() {
           
           {/* Main Action Trigger */}
           <Paper elevation={0} sx={{ p: 3.5, borderRadius: 4, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', textAlign: 'center' }}>
-            <Button
+            <LoadingButton
               variant="contained"
               fullWidth
               size="large"
               onClick={handleProcessImages}
-              disabled={images.length === 0 || progress !== null}
-              startIcon={progress !== null ? <CircularProgress size={18} color="inherit" /> : <CloudDownloadIcon />}
+              disabled={images.length === 0}
+              loading={progress !== null}
+              loadingPosition="start"
+              startIcon={<CloudDownloadIcon />}
               sx={{
                 py: 2,
-                borderRadius: 3.5,
+                borderRadius: '100px',
                 fontWeight: 900,
                 fontSize: '1rem',
                 textTransform: 'none',
-                background: 'linear-gradient(135deg, #00b894 0%, #009975 100%)',
-                boxShadow: '0 4px 15px rgba(0, 184, 148, 0.25)',
+                bgcolor: 'primary.main',
+                color: 'white',
+                transition: 'all 0.2s',
                 '&:hover': {
-                  background: 'linear-gradient(135deg, #3dd6a0 0%, #009975 100%)',
+                  bgcolor: 'primary.dark',
+                  transform: 'scale(1.02)',
                 },
               }}
             >
-              {progress !== null ? `Đang xử lý ảnh (${progress.current}/${progress.total})` : `Xử lý & Tải về ${images.length} ảnh`}
-            </Button>
+              {progress !== null ? `Đang xử lý ảnh (${progress.current}/${progress.total})...` : `Xử lý & Tải về ${images.length} ảnh`}
+            </LoadingButton>
             
             {progress !== null && (
               <Box sx={{ width: '100%', mt: 2.5 }}>
@@ -1447,7 +1439,7 @@ export default function GeoTagSection() {
           {savedStats && (
             <Paper elevation={0} sx={{ p: 2.5, borderRadius: 3, border: '1px solid', borderColor: 'success.light', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.08)' : 'rgba(0, 184, 148, 0.04)' }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'success.main', display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                📈 Báo cáo dung lượng nén tối ưu
+                Báo cáo dung lượng nén tối ưu
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, fontSize: '0.8rem' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -1483,7 +1475,7 @@ export default function GeoTagSection() {
                 size="small"
                 startIcon={<MapIcon />}
                 onClick={() => window.open(`https://www.google.com/maps?q=${latitude},${longitude}`, '_blank')}
-                sx={{ textTransform: 'none', borderRadius: 2 }}
+                sx={{ textTransform: 'none', borderRadius: '100px' }}
               >
                 Google Maps
               </Button>
@@ -1495,7 +1487,26 @@ export default function GeoTagSection() {
               <Box><strong>Kinh độ DMS:</strong> {dmsLng}</Box>
             </Box>
 
-            <Tabs value={previewTab} onChange={(_, val) => setPreviewTab(val)} variant="fullWidth" sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+            <Tabs 
+              value={previewTab} 
+              onChange={(_, val) => setPreviewTab(val)} 
+              variant="fullWidth" 
+              sx={{ 
+                borderBottom: 1, 
+                borderColor: 'divider', 
+                mb: 2,
+                '& .MuiTabs-indicator': {
+                  display: 'none'
+                },
+                '& .MuiTab-root': {
+                  borderBottom: '2px solid transparent',
+                  '&.Mui-selected': {
+                    color: 'primary.main',
+                    borderColor: 'primary.main'
+                  }
+                }
+              }}
+            >
               <Tab label="Google Images" sx={{ textTransform: 'none', fontWeight: 700 }} />
               <Tab label="EXIF JSON" sx={{ textTransform: 'none', fontWeight: 700 }} />
               <Tab label="ExifTool CMD" sx={{ textTransform: 'none', fontWeight: 700 }} />
@@ -1514,7 +1525,6 @@ export default function GeoTagSection() {
                   bgcolor: 'background.paper', 
                   border: '1px solid', 
                   borderColor: 'divider',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
                   transition: 'transform 0.2s',
                   '&:hover': { transform: 'scale(1.02)' }
                 }}>
@@ -1571,7 +1581,7 @@ export default function GeoTagSection() {
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.65rem', wordBreak: 'break-all', fontFamily: 'monospace' }}>
                       {(() => {
-                        let previewName = images.length > 0 ? images[0].name : 'image.jpg';
+                        const previewName = images.length > 0 ? images[0].name : 'image.jpg';
                         const dotIdx = previewName.lastIndexOf('.');
                         let rawName = dotIdx !== -1 ? previewName.substring(0, dotIdx) : previewName;
                         if (filenamePattern === 'seo-title' && title.trim()) {
@@ -1649,7 +1659,7 @@ export default function GeoTagSection() {
           {/* 8. Static SEO Image Tips */}
           <Paper elevation={0} sx={{ p: 3, borderRadius: 4, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 0.8, mb: 1.5 }}>
-              <HelpOutlinedIcon /> 💡 Mẹo Tối ưu hóa SEO Hình ảnh
+              <HelpOutlinedIcon /> Mẹo Tối ưu hóa SEO Hình ảnh
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25, fontSize: '0.8rem', color: 'text.secondary', lineHeight: 1.5 }}>
               <Box>

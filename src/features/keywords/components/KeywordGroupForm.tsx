@@ -71,7 +71,7 @@ export function KeywordGroupForm({ open, domainId, onClose, onSuccess }: Keyword
 	};
 
 	return (
-		<Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+		<Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '28px' } }}>
 			<DialogTitle sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
 				Thêm từ khoá
 				{keywords.length > 0 && (
@@ -114,10 +114,10 @@ export function KeywordGroupForm({ open, domainId, onClose, onSuccess }: Keyword
 					</Box>
 				</DialogContent>
 				<DialogActions sx={{ px: 3, py: 2 }}>
-					<Button onClick={handleClose} disabled={actionLoading} color="inherit">
+					<Button onClick={handleClose} disabled={actionLoading} color="inherit" sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700 }}>
 						Hủy
 					</Button>
-					<Button type="submit" variant="contained" disabled={actionLoading || keywords.length === 0}>
+					<Button type="submit" variant="contained" disabled={actionLoading || keywords.length === 0} sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700 }}>
 						{actionLoading ? 'Đang thêm...' : `Thêm ${keywords.length > 0 ? keywords.length + ' ' : ''}từ khoá`}
 					</Button>
 				</DialogActions>

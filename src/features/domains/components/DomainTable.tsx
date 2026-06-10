@@ -5,7 +5,8 @@ import type { Domain, DomainOwner } from '../../../types/domain.types';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
 import Box from '@mui/material/Box';
-import { Link } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
+import MuiLink from '@mui/material/Link';
 
 interface DomainTableProps {
 	domains: Domain[];
@@ -54,9 +55,21 @@ export default function DomainTable({
 			width: 250,
 			sortable: true,
 			renderCell: (row) => (
-				<Link to={`/domains/${row._id}/keywords`} style={{ textDecoration: 'none', color: '#1976d2', fontWeight: 500 }}>
+				<MuiLink
+					component={RouterLink}
+					to={`/domains/${row._id}/keywords`}
+					sx={{
+						textDecoration: 'none',
+						color: 'primary.main',
+						fontWeight: 600,
+						'&:hover': {
+							color: 'primary.dark',
+							textDecoration: 'underline'
+						}
+					}}
+				>
 					{row.domain}
-				</Link>
+				</MuiLink>
 			)
 		},
 		{
@@ -70,9 +83,9 @@ export default function DomainTable({
 			renderCell: (row) => (
 				<Typography variant="body2">
 					{row.metaDescription == null
-						? <span style={{ color: 'text.secondary' }}>N/A</span>
+						? <Box component="span" sx={{ color: 'text.secondary' }}>N/A</Box>
 						: row.metaDescription === ''
-							? <span style={{ color: '#e17055' }}>Không lấy được dữ liệu</span>
+							? <Box component="span" sx={{ color: 'warning.main' }}>Không lấy được dữ liệu</Box>
 							: row.metaDescription}
 				</Typography>
 			)
@@ -93,7 +106,7 @@ export default function DomainTable({
 			width: 200,
 			renderCell: (row) => {
 				const owners = (row.owners as unknown as DomainOwner[]) || [];
-				if (owners.length === 0) return <span style={{ color: 'text.secondary' }}>Chưa gán</span>;
+				if (owners.length === 0) return <Box component="span" sx={{ color: 'text.secondary' }}>Chưa gán</Box>;
 				return (
 					<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
 						{owners.map((o) => (

@@ -110,7 +110,7 @@ export default function DomainPage() {
 	};
 
 	return (
-		<Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 3, zoom: 0.9 }}>
+		<Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 3, zoom: 0.8 }}>
 			<Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
 				{error && (
 					<Box sx={{ px: 2, pt: 2 }}>
@@ -142,7 +142,7 @@ export default function DomainPage() {
 									<Button variant="contained" startIcon={<AddOutlinedIcon />} onClick={() => {
 										dispatch(clearDomainError());
 										setShowForm(true);
-									}}>
+									}} sx={{ borderRadius: '100px', height: 40, px: 2.5, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>
 										Thêm Tên Miền
 									</Button>
 								</>
@@ -152,14 +152,14 @@ export default function DomainPage() {
 				</Box>
 			</Paper>
 
-			<Dialog open={showForm} onClose={() => { if (!createLoading) setShowForm(false); }} maxWidth="sm" fullWidth>
+			<Dialog open={showForm} onClose={() => { if (!createLoading) setShowForm(false); }} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '28px' } }}>
 				<DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 					Thêm Tên Miền
 					<IconButton size="small" onClick={() => setShowForm(false)} disabled={createLoading}>
 						<CloseIcon />
 					</IconButton>
 				</DialogTitle>
-				<DialogContent dividers>
+				<DialogContent dividers sx={{ maxHeight: '70vh', overflowY: 'auto' }}>
 					<DomainForm
 						onSubmit={handleCreateDomain}
 						onCancel={() => setShowForm(false)}

@@ -36,7 +36,8 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import TuneIcon from '@mui/icons-material/Tune';
 
-import { useToastify } from '../../components/Toastify';
+import { useToastify } from '@/components/Toastify';
+import LoadingButton from '@mui/lab/LoadingButton';
 import { serpService } from './serpService';
 
 // Helper function to extract main domain from URL
@@ -453,12 +454,12 @@ export default function QuickSerpChecker() {
             sx={{ 
               width: 44, 
               height: 44, 
-              borderRadius: 3, 
+              borderRadius: '12px', 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center', 
-              background: 'linear-gradient(135deg, #00b894 0%, #009975 100%)', 
-              boxShadow: '0 4px 14px rgba(0, 184, 148, 0.3)', 
+              bgcolor: 'primary.main', 
+              boxShadow: 'none', 
               mr: 2 
             }}
           >
@@ -501,29 +502,33 @@ export default function QuickSerpChecker() {
                   border: '1px solid rgba(239, 68, 68, 0.2)' 
                 }} 
               />
-              <Button
+              <LoadingButton
                 variant="outlined"
                 color="warning"
                 size="small"
-                disabled={state.isRefreshingCookie}
+                loading={state.isRefreshingCookie}
                 onClick={handleRefreshCookie}
-                startIcon={state.isRefreshingCookie ? <CircularProgress size={12} color="inherit" /> : <RefreshIcon sx={{ fontSize: 13 }} />}
+                loadingPosition="start"
+                startIcon={<RefreshIcon sx={{ fontSize: 13 }} />}
                 sx={{ 
                   textTransform: 'none', 
-                  borderRadius: 2, 
+                  borderRadius: '100px', 
                   fontWeight: 700, 
                   fontSize: '0.72rem',
                   py: 0.4,
+                  px: 2,
                   color: '#f59e0b',
                   borderColor: 'rgba(245, 158, 11, 0.4)',
+                  transition: 'all 0.2s',
                   '&:hover': {
                     borderColor: '#f59e0b',
-                    bgcolor: 'rgba(245, 158, 11, 0.05)'
+                    bgcolor: 'rgba(245, 158, 11, 0.05)',
+                    transform: 'scale(1.02)'
                   }
                 }}
               >
                 {state.isRefreshingCookie ? 'Đang làm mới...' : 'Refresh cookie'}
-              </Button>
+              </LoadingButton>
             </Box>
           ) : (
             <CircularProgress size={16} />
@@ -540,7 +545,6 @@ export default function QuickSerpChecker() {
           border: '1px solid',
           borderColor: 'divider',
           bgcolor: 'background.paper',
-          boxShadow: '0 10px 30px rgba(0,0,0,0.03)',
           mb: 4
         }}
       >
@@ -558,7 +562,7 @@ export default function QuickSerpChecker() {
                 placeholder="Nhập domain của bạn (vd: thuvienphapluat.vn)..."
                 value={state.domain}
                 onChange={(e) => updateSerpSharedState({ domain: e.target.value })}
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2.5, bgcolor: 'background.default' } }}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '100px', bgcolor: 'background.default' } }}
                 slotProps={{
                   input: {
                     startAdornment: <LanguageIcon sx={{ fontSize: 18, color: 'text.disabled', mr: 1 }} />
@@ -579,7 +583,7 @@ export default function QuickSerpChecker() {
                 placeholder="Nhập danh sách từ khóa cần check, mỗi dòng một từ khóa..."
                 value={state.keywordsInput}
                 onChange={(e) => updateSerpSharedState({ keywordsInput: e.target.value })}
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2.5, bgcolor: 'background.default', fontFamily: 'monospace', fontSize: '0.85rem' } }}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '16px', bgcolor: 'background.default', fontFamily: 'monospace', fontSize: '0.85rem' } }}
               />
             </Box>
 
@@ -594,7 +598,7 @@ export default function QuickSerpChecker() {
                 placeholder="Nhập tên miền đối thủ cạnh tranh..."
                 value={state.competitorsInput}
                 onChange={(e) => updateSerpSharedState({ competitorsInput: e.target.value })}
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2.5, bgcolor: 'background.default', fontFamily: 'monospace', fontSize: '0.85rem' } }}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '16px', bgcolor: 'background.default', fontFamily: 'monospace', fontSize: '0.85rem' } }}
               />
             </Box>
           </Grid>
@@ -610,7 +614,7 @@ export default function QuickSerpChecker() {
                 <Select
                   value={state.scanDepth}
                   onChange={(e) => updateSerpSharedState({ scanDepth: String(e.target.value) })}
-                  sx={{ borderRadius: 2.5, bgcolor: 'background.default', fontWeight: 700 }}
+                  sx={{ borderRadius: '100px', bgcolor: 'background.default', fontWeight: 700, '& .MuiOutlinedInput-root': { borderRadius: '100px' } }}
                 >
                   <MenuItem value="10">Top 10 (Mặc định - Siêu nhanh)</MenuItem>
                   <MenuItem value="30">Top 30 (Chậm hơn 3x)</MenuItem>
@@ -631,7 +635,7 @@ export default function QuickSerpChecker() {
                   Quốc gia
                 </Typography>
                 <FormControl fullWidth size="small">
-                  <Select value={state.location} onChange={(e) => updateSerpSharedState({ location: e.target.value })} sx={{ borderRadius: 2.5, bgcolor: 'background.default', fontWeight: 600 }}>
+                  <Select value={state.location} onChange={(e) => updateSerpSharedState({ location: e.target.value })} sx={{ borderRadius: '100px', bgcolor: 'background.default', fontWeight: 600, '& .MuiOutlinedInput-root': { borderRadius: '100px' } }}>
                     <MenuItem value="VN">🇻🇳 Việt Nam</MenuItem>
                     <MenuItem value="US">🇺🇸 Hoa Kỳ</MenuItem>
                     <MenuItem value="SG">🇸🇬 Singapore</MenuItem>
@@ -643,7 +647,7 @@ export default function QuickSerpChecker() {
                   Ngôn ngữ
                 </Typography>
                 <FormControl fullWidth size="small">
-                  <Select value={state.language} onChange={(e) => updateSerpSharedState({ language: e.target.value })} sx={{ borderRadius: 2.5, bgcolor: 'background.default', fontWeight: 600 }}>
+                  <Select value={state.language} onChange={(e) => updateSerpSharedState({ language: e.target.value })} sx={{ borderRadius: '100px', bgcolor: 'background.default', fontWeight: 600, '& .MuiOutlinedInput-root': { borderRadius: '100px' } }}>
                     <MenuItem value="vi">Tiếng Việt</MenuItem>
                     <MenuItem value="en">Tiếng Anh</MenuItem>
                   </Select>
@@ -664,16 +668,16 @@ export default function QuickSerpChecker() {
                 fullWidth
                 sx={{ 
                   bgcolor: 'background.default', 
-                  borderRadius: 2.5,
+                  borderRadius: '100px',
                   p: 0.4,
                   border: '1px solid',
                   borderColor: 'divider',
-                  '& .MuiToggleButton-root': { border: 'none', borderRadius: 2, py: 0.8, fontWeight: 700, textTransform: 'none', fontSize: '0.78rem' },
+                  '& .MuiToggleButton-root': { border: 'none', borderRadius: '100px', py: 0.8, fontWeight: 700, textTransform: 'none', fontSize: '0.78rem' },
                   '& .Mui-selected': { bgcolor: 'primary.main', color: 'primary.contrastText', '&:hover': { bgcolor: 'primary.dark' } }
                 }}
               >
-                <ToggleButton value="slow">🐢 Slow (An toàn)</ToggleButton>
-                <ToggleButton value="apify">🚀 Apify (Cao cấp)</ToggleButton>
+                <ToggleButton value="slow">Slow (An toàn)</ToggleButton>
+                <ToggleButton value="apify">Apify (Cao cấp)</ToggleButton>
               </ToggleButtonGroup>
 
               {/* Dynamic comparative help alert */}
@@ -681,7 +685,7 @@ export default function QuickSerpChecker() {
                 {state.mode === 'slow' ? (
                   <>
                     <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: 'warning.main', display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                      🐢 CHẾ ĐỘ SLOW (AN TOÀN TUẦN TỰ)
+                      CHẾ ĐỘ SLOW (AN TOÀN TUẦN TỰ)
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.4, fontSize: '0.72rem' }}>
                       • <strong>Tốc độ:</strong> Chậm hơn (1-2 phút cho 10 từ khóa).<br />
@@ -693,7 +697,7 @@ export default function QuickSerpChecker() {
                 ) : (
                   <>
                     <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#10b981', display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                      🚀 CHẾ ĐỘ APIFY (ĐÁM MÂY CAO CẤP)
+                      CHẾ ĐỘ APIFY (ĐÁM MÂY CAO CẤP)
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.4, fontSize: '0.72rem' }}>
                       • <strong>Tốc độ:</strong> Siêu tốc, chỉ **17s** cho 10 từ khóa (1.7s/kw).<br />
@@ -707,34 +711,55 @@ export default function QuickSerpChecker() {
             </Box>
 
             <Box sx={{ display: 'flex', gap: 2, mt: 'auto' }}>
-              <Button
+              <LoadingButton
                 variant="contained"
                 onClick={handleCheck}
-                disabled={state.loading}
-                startIcon={state.loading ? <CircularProgress size={16} color="inherit" /> : <SearchIcon sx={{ fontSize: 16 }} />}
+                loading={state.loading}
+                loadingPosition="start"
+                startIcon={<SearchIcon sx={{ fontSize: 16 }} />}
                 sx={{
                   flex: 1,
-                  borderRadius: 2.5,
-                  py: 1.3,
+                  borderRadius: '100px',
+                  height: 40,
                   fontWeight: 900,
                   fontSize: '0.85rem',
                   textTransform: 'none',
-                  background: 'linear-gradient(135deg, #00b894 0%, #009975 100%)',
-                  boxShadow: '0 4px 14px rgba(0, 184, 148, 0.2)',
+                  bgcolor: 'primary.main',
+                  color: 'primary.contrastText',
+                  boxShadow: 'none',
+                  transition: 'all 0.2s',
                   '&:hover': {
-                    background: 'linear-gradient(135deg, #3dd6a0 0%, #009975 100%)',
-                    boxShadow: '0 6px 18px rgba(0, 184, 148, 0.3)'
+                    bgcolor: 'primary.dark',
+                    transform: 'scale(1.02)',
+                    boxShadow: 'none'
+                  },
+                  '&.Mui-disabled': {
+                    bgcolor: 'action.disabledBackground',
+                    color: 'action.disabled'
                   }
                 }}
               >
                 {state.loading ? 'Đang phân tích...' : 'Bắt đầu kiểm tra'}
-              </Button>
+              </LoadingButton>
               <Button
                 variant="outlined"
                 color="inherit"
                 onClick={handleClear}
                 disabled={state.loading}
-                sx={{ borderRadius: 2.5, textTransform: 'none', fontWeight: 700, fontSize: '0.82rem', borderColor: 'divider' }}
+                sx={{ 
+                  borderRadius: '100px', 
+                  height: 40, 
+                  textTransform: 'none', 
+                  fontWeight: 700, 
+                  fontSize: '0.82rem', 
+                  borderColor: 'divider',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    bgcolor: 'action.hover',
+                    transform: 'scale(1.02)',
+                    borderColor: 'divider'
+                  }
+                }}
               >
                 Xóa
               </Button>
@@ -782,7 +807,7 @@ export default function QuickSerpChecker() {
                       elevation={0}
                       sx={{ 
                         p: 2.2, 
-                        borderRadius: 3.5, 
+                        borderRadius: '16px', 
                         border: '1px solid', 
                         borderColor: card.border, 
                         bgcolor: card.bg, 
@@ -807,7 +832,7 @@ export default function QuickSerpChecker() {
                   sx={{ 
                     mb: 3.5, 
                     p: 2, 
-                    borderRadius: 3.5, 
+                    borderRadius: '16px', 
                     bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.04)', 
                     border: '1px solid rgba(16, 185, 129, 0.25)', 
                     display: 'flex', 
@@ -817,7 +842,7 @@ export default function QuickSerpChecker() {
                 >
                   <CheckCircleIcon sx={{ color: '#10b981', fontSize: 20 }} />
                   <Typography variant="body2" sx={{ color: '#10b981', fontWeight: 800, fontSize: '0.8rem' }}>
-                    🛡️ Capsolver đã tự động nhận diện và vượt qua thành công {state.result.captchaSolved} lần Captcha Google xuất hiện giữa tiến trình quét của chế độ AN TOÀN (Slow mode)!
+                    Capsolver đã tự động nhận diện và vượt qua thành công {state.result.captchaSolved} lần Captcha Google xuất hiện giữa tiến trình quét của chế độ AN TOÀN (Slow mode)!
                   </Typography>
                 </Box>
               )}
@@ -831,14 +856,13 @@ export default function QuickSerpChecker() {
                   border: '1px solid',
                   borderColor: 'divider',
                   bgcolor: 'background.paper',
-                  boxShadow: '0 2px 12px rgba(0,0,0,0.01)',
                   mb: 4
                 }}
               >
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: { xs: 'stretch', md: 'center' }, justifyContent: 'space-between', gap: 2, mb: 2.5 }}>
                   
                   {/* Results Filters Tabs */}
-                  <Box sx={{ display: 'flex', bgcolor: 'background.default', p: 0.5, borderRadius: 2.5, border: '1px solid', borderColor: 'divider', flexWrap: 'wrap', gap: 0.5 }}>
+                  <Box sx={{ display: 'flex', bgcolor: 'background.default', p: 0.5, borderRadius: '100px', border: '1px solid', borderColor: 'divider', flexWrap: 'wrap', gap: 0.5 }}>
                     {[
                       { key: 'all', label: `Tất cả (${stats.total})` },
                       { key: 'found', label: `Tìm thấy (${stats.found})` },
@@ -850,7 +874,7 @@ export default function QuickSerpChecker() {
                         size="small"
                         onClick={() => setResultsTab(tab.key as any)}
                         sx={{ 
-                          borderRadius: 2, 
+                          borderRadius: '100px', 
                           px: 2, 
                           py: 0.6,
                           fontWeight: 700, 
@@ -882,7 +906,7 @@ export default function QuickSerpChecker() {
                       }}
                       sx={{ 
                         '& .MuiOutlinedInput-root': { 
-                          borderRadius: 2, 
+                          borderRadius: '100px', 
                           fontSize: '0.8rem', 
                           bgcolor: 'background.default',
                           width: { xs: '100%', sm: 180 }
@@ -896,11 +920,12 @@ export default function QuickSerpChecker() {
                       startIcon={<FileDownloadIcon sx={{ fontSize: 14 }} />}
                       onClick={handleDownloadCsv}
                       sx={{
-                        borderRadius: 2,
+                        borderRadius: '100px',
                         fontWeight: 700,
                         textTransform: 'none',
                         fontSize: '0.75rem',
                         height: 38,
+                        px: 2.5,
                         color: '#10b981',
                         borderColor: 'rgba(16, 185, 129, 0.4)',
                         '&:hover': {
@@ -959,14 +984,13 @@ export default function QuickSerpChecker() {
                             display: 'flex',
                             flexDirection: 'column',
                             p: 2,
-                            borderRadius: 3,
+                            borderRadius: '16px',
                             border: '1px solid',
                             borderColor: hasError ? 'error.light' : isRowExpanded ? 'primary.light' : 'divider',
                             bgcolor: rowBg,
                             transition: 'all 0.2s',
                             '&:hover': {
-                              borderColor: hasError ? 'error.main' : 'primary.light',
-                              boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
+                              borderColor: hasError ? 'error.main' : 'primary.light'
                             }
                           }}
                         >
@@ -985,14 +1009,14 @@ export default function QuickSerpChecker() {
                               </Typography>
                               {item.scrapedAt && (
                                 <Typography sx={{ fontSize: '0.68rem', color: 'text.disabled', fontWeight: 500, display: 'block', mt: 0.25 }}>
-                                  🕒 {new Date(item.scrapedAt).toLocaleDateString('vi-VN')} {new Date(item.scrapedAt).toLocaleTimeString('vi-VN')}
+                                  {new Date(item.scrapedAt).toLocaleDateString('vi-VN')} {new Date(item.scrapedAt).toLocaleTimeString('vi-VN')}
                                 </Typography>
                               )}
                             </Box>
 
                             {/* Old rank */}
                             <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                              <Chip label="★ Mới" size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700, borderColor: 'divider', color: 'text.secondary' }} />
+                              <Chip label="Mới" size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700, borderColor: 'divider', color: 'text.secondary' }} />
                             </Box>
 
                             {/* New rank circle */}
@@ -1010,7 +1034,7 @@ export default function QuickSerpChecker() {
 
                             {/* Changes */}
                             <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                              <Chip label="✦ Mới" size="small" sx={{ height: 18, fontSize: '0.65rem', fontWeight: 800, bgcolor: 'rgba(59, 130, 246, 0.12)', color: 'primary.main', border: '1px solid rgba(59, 130, 246, 0.2)' }} />
+                              <Chip label="Mới" size="small" sx={{ height: 18, fontSize: '0.65rem', fontWeight: 800, bgcolor: 'rgba(59, 130, 246, 0.12)', color: 'primary.main', border: '1px solid rgba(59, 130, 246, 0.2)' }} />
                             </Box>
 
                             {/* Ranking URL Link */}
@@ -1020,16 +1044,16 @@ export default function QuickSerpChecker() {
                                   <Link 
                                     href={getOursUrl(item)} 
                                     target="_blank" 
+                                    underline="none"
                                     sx={{ 
                                       color: 'primary.main', 
                                       fontSize: '0.8rem', 
-                                      fontWeight: 700, 
+                                      fontWeight: 500, 
                                       display: 'inline-flex', 
                                       alignItems: 'center', 
                                       gap: 0.8, 
-                                      textDecoration: 'none', 
                                       maxWidth: '100%',
-                                      '&:hover': { textDecoration: 'underline' } 
+                                      '&:hover': { color: 'primary.dark' } 
                                     }}
                                   >
                                     <LaunchIcon sx={{ fontSize: 12, flexShrink: 0, color: 'primary.main', opacity: 0.9 }} />
@@ -1040,7 +1064,7 @@ export default function QuickSerpChecker() {
                                 </Tooltip>
                               ) : hasError ? (
                                 <Typography sx={{ fontSize: '0.78rem', color: 'error.main', fontWeight: 700 }}>
-                                  ⚠️ {mapErrorMessage(item.error)}
+                                  {mapErrorMessage(item.error)}
                                 </Typography>
                               ) : (
                                 <Typography sx={{ fontSize: '0.78rem', color: 'text.disabled', fontStyle: 'italic' }}>
@@ -1056,21 +1080,43 @@ export default function QuickSerpChecker() {
                                 variant="outlined"
                                 color="primary"
                                 onClick={() => setExpandedRows(prev => ({ ...prev, [item.keyword]: !isRowExpanded }))}
-                                sx={{ borderRadius: 2, fontSize: '0.68rem', py: 0.3, textTransform: 'none', fontWeight: 800 }}
+                                sx={{ 
+                                  borderRadius: '100px', 
+                                  fontSize: '0.68rem', 
+                                  py: 0.3, 
+                                  px: 1.5,
+                                  textTransform: 'none', 
+                                  fontWeight: 800,
+                                  transition: 'all 0.2s',
+                                  '&:hover': {
+                                    transform: 'scale(1.02)',
+                                    bgcolor: 'action.hover'
+                                  }
+                                }}
                               >
                                 {isRowExpanded ? 'Thu gọn' : 'SERP'}
                               </Button>
-                              <Button
+                              <LoadingButton
                                 size="small"
                                 variant="outlined"
                                 color="warning"
-                                disabled={isRechecking}
+                                loading={isRechecking}
                                 onClick={() => handleRecheckRow(item.keyword)}
-                                startIcon={isRechecking ? <CircularProgress size={10} color="inherit" /> : null}
-                                sx={{ borderRadius: 2, fontSize: '0.68rem', py: 0.3, textTransform: 'none', fontWeight: 800 }}
+                                sx={{ 
+                                  borderRadius: '100px', 
+                                  fontSize: '0.68rem', 
+                                  py: 0.3, 
+                                  px: 1.5,
+                                  textTransform: 'none', 
+                                  fontWeight: 800,
+                                  transition: 'all 0.2s',
+                                  '&:hover': {
+                                    transform: 'scale(1.02)'
+                                  }
+                                }}
                               >
-                                {isRechecking ? 'Quét...' : 'Recheck'}
-                              </Button>
+                                Recheck
+                              </LoadingButton>
                             </Box>
 
                           </Box>
@@ -1080,7 +1126,7 @@ export default function QuickSerpChecker() {
                             <Divider sx={{ my: 1.5, borderColor: 'divider' }} />
                             <Box sx={{ pl: { xs: 0, md: 5 } }}>
                               <Typography variant="caption" sx={{ fontWeight: 800, textTransform: 'uppercase', color: 'text.secondary', display: 'block', mb: 1.5, letterSpacing: 0.5 }}>
-                                📊 Kết quả tự nhiên organic (Top Google)
+                                Kết quả tự nhiên organic (Top Google)
                               </Typography>
                               
                               {item.organicResults && item.organicResults.length > 0 ? (
@@ -1111,7 +1157,17 @@ export default function QuickSerpChecker() {
                                         </Box>
                                         <Box sx={{ minWidth: 0, flex: 1 }}>
                                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', mb: 0.5 }}>
-                                            <Link href={result.url} target="_blank" sx={{ fontWeight: 800, fontSize: '0.82rem', color: isOurs ? '#10b981' : isCompetitor ? '#f59e0b' : 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
+                                            <Link 
+                                              href={result.url} 
+                                              target="_blank" 
+                                              underline="none"
+                                              sx={{ 
+                                                fontWeight: 500, 
+                                                fontSize: '0.82rem', 
+                                                color: isOurs ? '#10b981' : isCompetitor ? '#f59e0b' : 'primary.main', 
+                                                '&:hover': { color: isOurs ? '#059669' : isCompetitor ? '#d97706' : 'primary.dark' } 
+                                              }}
+                                            >
                                               {result.title}
                                             </Link>
                                             {isOurs ? (
@@ -1158,7 +1214,6 @@ export default function QuickSerpChecker() {
                     border: '1px solid',
                     borderColor: 'divider',
                     bgcolor: 'background.paper',
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.02)',
                     mb: 4
                   }}
                 >
@@ -1171,8 +1226,7 @@ export default function QuickSerpChecker() {
                         display: 'flex', 
                         alignItems: 'center', 
                         justifyContent: 'center', 
-                        background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                        boxShadow: '0 4px 10px rgba(245, 158, 11, 0.2)'
+                        bgcolor: 'warning.main'
                       }}
                     >
                       <CompareArrowsIcon sx={{ color: 'white', fontSize: 18 }} />
@@ -1223,10 +1277,10 @@ export default function QuickSerpChecker() {
                       }}
                     >
                       <Box>Từ khóa</Box>
-                      <Box sx={{ color: '#10b981' }}>🏠 {state.domain.toUpperCase()}</Box>
+                      <Box sx={{ color: '#10b981' }}>{state.domain.toUpperCase()} (CỦA BẠN)</Box>
                       {parsedCompetitors.map((c, idx) => (
                         <Box key={idx} sx={{ color: '#f59e0b', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                          🎯 {c.toUpperCase()}
+                          {c.toUpperCase()}
                         </Box>
                       ))}
                     </Box>

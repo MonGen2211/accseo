@@ -67,9 +67,23 @@ export default function RoleManagementTab() {
 
   const handleCreateSubmit = async () => {
     const errs: Partial<CreateRoleDto> = {};
-    if (!createForm.name.trim()) errs.name = 'Vui lòng nhập tên định danh';
-    else if (!/^[A-Z0-9_]+$/.test(createForm.name)) errs.name = 'Chỉ dùng chữ HOA, số và dấu gạch dưới';
-    if (!createForm.label.trim()) errs.label = 'Vui lòng nhập tên hiển thị';
+    const nameTrimmed = createForm.name.trim().toUpperCase();
+    const labelTrimmed = createForm.label.trim().toLowerCase();
+
+    if (!createForm.name.trim()) {
+      errs.name = 'Vui lòng nhập tên định danh';
+    } else if (!/^[A-Z0-9_]+$/.test(createForm.name)) {
+      errs.name = 'Chỉ dùng chữ HOA, số và dấu gạch dưới';
+    } else if (nameTrimmed === 'ADMIN' || nameTrimmed.includes('ADMIN')) {
+      errs.name = 'Không được phép tạo vai trò Admin';
+    }
+
+    if (!createForm.label.trim()) {
+      errs.label = 'Vui lòng nhập tên hiển thị';
+    } else if (labelTrimmed.includes('quản trị') || labelTrimmed.includes('admin')) {
+      errs.label = 'Không được phép tạo vai trò Quản trị hoặc Admin';
+    }
+
     if (Object.keys(errs).length) { setCreateErrors(errs); return; }
 
     setCreateLoading(true);
@@ -103,7 +117,14 @@ export default function RoleManagementTab() {
   const handleEditSubmit = async () => {
     if (!editRole) return;
     const errs: Partial<UpdateRoleDto> = {};
-    if (!editForm.label?.trim()) errs.label = 'Vui lòng nhập tên hiển thị';
+    const labelTrimmed = editForm.label?.trim().toLowerCase() || '';
+
+    if (!editForm.label?.trim()) {
+      errs.label = 'Vui lòng nhập tên hiển thị';
+    } else if (labelTrimmed.includes('quản trị') || labelTrimmed.includes('admin')) {
+      errs.label = 'Không được phép đặt tên vai trò là Quản trị hoặc Admin';
+    }
+
     if (Object.keys(errs).length) { setEditErrors(errs); return; }
 
     setEditLoading(true);

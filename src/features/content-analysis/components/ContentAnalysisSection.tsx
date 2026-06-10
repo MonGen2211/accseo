@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Box,
@@ -39,28 +39,23 @@ import {
   FormControlLabel,
   Switch,
   Grid,
+  Link,
 } from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import SendIcon from '@mui/icons-material/Send';
 import HistoryIcon from '@mui/icons-material/History';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import SearchIcon from '@mui/icons-material/Search';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import BrainIcon from '@mui/icons-material/Psychology';
 import FileSearchIcon from '@mui/icons-material/FindInPage';
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import DescriptionIcon from '@mui/icons-material/Description';
+import LoadingButton from '@mui/lab/LoadingButton';
 
 import { contentAnalysisService } from '../contentAnalysisService';
-import type { SessionDetail, SessionListItem } from '../types';
-import { useToastify } from '../../../components/Toastify';
+import type { SessionDetail, SessionListItem, PerArticleStructural } from '../types';
+import { useToastify } from '@/components/Toastify';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
@@ -124,13 +119,70 @@ const getMethodTooltip = (method: string): string => {
 const getHostname = (urlStr: string): string => {
   try {
     return new URL(urlStr).hostname;
-  } catch (e) {
+  } catch {
     return urlStr;
   }
 };
 
+// Generate markdown structure
+const generateMarkdown = (session: SessionDetail): string => {
+  if (!session.result) return '';
+  const outline = session.result.outline;
+  const rec = session.result.structural.recommendation;
+
+  let md = `# ${outline.title || session.keyword}\n`;
+  if (outline.metaDescription) {
+    md += `> ${outline.metaDescription}\n\n`;
+  }
+
+  md += `**Recommended word count:** ${rec.recommendedWordCount.ideal} words (range: ${rec.recommendedWordCount.min} - ${rec.recommendedWordCount.max})\n`;
+  md += `**Recommended headings:** H2: ${rec.recommendedH2Count.ideal}+, H3: ${rec.recommendedH3Count.ideal}+\n`;
+  md += `**Recommended image count:** ${rec.recommendedImageCount.ideal}+\n`;
+  md += `**Recommended keyword density:** ${rec.recommendedKeywordDensity.ideal}% (range: ${rec.recommendedKeywordDensity.min}% - ${rec.recommendedKeywordDensity.max}%)\n\n`;
+
+  if (outline.differentiationStrategy) {
+    md += `## Differentiation Strategy\n${outline.differentiationStrategy}\n\n`;
+  }
+
+  md += `## Outline Structure\n`;
+  outline.outline.forEach((node) => {
+    const prefix = '#'.repeat(node.level);
+    let badges = '';
+    if (node.isCoreIntent) badges += ' [Core/Bắt buộc]';
+    if (node.isUniqueValue) badges += ' [Góc nhìn độc đáo]';
+    md += `${prefix} ${node.text}${badges}\n`;
+    if (node.supportingKeywords && node.supportingKeywords.length > 0) {
+      md += `*Supporting keywords: ${node.supportingKeywords.join(', ')}*\n`;
+    }
+    md += '\n';
+  });
+
+  if (outline.faqs && outline.faqs.length > 0) {
+    md += `## FAQ\n`;
+    outline.faqs.forEach((faq) => {
+      md += `**Q: ${faq.question}**\n`;
+      md += `A: ${faq.shortAnswer}\n\n`;
+    });
+  }
+
+  return md;
+};
+
 interface ContentAnalysisSectionProps {
   isActive?: boolean;
+}
+
+interface SelectedCompetitorState {
+  art: PerArticleStructural;
+  source: {
+    index: number;
+    url: string;
+    title: string | null;
+    displayUrl: string | null;
+    snippet: string | null;
+    position: number | null;
+  } | undefined;
+  position: number;
 }
 
 export default function ContentAnalysisSection({ isActive = true }: ContentAnalysisSectionProps) {
@@ -153,35 +205,37 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
   const [isExportingDoc, setIsExportingDoc] = useState(false);
 
   // Competitor details modal state
-  const [selectedCompetitor, setSelectedCompetitor] = useState<any | null>(null);
+  const [selectedCompetitor, setSelectedCompetitor] = useState<SelectedCompetitorState | null>(null);
 
   // History list item refs for scrolling
   const historyItemRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // Load history list
-  const fetchHistoryList = async (silent = false) => {
+  const fetchHistoryList = useCallback(async (silent = false) => {
     if (!silent) setLoadingHistory(true);
     try {
       const data = await contentAnalysisService.getSessionsList(20);
       setHistoryList(data.items || []);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to load history list:', err);
       showToast('Lỗi khi tải lịch sử phân tích', 'danger');
     } finally {
       if (!silent) setLoadingHistory(false);
     }
-  };
+  }, [showToast]);
 
   // Initial load
   useEffect(() => {
-    fetchHistoryList();
-  }, []);
+    Promise.resolve().then(() => {
+      fetchHistoryList();
+    });
+  }, [fetchHistoryList]);
 
   // Poll active session details
   useEffect(() => {
     if (!activeSessionId || !isActive) {
       if (!activeSessionId) {
-        setActiveSessionDetail(null);
+        Promise.resolve().then(() => setActiveSessionDetail(null));
       }
       return;
     }
@@ -201,10 +255,11 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
             fetchHistoryList(true); // silent refresh history
             break;
           }
-        } catch (err: any) {
+        } catch (err) {
           console.error('Polling error:', err);
+          const axiosError = err as { response?: { status?: number } };
           // If 404, we might want to stop
-          if (err?.response?.status === 404) {
+          if (axiosError.response?.status === 404) {
             showToast('Không tìm thấy phiên phân tích này', 'danger');
             setSearchParams({});
             break;
@@ -222,7 +277,7 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
     return () => {
       active = false;
     };
-  }, [activeSessionId, isActive]);
+  }, [activeSessionId, isActive, fetchHistoryList, setSearchParams, showToast]);
 
   // Background poll history list if there are active sessions
   useEffect(() => {
@@ -235,7 +290,7 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
     }, 7000);
 
     return () => clearInterval(interval);
-  }, [historyList, isActive]);
+  }, [historyList, isActive, fetchHistoryList]);
 
   // Form submit to start analysis
   const handleSubmit = async (e: React.FormEvent) => {
@@ -269,10 +324,11 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
       } else {
         showToast('Phiên phân tích đã được đưa vào hàng đợi thành công!', 'success');
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Start session error:', err);
-      const statusCode = err?.response?.status;
-      const errorCode = err?.response?.data?.message || err?.message;
+      const axiosError = err as { response?: { status?: number; data?: { message?: string } }; message?: string };
+      const statusCode = axiosError.response?.status;
+      const errorCode = axiosError.response?.data?.message || axiosError.message;
 
       if (statusCode === 409 || errorCode?.includes('BUSY') || errorCode?.includes('active')) {
         showToast('Bạn đang có một phiên phân tích đang chạy. Vui lòng đợi!', 'warning');
@@ -286,7 +342,7 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
           }, 100);
         }
       } else {
-        showToast(err?.response?.data?.message || err?.message || 'Lỗi khởi tạo phiên phân tích', 'danger');
+        showToast(axiosError.response?.data?.message || axiosError.message || 'Lỗi khởi tạo phiên phân tích', 'danger');
       }
     } finally {
       setIsSubmitting(false);
@@ -302,7 +358,7 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
   };
 
   // Helper to export outline markdown file
-  const handleExportMarkdownFile = () => {
+  const handleExportMarkdownFile = useCallback(() => {
     if (!activeSessionDetail || !activeSessionDetail.result) return;
     const md = generateMarkdown(activeSessionDetail);
     const element = document.createElement('a');
@@ -313,7 +369,7 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
     element.click();
     element.remove();
     showToast('Đã tải xuống file outline Markdown!', 'success');
-  };
+  }, [activeSessionDetail, showToast]);
 
   // Helper to re-analyze
   const handleReanalyze = async () => {
@@ -330,9 +386,10 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
       setSearchParams({ session: res.sessionId });
       await fetchHistoryList(true);
       showToast('Đã bắt đầu phân tích lại!', 'success');
-    } catch (err: any) {
+    } catch (err) {
       console.error('Re-analyze error:', err);
-      showToast(err?.response?.data?.message || err?.message || 'Lỗi khi yêu cầu phân tích lại', 'danger');
+      const axiosError = err as { response?: { data?: { message?: string } }; message?: string };
+      showToast(axiosError.response?.data?.message || axiosError.message || 'Lỗi khi yêu cầu phân tích lại', 'danger');
     } finally {
       setIsSubmitting(false);
     }
@@ -371,10 +428,11 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
       if (res.docUrl) {
         window.open(res.docUrl, '_blank');
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Export Google Doc error:', err);
-      const code = err?.response?.data?.code || err?.code;
-      const msg = err?.response?.data?.message || err?.message || 'Lỗi khi xuất Google Doc';
+      const axiosError = err as { response?: { data?: { code?: string; message?: string } }; code?: string; message?: string };
+      const code = axiosError.response?.data?.code || axiosError.code;
+      const msg = axiosError.response?.data?.message || axiosError.message || 'Lỗi khi xuất Google Doc';
 
       if (code === 'DOCS_APPS_SCRIPT_NOT_CONFIGURED') {
         showToast('Docs Apps Script chưa được cấu hình. Vui lòng liên hệ Admin.', 'danger');
@@ -386,49 +444,7 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
     }
   };
 
-  // Generate markdown structure
-  const generateMarkdown = (session: SessionDetail) => {
-    if (!session.result) return '';
-    const outline = session.result.outline;
-    const rec = session.result.structural.recommendation;
 
-    let md = `# ${outline.title || session.keyword}\n`;
-    if (outline.metaDescription) {
-      md += `> ${outline.metaDescription}\n\n`;
-    }
-
-    md += `**Recommended word count:** ${rec.recommendedWordCount.ideal} words (range: ${rec.recommendedWordCount.min} - ${rec.recommendedWordCount.max})\n`;
-    md += `**Recommended headings:** H2: ${rec.recommendedH2Count.ideal}+, H3: ${rec.recommendedH3Count.ideal}+\n`;
-    md += `**Recommended image count:** ${rec.recommendedImageCount.ideal}+\n`;
-    md += `**Recommended keyword density:** ${rec.recommendedKeywordDensity.ideal}% (range: ${rec.recommendedKeywordDensity.min}% - ${rec.recommendedKeywordDensity.max}%)\n\n`;
-
-    if (outline.differentiationStrategy) {
-      md += `## Differentiation Strategy\n${outline.differentiationStrategy}\n\n`;
-    }
-
-    md += `## Outline Structure\n`;
-    outline.outline.forEach((node) => {
-      const prefix = '#'.repeat(node.level);
-      let badges = '';
-      if (node.isCoreIntent) badges += ' [Core/Bắt buộc]';
-      if (node.isUniqueValue) badges += ' [Góc nhìn độc đáo]';
-      md += `${prefix} ${node.text}${badges}\n`;
-      if (node.supportingKeywords && node.supportingKeywords.length > 0) {
-        md += `*Supporting keywords: ${node.supportingKeywords.join(', ')}*\n`;
-      }
-      md += '\n';
-    });
-
-    if (outline.faqs && outline.faqs.length > 0) {
-      md += `## FAQ\n`;
-      outline.faqs.forEach((faq) => {
-        md += `**Q: ${faq.question}**\n`;
-        md += `A: ${faq.shortAnswer}\n\n`;
-      });
-    }
-
-    return md;
-  };
 
   // Helper to copy single outline node text
   const handleCopySingleNode = (text: string) => {
@@ -446,9 +462,8 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5 }}>
       {/* Title */}
       <Box>
-        <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1.25 }}>
-          <BrainIcon sx={{ color: 'primary.main' }} />
-          Phân tích nội dung đối thủ (Surfer SEO Analyzer)
+        <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary' }}>
+          Tạo Outline đối thủ (Surfer SEO Analyzer)
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
           Phân tích Top 10 đối thủ hàng đầu trên SERP Google, tính toán cấu trúc thẻ headings, mật độ từ khoá NLP và tự động thiết kế Outline SEO chuẩn.
@@ -513,7 +528,7 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
               <Box sx={{ px: 1, mt: 1 }}>
                 <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, mb: 1, display: 'flex', justifyContent: 'space-between' }}>
                   <span>Số đối thủ cào quét (Top SERP)</span>
-                  <strong style={{ color: '#00b894' }}>{topN} bài viết</strong>
+                  <Box component="strong" sx={{ color: 'primary.main' }}>{topN} bài viết</Box>
                 </Typography>
                 <Slider
                   value={topN}
@@ -528,25 +543,35 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
                 />
               </Box>
 
-              <Button
+              <LoadingButton
                 type="submit"
                 variant="contained"
-                disabled={isSubmitting || keyword.trim().length < 2 || historyList.some(item => !['done', 'failed'].includes(item.status))}
-                startIcon={isSubmitting ? <CircularProgress size={18} color="inherit" /> : <SendIcon />}
+                loading={isSubmitting}
+                loadingPosition="start"
+                disabled={keyword.trim().length < 2 || historyList.some(item => !['done', 'failed'].includes(item.status))}
+                startIcon={<SendIcon />}
                 sx={{
                   py: 1.4,
-                  borderRadius: 3,
-                  fontWeight: 700,
+                  borderRadius: '100px',
+                  fontWeight: 900,
                   textTransform: 'none',
-                  background: 'linear-gradient(135deg, #00b894 0%, #009975 100%)',
-                  boxShadow: '0 4px 15px rgba(0, 184, 148, 0.25)',
+                  bgcolor: 'primary.main',
+                  color: 'primary.contrastText',
+                  boxShadow: 'none',
+                  transition: 'all 0.2s',
                   '&:hover': {
-                    background: 'linear-gradient(135deg, #3dd6a0 0%, #009975 100%)',
+                    bgcolor: 'primary.dark',
+                    transform: 'scale(1.02)',
+                    boxShadow: 'none',
                   },
+                  '&.Mui-disabled': {
+                    bgcolor: 'action.disabledBackground',
+                    color: 'action.disabled'
+                  }
                 }}
               >
-                {isSubmitting ? 'Đang gửi...' : 'Phân tích từ khóa'}
-              </Button>
+                Phân tích từ khóa
+              </LoadingButton>
             </Box>
           </Paper>
 
@@ -747,15 +772,27 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
               </Alert>
 
               <Box>
-                <Button
+                <LoadingButton
                   variant="outlined"
                   onClick={handleReanalyze}
-                  disabled={isSubmitting}
+                  loading={isSubmitting}
+                  loadingPosition="start"
                   startIcon={<RefreshIcon />}
-                  sx={{ borderRadius: 3, fontWeight: 700, py: 1.2, px: 3, border: '1.5px solid', '&:hover': { border: '1.5px solid' } }}
+                  sx={{
+                    borderRadius: '100px',
+                    fontWeight: 700,
+                    py: 1.2,
+                    px: 3,
+                    border: '1.5px solid',
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      border: '1.5px solid',
+                      transform: 'scale(1.02)',
+                    }
+                  }}
                 >
                   Thử lại ngay
-                </Button>
+                </LoadingButton>
               </Box>
             </Box>
           )}
@@ -773,14 +810,14 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
                 )}
                 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2.5 }}>
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Box sx={{ flex: '1 1 auto', minWidth: { xs: '100%', md: '300px' } }}>
                     <Typography variant="h4" sx={{ fontWeight: 900, color: 'text.primary', letterSpacing: '-0.5px', wordBreak: 'break-word' }}>
                       {activeSessionDetail.keyword}
                     </Typography>
 
                     {activeSessionDetail.result.scrapeSummary && (
                       <Typography variant="body2" sx={{ mt: 1, fontWeight: 700, color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        📊 Đã phân tích {activeSessionDetail.result.scrapeSummary.succeeded}/{activeSessionDetail.result.scrapeSummary.attempted} trang Top SERP
+                        Đã phân tích {activeSessionDetail.result.scrapeSummary.succeeded}/{activeSessionDetail.result.scrapeSummary.attempted} trang Top SERP
                       </Typography>
                     )}
                     
@@ -794,13 +831,22 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
                     </Box>
                   </Box>
 
-                  <Box sx={{ display: 'flex', gap: 1.25, flexWrap: 'wrap' }}>
+                  <Box sx={{ display: 'flex', gap: 1.25, flexWrap: 'wrap', flex: '1 1 auto', justifyContent: { xs: 'flex-start', md: 'flex-end' }, mt: { xs: 2, md: 0 } }}>
                     <Button
                       size="small"
                       variant="outlined"
                       startIcon={<ContentCopyIcon />}
                       onClick={handleCopyOutlineMarkdown}
-                      sx={{ borderRadius: 2.5, textTransform: 'none', fontWeight: 700, py: 0.8 }}
+                      sx={{
+                        borderRadius: '100px',
+                        textTransform: 'none',
+                        fontWeight: 700,
+                        py: 0.8,
+                        transition: 'all 0.2s',
+                        '&:hover': {
+                          transform: 'scale(1.02)'
+                        }
+                      }}
                     >
                       Copy Outline
                     </Button>
@@ -809,7 +855,16 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
                       variant="outlined"
                       startIcon={<CloudDownloadIcon />}
                       onClick={handleExportMarkdownFile}
-                      sx={{ borderRadius: 2.5, textTransform: 'none', fontWeight: 700, py: 0.8 }}
+                      sx={{
+                        borderRadius: '100px',
+                        textTransform: 'none',
+                        fontWeight: 700,
+                        py: 0.8,
+                        transition: 'all 0.2s',
+                        '&:hover': {
+                          transform: 'scale(1.02)'
+                        }
+                      }}
                     >
                       Tải Markdown (.md)
                     </Button>
@@ -818,57 +873,93 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
                         <Button
                           size="small"
                           variant="contained"
-                          color="success"
+                          color="primary"
                           startIcon={<DescriptionIcon />}
                           onClick={() => window.open(activeSessionDetail.docUrl!, '_blank')}
-                          sx={{ borderRadius: 2.5, textTransform: 'none', fontWeight: 700, py: 0.8 }}
+                          sx={{
+                            borderRadius: '100px',
+                            textTransform: 'none',
+                            fontWeight: 700,
+                            py: 0.8,
+                            boxShadow: 'none',
+                            transition: 'all 0.2s',
+                            '&:hover': {
+                              bgcolor: 'primary.dark',
+                              transform: 'scale(1.02)',
+                              boxShadow: 'none'
+                            }
+                          }}
                         >
                           Mở Google Doc
                         </Button>
-                        <Button
+                        <LoadingButton
                           size="small"
                           variant="outlined"
-                          color="secondary"
+                          color="primary"
                           onClick={() => handleExportGoogleDoc(true)}
-                          disabled={isExportingDoc}
-                          sx={{ borderRadius: 2.5, textTransform: 'none', fontWeight: 700, py: 0.8 }}
+                          loading={isExportingDoc}
+                          loadingPosition="start"
+                          startIcon={<DescriptionIcon />}
+                          sx={{
+                            borderRadius: '100px',
+                            textTransform: 'none',
+                            fontWeight: 700,
+                            py: 0.8,
+                            transition: 'all 0.2s',
+                            '&:hover': {
+                              transform: 'scale(1.02)'
+                            }
+                          }}
                         >
                           Tạo lại Doc
-                        </Button>
+                        </LoadingButton>
                       </>
                     ) : (
-                      <Button
+                      <LoadingButton
                         size="small"
                         variant="contained"
                         color="primary"
-                        startIcon={isExportingDoc ? <CircularProgress size={16} color="inherit" /> : <DescriptionIcon />}
+                        loading={isExportingDoc}
+                        loadingPosition="start"
+                        startIcon={<DescriptionIcon />}
                         onClick={() => handleExportGoogleDoc(false)}
-                        disabled={isExportingDoc}
-                        sx={{ borderRadius: 2.5, textTransform: 'none', fontWeight: 700, py: 0.8 }}
+                        sx={{
+                          borderRadius: '100px',
+                          textTransform: 'none',
+                          fontWeight: 700,
+                          py: 0.8,
+                          boxShadow: 'none',
+                          transition: 'all 0.2s',
+                          '&:hover': {
+                            transform: 'scale(1.02)',
+                            boxShadow: 'none'
+                          }
+                        }}
                       >
-                        {isExportingDoc ? 'Đang tạo Doc...' : 'Xuất Google Doc'}
-                      </Button>
+                        Xuất Google Doc
+                      </LoadingButton>
                     )}
-                    <Button
+                    <LoadingButton
                       size="small"
-                      variant="contained"
+                      variant="outlined"
+                      color="primary"
+                      loading={isSubmitting}
+                      loadingPosition="start"
                       startIcon={<RefreshIcon />}
                       onClick={handleReanalyze}
-                      disabled={isSubmitting}
                       sx={{
-                        borderRadius: 2.5,
+                        borderRadius: '100px',
                         textTransform: 'none',
                         fontWeight: 700,
                         py: 0.8,
-                        background: 'linear-gradient(135deg, #00b894 0%, #009975 100%)',
-                        boxShadow: '0 4px 12px rgba(0, 184, 148, 0.2)',
+                        transition: 'all 0.2s',
                         '&:hover': {
-                          background: 'linear-gradient(135deg, #3dd6a0 0%, #009975 100%)',
+                          transform: 'scale(1.02)'
                         }
                       }}
                     >
                       Cào lại
-                    </Button>
+                    </LoadingButton>
                   </Box>
                 </Box>
 
@@ -887,7 +978,7 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
               {activeSessionDetail.result.structural.recommendation && (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary', pl: 0.5 }}>
-                    🎯 Đề xuất cấu trúc chuẩn SEO (Structural Recommendations)
+                    Đề xuất cấu trúc chuẩn SEO (Structural Recommendations)
                   </Typography>
 
                   <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2.5 }}>
@@ -950,7 +1041,7 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
                   {activeSessionDetail.result.outline?.differentiationStrategy && (
                     <Box sx={{ p: 2.5, borderLeft: '4px solid #00cec9', bgcolor: 'action.hover', borderRadius: '0 8px 8px 0' }}>
                       <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 0.8 }}>
-                        💡 CHIẾN LƯỢC ĐỘC ĐÁO & KHÁC BIỆT CỦA BẠN (DIFFERENTIATION STRATEGY)
+                        CHIẾN LƯỢC ĐỘC ĐÁO & KHÁC BIỆT CỦA BẠN (DIFFERENTIATION STRATEGY)
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary', lineHeight: 1.6 }}>
                         {activeSessionDetail.result.outline.differentiationStrategy}
@@ -975,7 +1066,7 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
                     py: 1.75
                   }}
                 >
-                  ⚠️ {activeSessionDetail.result.scrapeSummary.failed}/{activeSessionDetail.result.scrapeSummary.attempted} trang đối thủ bị chặn (Cloudflare/Captcha). Outline AI chỉ phân tích trên {activeSessionDetail.result.scrapeSummary.succeeded} trang còn lại — kết quả có thể thiếu góc nhìn. Cân nhắc chạy lại keyword này khi IP mát hoặc dùng keyword biến thể.
+                  {activeSessionDetail.result.scrapeSummary.failed}/{activeSessionDetail.result.scrapeSummary.attempted} trang đối thủ bị chặn (Cloudflare/Captcha). Outline AI chỉ phân tích trên {activeSessionDetail.result.scrapeSummary.succeeded} trang còn lại — kết quả có thể thiếu góc nhìn. Cân nhắc chạy lại keyword này khi IP mát hoặc dùng keyword biến thể.
                 </Alert>
               )}
 
@@ -983,8 +1074,7 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
               {activeSessionDetail.result.outline?.outline && (
                 <Paper elevation={0} sx={{ p: 3.5, borderRadius: 4, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 1.5 }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <AssignmentIcon sx={{ color: 'primary.main' }} />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary' }}>
                       Dàn ý bài viết tối ưu bằng AI (Brief Outline)
                     </Typography>
 
@@ -1004,14 +1094,14 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     {activeSessionDetail.result.outline.outline.map((node, index) => {
                       const getIndentStyle = () => {
-                        if (node.level === 3) return { ml: 4, borderLeft: '2px solid rgba(0, 184, 148, 0.15)', pl: 2 };
-                        if (node.level === 4) return { ml: 8, borderLeft: '2px dotted rgba(0, 184, 148, 0.15)', pl: 2 };
+                        if (node.level === 3) return { ml: 4, borderLeft: '2px solid rgba(37, 99, 235, 0.15)', pl: 2 };
+                        if (node.level === 4) return { ml: 8, borderLeft: '2px dotted rgba(37, 99, 235, 0.15)', pl: 2 };
                         return { ml: 0 };
                       };
 
                       const getLevelColor = () => {
-                        if (node.level === 2) return { bg: '#e6fcf5', text: '#00b894' };
-                        if (node.level === 3) return { bg: '#e0f7fa', text: '#00838f' };
+                        if (node.level === 2) return { bg: '#dbeafe', text: '#2563eb' };
+                        if (node.level === 3) return { bg: '#e0f2fe', text: '#0369a1' };
                         return { bg: '#f1f5f9', text: '#475569' };
                       };
 
@@ -1054,9 +1144,9 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
                                     height: 16,
                                     fontSize: '0.6rem',
                                     fontWeight: 800,
-                                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.15)' : '#e6fcf5',
-                                    color: '#00b894',
-                                    border: (theme) => theme.palette.mode === 'dark' ? '1px solid rgba(0, 184, 148, 0.25)' : '1px solid #c3fae8'
+                                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.15)' : '#dbeafe',
+                                    color: 'primary.main',
+                                    border: (theme) => theme.palette.mode === 'dark' ? '1px solid rgba(37, 99, 235, 0.25)' : '1px solid #bfdbfe'
                                   }}
                                 />
                               )}
@@ -1156,7 +1246,7 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
               {activeSessionDetail.result.structural.termFrequency && activeSessionDetail.result.structural.termFrequency.length > 0 && (
                 <Paper elevation={0} sx={{ p: 3.5, borderRadius: 4, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary', mb: 2 }}>
-                    🏷️ Cụm từ NLP cần có trong bài viết (NLP Term Frequency)
+                    Cụm từ NLP cần có trong bài viết (NLP Term Frequency)
                   </Typography>
 
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.25 }}>
@@ -1178,7 +1268,7 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
                                   display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
-                                  bgcolor: hasCoverage ? '#00b894' : 'rgba(0,0,0,0.06)',
+                                  bgcolor: hasCoverage ? '#10b981' : 'rgba(0,0,0,0.06)',
                                   color: hasCoverage ? 'white' : 'text.secondary',
                                   borderRadius: '50%',
                                   width: '20px !important',
@@ -1195,9 +1285,9 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
                               py: 2,
                               px: 0.5,
                               borderRadius: 2.5,
-                              bgcolor: hasCoverage ? 'rgba(0, 184, 148, 0.05)' : 'transparent',
+                              bgcolor: hasCoverage ? 'rgba(16, 185, 129, 0.08)' : 'transparent',
                               border: '1px solid',
-                              borderColor: hasCoverage ? '#00b894' : 'divider',
+                              borderColor: hasCoverage ? '#10b981' : 'divider',
                               color: 'text.primary',
                             }}
                           />
@@ -1211,8 +1301,7 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
               {/* 5. Competitor Table */}
               {activeSessionDetail.result.structural.perArticle && activeSessionDetail.result.structural.perArticle.length > 0 && (
                 <Paper elevation={0} sx={{ p: 3.5, borderRadius: 4, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', overflow: 'hidden' }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <EmojiEventsIcon sx={{ color: 'amber.main', fontSize: 20 }} />
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary', mb: 2 }}>
                     Phân tích chi tiết từng đối thủ (Competitors Structural Analysis)
                   </Typography>
 
@@ -1294,7 +1383,7 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
                   <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
                       <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary' }}>
-                        ⚠️ Trang đối thủ KHÔNG scrape được (Failed Competitor Scrapes)
+                        Trang đối thủ KHÔNG cào được (Failed Competitor Scrapes)
                       </Typography>
                       {activeSessionDetail.result.scrapeSummary && (
                         <Chip
@@ -1335,20 +1424,23 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
                                   <TableCell sx={{ fontWeight: 700, py: 1.2 }}>{idx + 1}</TableCell>
                                   <TableCell sx={{ py: 1.2, maxWidth: 280 }}>
                                     <Tooltip title={source.url} arrow>
-                                      <a
+                                      <Link
                                         href={source.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        style={{
-                                          color: '#00b894',
-                                          textDecoration: 'underline',
-                                          fontWeight: 650,
+                                        underline="none"
+                                        sx={{
+                                          color: 'primary.main',
+                                          fontWeight: 500,
                                           wordBreak: 'break-all',
-                                          display: 'inline-block'
+                                          display: 'inline-block',
+                                          '&:hover': {
+                                            textDecoration: 'underline'
+                                          }
                                         }}
                                       >
                                         {getHostname(source.url)}
-                                      </a>
+                                      </Link>
                                     </Tooltip>
                                   </TableCell>
                                   <TableCell sx={{ py: 1.2 }}>
@@ -1426,7 +1518,7 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
                     <Grid size={{ xs: 12, md: 6 }}>
                       <Paper elevation={0} sx={{ p: 3.5, borderRadius: 4, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', height: '100%' }}>
                         <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary', mb: 2 }}>
-                          ❓ Người dùng cũng hỏi (People Also Ask)
+                          Người dùng cũng hỏi (People Also Ask)
                         </Typography>
                         <List dense disablePadding>
                           {activeSessionDetail.result.peopleAlsoAsk.map((q, idx) => (
@@ -1444,7 +1536,7 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
                     <Grid size={{ xs: 12, md: 6 }}>
                       <Paper elevation={0} sx={{ p: 3.5, borderRadius: 4, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', height: '100%' }}>
                         <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary', mb: 2 }}>
-                          🔍 Tìm kiếm có liên quan (Related Searches)
+                          Tìm kiếm có liên quan (Related Searches)
                         </Typography>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                           {activeSessionDetail.result.relatedSearches.map((kw, idx) => (
@@ -1474,9 +1566,8 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
               {/* 8. Featured Snippet */}
               {activeSessionDetail.result.featuredSnippet && (
                 <Paper elevation={0} sx={{ p: 3.5, borderRadius: 4, border: '1.5px solid #f59e0b', bgcolor: 'rgba(245, 158, 11, 0.02)' }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#b45309', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <WarningAmberIcon sx={{ color: '#f59e0b', fontSize: 22 }} />
-                    🏆 Google Featured Snippet (Đoạn trích nổi bật)
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#b45309', mb: 1.5 }}>
+                    Google Featured Snippet (Đoạn trích nổi bật)
                   </Typography>
 
                   <Typography variant="body2" sx={{ p: 2.5, bgcolor: 'action.hover', borderRadius: 3, borderLeft: '4px solid #f59e0b', fontStyle: 'italic', fontWeight: 550, color: 'text.primary', lineHeight: 1.6, mb: 2 }}>
@@ -1488,17 +1579,26 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
                       <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
                         Nguồn chiếm vị trí: <strong style={{ color: '#2563eb' }}>{activeSessionDetail.result.featuredSnippet.source}</strong>
                       </Typography>
-                      <Button
-                        size="small"
-                        variant="text"
-                        startIcon={<OpenInNewIcon sx={{ fontSize: 13 }} />}
-                        component="a"
+                      <Link
                         href={activeSessionDetail.result.featuredSnippet.source}
                         target="_blank"
-                        sx={{ textTransform: 'none', fontWeight: 700 }}
+                        rel="noopener noreferrer"
+                        underline="none"
+                        sx={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          fontSize: '0.8125rem',
+                          fontWeight: 500,
+                          color: 'primary.main',
+                          '&:hover': {
+                            textDecoration: 'underline'
+                          }
+                        }}
                       >
+                        <OpenInNewIcon sx={{ fontSize: 13 }} />
                         Nghiên cứu copy
-                      </Button>
+                      </Link>
                     </Box>
                   )}
                 </Paper>
@@ -1528,15 +1628,24 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
             <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: 1.5 }}>
               <Box>
                 <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>ĐƯỜNG DẪN CHI TIẾT (URL)</Typography>
-                <Typography
-                  variant="body2"
-                  component="a"
+                <Link
                   href={selectedCompetitor.art.url}
                   target="_blank"
-                  sx={{ color: 'primary.main', textDecoration: 'underline', fontWeight: 600, wordBreak: 'break-all', display: 'block', mt: 0.5 }}
+                  rel="noopener noreferrer"
+                  underline="none"
+                  sx={{
+                    color: 'primary.main',
+                    fontWeight: 500,
+                    wordBreak: 'break-all',
+                    display: 'block',
+                    mt: 0.5,
+                    '&:hover': {
+                      textDecoration: 'underline'
+                    }
+                  }}
                 >
                   {selectedCompetitor.art.url}
-                </Typography>
+                </Link>
               </Box>
 
               {selectedCompetitor.source?.snippet && (
@@ -1583,7 +1692,19 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
               </Box>
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2 }}>
-              <Button onClick={() => setSelectedCompetitor(null)} variant="outlined" sx={{ borderRadius: 2.5, textTransform: 'none', fontWeight: 700 }}>
+              <Button
+                onClick={() => setSelectedCompetitor(null)}
+                variant="outlined"
+                sx={{
+                  borderRadius: '100px',
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    transform: 'scale(1.02)'
+                  }
+                }}
+              >
                 Đóng
               </Button>
             </DialogActions>

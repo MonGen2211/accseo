@@ -8,9 +8,9 @@ export const getDesignTokens = (mode: PaletteMode) => ({
           // Light Mode Colors
           primary: {
             main: '#00b894',
-            light: '#3dd6a0',
             dark: '#009975',
-            contrastText: '#fff',
+            light: 'rgba(0, 184, 148, 0.1)',
+            contrastText: '#ffffff',
           },
           secondary: {
             main: '#636e72',
@@ -18,22 +18,40 @@ export const getDesignTokens = (mode: PaletteMode) => ({
             dark: '#2d3436',
           },
           background: {
-            default: '#f5f6fa',
+            default: '#f8fafc',
             paper: '#ffffff',
           },
           text: {
-            primary: '#2d3436',
-            secondary: '#636e72',
+            primary: '#0f172a',
+            secondary: '#475569',
+            disabled: '#94a3b8',
           },
-          divider: '#e0e3eb',
+          success: {
+            main: '#2ecc71',
+            light: 'rgba(46, 204, 113, 0.1)',
+          },
+          warning: {
+            main: '#ff7675',
+            light: 'rgba(255, 118, 117, 0.15)',
+          },
+          error: {
+            main: '#e74c3c',
+            dark: '#c0392b',
+            light: 'rgba(231, 76, 60, 0.1)',
+          },
+          divider: '#e2e8f0',
+          action: {
+            hover: 'rgba(15, 23, 42, 0.04)',
+            selected: 'rgba(15, 23, 42, 0.08)',
+          },
         }
       : {
           // Dark Mode Colors
           primary: {
             main: '#00b894',
-            light: '#3dd6a0',
             dark: '#009975',
-            contrastText: '#fff',
+            light: 'rgba(0, 184, 148, 0.1)',
+            contrastText: '#ffffff',
           },
           secondary: {
             main: '#a0aec0',
@@ -41,23 +59,34 @@ export const getDesignTokens = (mode: PaletteMode) => ({
             dark: '#64748b',
           },
           background: {
-            default: '#0f172a', // slate-900
-            paper: '#1e293b',   // slate-800
+            default: '#0f172a',
+            paper: '#1e293b',
           },
           text: {
-            primary: '#f8fafc', // slate-50
-            secondary: '#94a3b8', // slate-400
+            primary: '#f8fafc',
+            secondary: '#94a3b8',
+            disabled: '#475569',
           },
-          divider: 'rgba(255, 255, 255, 0.12)',
+          success: {
+            main: '#00b894',
+            light: 'rgba(0, 184, 148, 0.1)',
+          },
+          warning: {
+            main: '#ff7675',
+            light: 'rgba(255, 118, 117, 0.15)',
+          },
+          error: {
+            main: '#e74c3c',
+            dark: '#c0392b',
+            light: 'rgba(231, 76, 60, 0.1)',
+          },
+          divider: 'rgba(255, 255, 255, 0.08)',
           action: {
-            hover: 'rgba(255, 255, 255, 0.08)',
+            hover: 'rgba(255, 255, 255, 0.05)',
             selected: 'rgba(255, 255, 255, 0.16)',
           },
         }),
-    error: { main: '#e74c3c' },
-    warning: { main: '#f39c12' },
     info: { main: '#3498db' },
-    success: { main: '#00b894' },
   },
   typography: {
     fontFamily: '"Inter", "system-ui", "-apple-system", sans-serif',
@@ -101,8 +130,8 @@ export const getDesignTokens = (mode: PaletteMode) => ({
             fontSize: '0.78rem',
             textTransform: 'uppercase' as const,
             letterSpacing: '0.04em',
-            color: mode === 'light' ? '#636e72' : '#94a3b8',
-            backgroundColor: mode === 'light' ? '#f8f9fb' : '#0f172a',
+            color: mode === 'light' ? '#475569' : '#94a3b8',
+            backgroundColor: mode === 'light' ? '#f8fafc' : '#0f172a',
           },
         },
       },
@@ -110,7 +139,7 @@ export const getDesignTokens = (mode: PaletteMode) => ({
     MuiTableCell: {
       styleOverrides: {
         root: {
-          borderColor: mode === 'light' ? '#e0e3eb' : 'rgba(255, 255, 255, 0.12)',
+          borderColor: mode === 'light' ? '#e2e8f0' : 'rgba(255, 255, 255, 0.08)',
           padding: '12px 16px',
         },
       },

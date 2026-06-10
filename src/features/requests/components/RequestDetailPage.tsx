@@ -74,7 +74,7 @@ export default function RequestDetailPage() {
 				<Typography sx={{ color: 'text.secondary', mb: 2 }}>
 					{error ?? 'Không tìm thấy yêu cầu hoặc bạn không có quyền xem.'}
 				</Typography>
-				<Button variant="outlined" onClick={() => navigate(-1)}>Quay lại</Button>
+				<Button variant="outlined" onClick={() => navigate(-1)} sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>Quay lại</Button>
 			</Box>
 		);
 	}
@@ -132,7 +132,7 @@ export default function RequestDetailPage() {
 	};
 
 	return (
-		<Box sx={{ p: 3, pb: 10 }}>
+		<Box sx={{ p: 3, pb: 10, zoom: 0.8 }}>
 			<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
 				<IconButton onClick={() => navigate(-1)}><ArrowBackIcon /></IconButton>
 				<Typography variant="h5" sx={{ fontWeight: 700, flex: 1 }}>{current.title}</Typography>
@@ -256,20 +256,20 @@ export default function RequestDetailPage() {
 				{/* Action buttons */}
 				<Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
 					{canClaim && (
-						<Button variant="contained" onClick={handleClaim} disabled={actionLoading}>Nhận việc</Button>
+						<Button variant="contained" onClick={handleClaim} disabled={actionLoading} sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>Nhận việc</Button>
 					)}
 					{canResolve && current.type !== 'KEYWORD_APPROVAL' && (
-						<Button variant="contained" color="success" onClick={() => { setResolveAction('DONE'); setResolveNote(''); setResolveOpen(true); }}>
+						<Button variant="contained" color="success" onClick={() => { setResolveAction('DONE'); setResolveNote(''); setResolveOpen(true); }} sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>
 							Hoàn thành / Từ chối
 						</Button>
 					)}
 					{canReassign && (
-						<Button variant="outlined" onClick={() => { setReassignUser(null); setReassignNote(''); setUserSearch(''); setUserInputValue(''); setReassignOpen(true); }}>
+						<Button variant="outlined" onClick={() => { setReassignUser(null); setReassignNote(''); setUserSearch(''); setUserInputValue(''); setReassignOpen(true); }} sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>
 							Chuyển người
 						</Button>
 					)}
 					{canCancel && !['DONE', 'CANCELLED', 'REJECTED'].includes(current.status) && (
-						<Button variant="outlined" color="error" onClick={() => setCancelOpen(true)}>Huỷ yêu cầu</Button>
+						<Button variant="outlined" color="error" onClick={() => setCancelOpen(true)} sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>Huỷ yêu cầu</Button>
 					)}
 				</Box>
 
@@ -304,27 +304,30 @@ export default function RequestDetailPage() {
 			</Box>
 
 			{/* Resolve Dialog */}
-			<Dialog open={resolveOpen} onClose={() => setResolveOpen(false)} maxWidth="sm" fullWidth>
-				<DialogTitle>Xử lý yêu cầu</DialogTitle>
-				<DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+			<Dialog open={resolveOpen} onClose={() => setResolveOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '28px' } }}>
+				<DialogTitle sx={{ fontWeight: 800 }}>Xử lý yêu cầu</DialogTitle>
+				<Divider />
+				<DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2.5, maxHeight: '70vh', overflowY: 'auto' }}>
 					<RadioGroup value={resolveAction} onChange={(e) => setResolveAction(e.target.value as 'DONE' | 'REJECTED')} row>
 						<FormControlLabel value="DONE" control={<Radio color="success" />} label="Hoàn thành" />
 						<FormControlLabel value="REJECTED" control={<Radio color="error" />} label="Từ chối" />
 					</RadioGroup>
-					<TextField fullWidth multiline rows={3} label="Ghi chú (tuỳ chọn)" value={resolveNote} onChange={(e) => setResolveNote(e.target.value)} />
+					<TextField fullWidth multiline rows={3} label="Ghi chú (tuỳ chọn)" value={resolveNote} onChange={(e) => setResolveNote(e.target.value)} sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }} />
 				</DialogContent>
-				<DialogActions>
-					<Button onClick={() => setResolveOpen(false)}>Huỷ</Button>
-					<Button variant="contained" onClick={handleResolve} disabled={actionLoading} color={resolveAction === 'DONE' ? 'success' : 'error'}>
+				<Divider />
+				<DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
+					<Button onClick={() => setResolveOpen(false)} sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>Huỷ</Button>
+					<Button variant="contained" onClick={handleResolve} disabled={actionLoading} color={resolveAction === 'DONE' ? 'success' : 'error'} sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>
 						{resolveAction === 'DONE' ? 'Xác nhận hoàn thành' : 'Xác nhận từ chối'}
 					</Button>
 				</DialogActions>
 			</Dialog>
 
 			{/* Reassign Dialog */}
-			<Dialog open={reassignOpen} onClose={() => setReassignOpen(false)} maxWidth="sm" fullWidth>
-				<DialogTitle>Chuyển người xử lý</DialogTitle>
-				<DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+			<Dialog open={reassignOpen} onClose={() => setReassignOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '28px' } }}>
+				<DialogTitle sx={{ fontWeight: 800 }}>Chuyển người xử lý</DialogTitle>
+				<Divider />
+				<DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2.5, maxHeight: '70vh', overflowY: 'auto' }}>
 					<Autocomplete
 						options={userOptions}
 						getOptionLabel={(u) => `${u.name} (${u.email})`}
@@ -339,26 +342,29 @@ export default function RequestDetailPage() {
 						}}
 						clearOnBlur={false}
 						filterOptions={(x) => x}
-						renderInput={(params) => <TextField {...params} label="Tìm người xử lý" size="small" />}
+						renderInput={(params) => <TextField {...params} label="Tìm người xử lý" size="small" sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }} />}
 					/>
 
-					<TextField multiline rows={2} label="Ghi chú (tuỳ chọn)" value={reassignNote} onChange={(e) => setReassignNote(e.target.value)} size="small" />
+					<TextField multiline rows={2} label="Ghi chú (tuỳ chọn)" value={reassignNote} onChange={(e) => setReassignNote(e.target.value)} size="small" sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }} />
 				</DialogContent>
-				<DialogActions>
-					<Button onClick={() => setReassignOpen(false)}>Huỷ</Button>
-					<Button variant="contained" onClick={handleReassign} disabled={!reassignUser || actionLoading}>Xác nhận</Button>
+				<Divider />
+				<DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
+					<Button onClick={() => setReassignOpen(false)} sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>Huỷ</Button>
+					<Button variant="contained" onClick={handleReassign} disabled={!reassignUser || actionLoading} sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>Xác nhận</Button>
 				</DialogActions>
 			</Dialog>
 
 			{/* Cancel Dialog */}
-			<Dialog open={cancelOpen} onClose={() => setCancelOpen(false)}>
-				<DialogTitle>Huỷ yêu cầu</DialogTitle>
-				<DialogContent>
+			<Dialog open={cancelOpen} onClose={() => setCancelOpen(false)} PaperProps={{ sx: { borderRadius: '28px' } }}>
+				<DialogTitle sx={{ fontWeight: 800 }}>Huỷ yêu cầu</DialogTitle>
+				<Divider />
+				<DialogContent sx={{ pt: 2, maxHeight: '70vh', overflowY: 'auto' }}>
 					<Typography>Bạn có chắc muốn huỷ yêu cầu này?</Typography>
 				</DialogContent>
-				<DialogActions>
-					<Button onClick={() => setCancelOpen(false)}>Không</Button>
-					<Button variant="contained" color="error" onClick={handleCancel} disabled={actionLoading}>Huỷ yêu cầu</Button>
+				<Divider />
+				<DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
+					<Button onClick={() => setCancelOpen(false)} sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>Không</Button>
+					<Button variant="contained" color="error" onClick={handleCancel} disabled={actionLoading} sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>Huỷ yêu cầu</Button>
 				</DialogActions>
 			</Dialog>
 		</Box>

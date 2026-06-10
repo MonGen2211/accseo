@@ -27,3 +27,8 @@ dist-ssr
 # Scratch folder
 scratch/
 
+.claude/
+CLAUDE.md
+AGENTS.md
+COLORS.md
+STYLES.md

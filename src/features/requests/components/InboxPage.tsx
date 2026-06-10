@@ -173,7 +173,7 @@ export default function InboxPage({ tabsNode }: { tabsNode?: React.ReactNode }) 
         <Box sx={{ textAlign: 'center', py: 12 }}>
           <Box sx={{
             width: 80, height: 80, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #e6f8f4, #cbf2e8)',
+            bgcolor: 'primary.light',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             mx: 'auto', mb: 2,
           }}>
@@ -218,7 +218,7 @@ export default function InboxPage({ tabsNode }: { tabsNode?: React.ReactNode }) 
                 '&:hover': {
                   boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
                   borderLeftColor: statusColor,
-                  bgcolor: '#fafafa',
+                  bgcolor: 'action.hover',
                   transform: 'translateX(2px)',
                 },
               }}
@@ -268,7 +268,7 @@ export default function InboxPage({ tabsNode }: { tabsNode?: React.ReactNode }) 
                           <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
                             {doneCount}/{req.participants.length}
                           </Typography>
-                          <AvatarGroup max={5} sx={{ '& .MuiAvatar-root': { width: 22, height: 22, fontSize: 10, border: '2px solid #fff' } }}>
+                          <AvatarGroup max={5} sx={{ '& .MuiAvatar-root': { width: 22, height: 22, fontSize: 10, border: (theme) => `2px solid ${theme.palette.background.paper}` } }}>
                             {req.participants.map((p) => (
                               <Avatar key={p.user.id} src={p.user.imgAvatar}>{p.user.name?.[0]}</Avatar>
                             ))}
@@ -310,12 +310,13 @@ export default function InboxPage({ tabsNode }: { tabsNode?: React.ReactNode }) 
                           onClick={() => handleClaim(req)}
                           disabled={actionLoading}
                           sx={{
-                            borderRadius: 1.5, fontWeight: 700, fontSize: '0.72rem', px: 1.5, py: 0.25, minWidth: 0,
-                            background: 'linear-gradient(135deg, #00b894, #00cec9)',
-                            boxShadow: '0 2px 8px rgba(0,184,148,0.3)',
+                            borderRadius: '100px', fontWeight: 700, fontSize: '0.72rem', px: 2, py: 0.5, minWidth: 0,
+                            bgcolor: 'primary.main',
                             color: 'primary.contrastText',
                             whiteSpace: 'nowrap',
-                            '&:hover': { boxShadow: '0 4px 12px rgba(0,184,148,0.4)' },
+                            textTransform: 'none',
+                            transition: 'all 0.2s',
+                            '&:hover': { bgcolor: 'primary.dark', transform: 'scale(1.02)' },
                           }}
                         >
                           Nhận việc
@@ -326,7 +327,13 @@ export default function InboxPage({ tabsNode }: { tabsNode?: React.ReactNode }) 
                           size="small"
                           variant="outlined"
                           onClick={() => openResolve(req)}
-                          sx={{ borderRadius: 1.5, fontWeight: 600, fontSize: '0.72rem', px: 1.5, py: 0.25, minWidth: 0, whiteSpace: 'nowrap', color: '#00b894', borderColor: '#a7f3d0', bgcolor: '#ecfdf5', '&:hover': { bgcolor: '#d1fae5', borderColor: '#6ee7b7' } }}
+                          sx={{
+                            borderRadius: '100px', fontWeight: 700, fontSize: '0.72rem', px: 2, py: 0.5, minWidth: 0,
+                            whiteSpace: 'nowrap', textTransform: 'none',
+                            color: 'primary.main', borderColor: 'rgba(0, 184, 148, 0.3)', bgcolor: 'rgba(0, 184, 148, 0.1)',
+                            transition: 'all 0.2s',
+                            '&:hover': { bgcolor: 'rgba(0, 184, 148, 0.2)', borderColor: 'primary.main', transform: 'scale(1.02)' }
+                          }}
                         >
                           Xử lý
                         </Button>
@@ -363,10 +370,10 @@ export default function InboxPage({ tabsNode }: { tabsNode?: React.ReactNode }) 
 
       {/* Resolve Dialog */}
       <Dialog open={resolveOpen} onClose={() => setResolveOpen(false)} maxWidth="sm" fullWidth
-        slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
+        PaperProps={{ sx: { borderRadius: '28px' } }}>
         <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>Xử lý yêu cầu</DialogTitle>
         <Divider />
-        <DialogContent sx={{ pt: 2.5 }}>
+        <DialogContent sx={{ pt: 2.5, maxHeight: '70vh', overflowY: 'auto' }}>
           <RadioGroup value={resolveAction} onChange={(e) => setResolveAction(e.target.value as 'DONE' | 'REJECTED')} row sx={{ mb: 2.5 }}>
             <FormControlLabel value="DONE" control={<Radio color="success" />} label="Hoàn thành" />
             <FormControlLabel value="REJECTED" control={<Radio color="error" />} label="Từ chối" />
@@ -375,11 +382,11 @@ export default function InboxPage({ tabsNode }: { tabsNode?: React.ReactNode }) 
             value={resolveNote} onChange={(e) => setResolveNote(e.target.value)}
             sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }} />
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
-          <Button onClick={() => setResolveOpen(false)} sx={{ borderRadius: 2 }}>Huỷ</Button>
+        <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
+          <Button onClick={() => setResolveOpen(false)} sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>Huỷ</Button>
           <Button variant="contained" onClick={handleResolve} disabled={actionLoading}
             color={resolveAction === 'DONE' ? 'success' : 'error'}
-            sx={{ borderRadius: 2, fontWeight: 700 }}>
+            sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>
             {resolveAction === 'DONE' ? 'Xác nhận hoàn thành' : 'Xác nhận từ chối'}
           </Button>
         </DialogActions>

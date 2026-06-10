@@ -58,10 +58,10 @@ export default function DomainForm({ onSubmit, onCancel, loading, apiError, onCl
 			/>
 
 			<Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-				<Button variant="text" color="inherit" onClick={onCancel} disabled={loading}>
+				<Button variant="text" color="inherit" onClick={onCancel} disabled={loading} sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>
 					Hủy
 				</Button>
-				<Button type="submit" variant="contained" disabled={loading}>
+				<Button type="submit" variant="contained" disabled={loading} sx={{ borderRadius: '100px', height: 40, px: 3, textTransform: 'none', fontWeight: 700, transition: 'all 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>
 					{loading ? 'Đang lưu...' : 'Thêm mới'}
 				</Button>
 			</Box>

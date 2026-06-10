@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
+import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
 import TextField from '@mui/material/TextField';
@@ -90,6 +91,14 @@ const fmtDateTime = (iso: string | null | undefined): string => {
   } catch {
     return String(iso);
   }
+};
+
+const formatDefensiveNumber = (num: number): string => {
+  if (isNaN(num) || num === null || num === undefined) return '-';
+  if (num >= 1e9) {
+    return num.toExponential(2); // Tránh bug tràn số
+  }
+  return new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(num);
 };
 
 const getRoleLabel = (role: string): string => {
@@ -273,37 +282,30 @@ function CategoryCard({
     <Paper
       elevation={0}
       sx={{
-        borderRadius: 5,
+        borderRadius: 2,
         border: '1px solid',
-        borderColor: expanded ? config.color : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'),
-        bgcolor: isDark ? 'rgba(20, 20, 25, 0.6)' : '#ffffff',
+        borderColor: expanded ? config.color : 'divider',
+        bgcolor: 'background.paper',
         overflow: 'hidden',
         position: 'relative',
-        backdropFilter: 'blur(10px)',
-        transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
-        boxShadow: isDark 
-          ? '0 4px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05)' 
-          : '0 4px 16px rgba(0, 0, 0, 0.02)',
+        transition: 'all 0.2s ease-in-out',
         '&:hover': {
           borderColor: config.color,
-          transform: 'translateY(-3px)',
+          transform: 'translateY(-2px)',
           boxShadow: isDark 
-            ? `0 12px 30px rgba(${config.color === '#10b981' ? '16, 185, 129' : config.color === '#f59e0b' ? '245, 158, 11' : '37, 99, 235'}, 0.12)` 
-            : '0 12px 24px rgba(0, 0, 0, 0.06)',
+            ? '0 4px 12px rgba(0,0,0,0.5)' 
+            : '0 4px 12px rgba(0,0,0,0.05)',
         }
       }}
     >
-      {/* Visual Glowing Left Accent Border */}
+      {/* Visual Left Accent Border */}
       <Box sx={{ 
         position: 'absolute', 
         left: 0, 
         top: 0, 
         bottom: 0, 
         width: 5, 
-        background: runs > 0 
-          ? `linear-gradient(to bottom, ${config.color}, #55efc4)` 
-          : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'),
-        boxShadow: runs > 0 ? `0 0 10px ${config.color}` : 'none',
+        bgcolor: runs > 0 ? config.color : 'divider',
         zIndex: 2
       }} />
 
@@ -313,24 +315,23 @@ function CategoryCard({
         sx={{
           p: 3,
           cursor: 'pointer',
-          bgcolor: expanded ? (isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.01)') : 'transparent',
+          bgcolor: expanded ? 'action.hover' : 'transparent',
           transition: 'background-color 0.2s',
-          '&:active': { bgcolor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)' }
+          '&:active': { bgcolor: 'action.selected' }
         }}
       >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0 }}>
-            {/* Category Icon wrapped in a beautiful glass orb */}
+        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2.5 }}>
+          <Stack direction="row" alignItems="center" spacing={2} sx={{ minWidth: 0 }}>
+            {/* Category Icon */}
             <Box sx={{ 
               width: 44, 
               height: 44, 
-              borderRadius: '12px', 
+              borderRadius: 1.5, 
               bgcolor: config.bg, 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center',
               border: `1px solid rgba(${config.color === '#10b981' ? '16, 185, 129' : '245, 158, 11'}, 0.2)`,
-              boxShadow: `0 4px 10px rgba(${config.color === '#10b981' ? '16, 185, 129' : '245, 158, 11'}, 0.05)`,
               flexShrink: 0
             }}>
               {config.icon}
@@ -339,18 +340,17 @@ function CategoryCard({
               <Typography sx={{ fontWeight: 800, fontSize: '0.96rem', color: 'text.primary', lineHeight: 1.25, letterSpacing: '-0.01em' }}>
                 {label}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary', fontWeight: 500, bgcolor: isDark ? 'rgba(255,255,255,0.04)' : '#f1f5f9', px: 1, py: 0.2, borderRadius: 1 }}>
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.5 }}>
+                <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary', fontWeight: 500, bgcolor: 'background.default', px: 1, py: 0.2, borderRadius: 0.5 }}>
                   {categoryKey}
                 </Typography>
                 {runs > 0 && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
                     <Box sx={{ 
                       width: 6, 
                       height: 6, 
                       borderRadius: '50%', 
-                      bgcolor: '#10b981', 
-                      boxShadow: '0 0 6px #10b981',
+                      bgcolor: 'success.main', 
                       animation: 'pulse 1.8s infinite ease-in-out',
                       '@keyframes pulse': {
                         '0%': { transform: 'scale(0.8)', opacity: 0.4 },
@@ -361,16 +361,16 @@ function CategoryCard({
                     <Typography sx={{ fontSize: '0.66rem', color: 'success.main', fontWeight: 700 }}>
                       Hoạt động
                     </Typography>
-                  </Box>
+                  </Stack>
                 )}
-              </Box>
+              </Stack>
             </Box>
-          </Box>
+          </Stack>
           <Box sx={{ 
             width: 28, 
             height: 28, 
             borderRadius: '50%', 
-            bgcolor: isDark ? 'rgba(255,255,255,0.03)' : '#f1f5f9', 
+            bgcolor: 'background.default', 
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center',
@@ -385,7 +385,7 @@ function CategoryCard({
           }}>
             <LaunchIcon sx={{ fontSize: 13 }} />
           </Box>
-        </Box>
+        </Stack>
 
         {/* Small Numeric Stats Sub-boxes */}
         <Grid container spacing={2}>
@@ -397,14 +397,30 @@ function CategoryCard({
               bgcolor: isDark ? 'rgba(255,255,255,0.015)' : '#f8fafc', 
               border: '1px solid', 
               borderColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)', 
-              textAlign: 'center' 
+              textAlign: 'center',
+              minWidth: 80,
+              maxWidth: '100%',
+              overflow: 'hidden'
             }}>
               <Typography sx={{ fontSize: '0.64rem', fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                 Chạy
               </Typography>
-              <Typography sx={{ fontSize: '1.3rem', fontWeight: 900, color: runs > 0 ? 'text.primary' : 'text.disabled', mt: 0.5 }}>
-                {runs}
-              </Typography>
+              <Tooltip title={runs.toLocaleString('en-US')} arrow placement="top">
+                <Typography sx={{ 
+                  fontSize: '1.3rem', 
+                  fontWeight: 900, 
+                  color: runs > 0 ? 'text.primary' : 'text.disabled', 
+                  mt: 0.5, 
+                  cursor: 'help',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  width: '100%',
+                  textAlign: 'center'
+                }}>
+                  {formatDefensiveNumber(runs)}
+                </Typography>
+              </Tooltip>
             </Box>
           </Grid>
           {/* Success */}
@@ -415,14 +431,30 @@ function CategoryCard({
               bgcolor: success > 0 ? (isDark ? 'rgba(16, 185, 129, 0.05)' : '#ecfdf5') : (isDark ? 'rgba(255,255,255,0.015)' : '#f8fafc'), 
               border: '1px solid', 
               borderColor: success > 0 ? (isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.15)') : (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'),
-              textAlign: 'center' 
+              textAlign: 'center',
+              minWidth: 80,
+              maxWidth: '100%',
+              overflow: 'hidden'
             }}>
               <Typography sx={{ fontSize: '0.64rem', fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                 OK
               </Typography>
-              <Typography sx={{ fontSize: '1.3rem', fontWeight: 900, color: success > 0 ? 'success.main' : 'text.disabled', mt: 0.5 }}>
-                {success}
-              </Typography>
+              <Tooltip title={success.toLocaleString('en-US')} arrow placement="top">
+                <Typography sx={{ 
+                  fontSize: '1.3rem', 
+                  fontWeight: 900, 
+                  color: success > 0 ? 'success.main' : 'text.disabled', 
+                  mt: 0.5, 
+                  cursor: 'help',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  width: '100%',
+                  textAlign: 'center'
+                }}>
+                  {formatDefensiveNumber(success)}
+                </Typography>
+              </Tooltip>
             </Box>
           </Grid>
           {/* Failed */}
@@ -434,7 +466,10 @@ function CategoryCard({
               border: '1px solid', 
               borderColor: failed > 0 ? (isDark ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.15)') : (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'),
               textAlign: 'center',
-              position: 'relative'
+              position: 'relative',
+              minWidth: 80,
+              maxWidth: '100%',
+              overflow: 'hidden'
             }}>
               {failed > 0 && (
                 <Box sx={{ 
@@ -451,16 +486,28 @@ function CategoryCard({
               <Typography sx={{ fontSize: '0.64rem', fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                 Lỗi
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, mt: 0.5 }}>
-                <Typography sx={{ fontSize: '1.3rem', fontWeight: 900, color: failed > 0 ? 'error.main' : 'text.disabled' }}>
-                  {failed}
-                </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, mt: 0.5, maxWidth: '100%', overflow: 'hidden' }}>
+                <Tooltip title={failed.toLocaleString('en-US')} arrow placement="top">
+                  <Typography sx={{ 
+                    fontSize: '1.3rem', 
+                    fontWeight: 900, 
+                    color: failed > 0 ? 'error.main' : 'text.disabled', 
+                    cursor: 'help',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '100%',
+                    textAlign: 'center'
+                  }}>
+                    {formatDefensiveNumber(failed)}
+                  </Typography>
+                </Tooltip>
                 {failed > 0 && (
                   <Chip
                     label={`${errorRate.toFixed(0)}%`}
                     size="small"
                     color="error"
-                    sx={{ height: 16, fontSize: '0.6rem', px: 0.2, fontWeight: 900, borderRadius: 0.5 }}
+                    sx={{ height: 16, fontSize: '0.6rem', px: 0.2, fontWeight: 900, borderRadius: 0.5, flexShrink: 0 }}
                   />
                 )}
               </Box>
@@ -486,15 +533,10 @@ function CategoryCard({
         }}
         PaperProps={{
           sx: {
-            borderRadius: 5,
+            borderRadius: '28px',
             border: '1px solid',
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-            background: isDark 
-              ? 'linear-gradient(135deg, rgba(20, 20, 25, 0.95) 0%, rgba(10, 10, 12, 0.98) 100%)' 
-              : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-            boxShadow: isDark 
-              ? '0 24px 64px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.05)' 
-              : '0 24px 48px rgba(0, 0, 0, 0.08)',
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
           }
         }}
       >
@@ -543,7 +585,7 @@ function CategoryCard({
         </DialogTitle>
 
         {/* Dialog Content */}
-        <DialogContent sx={{ p: 3, mt: 1 }}>
+        <DialogContent sx={{ p: 3, mt: 1, maxHeight: '65vh', overflowY: 'auto' }}>
           {/* Metadata Banner */}
           <Box sx={{ 
             display: 'flex', 
@@ -585,16 +627,17 @@ function CategoryCard({
                 Chi tiết tác vụ trong nhóm
               </Typography>
               
-              <TableContainer sx={{ 
+              <TableContainer component={Paper} sx={{ 
                 border: '1px solid', 
-                borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)', 
-                borderRadius: 3.5, 
-                bgcolor: isDark ? 'rgba(20, 20, 25, 0.4)' : '#ffffff', 
-                overflow: 'hidden' 
+                borderColor: 'divider', 
+                borderRadius: 2, 
+                bgcolor: 'background.paper', 
+                overflowX: 'auto',
+                width: '100%'
               }}>
                 <Table size="small">
                   <TableHead>
-                    <TableRow sx={{ '& th': { bgcolor: isDark ? 'rgba(255,255,255,0.02)' : '#f8fafc', fontSize: '0.68rem', fontWeight: 800, color: 'text.secondary', borderBottom: '1px solid', borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)', py: 1.5 } }}>
+                    <TableRow sx={{ '& th': { bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#f8fafc', fontSize: '0.68rem', fontWeight: 800, color: 'text.secondary', borderBottom: '1px solid', borderColor: 'divider', py: 1.5 } }}>
                       <TableCell>Tác vụ cụ thể</TableCell>
                       <TableCell align="right" sx={{ width: 80 }}>Lượt chạy</TableCell>
                       <TableCell align="right" sx={{ width: 80 }}>Lỗi</TableCell>
@@ -608,9 +651,9 @@ function CategoryCard({
                         <TableRow 
                           key={act.actionKey} 
                           sx={{ 
-                            '& td': { fontSize: '0.76rem', py: 1.5, borderBottom: '1px solid', borderColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' },
+                            '& td': { fontSize: '0.76rem', py: 1.5, borderBottom: '1px solid', borderColor: 'divider' },
                             '&:last-child td': { borderBottom: 'none' },
-                            '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.005)' }
+                            '&:hover': { bgcolor: 'action.hover' }
                           }}
                         >
                           <TableCell sx={{ fontWeight: 700, color: 'text.primary' }}>{act.label}</TableCell>
@@ -619,7 +662,7 @@ function CategoryCard({
                             {act.failed}
                           </TableCell>
                           <TableCell>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            <Stack spacing={0.5}>
                               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: 'text.secondary' }}>
                                   Thành công
@@ -628,17 +671,17 @@ function CategoryCard({
                                   {rate.toFixed(0)}%
                                 </Typography>
                               </Box>
-                              <Box sx={{ display: 'flex', width: '100%', height: 5, borderRadius: 2.5, overflow: 'hidden', bgcolor: isDark ? 'rgba(255,255,255,0.06)' : '#f1f5f9' }}>
+                              <Box sx={{ display: 'flex', width: '100%', height: 5, borderRadius: 2.5, overflow: 'hidden', bgcolor: 'action.hover' }}>
                                 {act.runs > 0 ? (
                                   <>
-                                    <Box sx={{ width: `${rate}%`, background: `linear-gradient(90deg, ${config.color}, #55efc4)`, height: '100%' }} />
+                                    <Box sx={{ width: `${rate}%`, bgcolor: config.color, height: '100%' }} />
                                     <Box sx={{ width: `${100 - rate}%`, bgcolor: 'error.main', height: '100%' }} />
                                   </>
                                 ) : (
                                   <Box sx={{ width: '100%', bgcolor: 'text.disabled', height: '100%', opacity: 0.2 }} />
                                 )}
                               </Box>
-                            </Box>
+                            </Stack>
                           </TableCell>
                         </TableRow>
                       );
@@ -674,19 +717,21 @@ function CategoryCard({
                         Không có thông tin chi tiết người dùng
                       </Typography>
                     ) : (
-                      <TableContainer sx={{ 
+                      <TableContainer component={Paper} sx={{ 
                         border: '1px solid', 
-                        borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)', 
-                        borderRadius: 3.5, 
-                        bgcolor: isDark ? 'rgba(20, 20, 25, 0.4)' : '#ffffff', 
+                        borderColor: 'divider', 
+                        borderRadius: 2, 
+                        bgcolor: 'background.paper', 
                         maxHeight: 320,
+                        overflowX: 'auto',
+                        width: '100%',
                         '&::-webkit-scrollbar': { width: '5px', height: '5px' },
                         '&::-webkit-scrollbar-track': { background: 'transparent' },
-                        '&::-webkit-scrollbar-thumb': { background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', borderRadius: '2.5px' }
+                        '&::-webkit-scrollbar-thumb': { background: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', borderRadius: '2.5px' }
                       }}>
                         <Table size="small" stickyHeader>
                           <TableHead>
-                            <TableRow sx={{ '& th': { bgcolor: isDark ? '#141419' : '#f8fafc', fontSize: '0.68rem', fontWeight: 800, color: 'text.secondary', borderBottom: '1px solid', borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)', py: 1.5 } }}>
+                            <TableRow sx={{ '& th': { bgcolor: 'background.default', fontSize: '0.68rem', fontWeight: 800, color: 'text.secondary', borderBottom: '1px solid', borderColor: 'divider', py: 1.5 } }}>
                               <TableCell>Tên tài khoản</TableCell>
                               <TableCell align="right" sx={{ width: 90 }}>Lượt chạy</TableCell>
                               <TableCell align="right" sx={{ width: 90 }}>Lỗi</TableCell>
@@ -701,13 +746,13 @@ function CategoryCard({
                                 <TableRow 
                                   key={i} 
                                   sx={{ 
-                                    '& td': { fontSize: '0.76rem', py: 1.5, borderBottom: '1px solid', borderColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' },
+                                    '& td': { fontSize: '0.76rem', py: 1.5, borderBottom: '1px solid', borderColor: 'divider' },
                                     '&:last-child td': { borderBottom: 'none' },
-                                    '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.005)' }
+                                    '&:hover': { bgcolor: 'action.hover' }
                                   }}
                                 >
                                   <TableCell>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <Stack direction="row" alignItems="center" spacing={1.5}>
                                       <Avatar sx={{ 
                                         width: 24, 
                                         height: 24, 
@@ -720,7 +765,7 @@ function CategoryCard({
                                         {initial}
                                       </Avatar>
                                       <Tooltip title={u.email || ''} arrow placement="top">
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        <Stack direction="row" alignItems="center" spacing={0.5}>
                                           <Typography sx={{ fontSize: '0.76rem', fontWeight: 700, color: 'text.primary' }}>
                                             {name}
                                           </Typography>
@@ -729,9 +774,9 @@ function CategoryCard({
                                               <ShieldIcon sx={{ fontSize: 12, color: 'primary.main' }} />
                                             </Tooltip>
                                           )}
-                                        </Box>
+                                        </Stack>
                                       </Tooltip>
-                                    </Box>
+                                    </Stack>
                                   </TableCell>
                                   <TableCell align="right" sx={{ fontWeight: 800 }}>{u.runs}</TableCell>
                                   <TableCell align="right" sx={{ color: u.failed > 0 ? 'error.main' : 'text.disabled', fontWeight: 800 }}>
@@ -952,28 +997,21 @@ export default function UsageStatsSection() {
             elevation={0} 
             sx={{ 
               p: 3, 
-              borderRadius: 5, 
-              bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(20, 20, 25, 0.6)' : '#ffffff',
-              display: 'flex', 
-              flexDirection: 'column', 
-              justifyContent: 'center', 
-              gap: 1.5,
+              borderRadius: 2, 
+              bgcolor: 'background.paper',
               minHeight: 110, 
               height: '100%',
               position: 'relative', 
               overflow: 'hidden',
               border: '1px solid',
-              borderColor: isDark ? 'rgba(37, 99, 235, 0.4)' : 'rgba(37, 99, 235, 0.2)',
-              background: (theme) => theme.palette.mode === 'dark' 
-                ? 'radial-gradient(circle at 100% 100%, rgba(37, 99, 235, 0.08) 0%, rgba(20, 20, 25, 0.6) 100%)' 
-                : 'radial-gradient(circle at 100% 100%, rgba(37, 99, 235, 0.05) 0%, #ffffff 100%)',
-              backdropFilter: 'blur(10px)',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.02)',
-              transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+              borderColor: 'divider',
+              transition: 'all 0.2s ease-in-out',
               '&:hover': {
-                transform: 'translateY(-3px)',
+                transform: 'translateY(-2px)',
                 borderColor: '#2563eb',
-                boxShadow: '0 12px 30px rgba(37, 99, 235, 0.2)',
+                boxShadow: (theme) => theme.palette.mode === 'dark' 
+                  ? '0 4px 12px rgba(0,0,0,0.5)' 
+                  : '0 4px 12px rgba(0,0,0,0.05)',
               }
             }}
           >
@@ -986,21 +1024,33 @@ export default function UsageStatsSection() {
               zIndex: 0,
               '& svg': { fontSize: 70 },
               transition: 'transform 0.4s ease',
-              '.MuiPaper-root:hover &': { transform: 'scale(1.15)' },
+              '.MuiPaper-root:hover &': { transform: 'scale(1.1)' },
             }}>
               <QueryStatsIcon />
             </Box>
-            <Box sx={{ zIndex: 1, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-              <Typography sx={{ fontSize: '0.82rem', color: 'text.primary', fontWeight: 800, letterSpacing: 0.5, lineHeight: 1.3, textTransform: 'uppercase' }}>
+            <Stack spacing={1} sx={{ zIndex: 1 }}>
+              <Typography sx={{ fontSize: '0.82rem', color: 'text.secondary', fontWeight: 800, letterSpacing: 0.5, lineHeight: 1.3, textTransform: 'uppercase' }}>
                 Tổng lượt chạy
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-                <Typography sx={{ fontSize: '2.5rem', fontWeight: 900, color: 'text.primary', lineHeight: 1 }}>
-                  {summaryMetrics.totalRuns.toLocaleString()}
-                </Typography>
+              <Stack direction="row" alignItems="baseline" spacing={1}>
+                <Tooltip title={summaryMetrics.totalRuns.toLocaleString('en-US')} arrow placement="top">
+                  <Typography sx={{ 
+                    fontSize: '2.5rem', 
+                    fontWeight: 900, 
+                    color: 'text.primary', 
+                    lineHeight: 1, 
+                    cursor: 'help',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '100%'
+                  }}>
+                    {formatDefensiveNumber(summaryMetrics.totalRuns)}
+                  </Typography>
+                </Tooltip>
                 <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: 'text.secondary' }}>lượt</Typography>
-              </Box>
-            </Box>
+              </Stack>
+            </Stack>
           </Paper>
         </Grid>
 
@@ -1010,28 +1060,21 @@ export default function UsageStatsSection() {
             elevation={0} 
             sx={{ 
               p: 3, 
-              borderRadius: 5, 
-              bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(20, 20, 25, 0.6)' : '#ffffff',
-              display: 'flex', 
-              flexDirection: 'column', 
-              justifyContent: 'center', 
-              gap: 1.5,
+              borderRadius: 2, 
+              bgcolor: 'background.paper',
               minHeight: 110, 
               height: '100%',
               position: 'relative', 
               overflow: 'hidden',
               border: '1px solid',
-              borderColor: isDark ? 'rgba(239, 68, 68, 0.4)' : 'rgba(239, 68, 68, 0.2)',
-              background: (theme) => theme.palette.mode === 'dark' 
-                ? 'radial-gradient(circle at 100% 100%, rgba(239, 68, 68, 0.08) 0%, rgba(20, 20, 25, 0.6) 100%)' 
-                : 'radial-gradient(circle at 100% 100%, rgba(239, 68, 68, 0.05) 0%, #ffffff 100%)',
-              backdropFilter: 'blur(10px)',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.02)',
-              transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+              borderColor: 'divider',
+              transition: 'all 0.2s ease-in-out',
               '&:hover': {
-                transform: 'translateY(-3px)',
+                transform: 'translateY(-2px)',
                 borderColor: '#dc2626',
-                boxShadow: '0 12px 30px rgba(239, 68, 68, 0.2)',
+                boxShadow: (theme) => theme.palette.mode === 'dark' 
+                  ? '0 4px 12px rgba(0,0,0,0.5)' 
+                  : '0 4px 12px rgba(0,0,0,0.05)',
               }
             }}
           >
@@ -1044,18 +1087,30 @@ export default function UsageStatsSection() {
               zIndex: 0,
               '& svg': { fontSize: 70 },
               transition: 'transform 0.4s ease',
-              '.MuiPaper-root:hover &': { transform: 'scale(1.15)' },
+              '.MuiPaper-root:hover &': { transform: 'scale(1.1)' },
             }}>
               <ErrorOutlinedIcon />
             </Box>
-            <Box sx={{ zIndex: 1, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-              <Typography sx={{ fontSize: '0.82rem', color: 'text.primary', fontWeight: 800, letterSpacing: 0.5, lineHeight: 1.3, textTransform: 'uppercase' }}>
+            <Stack spacing={1} sx={{ zIndex: 1 }}>
+              <Typography sx={{ fontSize: '0.82rem', color: 'text.secondary', fontWeight: 800, letterSpacing: 0.5, lineHeight: 1.3, textTransform: 'uppercase' }}>
                 Lượt lỗi hệ thống
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Typography sx={{ fontSize: '2.5rem', fontWeight: 900, color: summaryMetrics.totalFailed > 0 ? 'error.main' : 'text.primary', lineHeight: 1 }}>
-                  {summaryMetrics.totalFailed.toLocaleString()}
-                </Typography>
+              <Stack direction="row" alignItems="center" spacing={1.5}>
+                <Tooltip title={summaryMetrics.totalFailed.toLocaleString('en-US')} arrow placement="top">
+                  <Typography sx={{ 
+                    fontSize: '2.5rem', 
+                    fontWeight: 900, 
+                    color: summaryMetrics.totalFailed > 0 ? 'error.main' : 'text.primary', 
+                    lineHeight: 1, 
+                    cursor: 'help',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '100%'
+                  }}>
+                    {formatDefensiveNumber(summaryMetrics.totalFailed)}
+                  </Typography>
+                </Tooltip>
                 {summaryMetrics.totalRuns > 0 && (
                   <Chip
                     label={`Lỗi: ${summaryMetrics.errorRate.toFixed(1)}%`}
@@ -1063,15 +1118,15 @@ export default function UsageStatsSection() {
                     sx={{
                       fontWeight: 800,
                       fontSize: '0.72rem',
-                      borderRadius: 1.5,
+                      borderRadius: 0.5,
                       px: 0.5,
                       bgcolor: summaryMetrics.totalFailed > 0 ? 'error.main' : 'action.hover',
                       color: summaryMetrics.totalFailed > 0 ? 'white' : 'text.secondary'
                     }}
                   />
                 )}
-              </Box>
-            </Box>
+              </Stack>
+            </Stack>
           </Paper>
         </Grid>
 
@@ -1081,28 +1136,21 @@ export default function UsageStatsSection() {
             elevation={0} 
             sx={{ 
               p: 3, 
-              borderRadius: 5, 
-              bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(20, 20, 25, 0.6)' : '#ffffff',
-              display: 'flex', 
-              flexDirection: 'column', 
-              justifyContent: 'center', 
-              gap: 1.5,
+              borderRadius: 2, 
+              bgcolor: 'background.paper',
               minHeight: 110, 
               height: '100%',
               position: 'relative', 
               overflow: 'hidden',
               border: '1px solid',
-              borderColor: isDark ? 'rgba(16, 185, 129, 0.4)' : 'rgba(16, 185, 129, 0.2)',
-              background: (theme) => theme.palette.mode === 'dark' 
-                ? 'radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.08) 0%, rgba(20, 20, 25, 0.6) 100%)' 
-                : 'radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.05) 0%, #ffffff 100%)',
-              backdropFilter: 'blur(10px)',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.02)',
-              transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+              borderColor: 'divider',
+              transition: 'all 0.2s ease-in-out',
               '&:hover': {
-                transform: 'translateY(-3px)',
+                transform: 'translateY(-2px)',
                 borderColor: '#10b981',
-                boxShadow: '0 12px 30px rgba(16, 185, 129, 0.2)',
+                boxShadow: (theme) => theme.palette.mode === 'dark' 
+                  ? '0 4px 12px rgba(0,0,0,0.5)' 
+                  : '0 4px 12px rgba(0,0,0,0.05)',
               }
             }}
           >
@@ -1115,18 +1163,30 @@ export default function UsageStatsSection() {
               zIndex: 0,
               '& svg': { fontSize: 70 },
               transition: 'transform 0.4s ease',
-              '.MuiPaper-root:hover &': { transform: 'scale(1.15)' },
+              '.MuiPaper-root:hover &': { transform: 'scale(1.1)' },
             }}>
               <PersonOutlineIcon />
             </Box>
-            <Box sx={{ zIndex: 1, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-              <Typography sx={{ fontSize: '0.82rem', color: 'text.primary', fontWeight: 800, letterSpacing: 0.5, lineHeight: 1.3, textTransform: 'uppercase' }}>
+            <Stack spacing={1} sx={{ zIndex: 1 }}>
+              <Typography sx={{ fontSize: '0.82rem', color: 'text.secondary', fontWeight: 800, letterSpacing: 0.5, lineHeight: 1.3, textTransform: 'uppercase' }}>
                 Người dùng hoạt động
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography sx={{ fontSize: '2.5rem', fontWeight: 900, color: 'text.primary', lineHeight: 1 }}>
-                  {summaryMetrics.distinctUsers.toLocaleString()}
-                </Typography>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Tooltip title={summaryMetrics.distinctUsers.toLocaleString('en-US')} arrow placement="top">
+                  <Typography sx={{ 
+                    fontSize: '2.5rem', 
+                    fontWeight: 900, 
+                    color: 'text.primary', 
+                    lineHeight: 1, 
+                    cursor: 'help',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '100%'
+                  }}>
+                    {formatDefensiveNumber(summaryMetrics.distinctUsers)}
+                  </Typography>
+                </Tooltip>
                 <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: 'text.secondary' }}>tài khoản</Typography>
                 {summaryMetrics.distinctUsers > 0 && (
                   <Box sx={{ 
@@ -1134,14 +1194,13 @@ export default function UsageStatsSection() {
                     width: 8, 
                     height: 8, 
                     borderRadius: '50%', 
-                    bgcolor: '#10b981', 
-                    boxShadow: '0 0 8px #10b981',
+                    bgcolor: 'success.main', 
                     display: 'inline-block',
                     animation: 'pulse 2s infinite ease-in-out'
                   }} />
                 )}
-              </Box>
-            </Box>
+              </Stack>
+            </Stack>
           </Paper>
         </Grid>
       </Grid>
@@ -1152,12 +1211,10 @@ export default function UsageStatsSection() {
         sx={{ 
           p: 2, 
           mb: 4, 
-          borderRadius: 4.5, 
+          borderRadius: 2, 
           border: '1px solid', 
-          borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', 
-          bgcolor: isDark ? 'rgba(20, 20, 25, 0.4)' : '#ffffff', 
-          boxShadow: isDark ? 'none' : '0 2px 10px rgba(0,0,0,0.01)',
-          backdropFilter: 'blur(8px)',
+          borderColor: 'divider', 
+          bgcolor: 'background.paper', 
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -1183,8 +1240,8 @@ export default function UsageStatsSection() {
               sx={{ 
                 width: 170,
                 '& .MuiOutlinedInput-root': { 
-                  borderRadius: 3,
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#00b894' }
+                  borderRadius: 1,
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.main' }
                 } 
               }}
             />
@@ -1198,14 +1255,14 @@ export default function UsageStatsSection() {
               sx={{ 
                 width: 170,
                 '& .MuiOutlinedInput-root': { 
-                  borderRadius: 3,
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#00b894' }
+                  borderRadius: 1,
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.main' }
                 } 
               }}
             />
           </Box>
         </Box>
-
+ 
         <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
           <Button
             size="small"
@@ -1213,14 +1270,14 @@ export default function UsageStatsSection() {
             onClick={handleResetFilters}
             sx={{ 
               textTransform: 'none', 
-              borderRadius: 2.5, 
-              borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)', 
+              borderRadius: '100px', 
+              borderColor: 'divider', 
               color: 'text.secondary', 
               fontWeight: 700,
               fontSize: '0.78rem',
               px: 2,
               py: 0.8,
-              '&:hover': { bgcolor: 'action.hover', borderColor: 'text.secondary' } 
+              '&:hover': { bgcolor: 'action.hover', borderColor: 'text.primary' } 
             }}
           >
             Hôm nay
@@ -1232,17 +1289,17 @@ export default function UsageStatsSection() {
             startIcon={<RefreshIcon sx={{ fontSize: 16 }} />}
             sx={{ 
               textTransform: 'none', 
-              borderRadius: 2.5, 
-              background: 'linear-gradient(135deg, #00b894, #009975)', 
+              borderRadius: '100px', 
+              bgcolor: 'primary.main', 
               color: '#ffffff', 
               fontWeight: 800,
               fontSize: '0.78rem',
               px: 2.5,
               py: 0.8,
-              boxShadow: '0 4px 12px rgba(0, 184, 148, 0.2)',
+              boxShadow: 'none',
               '&:hover': { 
-                background: 'linear-gradient(135deg, #3dd6a0, #009975)', 
-                boxShadow: '0 6px 16px rgba(0, 184, 148, 0.3)' 
+                bgcolor: 'primary.dark',
+                boxShadow: 'none'
               } 
             }}
           >
@@ -1250,22 +1307,22 @@ export default function UsageStatsSection() {
           </Button>
         </Box>
       </Paper>
-
+ 
       {/* ─── 4. Card Grid Display ─── */}
       <Box sx={{ position: 'relative', minHeight: 200 }}>
         {/* Loading Spinner */}
         {loading && (
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 10, gap: 2 }}>
-            <CircularProgress size={32} sx={{ color: '#00b894' }} />
+            <CircularProgress size={32} />
             <Typography sx={{ color: 'text.secondary', fontSize: '0.9rem', fontWeight: 700 }}>Đang phân tích số liệu...</Typography>
           </Box>
         )}
 
         {/* Error Alert */}
         {!loading && error && (
-          <Alert severity="error" sx={{ borderRadius: 3.5, mb: 4, fontWeight: 600 }}>{error}</Alert>
+          <Alert severity="error" sx={{ borderRadius: 1, mb: 4, fontWeight: 600 }}>{error}</Alert>
         )}
-
+ 
         {/* Action Cards Grid */}
         {!loading && !error && statsData && (
           <Box>
@@ -1277,9 +1334,9 @@ export default function UsageStatsSection() {
                 alignItems: 'center', 
                 justifyContent: 'center', 
                 border: '2px dashed', 
-                borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)', 
-                borderRadius: 5,
-                bgcolor: isDark ? 'rgba(255,255,255,0.01)' : '#fcfcfd'
+                borderColor: 'divider', 
+                borderRadius: 2,
+                bgcolor: 'background.paper'
               }}>
                 <Typography sx={{ color: 'text.secondary', fontSize: '0.92rem', fontWeight: 700 }}>
                   Không tìm thấy dữ liệu thống kê

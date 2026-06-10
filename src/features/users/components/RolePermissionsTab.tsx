@@ -39,6 +39,18 @@ const METHOD_COLORS: Record<string, string> = {
   DELETE: '#c62828',
 };
 
+const pillButtonSx = {
+  borderRadius: '100px',
+  textTransform: 'none' as const,
+  px: 2.5,
+  height: 36,
+  fontWeight: 500,
+  transition: 'all 0.2s ease-in-out',
+  '&:hover': {
+    transform: 'scale(1.02)',
+  },
+};
+
 // ── Types theo response thực tế của BE ───────────────────────────────────────
 interface ApiItem {
   key: string;   // vd: "GET /api/v1/users"
@@ -115,7 +127,22 @@ export default function RolePermissionsTab() {
     setRolesLoading(true);
     setRolesError(null);
     try {
-      setRoles(await roleService.getAll());
+      const fetchedRoles = await roleService.getAll();
+      setRoles(fetchedRoles);
+      
+      // Auto select admin role if available
+      const adminRole = fetchedRoles.find((r) => r.name === 'ADMIN');
+      if (adminRole) {
+        setSelectedRole(adminRole);
+        setPermLoading(true);
+        try {
+          const perm = await fetchRolePermission(adminRole.name);
+          setCheckedPages(perm.pages.filter((p) => !(ALWAYS_ON_PAGES as readonly string[]).includes(p)));
+          setBlockedApis(perm.apis ?? []);
+        } finally {
+          setPermLoading(false);
+        }
+      }
     } catch {
       setRolesError('Không thể tải danh sách vai trò.');
     } finally {
@@ -128,6 +155,7 @@ export default function RolePermissionsTab() {
 
   // Load master list một lần khi mount
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setApisLoading(true);
     fetchAvailableApis().then(setApiModules).finally(() => setApisLoading(false));
   }, []);
@@ -274,18 +302,42 @@ export default function RolePermissionsTab() {
                 size="small"
                 startIcon={<SaveOutlinedIcon />}
                 onClick={handleSave}
-                disabled={saveLoading || !dirty}
+                disabled={saveLoading || !dirty || selectedRole.name === 'ADMIN'}
+                sx={pillButtonSx}
               >
                 {saveLoading ? 'Đang lưu...' : 'Lưu'}
               </Button>
             </Box>
 
+            {selectedRole.name === 'ADMIN' && (
+              <Alert severity="info" sx={{ mb: 2, borderRadius: '12px' }}>
+                Vai trò Quản trị viên (ADMIN) có đầy đủ toàn quyền hệ thống và không thể thay đổi.
+              </Alert>
+            )}
+
             {/* Inner tabs */}
             <Tabs
               value={innerTab}
               onChange={(_, v) => setInnerTab(v as InnerTab)}
-              sx={{ borderBottom: 1, borderColor: 'divider', mb: 2, minHeight: 36 }}
-              slotProps={{ indicator: { style: { height: 2 } } }}
+              sx={{ 
+                borderBottom: 1, 
+                borderColor: 'divider', 
+                mb: 2, 
+                minHeight: 36,
+                '& .MuiTabs-indicator': {
+                  display: 'none'
+                },
+                '& .MuiTab-root': { 
+                  minHeight: 36, 
+                  py: 0.75, 
+                  fontSize: 13,
+                  borderBottom: '2px solid transparent',
+                  '&.Mui-selected': {
+                    color: 'primary.main',
+                    borderColor: 'primary.main',
+                  }
+                }
+              }}
             >
               <Tab label="Trang" value="pages" sx={{ minHeight: 36, py: 0.75, fontSize: 13 }} />
               <Tab label="Chức năng" value="apis" sx={{ minHeight: 36, py: 0.75, fontSize: 13 }} />
@@ -306,6 +358,7 @@ export default function RolePermissionsTab() {
                         indeterminate={somePagesChecked}
                         onChange={handleToggleAllPages}
                         size="small"
+                        disabled={selectedRole.name === 'ADMIN'}
                       />
                     }
                     label={
@@ -324,6 +377,7 @@ export default function RolePermissionsTab() {
                           checked={checkedPages.includes(page.key)}
                           onChange={() => handleTogglePage(page.key)}
                           size="small"
+                          disabled={selectedRole.name === 'ADMIN'}
                         />
                       }
                       label={
@@ -367,6 +421,7 @@ export default function RolePermissionsTab() {
                                 indeterminate={!noneBlocked && !allBlocked}
                                 onChange={() => handleToggleModule(apis)}
                                 size="small"
+                                disabled={selectedRole.name === 'ADMIN'}
                               />
                             }
                             label={
@@ -401,6 +456,7 @@ export default function RolePermissionsTab() {
                                     checked={!isBlocked}
                                     onChange={() => handleToggleApi(item.key)}
                                     size="small"
+                                    disabled={selectedRole.name === 'ADMIN'}
                                   />
                                 }
                                 label={
