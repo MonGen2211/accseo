@@ -59,9 +59,15 @@ export default function ActivitySection({ onViewAll }: ActivitySectionProps) {
 	const { items, loading, loadingMore, hasMore } = useAppSelector(state => state.activities);
 	const [page, setPage] = useState(1);
 
-	// Initial fetch
+	// Initial fetch & Polling (Every 15s)
 	useEffect(() => {
 		dispatch(fetchActivities({ page: 1, limit: LIMIT, success: true }));
+
+		const interval = setInterval(() => {
+			dispatch(fetchActivities({ page: 1, limit: LIMIT, success: true }));
+		}, 15000);
+
+		return () => clearInterval(interval);
 	}, [dispatch]);
 
 	// Load next page
@@ -81,7 +87,7 @@ export default function ActivitySection({ onViewAll }: ActivitySectionProps) {
 	};
 
 	return (
-		<Box sx={{ flex: 1, minWidth: { xs: '100%', md: 380 }, height: { xs: 600, md: '100%' } }}>
+		<Box sx={{ flex: 1, minWidth: { xs: '100%', md: 380 }, height: 550 }}>
 			<Paper elevation={0} sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%' }}>
 
 				{/* ── Header ── */}
@@ -179,21 +185,23 @@ export default function ActivitySection({ onViewAll }: ActivitySectionProps) {
 				</Box>
 
 				{/* ── Footer ── */}
-				<Box
-					onClick={onViewAll}
-					sx={{
-						px: 3, py: 1.5,
-						borderTop: '1px solid', borderColor: 'divider',
-						display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5,
-						cursor: onViewAll ? 'pointer' : 'default',
-						bgcolor: 'background.default',
-						'&:hover': onViewAll ? { bgcolor: 'action.hover' } : {},
-						transition: 'background 0.15s',
-					}}
-				>
-					<Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: 'primary.main' }}>View all</Typography>
-					<ArrowForwardIosIcon sx={{ fontSize: 11, color: 'primary.main' }} />
-				</Box>
+				{onViewAll && (
+					<Box
+						onClick={onViewAll}
+						sx={{
+							px: 3, py: 1.5,
+							borderTop: '1px solid', borderColor: 'divider',
+							display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5,
+							cursor: 'pointer',
+							bgcolor: 'background.default',
+							'&:hover': { bgcolor: 'action.hover' },
+							transition: 'background 0.15s',
+						}}
+					>
+						<Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: 'primary.main' }}>Xem tất cả</Typography>
+						<ArrowForwardIosIcon sx={{ fontSize: 11, color: 'primary.main' }} />
+					</Box>
+				)}
 			</Paper>
 		</Box>
 	);

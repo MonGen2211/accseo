@@ -56,7 +56,9 @@ const activitySlice = createSlice({
 		builder
 			// fetchActivities (reset)
 			.addCase(fetchActivities.pending, (state) => {
-				state.loading = true;
+				if (state.items.length === 0) {
+					state.loading = true;
+				}
 				state.error = null;
 			})
 			.addCase(fetchActivities.fulfilled, (state, action) => {

@@ -616,7 +616,7 @@ export default function ScraperSection() {
 
 
   const renderInlineAiKeywords = useCallback((item: ScraperArticle) => {
-    const isGenerating = aiLoadingId === item._id;
+    const isGenerating = aiLoadingId === String(item._id);
     const sheetUrl = item.sheetUrl;
     const sheetLastBatch = item.sheetLastBatch;
 
@@ -627,22 +627,22 @@ export default function ScraperSection() {
             sx={{
               display: 'inline-flex',
               alignItems: 'center',
-              justifyContent: 'center',
               gap: 0.75,
               py: 0.25,
               px: 1.25,
-              borderRadius: 1,
+              borderRadius: 10,
               border: '1px solid rgba(0, 184, 148, 0.4)',
               bgcolor: 'rgba(0, 184, 148, 0.08)',
               color: '#00b894',
-              fontSize: '0.75rem',
-              fontWeight: 800,
-              height: 20,
-              whiteSpace: 'nowrap'
+              fontSize: '0.725rem',
+              fontWeight: 700,
+              height: 22,
+              whiteSpace: 'nowrap',
+              width: 'fit-content'
             }}
           >
-            <CircularProgress size={10} sx={{ color: '#00b894' }} />
-            Gen keyword
+            <CircularProgress size={12} sx={{ color: '#00b894' }} />
+            Đang tạo từ khóa AI...
           </Box>
         </Tooltip>
       );
@@ -653,6 +653,7 @@ export default function ScraperSection() {
         <Tooltip title={`Đã push Sheet (Batch #${sheetLastBatch || 1}) · Click để mở Google Sheet`} onClick={(e) => e.stopPropagation()}>
           <Button
             size="small"
+            startIcon={<LinkIcon sx={{ fontSize: 13 }} />}
             onClick={(e) => {
               e.stopPropagation();
               window.open(sheetUrl, '_blank', 'noopener,noreferrer');
@@ -660,34 +661,41 @@ export default function ScraperSection() {
             sx={{
               py: 0.25,
               px: 1.25,
-              borderRadius: 1,
-              border: '1px solid #10b981',
-              bgcolor: 'rgba(16, 185, 129, 0.08)',
+              borderRadius: 10,
+              border: '1px solid rgba(16, 185, 129, 0.5)',
+              bgcolor: 'rgba(16, 185, 129, 0.05)',
               color: '#10b981',
-              fontWeight: 800,
-              fontSize: '0.75rem',
+              fontWeight: 700,
+              fontSize: '0.725rem',
               minWidth: 0,
-              height: 20,
+              height: 22,
               textTransform: 'none',
-              transition: 'all 0.2s',
+              opacity: 0.7,
+              transition: 'all 0.2s ease-in-out',
+              '.MuiTableRow-root:hover &': {
+                opacity: 0.95
+              },
               '&:hover': {
-                bgcolor: 'rgba(16, 185, 129, 0.15)',
-                borderColor: '#059669',
-                transform: 'scale(1.05)',
+                opacity: '1 !important',
+                bgcolor: 'rgba(16, 185, 129, 0.12)',
+                borderColor: '#10b981',
+                transform: 'translateY(-1px)',
+                boxShadow: '0 2px 8px rgba(16, 185, 129, 0.25)'
               }
             }}
           >
-            mở
+            Mở Google Sheet
           </Button>
         </Tooltip>
       );
     }
 
-    // Default/Not generated: Input-like styled button with text "Gen keyword"
+    // Default/Not generated: Subtle, low-opacity button with sparkle
     return (
-      <Tooltip title="Nhấp để tự động Gen AI & Push Sheet" onClick={(e) => e.stopPropagation()}>
+      <Tooltip title="Tự động tạo từ khóa SEO & đẩy Google Sheet" onClick={(e) => e.stopPropagation()}>
         <Button
           size="small"
+          startIcon={<AutoAwesomeIcon sx={{ fontSize: 13 }} />}
           onClick={(e) => {
             e.stopPropagation();
             handleAiGenerate(item, false);
@@ -696,29 +704,37 @@ export default function ScraperSection() {
           sx={{
             py: 0.25,
             px: 1.25,
-            borderRadius: 1,
-            border: '1px solid rgba(0, 184, 148, 0.6)',
-            bgcolor: 'rgba(0, 184, 148, 0.08)',
+            borderRadius: 10,
+            border: '1px solid rgba(0, 184, 148, 0.5)',
+            bgcolor: 'rgba(0, 184, 148, 0.05)',
             color: '#00b894',
-            fontWeight: 800,
-            fontSize: '0.75rem',
+            fontWeight: 700,
+            fontSize: '0.725rem',
             minWidth: 0,
-            height: 20,
+            height: 22,
             textTransform: 'none',
             whiteSpace: 'nowrap',
-            transition: 'all 0.2s',
+            opacity: 0.7,
+            transition: 'all 0.2s ease-in-out',
+            '.MuiTableRow-root:hover &': {
+              opacity: 0.95
+            },
             '&:hover': {
-              bgcolor: 'rgba(0, 184, 148, 0.15)',
+              opacity: '1 !important',
+              bgcolor: 'rgba(0, 184, 148, 0.12)',
               borderColor: '#00b894',
-              transform: 'scale(1.05)',
+              transform: 'translateY(-1px)',
+              boxShadow: '0 2px 8px rgba(0, 184, 148, 0.25)'
             },
             '&.Mui-disabled': {
-              border: '1px solid rgba(0, 184, 148, 0.2)',
-              bgcolor: 'rgba(0, 184, 148, 0.03)',
+              borderColor: 'rgba(0, 184, 148, 0.15)',
+              bgcolor: 'rgba(0, 184, 148, 0.01)',
+              color: 'rgba(0, 184, 148, 0.3)',
+              opacity: 0.2
             }
           }}
         >
-          Gen keyword
+          Tạo từ khóa AI
         </Button>
       </Tooltip>
     );
@@ -871,9 +887,6 @@ export default function ScraperSection() {
                       }}
                     />
                   )}
-
-                  {/* AI Google Sheets / Generate Inline Controls */}
-                  {renderInlineAiKeywords(item)}
                 </Box>
 
                 <Link 
@@ -891,6 +904,9 @@ export default function ScraperSection() {
                 >
                   {item.title}
                 </Link>
+                <Box sx={{ mt: 0.5, display: 'flex' }}>
+                  {renderInlineAiKeywords(item)}
+                </Box>
               </Box>
             );
           }
@@ -1089,9 +1105,6 @@ export default function ScraperSection() {
                     />
                   )}
 
-                  {/* AI Google Sheets / Generate Inline Controls */}
-                  {renderInlineAiKeywords(item)}
-
                   {/* Article Type Badge (News/Document) */}
                   {item.articleType && (
                     <Chip
@@ -1115,6 +1128,9 @@ export default function ScraperSection() {
                   <Link href={item.url} target="_blank" rel="noopener noreferrer" sx={{ color: 'primary.main', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
                     {item.title}
                   </Link>
+                  <Box sx={{ mt: 0.5, display: 'flex' }}>
+                    {renderInlineAiKeywords(item)}
+                  </Box>
                   {item.category && item.category.length > 0 && (
                     <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.25 }}>
                       {item.category.map((cat, idx) => (
@@ -1344,40 +1360,46 @@ export default function ScraperSection() {
             </Box>
           </Box>
 
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '300px 1fr' }, gap: 3, mb: 4 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 3, mb: 4 }}>
             {/* Summary Box */}
-            <Box sx={{ p: 2, borderRadius: 3, bgcolor: 'background.default', border: '1px dashed', borderColor: 'divider', height: 'fit-content' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+            <Box sx={{ p: 2.5, borderRadius: 3, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider', height: 'fit-content' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                 <AnalyticsOutlinedIcon color="primary" />
                 <Typography sx={{ fontWeight: 700 }}>Tổng quan (Hiện có)</Typography>
               </Box>
               {loadingSummary ? (
-                <CircularProgress size={24} />
+                <Box sx={{ py: 2, display: 'flex', justifyContent: 'center' }}><CircularProgress size={24} /></Box>
               ) : summary ? (
-                <Box>
-                  <Typography sx={{ fontSize: '2rem', fontWeight: 800, color: 'primary.main', lineHeight: 1, mb: 0.5 }}>
-                    {summary.total} <Typography component="span" variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>bài viết</Typography>
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, mb: 1.5 }}>
-                    {Object.keys(summary.bySection || {}).length} chuyên mục
-                  </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 0.75, px: 1.25, borderRadius: 2, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
+                    <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary' }}>Tổng số bài viết</Typography>
+                    <Typography sx={{ fontSize: '1.15rem', fontWeight: 800, color: 'primary.main' }}>
+                      {summary.total.toLocaleString('vi-VN')}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 0.75, px: 1.25, borderRadius: 2, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
+                    <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary' }}>Số chuyên mục</Typography>
+                    <Typography sx={{ fontSize: '1.15rem', fontWeight: 800, color: 'text.primary' }}>
+                      {Object.keys(summary.bySection || {}).length}
+                    </Typography>
+                  </Box>
                   
                   <Button 
                     size="small" 
                     variant="text" 
                     onClick={() => setShowSectionDetails(!showSectionDetails)}
                     endIcon={<ExpandMoreIcon sx={{ transform: showSectionDetails ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />}
-                    sx={{ textTransform: 'none', fontWeight: 700, p: 0, minWidth: 0, color: 'primary.main', mb: 1 }}
+                    sx={{ textTransform: 'none', fontWeight: 700, p: 0, minWidth: 0, color: 'primary.main', mt: 0.5, fontSize: '0.75rem', alignSelf: 'flex-start' }}
                   >
                     {showSectionDetails ? 'Thu gọn chuyên mục' : 'Xem chi tiết chuyên mục'}
                   </Button>
 
                   <Collapse in={showSectionDetails}>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1, maxHeight: 300, overflowY: 'auto', pr: 0.5 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1, maxHeight: 200, overflowY: 'auto', pr: 0.5 }}>
                       {Object.entries(summary.bySection || {}).map(([sec, count]) => (
-                        <Box key={sec} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Typography variant="body2" sx={{ fontWeight: 500 }}>{sec}</Typography>
-                          <Chip label={count} size="small" sx={{ height: 20, fontSize: 11 }} />
+                        <Box key={sec} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 0.5, px: 1, borderRadius: 1.5, '&:hover': { bgcolor: 'action.hover' } }}>
+                          <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.825rem' }}>{sec}</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.825rem', color: 'text.secondary' }}>{count}</Typography>
                         </Box>
                       ))}
                     </Box>
@@ -1388,152 +1410,189 @@ export default function ScraperSection() {
               )}
             </Box>
 
-            {/* Top Keywords Grid */}
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
-              
-              {/* Top Categories */}
-              <Box sx={{ p: 2, borderRadius: 3, bgcolor: 'background.default', border: '1px dashed', borderColor: 'divider', display: 'flex', flexDirection: 'column', gap: 1, height: 'fit-content' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                  <FormatListBulletedIcon color="primary" />
-                  <Typography sx={{ fontWeight: 700 }}>Danh mục / Loại văn bản</Typography>
-                </Box>
-                {loadingSummary ? (
-                  <CircularProgress size={24} />
-                ) : summary?.topCategories?.length ? (
-                  <Box>
-                    {/* Default preview of first 5 categories */}
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: summary.topCategories.length > 5 ? 1 : 0 }}>
-                      {summary.topCategories.slice(0, 5).map((t, idx) => (
-                        <Chip
-                          key={`f-preview-${idx}`}
-                          label={`${t.name} (${t.count})`}
-                          onClick={() => setTag(t.name)}
-                          sx={{ 
-                            bgcolor: tag === t.name ? 'primary.main' : 'background.paper',
-                            color: tag === t.name ? 'primary.contrastText' : 'text.primary',
-                            fontWeight: 500,
-                            cursor: 'pointer',
-                            border: '1px solid',
-                            borderColor: tag === t.name ? 'primary.main' : 'divider',
-                            '&:hover': { bgcolor: tag === t.name ? 'primary.dark' : 'action.hover' }
-                          }}
-                        />
-                      ))}
-                    </Box>
-
-                    {summary.topCategories.length > 5 && (
-                      <Box>
-                        <Collapse in={showCategoryDetails}>
-                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1, mb: 1, maxHeight: 250, overflowY: 'auto', py: 0.5 }}>
-                            {summary.topCategories.slice(5).map((t, idx) => (
-                              <Chip
-                                key={`f-expand-${idx}`}
-                                label={`${t.name} (${t.count})`}
-                                onClick={() => setTag(t.name)}
-                                sx={{ 
-                                  bgcolor: tag === t.name ? 'primary.main' : 'background.paper',
-                                  color: tag === t.name ? 'primary.contrastText' : 'text.primary',
-                                  fontWeight: 500,
-                                  cursor: 'pointer',
-                                  border: '1px solid',
-                                  borderColor: tag === t.name ? 'primary.main' : 'divider',
-                                  '&:hover': { bgcolor: tag === t.name ? 'primary.dark' : 'action.hover' }
-                                }}
-                              />
-                            ))}
-                          </Box>
-                        </Collapse>
-                        
-                        <Button
-                          size="small"
-                          variant="text"
-                          onClick={() => setShowCategoryDetails(!showCategoryDetails)}
-                          endIcon={<ExpandMoreIcon sx={{ transform: showCategoryDetails ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />}
-                          sx={{ textTransform: 'none', fontWeight: 700, p: 0, minWidth: 0, color: 'primary.main', mt: 0.5 }}
-                        >
-                          {showCategoryDetails ? 'Thu gọn danh mục' : `Xem thêm danh mục (${summary.topCategories.length - 5})`}
-                        </Button>
-                      </Box>
-                    )}
-                  </Box>
-                ) : (
-                  <Typography variant="body2" color="text.secondary">Không có dữ liệu</Typography>
-                )}
+            {/* Top Categories Card */}
+            <Box sx={{ p: 2.5, borderRadius: 3, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider', height: 'fit-content' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <FormatListBulletedIcon color="primary" />
+                <Typography sx={{ fontWeight: 700 }}>Danh mục / Loại văn bản</Typography>
               </Box>
-
-              {/* Top Tags */}
-              <Box sx={{ p: 2, borderRadius: 3, bgcolor: 'background.default', border: '1px dashed', borderColor: 'divider', display: 'flex', flexDirection: 'column', gap: 1, height: 'fit-content' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                  <FormatListBulletedIcon color="secondary" />
-                  <Typography sx={{ fontWeight: 700 }}>Từ khóa nổi bật</Typography>
-                </Box>
-                {loadingSummary ? (
-                  <CircularProgress size={24} />
-                ) : summary?.topTags?.length ? (
-                  <Box>
-                    {/* Default preview of first 5 tags */}
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: summary.topTags.length > 5 ? 1 : 0 }}>
-                      {summary.topTags.slice(0, 5).map((t, idx) => (
-                        <Chip
-                          key={`r-preview-${idx}`}
-                          label={`${t.name} (${t.count})`}
-                          onClick={() => setTag(t.name)}
-                          size="small"
+              {loadingSummary ? (
+                <Box sx={{ py: 2, display: 'flex', justifyContent: 'center' }}><CircularProgress size={24} /></Box>
+              ) : summary?.topCategories?.length ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {/* Default preview of first 4 categories */}
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {summary.topCategories.slice(0, 4).map((t, idx) => {
+                      const isSelected = tag === t.name;
+                      return (
+                        <Box 
+                          key={`cat-${idx}`} 
+                          onClick={() => setTag(isSelected ? '' : t.name)}
                           sx={{ 
-                            bgcolor: tag === t.name ? 'secondary.main' : 'background.paper',
-                            color: tag === t.name ? 'secondary.contrastText' : 'text.secondary',
-                            fontWeight: 500,
+                            display: 'flex', 
+                            justifyContent: 'space-between', 
+                            alignItems: 'center', 
+                            py: 0.75,
+                            px: 1.25,
+                            borderRadius: 2,
                             cursor: 'pointer',
+                            bgcolor: isSelected ? 'primary.main' : 'background.paper',
+                            color: isSelected ? 'primary.contrastText' : 'text.primary',
                             border: '1px solid',
-                            borderColor: tag === t.name ? 'secondary.main' : 'divider',
-                            '&:hover': { bgcolor: tag === t.name ? 'secondary.dark' : 'action.hover' }
+                            borderColor: isSelected ? 'primary.main' : 'divider',
+                            transition: 'all 0.2s',
+                            '&:hover': { bgcolor: isSelected ? 'primary.dark' : 'action.hover' }
                           }}
-                        />
-                      ))}
-                    </Box>
-
-                    {summary.topTags.length > 5 && (
-                      <Box>
-                        <Collapse in={showTagDetails}>
-                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1, mb: 1, maxHeight: 250, overflowY: 'auto', py: 0.5 }}>
-                            {summary.topTags.slice(5).map((t, idx) => (
-                              <Chip
-                                key={`r-expand-${idx}`}
-                                label={`${t.name} (${t.count})`}
-                                onClick={() => setTag(t.name)}
-                                size="small"
-                                sx={{ 
-                                  bgcolor: tag === t.name ? 'secondary.main' : 'background.paper',
-                                  color: tag === t.name ? 'secondary.contrastText' : 'text.secondary',
-                                  fontWeight: 500,
-                                  cursor: 'pointer',
-                                  border: '1px solid',
-                                  borderColor: tag === t.name ? 'secondary.main' : 'divider',
-                                  '&:hover': { bgcolor: tag === t.name ? 'secondary.dark' : 'action.hover' }
-                                }}
-                              />
-                            ))}
-                          </Box>
-                        </Collapse>
-
-                        <Button
-                          size="small"
-                          variant="text"
-                          color="secondary"
-                          onClick={() => setShowTagDetails(!showTagDetails)}
-                          endIcon={<ExpandMoreIcon sx={{ transform: showTagDetails ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />}
-                          sx={{ textTransform: 'none', fontWeight: 700, p: 0, minWidth: 0, mt: 0.5 }}
                         >
-                          {showTagDetails ? 'Thu gọn từ khóa' : `Xem thêm từ khóa (${summary.topTags.length - 5})`}
-                        </Button>
-                      </Box>
-                    )}
+                          <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.825rem' }}>{t.name}</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.825rem', opacity: 0.8 }}>{t.count}</Typography>
+                        </Box>
+                      );
+                    })}
                   </Box>
-                ) : (
-                  <Typography variant="body2" color="text.secondary">Không có dữ liệu</Typography>
-                )}
-              </Box>
 
+                  {summary.topCategories.length > 4 && (
+                    <Box>
+                      <Collapse in={showCategoryDetails}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1, maxHeight: 200, overflowY: 'auto', pr: 0.5 }}>
+                          {summary.topCategories.slice(4).map((t, idx) => {
+                            const isSelected = tag === t.name;
+                            return (
+                              <Box 
+                                key={`cat-expand-${idx}`} 
+                                onClick={() => setTag(isSelected ? '' : t.name)}
+                                sx={{ 
+                                  display: 'flex', 
+                                  justifyContent: 'space-between', 
+                                  alignItems: 'center', 
+                                  py: 0.75,
+                                  px: 1.25,
+                                  borderRadius: 2,
+                                  cursor: 'pointer',
+                                  bgcolor: isSelected ? 'primary.main' : 'background.paper',
+                                  color: isSelected ? 'primary.contrastText' : 'text.primary',
+                                  border: '1px solid',
+                                  borderColor: isSelected ? 'primary.main' : 'divider',
+                                  transition: 'all 0.2s',
+                                  '&:hover': { bgcolor: isSelected ? 'primary.dark' : 'action.hover' }
+                                }}
+                              >
+                                <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.825rem' }}>{t.name}</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.825rem', opacity: 0.8 }}>{t.count}</Typography>
+                              </Box>
+                            );
+                          })}
+                        </Box>
+                      </Collapse>
+                      
+                      <Button
+                        size="small"
+                        variant="text"
+                        onClick={() => setShowCategoryDetails(!showCategoryDetails)}
+                        endIcon={<ExpandMoreIcon sx={{ transform: showCategoryDetails ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />}
+                        sx={{ textTransform: 'none', fontWeight: 700, p: 0, minWidth: 0, color: 'primary.main', mt: 1, ml: 1, fontSize: '0.75rem' }}
+                      >
+                        {showCategoryDetails ? 'Thu gọn danh mục' : `Xem thêm danh mục (${summary.topCategories.length - 4})`}
+                      </Button>
+                    </Box>
+                  )}
+                </Box>
+              ) : (
+                <Typography variant="body2" color="text.secondary">Không có dữ liệu</Typography>
+              )}
+            </Box>
+
+            {/* Top Tags Card */}
+            <Box sx={{ p: 2.5, borderRadius: 3, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider', height: 'fit-content' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <FormatListBulletedIcon color="secondary" />
+                <Typography sx={{ fontWeight: 700 }}>Từ khóa nổi bật</Typography>
+              </Box>
+              {loadingSummary ? (
+                <Box sx={{ py: 2, display: 'flex', justifyContent: 'center' }}><CircularProgress size={24} /></Box>
+              ) : summary?.topTags?.length ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {/* Default preview of first 4 tags */}
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {summary.topTags.slice(0, 4).map((t, idx) => {
+                      const isSelected = tag === t.name;
+                      return (
+                        <Box 
+                          key={`tag-${idx}`} 
+                          onClick={() => setTag(isSelected ? '' : t.name)}
+                          sx={{ 
+                            display: 'flex', 
+                            justifyContent: 'space-between', 
+                            alignItems: 'center', 
+                            py: 0.75,
+                            px: 1.25,
+                            borderRadius: 2,
+                            cursor: 'pointer',
+                            bgcolor: isSelected ? 'secondary.main' : 'background.paper',
+                            color: isSelected ? 'secondary.contrastText' : 'text.primary',
+                            border: '1px solid',
+                            borderColor: isSelected ? 'secondary.main' : 'divider',
+                            transition: 'all 0.2s',
+                            '&:hover': { bgcolor: isSelected ? 'secondary.dark' : 'action.hover' }
+                          }}
+                        >
+                          <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.825rem' }}>{t.name}</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.825rem', opacity: 0.8 }}>{t.count}</Typography>
+                        </Box>
+                      );
+                    })}
+                  </Box>
+
+                  {summary.topTags.length > 4 && (
+                    <Box>
+                      <Collapse in={showTagDetails}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1, maxHeight: 200, overflowY: 'auto', pr: 0.5 }}>
+                          {summary.topTags.slice(4).map((t, idx) => {
+                            const isSelected = tag === t.name;
+                            return (
+                              <Box 
+                                key={`tag-expand-${idx}`} 
+                                onClick={() => setTag(isSelected ? '' : t.name)}
+                                sx={{ 
+                                  display: 'flex', 
+                                  justifyContent: 'space-between', 
+                                  alignItems: 'center', 
+                                  py: 0.75,
+                                  px: 1.25,
+                                  borderRadius: 2,
+                                  cursor: 'pointer',
+                                  bgcolor: isSelected ? 'secondary.main' : 'background.paper',
+                                  color: isSelected ? 'secondary.contrastText' : 'text.primary',
+                                  border: '1px solid',
+                                  borderColor: isSelected ? 'secondary.main' : 'divider',
+                                  transition: 'all 0.2s',
+                                  '&:hover': { bgcolor: isSelected ? 'secondary.dark' : 'action.hover' }
+                                }}
+                              >
+                                <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.825rem' }}>{t.name}</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.825rem', opacity: 0.8 }}>{t.count}</Typography>
+                              </Box>
+                            );
+                          })}
+                        </Box>
+                      </Collapse>
+                      
+                      <Button
+                        size="small"
+                        variant="text"
+                        color="secondary"
+                        onClick={() => setShowTagDetails(!showTagDetails)}
+                        endIcon={<ExpandMoreIcon sx={{ transform: showTagDetails ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />}
+                        sx={{ textTransform: 'none', fontWeight: 700, p: 0, minWidth: 0, mt: 1, ml: 1, fontSize: '0.75rem' }}
+                      >
+                        {showTagDetails ? 'Thu gọn từ khóa' : `Xem thêm từ khóa (${summary.topTags.length - 4})`}
+                      </Button>
+                    </Box>
+                  )}
+                </Box>
+              ) : (
+                <Typography variant="body2" color="text.secondary">Không có dữ liệu</Typography>
+              )}
             </Box>
           </Box>
 

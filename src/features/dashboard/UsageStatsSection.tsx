@@ -320,8 +320,8 @@ function CategoryCard({
           '&:active': { bgcolor: 'action.selected' }
         }}
       >
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2.5 }}>
-          <Stack direction="row" alignItems="center" spacing={2} sx={{ minWidth: 0 }}>
+        <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
+          <Stack direction="row" spacing={2} sx={{ alignItems: 'center', minWidth: 0 }}>
             {/* Category Icon */}
             <Box sx={{ 
               width: 44, 
@@ -340,12 +340,12 @@ function CategoryCard({
               <Typography sx={{ fontWeight: 800, fontSize: '0.96rem', color: 'text.primary', lineHeight: 1.25, letterSpacing: '-0.01em' }}>
                 {label}
               </Typography>
-              <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.5 }}>
+              <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mt: 0.5 }}>
                 <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary', fontWeight: 500, bgcolor: 'background.default', px: 1, py: 0.2, borderRadius: 0.5 }}>
                   {categoryKey}
                 </Typography>
                 {runs > 0 && (
-                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
                     <Box sx={{ 
                       width: 6, 
                       height: 6, 
@@ -390,7 +390,7 @@ function CategoryCard({
         {/* Small Numeric Stats Sub-boxes */}
         <Grid container spacing={2}>
           {/* Total Runs */}
-          <Grid item xs={4}>
+          <Grid xs={4}>
             <Box sx={{ 
               p: 1.5, 
               borderRadius: 3.5, 
@@ -424,7 +424,7 @@ function CategoryCard({
             </Box>
           </Grid>
           {/* Success */}
-          <Grid item xs={4}>
+          <Grid xs={4}>
             <Box sx={{ 
               p: 1.5, 
               borderRadius: 3.5, 
@@ -458,7 +458,7 @@ function CategoryCard({
             </Box>
           </Grid>
           {/* Failed */}
-          <Grid item xs={4}>
+          <Grid xs={4}>
             <Box sx={{ 
               p: 1.5, 
               borderRadius: 3.5, 
@@ -621,7 +621,7 @@ function CategoryCard({
           {/* Two column Grid for Tables */}
           <Grid container spacing={3.5}>
             {/* Left: Actions List Table */}
-            <Grid item xs={12} md={runs > 0 ? 6 : 12}>
+            <Grid xs={12} md={runs > 0 ? 6 : 12}>
               <Typography sx={{ fontSize: '0.74rem', fontWeight: 800, mb: 2, color: 'text.primary', textTransform: 'uppercase', letterSpacing: 0.8, display: 'flex', alignItems: 'center', gap: 1 }}>
                 <SpeedIcon sx={{ fontSize: 16, color: config.color }} />
                 Chi tiết tác vụ trong nhóm
@@ -693,7 +693,7 @@ function CategoryCard({
 
             {/* Right: Users Breakdown Section */}
             {runs > 0 && (
-              <Grid item xs={12} md={6}>
+              <Grid xs={12} md={6}>
                 <Typography sx={{ fontSize: '0.74rem', fontWeight: 800, mb: 2, color: 'text.primary', textTransform: 'uppercase', letterSpacing: 0.8, display: 'flex', alignItems: 'center', gap: 1 }}>
                   <PersonOutlineIcon sx={{ fontSize: 16, color: config.color }} />
                   Tài khoản vận hành hôm nay
@@ -752,7 +752,7 @@ function CategoryCard({
                                   }}
                                 >
                                   <TableCell>
-                                    <Stack direction="row" alignItems="center" spacing={1.5}>
+                                    <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
                                       <Avatar sx={{ 
                                         width: 24, 
                                         height: 24, 
@@ -765,7 +765,7 @@ function CategoryCard({
                                         {initial}
                                       </Avatar>
                                       <Tooltip title={u.email || ''} arrow placement="top">
-                                        <Stack direction="row" alignItems="center" spacing={0.5}>
+                                        <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
                                           <Typography sx={{ fontSize: '0.76rem', fontWeight: 700, color: 'text.primary' }}>
                                             {name}
                                           </Typography>
@@ -992,7 +992,7 @@ export default function UsageStatsSection() {
       {/* ─── 2. Premium Overview Metrics Cards ─── */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {/* Total Runs Card */}
-        <Grid item xs={12} sm={4}>
+        <Grid xs={12} sm={4}>
           <Paper 
             elevation={0} 
             sx={{ 
@@ -1032,7 +1032,7 @@ export default function UsageStatsSection() {
               <Typography sx={{ fontSize: '0.82rem', color: 'text.secondary', fontWeight: 800, letterSpacing: 0.5, lineHeight: 1.3, textTransform: 'uppercase' }}>
                 Tổng lượt chạy
               </Typography>
-              <Stack direction="row" alignItems="baseline" spacing={1}>
+              <Stack direction="row" spacing={1} sx={{ alignItems: 'baseline' }}>
                 <Tooltip title={summaryMetrics.totalRuns.toLocaleString('en-US')} arrow placement="top">
                   <Typography sx={{ 
                     fontSize: '2.5rem', 
@@ -1055,7 +1055,7 @@ export default function UsageStatsSection() {
         </Grid>
 
         {/* Failed Runs Card */}
-        <Grid item xs={12} sm={4}>
+        <Grid xs={12} sm={4}>
           <Paper 
             elevation={0} 
             sx={{ 
@@ -1095,7 +1095,7 @@ export default function UsageStatsSection() {
               <Typography sx={{ fontSize: '0.82rem', color: 'text.secondary', fontWeight: 800, letterSpacing: 0.5, lineHeight: 1.3, textTransform: 'uppercase' }}>
                 Lượt lỗi hệ thống
               </Typography>
-              <Stack direction="row" alignItems="center" spacing={1.5}>
+              <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
                 <Tooltip title={summaryMetrics.totalFailed.toLocaleString('en-US')} arrow placement="top">
                   <Typography sx={{ 
                     fontSize: '2.5rem', 
@@ -1131,7 +1131,7 @@ export default function UsageStatsSection() {
         </Grid>
 
         {/* Distinct Users Card */}
-        <Grid item xs={12} sm={4}>
+        <Grid xs={12} sm={4}>
           <Paper 
             elevation={0} 
             sx={{ 
@@ -1171,7 +1171,7 @@ export default function UsageStatsSection() {
               <Typography sx={{ fontSize: '0.82rem', color: 'text.secondary', fontWeight: 800, letterSpacing: 0.5, lineHeight: 1.3, textTransform: 'uppercase' }}>
                 Người dùng hoạt động
               </Typography>
-              <Stack direction="row" alignItems="center" spacing={1}>
+              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                 <Tooltip title={summaryMetrics.distinctUsers.toLocaleString('en-US')} arrow placement="top">
                   <Typography sx={{ 
                     fontSize: '2.5rem', 
@@ -1236,7 +1236,7 @@ export default function UsageStatsSection() {
               size="small"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
-              InputLabelProps={{ shrink: true }}
+              slotProps={{ inputLabel: { shrink: true } }}
               sx={{ 
                 width: 170,
                 '& .MuiOutlinedInput-root': { 
@@ -1251,7 +1251,7 @@ export default function UsageStatsSection() {
               size="small"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              InputLabelProps={{ shrink: true }}
+              slotProps={{ inputLabel: { shrink: true } }}
               sx={{ 
                 width: 170,
                 '& .MuiOutlinedInput-root': { 

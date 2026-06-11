@@ -1057,7 +1057,7 @@ export default function ForceIndexPage() {
                   type="date"
                   fullWidth
                   size="small"
-                  InputLabelProps={{ shrink: true }}
+                  slotProps={{ inputLabel: { shrink: true } }}
                   value={filterFrom}
                   onChange={(e) => setFilterFrom(e.target.value)}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2.5 } }}
@@ -1070,7 +1070,7 @@ export default function ForceIndexPage() {
                   type="date"
                   fullWidth
                   size="small"
-                  InputLabelProps={{ shrink: true }}
+                  slotProps={{ inputLabel: { shrink: true } }}
                   value={filterTo}
                   onChange={(e) => setFilterTo(e.target.value)}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2.5 } }}

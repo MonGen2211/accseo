@@ -7,7 +7,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Paper from '@mui/material/Paper';
 import Chip from '@mui/material/Chip';
 import Link from '@mui/material/Link';
-import Grid from '@mui/material/Grid';
+import { Grid } from '@mui/material';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
@@ -16,6 +16,7 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Tooltip from '@mui/material/Tooltip';
 import Divider from '@mui/material/Divider';
 import Collapse from '@mui/material/Collapse';
+import InputAdornment from '@mui/material/InputAdornment';
 
 import CloudDoneIcon from '@mui/icons-material/CloudDone';
 import CloudQueueIcon from '@mui/icons-material/CloudQueue';
@@ -29,6 +30,17 @@ import type { Theme } from '@mui/material';
 import { useToastify } from '@/components/Toastify';
 import LoadingButton from '@mui/lab/LoadingButton';
 import { serpService } from './serpService';
+
+export const formatDefensiveNumber = (num: number): string => {
+  if (isNaN(num) || num === null || num === undefined) return '-';
+  if (num >= 1e12) {
+    return num.toExponential(2);
+  }
+  return new Intl.NumberFormat('en-US', {
+    notation: 'compact',
+    maximumFractionDigits: 1
+  }).format(num);
+};
 
 interface IndexCheckItem {
   url: string;
@@ -181,12 +193,15 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
         setResult(res.data);
         showToast(`Đã kiểm tra xong chỉ mục ${res.data.summary.total} URL!`, 'success');
       } else {
-        showToast(res.message || 'Lỗi kiểm tra Google Index', 'danger');
+        showToast(res.message || 'Không thể kiểm tra chỉ mục URL. Vui lòng thử lại sau!', 'danger');
       }
     } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : 'Lỗi kết nối máy chủ Index Checker';
-      const axiosError = err as { response?: { data?: { message?: string } } };
-      showToast(axiosError.response?.data?.message || errorMsg, 'danger');
+      console.error(err);
+      const axiosError = err as { response?: { status?: number; data?: { message?: string } } };
+      const friendlyMessage = axiosError.response?.status === 403 
+        ? 'Bạn không có quyền thực hiện thao tác này.' 
+        : axiosError.response?.data?.message || 'Không thể kết nối với công cụ kiểm tra. Vui lòng thử lại sau!';
+      showToast(friendlyMessage, 'danger');
     } finally {
       setLoading(false);
     }
@@ -270,7 +285,7 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
           <CloudDoneIcon sx={{ color: '#fff', fontSize: 22 }} />
         </Box>
         <Box>
-          <Typography variant="h5" sx={{ fontWeight: 900, letterSpacing: '-0.5px', color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '-0.5px', color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1.5 }}>
             Check Index
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.1, fontWeight: 500, fontSize: '0.85rem' }}>
@@ -283,7 +298,7 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
       <Paper
         elevation={0}
         sx={{
-          p: { xs: 3, md: 4.5 },
+          p: { xs: 2, md: 3 },
           borderRadius: 5,
           border: '1px solid',
           borderColor: 'divider',
@@ -291,10 +306,10 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
           mb: 4
         }}
       >
-        <Grid container spacing={4.5}>
+        <Grid container spacing={3}>
           
           {/* Left Column: Multiline URLs Input */}
-          <Grid item xs={12} md={7}>
+          <Grid size={{ xs: 12, md: 7 }}>
             <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, color: 'text.secondary', mb: 1.2, textTransform: 'uppercase', letterSpacing: 0.8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span>Đường dẫn cần check (URLs) <span style={{ color: '#ef4444' }}>*</span></span>
@@ -304,6 +319,8 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                 fullWidth
                 multiline
                 rows={11}
+                variant="outlined"
+                size="small"
                 placeholder="Nhập danh sách URL cần kiểm tra index, mỗi dòng một URL (vd: https://thuvienphapluat.vn/...)"
                 value={urlsInput}
                 onChange={(e) => setUrlsInput(e.target.value)}
@@ -345,10 +362,10 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
           </Grid>
 
           {/* Right Column: Configuration & Actions */}
-          <Grid item xs={12} md={5} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Grid size={{ xs: 12, md: 5 }} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             
             <Grid container spacing={2}>
-              <Grid item xs={6}>
+              <Grid size={{ xs: 6 }}>
                 <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, color: 'text.secondary', mb: 1, textTransform: 'uppercase', letterSpacing: 0.8 }}>
                   Quốc gia
                 </Typography>
@@ -370,7 +387,7 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={6}>
+              <Grid size={{ xs: 6 }}>
                 <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, color: 'text.secondary', mb: 1, textTransform: 'uppercase', letterSpacing: 0.8 }}>
                   Ngôn ngữ
                 </Typography>
@@ -493,7 +510,17 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                 size="small"
                 startIcon={<TuneIcon sx={{ fontSize: 13 }} />}
                 onClick={() => setShowAdvanced(!showAdvanced)}
-                sx={{ textTransform: 'none', color: 'text.secondary', fontWeight: 700, p: 0 }}
+                sx={{ 
+                  textTransform: 'none', 
+                  color: 'text.secondary', 
+                  fontWeight: 700, 
+                  p: 0,
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    color: 'primary.main',
+                    bgcolor: 'transparent'
+                  }
+                }}
               >
                 {showAdvanced ? 'Ẩn cấu hình nâng cao' : 'Tùy chọn cấu hình nâng cao'}
               </Button>
@@ -505,6 +532,7 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                     </Typography>
                     <TextField
                       fullWidth
+                      variant="outlined"
                       size="small"
                       type="number"
                       placeholder="Mặc định: 4000"
@@ -520,6 +548,7 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                     </Typography>
                     <TextField
                       fullWidth
+                      variant="outlined"
                       size="small"
                       type="number"
                       placeholder="Mặc định: 8000"
@@ -536,7 +565,7 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
           </Grid>
         </Grid>
 
-        <Divider sx={{ my: 3.5, borderStyle: 'dashed', borderColor: 'divider' }} />
+        <Divider sx={{ my: 2, borderStyle: 'dashed', borderColor: 'divider' }} />
 
         <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
           <LoadingButton
@@ -660,29 +689,63 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                   { label: 'CHƯA INDEX', val: result.summary.notIndexed, color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.25)' },
                   { label: 'KHÔNG XÁC ĐỊNH / LỖI', val: result.summary.failed, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.25)' },
                   { label: 'THỜI GIAN CHẠY', val: `${(result.tookMs / 1000).toFixed(1)}s`, color: '#64748b', bg: 'rgba(100, 116, 139, 0.12)', border: 'rgba(100, 116, 139, 0.2)' }
-                ].map((card, i) => (
-                  <Grid item xs={6} sm={2.4} key={i}>
-                    <Paper 
-                      elevation={0}
-                      sx={{ 
-                        p: 2.2, 
-                        borderRadius: '16px', 
-                        border: '1px solid', 
-                        borderColor: card.border, 
-                        bgcolor: card.bg, 
-                        textAlign: 'center',
-                        boxShadow: 'none'
-                      }}
-                    >
-                      <Typography sx={{ color: card.color, fontWeight: 900, fontSize: '1.25rem', fontFamily: 'monospace', mb: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.8 }}>
-                        {card.val}
-                      </Typography>
-                      <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                        {card.label}
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                ))}
+                ].map((card, i) => {
+                  const displayVal = typeof card.val === 'number' ? formatDefensiveNumber(card.val) : card.val;
+                  const tooltipTitle = typeof card.val === 'number' ? card.val.toLocaleString('en-US') : card.val;
+                  
+                  return (
+                    <Grid size={{ xs: 6, sm: 2.4 }} key={i}>
+                      <Tooltip title={tooltipTitle} arrow placement="top">
+                        <Paper 
+                          elevation={0}
+                          sx={{ 
+                            p: 2.2, 
+                            borderRadius: '16px', 
+                            border: '1px solid', 
+                            borderColor: card.border, 
+                            bgcolor: card.bg, 
+                            textAlign: 'center',
+                            boxShadow: 'none',
+                            minWidth: 100,
+                            maxWidth: '100%',
+                            overflow: 'hidden'
+                          }}
+                        >
+                          <Typography 
+                            sx={{ 
+                              color: card.color, 
+                              fontWeight: 800, 
+                              fontSize: '1.25rem', 
+                              fontFamily: 'monospace', 
+                              mb: 0.5, 
+                              display: 'block', 
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              width: '100%',
+                              textAlign: 'center'
+                            }}
+                          >
+                            {displayVal}
+                          </Typography>
+                          <Typography 
+                            noWrap
+                            sx={{ 
+                              fontSize: '0.68rem', 
+                              fontWeight: 800, 
+                              color: 'text.secondary', 
+                              textTransform: 'uppercase', 
+                              letterSpacing: 0.5,
+                              display: 'block'
+                            }}
+                          >
+                            {card.label}
+                          </Typography>
+                        </Paper>
+                      </Tooltip>
+                    </Grid>
+                  );
+                })}
               </Grid>
 
               {/* ACTION ROW (FILTERS, SEARCH, CSV EXPORT) */}
@@ -736,11 +799,18 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                     <TextField
                       placeholder="Tìm kiếm URL..."
+                      variant="outlined"
                       size="small"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      InputProps={{
-                        startAdornment: <SearchIcon sx={{ color: 'text.disabled', fontSize: 16, mr: 0.5 }} />
+                      slotProps={{
+                        input: {
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <SearchIcon sx={{ color: 'text.disabled', fontSize: 16 }} />
+                            </InputAdornment>
+                          )
+                        }
                       }}
                       sx={{ 
                         '& .MuiOutlinedInput-root': { 
@@ -915,7 +985,23 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                                 size="small"
                                 variant="outlined"
                                 onClick={() => setExpandedRows(prev => ({ ...prev, [item.url]: !isRowExpanded }))}
-                                sx={{ borderRadius: '100px', fontSize: '0.68rem', py: 0.3, textTransform: 'none', fontWeight: 800 }}
+                                sx={{ 
+                                  borderRadius: '100px', 
+                                  fontSize: '0.68rem', 
+                                  py: 0.5, 
+                                  px: 2,
+                                  textTransform: 'none', 
+                                  fontWeight: 800,
+                                  borderColor: 'divider',
+                                  color: 'text.secondary',
+                                  transition: 'all 0.2s',
+                                  '&:hover': {
+                                    borderColor: 'primary.main',
+                                    color: 'primary.main',
+                                    bgcolor: 'action.hover',
+                                    transform: 'scale(1.02)'
+                                  }
+                                }}
                               >
                                 {isRowExpanded ? 'Thu gọn' : 'Chi tiết'}
                               </Button>
@@ -933,15 +1019,15 @@ export default function GoogleIndexChecker({ isActive = true }: GoogleIndexCheck
                               </Typography>
 
                               <Grid container spacing={2}>
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                   <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, display: 'block', mb: 0.2 }}>
                                     Google Site Query:
                                   </Typography>
                                   <Typography variant="body2" sx={{ fontFamily: 'monospace', bgcolor: 'background.default', p: 1, borderRadius: 1.5, border: '1px solid', borderColor: 'divider', fontSize: '0.75rem', wordBreak: 'break-all' }}>
-                                    {item.query}
+                                    {item.query || '-'}
                                   </Typography>
                                 </Grid>
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                   <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, display: 'block', mb: 0.2 }}>
                                     Thông tin lập chỉ mục:
                                   </Typography>

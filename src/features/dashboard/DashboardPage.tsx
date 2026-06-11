@@ -69,7 +69,9 @@ import type { Domain } from '../../types/domain.types';
 import type { KeywordGroup } from '../keywords/types';
 import type { Request } from '../requests/types';
 import { useToastify } from '../../components/Toastify';
-import { useAppSelector } from '../../app/store';
+import { useAppSelector, useAppDispatch } from '../../app/store';
+import { markAsRead } from '../notifications/notificationSlice';
+import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { StatusBadge, TypeBadge, getDueDateInfo } from '../requests/components/RequestBadges';
@@ -941,7 +943,7 @@ function StatCard({ title, value, icon, activeColor = '#2563EB', active, onClick
         p: 3, 
         borderRadius: 2, 
         bgcolor: 'background.paper',
-        minHeight: 110, 
+        minHeight: 125, 
         height: '100%',
         position: 'relative', 
         overflow: 'hidden',
@@ -949,6 +951,9 @@ function StatCard({ title, value, icon, activeColor = '#2563EB', active, onClick
         borderColor: active ? activeColor : 'divider',
         cursor: onClick ? 'pointer' : 'default',
         transition: 'all 0.2s ease-in-out',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
         '&:hover': onClick ? {
           transform: 'translateY(-2px)',
           borderColor: activeColor,
@@ -977,7 +982,7 @@ function StatCard({ title, value, icon, activeColor = '#2563EB', active, onClick
         </Typography>
         <Tooltip title={value.toLocaleString('en-US')} arrow placement="top">
           <Typography sx={{ 
-            fontSize: '2.5rem', 
+            fontSize: '2.2rem', 
             fontWeight: 900, 
             color: 'text.primary', 
             lineHeight: 1, 
@@ -991,6 +996,20 @@ function StatCard({ title, value, icon, activeColor = '#2563EB', active, onClick
           </Typography>
         </Tooltip>
       </Stack>
+
+      <Box sx={{ zIndex: 1, mt: 1.5 }}>
+        {onClick ? (
+          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: active ? activeColor : 'text.disabled', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Box component="span" sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: active ? activeColor : 'text.disabled', display: 'inline-block' }} />
+            {active ? 'Đang lọc bảng' : 'Nhấp để lọc bảng'}
+          </Typography>
+        ) : (
+          <Typography sx={{ fontSize: '0.68rem', fontWeight: 600, color: 'text.disabled', opacity: 0.65, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Box component="span" sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'text.disabled', display: 'inline-block', opacity: 0.5 }} />
+            Chỉ hiển thị số liệu
+          </Typography>
+        )}
+      </Box>
     </Paper>
   );
 }
@@ -1247,6 +1266,7 @@ function Ga4Panel({ domains, selectedDomainId, onDomainChange, selectedDays, onD
 export default function DashboardPage() {
   const { showToast } = useToastify();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const user = useAppSelector(state => state.auth.user);
   const { items: notifItems } = useAppSelector(state => state.notifications);
 
@@ -1270,10 +1290,21 @@ export default function DashboardPage() {
   const [activePanel, setActivePanel] = useState<ActivePanel>('ga4');
   const [panelGroups, setPanelGroups] = useState<KeywordGroup[]>([]);
   const [loadingPanel, setLoadingPanel] = useState(false);
-  const [panelDomainId, setPanelDomainId] = useState('');
+  const [activitiesDialogOpen, setActivitiesDialogOpen] = useState(false);
 
   const [inboxRequests, setInboxRequests] = useState<Request[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
+
+  const handleNotifClick = (notif: any) => {
+    if (!notif.isRead) {
+      dispatch(markAsRead(notif._id));
+    }
+    if (notif.data?.requestId) {
+      navigate(`/requests/${notif.data.requestId}`);
+    } else if (notif.data?.entityType === 'keyword_group') {
+      navigate('/domains');
+    }
+  };
 
 
 
@@ -1291,7 +1322,6 @@ export default function DashboardPage() {
         if (items.length > 0) {
           setDomains(items);
           setSelectedDomainId(items[0]._id);
-          setPanelDomainId(items[0]._id);
         }
       } else {
         showToast('Lỗi tải Domain', 'danger');
@@ -1340,20 +1370,20 @@ export default function DashboardPage() {
 
   // Load panel keywords
   useEffect(() => {
-    if (activePanel === 'ga4' || activePanel === 'requests' || !panelDomainId) return;
+    if (activePanel === 'ga4' || activePanel === 'requests' || !selectedDomainId) return;
     let mounted = true;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoadingPanel(true);
     const status = activePanel === 'deployed' ? 'deployed' : 'pending_approval';
-    keywordGroupService.getGroups(panelDomainId, 1, 20, '', 'desc', status)
+    keywordGroupService.getGroups(selectedDomainId, 1, 20, '', 'desc', status)
       .then(res => { if (mounted) setPanelGroups(res.items); })
       .catch(() => { if (mounted) setPanelGroups([]); })
       .finally(() => { if (mounted) setLoadingPanel(false); });
     return () => { mounted = false; };
-  }, [activePanel, panelDomainId]);
+  }, [activePanel, selectedDomainId]);
 
   const handleCardClick = (panel: ActivePanel) => {
-    setActivePanel(prev => prev === panel ? 'ga4' : panel);
+    setActivePanel(panel);
   };
 
   const unreadNotifs = notifItems.filter(n => !n.isRead).slice(0, 2);
@@ -1384,35 +1414,35 @@ export default function DashboardPage() {
 
   const dockCategories = [
     {
-      title: 'Overview',
+      title: 'Tổng quan',
       items: [
         { id: 'overview', label: 'Tổng quan & Báo cáo', icon: <SpaceDashboardIcon sx={{ fontSize: 20 }} /> },
       ]
     },
     {
-      title: 'Keywords',
+      title: 'Quản lý từ khóa',
       items: [
-        { id: 'trending-keywords', label: 'Trending Keyword', icon: <TrendingUpOutlinedIcon sx={{ fontSize: 20 }} /> },
-        { id: 'vbpl', label: 'Gợi ý từ khóa', icon: <AutoAwesomeIcon sx={{ fontSize: 20 }} /> },
-        { id: 'planner', label: 'Keyword Planner', icon: <SearchIcon sx={{ fontSize: 20 }} /> },
-        { id: 'serp', label: 'check Ranking', icon: <EmojiEventsIcon sx={{ fontSize: 20 }} /> },
+        { id: 'trending-keywords', label: 'Xu hướng từ khóa', icon: <TrendingUpOutlinedIcon sx={{ fontSize: 20 }} /> },
+        { id: 'vbpl', label: 'Gợi ý từ khóa AI', icon: <AutoAwesomeIcon sx={{ fontSize: 20 }} /> },
+        { id: 'planner', label: 'Lập kế hoạch từ khóa', icon: <SearchIcon sx={{ fontSize: 20 }} /> },
+        { id: 'serp', label: 'Kiểm tra thứ hạng (SERP)', icon: <EmojiEventsIcon sx={{ fontSize: 20 }} /> },
       ]
     },
     {
-      title: 'Services',
+      title: 'Dịch vụ cào & Chỉ mục',
       items: [
-        { id: 'index-checker', label: 'Check Index', icon: <CloudDoneOutlinedIcon sx={{ fontSize: 20 }} /> },
+        { id: 'index-checker', label: 'Kiểm tra lập chỉ mục', icon: <CloudDoneOutlinedIcon sx={{ fontSize: 20 }} /> },
         { id: 'scraper', label: 'Thu thập báo chí', icon: <ArticleOutlinedIcon sx={{ fontSize: 20 }} /> },
-        { id: 'scraper-url', label: 'URL Scraper', icon: <LinkIcon sx={{ fontSize: 20 }} /> },
-        { id: 'indexed', label: 'Ép Index', icon: <AndroidIcon sx={{ fontSize: 20 }} /> },
+        { id: 'scraper-url', label: 'Cào dữ liệu từ URL', icon: <LinkIcon sx={{ fontSize: 20 }} /> },
+        { id: 'indexed', label: 'Ép chỉ mục Google', icon: <AndroidIcon sx={{ fontSize: 20 }} /> },
       ]
     },
     {
-      title: 'Developers',
+      title: 'Tối ưu & Đánh giá SEO',
       items: [
-        { id: 'content-analysis', label: 'Tạo Outline', icon: <PsychologyIcon sx={{ fontSize: 20 }} /> },
-        { id: 'seo-audit', label: 'SEO Audit', icon: <AssessmentOutlinedIcon sx={{ fontSize: 20 }} /> },
-        { id: 'geo-tag', label: 'Geo Tag Ảnh', icon: <PlaceIcon sx={{ fontSize: 20 }} /> },
+        { id: 'content-analysis', label: 'Tạo Outline bài viết AI', icon: <PsychologyIcon sx={{ fontSize: 20 }} /> },
+        { id: 'seo-audit', label: 'Đánh giá SEO (Audit)', icon: <AssessmentOutlinedIcon sx={{ fontSize: 20 }} /> },
+        { id: 'geo-tag', label: 'Định vị tọa độ ảnh (Geo Tag)', icon: <PlaceIcon sx={{ fontSize: 20 }} /> },
       ]
     }
   ];
@@ -1690,8 +1720,8 @@ export default function DashboardPage() {
         minWidth: 0, 
         display: 'flex', 
         flexDirection: 'column', 
-        gap: 4, 
-        p: { xs: 2, md: 4 }, 
+        gap: 3, 
+        p: { xs: 1.5, md: 2 }, 
         ml: { xs: 0, md: `${sidebarWidth}px` },
         transition: 'margin-left 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
       }}>
@@ -1700,21 +1730,47 @@ export default function DashboardPage() {
       <Box sx={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
         <Stack spacing={4}>
           {/* Header */}
-          <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+          <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <Stack spacing={1}>
               <Typography variant="h4" sx={{ letterSpacing: '-0.5px', fontWeight: 800, mb: 1 }}>
                 Xin chào, {user?.name || 'Admin'}! 👋
               </Typography>
 
               {unreadNotifs.length > 0 ? (
-                <Stack spacing={0.8}>
+                <Stack spacing={1} sx={{ width: '100%', maxWidth: 650 }}>
                   {unreadNotifs.map(n => (
-                    <Stack key={n._id} direction="row" alignItems="center" spacing={1}>
-                      <NotificationsNoneOutlinedIcon sx={{ fontSize: 16, color: 'primary.main' }} />
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }} noWrap>{n.title}</Typography>
-                      <Typography variant="caption" sx={{ color: 'text.disabled', flexShrink: 0 }}>
+                    <Stack 
+                      key={n._id} 
+                      direction="row" 
+                      spacing={1.5}
+                      onClick={() => handleNotifClick(n)}
+                      sx={{ 
+                        alignItems: 'center',
+                        cursor: 'pointer',
+                        p: 1.2,
+                        borderRadius: 2,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.05)' : 'rgba(0, 184, 148, 0.02)',
+                        transition: 'all 0.2s',
+                        '&:hover': { 
+                          bgcolor: 'action.hover',
+                          transform: 'translateX(4px)',
+                          borderColor: 'primary.main'
+                        },
+                        width: '100%'
+                      }}
+                    >
+                      <NotificationsNoneOutlinedIcon sx={{ fontSize: 18, color: 'primary.main', flexShrink: 0 }} />
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary', flexGrow: 1 }} noWrap>
+                        {n.title}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'text.disabled', flexShrink: 0, mr: 1 }}>
                         {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: vi })}
                       </Typography>
+                      {!n.isRead && (
+                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'primary.main', flexShrink: 0 }} />
+                      )}
                     </Stack>
                   ))}
                 </Stack>
@@ -1731,16 +1787,16 @@ export default function DashboardPage() {
             {/* Left: stat cards */}
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 2 }}>
               <StatCard
-                title="DOMAIN QUẢN LÝ"
+                title="Tên miền quản lý"
                 value={stats.domains}
                 icon={<PublicIcon sx={{ color: '#2563eb', fontSize: 22 }} />}
                 bgColor="#bfdbfe" iconBgColor="#dbeafe"
                 activeColor="#2563EB"
                 active={activePanel === 'ga4'}
-                onClick={() => setActivePanel('ga4')}
+                onClick={() => handleCardClick('ga4')}
               />
               <StatCard
-                title="YÊU CẦU CẦN XỬ LÝ"
+                title="Yêu cầu cần xử lý"
                 value={stats.pendingRequests}
                 icon={<InboxOutlinedIcon sx={{ color: '#4f46e5', fontSize: 22 }} />}
                 bgColor="#c7d2fe" iconBgColor="#e0e7ff"
@@ -1749,35 +1805,35 @@ export default function DashboardPage() {
                 onClick={() => handleCardClick('requests')}
               />
               <StatCard
-                title="BÀI VIẾT ĐÃ INDEX"
+                title="Bài viết đã Index"
                 value={stats.indexedArticles}
                 icon={<CloudDoneOutlinedIcon sx={{ color: '#16A34A', fontSize: 22 }} />}
                 bgColor="#bbf7d0" iconBgColor="#dcfce7"
                 activeColor="#16A34A"
               />
               <StatCard
-                title="BÀI VIẾT CHƯA INDEX"
+                title="Bài viết chưa Index"
                 value={stats.notIndexedArticles}
                 icon={<CloudOffOutlinedIcon sx={{ color: '#6B7280', fontSize: 22 }} />}
                 bgColor="#e5e7eb" iconBgColor="#f3f4f6"
                 activeColor="#6B7280"
               />
               <StatCard
-                title="BÀI VIẾT TỐI ƯU CHỜ DUYỆT"
+                title="Bài viết tối ưu chờ duyệt"
                 value={stats.pendingOptimizedArticles}
                 icon={<TuneOutlinedIcon sx={{ color: '#6366f1', fontSize: 22 }} />}
                 bgColor="#e0e7ff" iconBgColor="#c7d2fe"
                 activeColor="#6366f1"
               />
               <StatCard
-                title="BÀI VIẾT CHỜ DUYỆT"
+                title="Bài viết chờ duyệt"
                 value={stats.pendingArticles}
                 icon={<ArticleOutlinedIcon sx={{ color: '#8b5cf6', fontSize: 22 }} />}
                 bgColor="#ede9fe" iconBgColor="#ddd6fe"
                 activeColor="#8b5cf6"
               />
               <StatCard
-                title="BỘ TỪ KHOÁ TRIỂN KHAI"
+                title="Bộ từ khóa triển khai"
                 value={stats.deployedKeywords}
                 icon={<DraftsOutlinedIcon sx={{ color: '#4f46e5', fontSize: 22 }} />}
                 bgColor="#e0e7ff" iconBgColor="#c7d2fe"
@@ -1786,7 +1842,7 @@ export default function DashboardPage() {
                 onClick={() => handleCardClick('deployed')}
               />
               <StatCard
-                title="BỘ TỪ KHOÁ CHỜ PHÊ DUYỆT"
+                title="Bộ từ khóa chờ duyệt"
                 value={stats.pendingKeywords}
                 icon={<PendingActionsIcon sx={{ color: '#D97706', fontSize: 22 }} />}
                 bgColor="#fde68a" iconBgColor="#fef3c7"
@@ -1795,7 +1851,7 @@ export default function DashboardPage() {
                 onClick={() => handleCardClick('pending')}
               />
               <StatCard
-                title="TỪ KHOÁ PHÂN TÁCH CHỜ DUYỆT"
+                title="Từ khóa phân tách chờ duyệt"
                 value={stats.pendingKeywordSegments}
                 icon={<CallSplitOutlinedIcon sx={{ color: '#EA580C', fontSize: 22 }} />}
                 bgColor="#fed7aa" iconBgColor="#ffedd5"
@@ -1825,8 +1881,8 @@ export default function DashboardPage() {
                   loading={loadingPanel}
                   title={activePanel === 'deployed' ? 'Từ khoá đã triển khai' : 'Từ khoá chờ phê duyệt'}
                   domains={domains}
-                  selectedDomainId={panelDomainId}
-                  onDomainChange={setPanelDomainId}
+                  selectedDomainId={selectedDomainId}
+                  onDomainChange={setSelectedDomainId}
                   navigate={navigate}
                 />
               )}
@@ -1839,7 +1895,7 @@ export default function DashboardPage() {
           </Suspense>
 
           {/* Bottom section: Activity Logs */}
-          <ActivitySection />
+          <ActivitySection onViewAll={() => setActivitiesDialogOpen(true)} />
         </Stack>
       </Box>
 
@@ -1960,6 +2016,66 @@ export default function DashboardPage() {
           <HelpOutlinedIcon sx={{ fontSize: 24 }} />
         </IconButton>
       </Tooltip>
+
+      {/* Dialog xem toàn bộ hoạt động */}
+      <Dialog
+        open={activitiesDialogOpen}
+        onClose={() => setActivitiesDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 4.5,
+            border: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
+            boxShadow: '0 24px 48px -12px rgba(0, 0, 0, 0.18)',
+            p: 1
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 900, fontSize: '1.2rem', pb: 1, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1.2 }}>
+          <Box 
+            sx={{ 
+              width: 32, 
+              height: 32, 
+              borderRadius: 2, 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+              color: '#fff' 
+            }}
+          >
+            <HistoryOutlinedIcon sx={{ fontSize: 18 }} />
+          </Box>
+          Toàn bộ lịch sử hoạt động hệ thống
+        </DialogTitle>
+        <DialogContent dividers sx={{ borderColor: 'divider', p: 0, height: 600 }}>
+          <Box sx={{ height: '100%', overflow: 'hidden' }}>
+            <ActivitySection />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, py: 1.5 }}>
+          <Button 
+            onClick={() => setActivitiesDialogOpen(false)} 
+            variant="contained"
+            sx={{
+              borderRadius: '100px',
+              fontWeight: 800,
+              textTransform: 'none',
+              px: 3,
+              py: 0.8,
+              bgcolor: 'primary.main',
+              '&:hover': {
+                bgcolor: 'primary.dark'
+              }
+            }}
+          >
+            Đóng
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Dialog Hướng dẫn sử dụng */}
       <Dialog
