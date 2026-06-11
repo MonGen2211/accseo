@@ -16,6 +16,8 @@ import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined';
 import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
+import LanguageOutlinedIcon from '@mui/icons-material/LanguageOutlined';
+import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
 import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CallSplitOutlinedIcon from '@mui/icons-material/CallSplitOutlined';
@@ -55,7 +57,10 @@ const ForceIndexUnifiedSection = lazy(() => import('../force-index/components/Fo
 const SeoAuditSection = lazy(() => import('../seo-audit/components/SeoAuditSection'));
 const GeoTagSection = lazy(() => import('../geo-tag/components/GeoTagSection'));
 const UsageStatsSection = lazy(() => import('./UsageStatsSection'));
-import { useNavigate } from 'react-router-dom';
+const DomainPage = lazy(() => import('../domains/components/DomainPage'));
+const RequestsPage = lazy(() => import('../requests/components/RequestsPage'));
+const UserPage = lazy(() => import('../users/components/UserPage'));
+import { useNavigate, useLocation } from 'react-router-dom';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
@@ -1266,8 +1271,10 @@ function Ga4Panel({ domains, selectedDomainId, onDomainChange, selectedDays, onD
 export default function DashboardPage() {
   const { showToast } = useToastify();
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useAppDispatch();
-  const user = useAppSelector(state => state.auth.user);
+  const { user, allowedPages } = useAppSelector(state => state.auth);
+  const canView = (pageKey: string) => allowedPages === null || (Array.isArray(allowedPages) && allowedPages.includes(pageKey));
   const { items: notifItems } = useAppSelector(state => state.notifications);
 
   const [stats, setStats] = useState({
@@ -1389,8 +1396,32 @@ export default function DashboardPage() {
   const unreadNotifs = notifItems.filter(n => !n.isRead).slice(0, 2);
 
   const [activeTab, setActiveTab] = useState(() => {
+    const path = window.location.pathname;
+    if (path === '/domains') return 'domains';
+    if (path === '/requests') return 'requests';
+    if (path === '/users') return 'users';
     return sessionStorage.getItem('dashboard_active_tab') || 'overview';
   });
+
+  useEffect(() => {
+    const path = location.pathname;
+    if (path === '/domains') {
+      setActiveTab('domains');
+    } else if (path === '/requests') {
+      setActiveTab('requests');
+    } else if (path === '/users') {
+      setActiveTab('users');
+    } else if (path === '/') {
+      const currentSavedTab = sessionStorage.getItem('dashboard_active_tab') || 'overview';
+      if (['domains', 'requests', 'users'].includes(currentSavedTab)) {
+        setActiveTab('overview');
+        sessionStorage.setItem('dashboard_active_tab', 'overview');
+      } else {
+        setActiveTab(currentSavedTab);
+      }
+    }
+  }, [location.pathname]);
+
   const [guideOpen, setGuideOpen] = useState(false);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -1407,8 +1438,29 @@ export default function DashboardPage() {
   };
 
   const handleTabChange = (tabId: string) => {
-    setActiveTab(tabId);
-    sessionStorage.setItem('dashboard_active_tab', tabId);
+    if (tabId === 'overview') {
+      navigate('/');
+      setActiveTab('overview');
+      sessionStorage.setItem('dashboard_active_tab', 'overview');
+    } else if (tabId === 'domains') {
+      navigate('/domains');
+      setActiveTab('domains');
+      sessionStorage.setItem('dashboard_active_tab', 'domains');
+    } else if (tabId === 'requests') {
+      navigate('/requests');
+      setActiveTab('requests');
+      sessionStorage.setItem('dashboard_active_tab', 'requests');
+    } else if (tabId === 'users') {
+      navigate('/users');
+      setActiveTab('users');
+      sessionStorage.setItem('dashboard_active_tab', 'users');
+    } else {
+      if (window.location.pathname !== '/') {
+        navigate('/');
+      }
+      setActiveTab(tabId);
+      sessionStorage.setItem('dashboard_active_tab', tabId);
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -1417,6 +1469,9 @@ export default function DashboardPage() {
       title: 'Tổng quan',
       items: [
         { id: 'overview', label: 'Tổng quan & Báo cáo', icon: <SpaceDashboardIcon sx={{ fontSize: 20 }} /> },
+        { id: 'domains', label: 'Quản lý tên miền', icon: <LanguageOutlinedIcon sx={{ fontSize: 20 }} />, pageKey: 'domains' },
+        { id: 'requests', label: 'Yêu cầu & Nhóm', icon: <AssignmentOutlinedIcon sx={{ fontSize: 20 }} />, pageKey: 'requests' },
+        { id: 'users', label: 'Người dùng', icon: <PeopleOutlinedIcon sx={{ fontSize: 20 }} />, pageKey: 'users' },
       ]
     },
     {
@@ -1632,7 +1687,10 @@ export default function DashboardPage() {
                 </Typography>
               )}
 
-              {category.items.map((tab) => {
+               {category.items.map((tab) => {
+                if (tab.pageKey && !canView(tab.pageKey)) {
+                  return null;
+                }
                 const isActive = activeTab === tab.id;
                 const content = (
                   <Box
@@ -1983,6 +2041,30 @@ export default function DashboardPage() {
         <Box sx={{ mt: 1 }}>
           <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>}>
             <GeoTagSection />
+          </Suspense>
+        </Box>
+      )}
+
+      {activeTab === 'domains' && (
+        <Box sx={{ mt: 1 }}>
+          <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>}>
+            <DomainPage />
+          </Suspense>
+        </Box>
+      )}
+
+      {activeTab === 'requests' && (
+        <Box sx={{ mt: 1 }}>
+          <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>}>
+            <RequestsPage />
+          </Suspense>
+        </Box>
+      )}
+
+      {activeTab === 'users' && (
+        <Box sx={{ mt: 1 }}>
+          <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>}>
+            <UserPage />
           </Suspense>
         </Box>
       )}

@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
-import Sidebar from './Sidebar';
 import Header from './Header';
 import NotificationToast from '../NotificationToast';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -38,7 +37,6 @@ export default function MainLayout() {
 			>
 				<Outlet />
 			</Box>
-			<Sidebar />
 			<NotificationToast />
 		</Box>
 	);

@@ -89,7 +89,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 		navigate(path);
 	};
 
-	const isDashboard = location.pathname === '/';
+	const isDashboard = ['/', '/domains', '/requests', '/users'].includes(location.pathname);
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
 		return sessionStorage.getItem('sidebar_collapsed') === 'true';
 	});
