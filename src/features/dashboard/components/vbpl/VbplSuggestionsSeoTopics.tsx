@@ -171,6 +171,7 @@ const startPublicTrendSuggestionsStream = async (
 
   try {
     await vbplSuggestionsService.getPublicTrendSuggestionsStream(
+      {},
       (event) => {
         const customMsg = getPublicLogMessage(event.step, event.data, event.message);
         const newLog: PublicTrendStreamLog = {
