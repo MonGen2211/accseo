@@ -1,6 +1,7 @@
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, CartesianGrid } from 'recharts';
 import type { TrendTimelinePoint } from '../types';
 import { Box, Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 
 interface TrendLineChartProps {
 	data: TrendTimelinePoint[];
@@ -8,6 +9,7 @@ interface TrendLineChartProps {
 	height?: number;
 	showAxes?: boolean;
 	color?: string;
+	lastDate?: string;
 }
 
 interface TooltipPayload {
@@ -37,7 +39,11 @@ function CustomDot(props: { cx?: number; cy?: number; index?: number; dataLength
 	return <circle cx={cx} cy={cy} r={5} fill={color ?? '#6366f1'} stroke="#fff" strokeWidth={2} />;
 }
 
-export function TrendLineChart({ data, currentScore, height = 200, showAxes = true, color = '#6366f1' }: TrendLineChartProps) {
+export function TrendLineChart({ data, currentScore, height = 200, showAxes = true, color = '#6366f1', lastDate }: TrendLineChartProps) {
+	const theme = useTheme();
+	const dividerColor = theme.palette.divider;
+	const textSecondaryColor = theme.palette.text.secondary;
+
 	if (!data || data.length === 0) {
 		return (
 			<Box sx={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -46,9 +52,7 @@ export function TrendLineChart({ data, currentScore, height = 200, showAxes = tr
 		);
 	}
 
-	const base: TrendTimelinePoint[] = currentScore !== undefined
-		? [...data, { date: todayLabel(), value: currentScore }]
-		: [...data];
+	const base = [...data];
 
 	const thinned = base.length > 60
 		? base.filter((_, i) => i % Math.ceil(base.length / 60) === 0 || i === base.length - 1)
@@ -64,11 +68,11 @@ export function TrendLineChart({ data, currentScore, height = 200, showAxes = tr
 	return (
 		<ResponsiveContainer width="100%" height={height}>
 			<LineChart data={thinned} margin={{ top: 8, right: 12, left: showAxes ? 0 : -28, bottom: showAxes ? 24 : 4 }}>
-				{showAxes && <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />}
+				{showAxes && <CartesianGrid strokeDasharray="3 3" stroke={dividerColor} />}
 				{showAxes && (
 					<XAxis
 						dataKey="date"
-						tick={{ fontSize: 11, fill: '#94a3b8' }}
+						tick={{ fontSize: 11, fill: textSecondaryColor }}
 						tickLine={false}
 						axisLine={false}
 						interval={0}
@@ -81,13 +85,13 @@ export function TrendLineChart({ data, currentScore, height = 200, showAxes = tr
 				<YAxis
 					domain={[0, 100]}
 					ticks={[0, 25, 50, 75, 100]}
-					tick={{ fontSize: 11, fill: '#94a3b8' }}
+					tick={{ fontSize: 11, fill: textSecondaryColor }}
 					tickLine={false}
 					axisLine={false}
 					width={showAxes ? 32 : 28}
 				/>
 				<Tooltip content={<CustomTooltip />} />
-				<ReferenceLine y={50} stroke="#e2e8f0" strokeDasharray="4 4" />
+				<ReferenceLine y={50} stroke={dividerColor} strokeDasharray="4 4" />
 				<Line
 					type="linear"
 					dataKey="value"

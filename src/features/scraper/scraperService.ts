@@ -1,5 +1,5 @@
 import api from '../../utils/api';
-import type { GetArticlesParams, GetArticlesResponse, ScraperSummary, TriggerScrapeResponse, ScraperSchedule, ScheduleUpdateResponse, AiGenerateResponseData, AiResultResponseData } from './types';
+import type { GetArticlesParams, GetArticlesResponse, ScraperSummary, TriggerScrapeResponse, ScraperSchedule, ScheduleUpdateResponse, AiGenerateResponseData, AiResultResponseData, VbplAiAutoConfig, VbplAiAutoFilterOptions, VbplAiAutoRunResult } from './types';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -7,6 +7,13 @@ export interface ApiResponse<T> {
   data: T;
   message?: string;
 }
+
+const unwrapResponseData = <T>(resData: any): T => {
+  if (resData && typeof resData === 'object' && 'data' in resData && !Array.isArray(resData)) {
+    return resData.data as T;
+  }
+  return resData as T;
+};
 
 export const scraperService = {
   triggerManualScrape: async (source?: string): Promise<TriggerScrapeResponse> => {
@@ -30,6 +37,7 @@ export const scraperService = {
     if (params.linhVuc) query.append('linhVuc', params.linhVuc);
     if (params.docTypeCode) query.append('docTypeCode', params.docTypeCode);
     if (params.sheetStatus) query.append('sheetStatus', params.sheetStatus);
+    if (params.fullInfoStatus) query.append('fullInfoStatus', params.fullInfoStatus);
     if (params.articleType) query.append('articleType', params.articleType);
     if (params.page) query.append('page', params.page.toString());
     if (params.limit) query.append('limit', params.limit.toString());
@@ -91,5 +99,54 @@ export const scraperService = {
       `/scraper/articles/ai-state?${query.toString()}`
     );
     return response.data.data;
+  },
+
+  getVbplAiAutoConfig: async (): Promise<VbplAiAutoConfig> => {
+    const response = await api.get<ApiResponse<any>>('/scraper/vbpl/ai-auto-config');
+    return unwrapResponseData<VbplAiAutoConfig>(response.data.data);
+  },
+
+  updateVbplAiAutoConfig: async (payload: Partial<VbplAiAutoConfig>): Promise<{ message: string; data: VbplAiAutoConfig }> => {
+    const response = await api.put<ApiResponse<any>>('/scraper/vbpl/ai-auto-config', payload);
+    const responseData = response.data.data;
+    // Defensive check: if NestJS global interceptor does NOT unwrap nested { message, data },
+    // then responseData has data and message. Otherwise, responseData is the config itself,
+    // and response.data.message has the message.
+    if (responseData && responseData.data && typeof responseData.message === 'string') {
+      return {
+        message: responseData.message,
+        data: responseData.data as VbplAiAutoConfig
+      };
+    }
+    return {
+      message: response.data.message || 'Cập nhật cấu hình tự động đẩy thông tin VBPL lên Sheet thành công!',
+      data: responseData as VbplAiAutoConfig
+    };
+  },
+
+  getVbplAiAutoFilterOptions: async (): Promise<VbplAiAutoFilterOptions> => {
+    const response = await api.get<ApiResponse<any>>('/scraper/vbpl/ai-auto-config/filter-options');
+    return unwrapResponseData<VbplAiAutoFilterOptions>(response.data.data);
+  },
+
+  runVbplAiAutoNow: async (payload?: {
+    scopes?: ('TW' | 'DP')[];
+    effStatusCodes?: string[];
+    docTypeCodes?: string[];
+    nganhs?: string[];
+    linhVucs?: string[];
+  }): Promise<{ message: string; data: { started: boolean } }> => {
+    const response = await api.post<ApiResponse<any>>('/scraper/vbpl/ai-auto-config/run-now', payload);
+    const responseData = response.data.data;
+    if (responseData && responseData.data && typeof responseData.message === 'string') {
+      return {
+        message: responseData.message,
+        data: responseData.data
+      };
+    }
+    return {
+      message: response.data.message || 'Kích hoạt tự động đẩy VBPL lên Sheet thành công!',
+      data: responseData
+    };
   }
 };

@@ -71,16 +71,54 @@ export function Ga4OverviewCards({ summary, loading }: Ga4OverviewCardsProps) {
 	];
 
 	return (
-		<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 0, px: 3, py: 1.25, borderBottom: '1px solid', borderColor: 'divider' }}>
-			{cards.map((card, i) => (
-				<Box key={card.label} sx={{ display: 'flex', alignItems: 'baseline', gap: 0.6, px: 2, borderRight: i < cards.length - 1 ? '1px solid' : 'none', borderColor: 'divider' }}>
-					<Typography sx={{ fontSize: 11, color: 'text.secondary', whiteSpace: 'nowrap' }}>
-						{card.label}
-					</Typography>
+		<Box sx={{
+			display: 'grid',
+			gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(5, 1fr)' },
+			gap: 1.5,
+			px: 3,
+			py: 2,
+			borderBottom: '1px solid',
+			borderColor: 'divider',
+			bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.01)' : 'rgba(0, 0, 0, 0.01)',
+		}}>
+			{cards.map((card) => (
+				<Box
+					key={card.label}
+					sx={{
+						p: 1.5,
+						borderRadius: 2,
+						border: '1px solid',
+						borderColor: 'divider',
+						bgcolor: 'background.paper',
+						display: 'flex',
+						flexDirection: 'column',
+						gap: 0.5,
+						minWidth: 0,
+					}}
+				>
+					<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+						<Typography sx={{ fontSize: 10, fontWeight: 700, color: 'text.secondary', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+							{card.label}
+						</Typography>
+						<Box sx={{
+							width: 22,
+							height: 22,
+							borderRadius: 1,
+							bgcolor: (theme) => theme.palette.mode === 'dark' ? `${card.color}18` : `${card.color}0f`,
+							display: 'flex',
+							alignItems: 'center',
+							justifyContent: 'center',
+							color: card.color,
+							flexShrink: 0,
+							'& svg': { fontSize: 13 },
+						}}>
+							{card.icon}
+						</Box>
+					</Box>
 					{loading ? (
-						<Skeleton width={36} height={18} />
+						<Skeleton width="50%" height={20} sx={{ mt: 0.5 }} />
 					) : (
-						<Typography sx={{ fontSize: 16, fontWeight: 800, color: 'primary.main', whiteSpace: 'nowrap' }}>
+						<Typography sx={{ fontSize: 16, fontWeight: 800, color: card.color, mt: 0.5, lineHeight: 1 }}>
 							{card.value}
 						</Typography>
 					)}

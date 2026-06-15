@@ -12,6 +12,8 @@ import Chip from '@mui/material/Chip';
 import Link from '@mui/material/Link';
 import CircularProgress from '@mui/material/CircularProgress';
 import CloudDownloadOutlinedIcon from '@mui/icons-material/CloudDownloadOutlined';
+import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
+import CloudDoneIcon from '@mui/icons-material/CloudDone';
 import SearchIcon from '@mui/icons-material/Search';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import AnalyticsOutlinedIcon from '@mui/icons-material/AnalyticsOutlined';
@@ -39,7 +41,21 @@ import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import LinkIcon from '@mui/icons-material/Link';
 import GavelIcon from '@mui/icons-material/Gavel';
+import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import { useAppSelector } from '../../../app/store';
+
+import Accordion from '@mui/material/Accordion';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import ListItemText from '@mui/material/ListItemText';
+import OutlinedInput from '@mui/material/OutlinedInput';
+import Grid from '@mui/material/Grid';
+import Alert from '@mui/material/Alert';
+import AlertTitle from '@mui/material/AlertTitle';
+import FormHelperText from '@mui/material/FormHelperText';
+import Divider from '@mui/material/Divider';
 
 import CustomTable from '../../../components/custom-table/CustomTable';
 import type { TableField } from '../../../types/tableFields.types';
@@ -55,7 +71,7 @@ const safeFormat = (dateStr: string | undefined | null, fmt: string) => {
 };
 
 import { scraperService } from '../scraperService';
-import type { ScraperArticle, ScraperSummary, ScraperSchedule } from '../types';
+import type { ScraperArticle, ScraperSummary, ScraperSchedule, VbplAiAutoConfig, VbplAiAutoFilterOptions, VbplAiAutoRunResult } from '../types';
 
 const CRON_OPTIONS = [
   { value: '*/10 * * * *', label: 'Mỗi 10 phút một lần' },
@@ -93,13 +109,13 @@ const LEGAL_DOMAINS = [
 
 const DOC_TYPES = [
   { code: 'TT', label: 'Thông tư (TT)' },
-  { code: 'QĐ', label: 'Quyết định (QĐ)' },
-  { code: 'NĐ', label: 'Nghị định (NĐ)' },
+  { code: 'QD', label: 'Quyết định (QĐ)' },
+  { code: 'ND', label: 'Nghị định (NĐ)' },
   { code: 'CV', label: 'Công văn (CV)' },
   { code: 'NQ', label: 'Nghị quyết (NQ)' },
   { code: 'L', label: 'Luật (L)' },
   { code: 'PL', label: 'Pháp lệnh (PL)' },
-  { code: 'CH', label: 'Chỉ thị (CH)' }
+  { code: 'CT', label: 'Chỉ thị (CT)' }
 ];
 
 export default function ScraperSection() {
@@ -126,6 +142,7 @@ export default function ScraperSection() {
   const [linhVuc, setLinhVuc] = useState('');
   const [docTypeCode, setDocTypeCode] = useState('');
   const [sheetStatus, setSheetStatus] = useState('all');
+  const [fullInfoStatus, setFullInfoStatus] = useState('all');
   const [showSectionDetails, setShowSectionDetails] = useState(false);
   const [showCategoryDetails, setShowCategoryDetails] = useState(false);
   const [showTagDetails, setShowTagDetails] = useState(false);
@@ -154,6 +171,14 @@ export default function ScraperSection() {
   const [cronInput, setCronInput] = useState('*/10 * * * *');
   const [cronPreset, setCronPreset] = useState('*/10 * * * *');
   const [isUpdatingSchedule, setIsUpdatingSchedule] = useState(false);
+
+  // --- VBPL Auto AI Config State ---
+  const [autoConfig, setAutoConfig] = useState<VbplAiAutoConfig | null>(null);
+  const [originalConfig, setOriginalConfig] = useState<VbplAiAutoConfig | null>(null);
+  const [autoFilterOptions, setAutoFilterOptions] = useState<VbplAiAutoFilterOptions | null>(null);
+  const [loadingAutoConfig, setLoadingAutoConfig] = useState(false);
+  const [savingAutoConfig, setSavingAutoConfig] = useState(false);
+  const [runningAutoNow, setRunningAutoNow] = useState(false);
 
   // --- Export Excel Dialog State ---
   const [openDownloadDialog, setOpenDownloadDialog] = useState(false);
@@ -360,7 +385,8 @@ export default function ScraperSection() {
         nganh: activeSite === 'vbpl' && nganh ? nganh : undefined,
         linhVuc: activeSite === 'vbpl' && linhVuc ? linhVuc : undefined,
         docTypeCode: activeSite === 'vbpl' && docTypeCode ? docTypeCode : undefined,
-        sheetStatus: sheetStatus || undefined,
+        sheetStatus: activeSite === 'vbpl' ? undefined : (sheetStatus || undefined),
+        fullInfoStatus: activeSite === 'vbpl' && fullInfoStatus ? fullInfoStatus : undefined,
         articleType: activeSite === 'luatvietnam' && articleType !== 'all' ? articleType : undefined,
         page: p + 1,
         limit: l
@@ -375,6 +401,197 @@ export default function ScraperSection() {
     }
   };
 
+  const loadVbplAutoConfig = useCallback(async () => {
+    if (!isAdmin || activeSite !== 'vbpl') return;
+    setLoadingAutoConfig(true);
+    try {
+      const [config, options] = await Promise.all([
+        scraperService.getVbplAiAutoConfig(),
+        scraperService.getVbplAiAutoFilterOptions()
+      ]);
+      setAutoConfig(config);
+      setOriginalConfig(config);
+      setAutoFilterOptions(options);
+    } catch (err: unknown) {
+      console.error('Lỗi tải cấu hình tự động VBPL:', err);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      const resMsg = (err as { response?: { data?: { message?: string } } }).response?.data?.message;
+      showToast(resMsg || errMsg || 'Không thể tải cấu hình tự động VBPL', 'danger');
+    } finally {
+      setLoadingAutoConfig(false);
+    }
+  }, [isAdmin, activeSite, showToast]);
+
+  useEffect(() => {
+    if (activeSite === 'vbpl' && isAdmin) {
+      loadVbplAutoConfig();
+    }
+  }, [activeSite, isAdmin, loadVbplAutoConfig]);
+
+  const handleSaveVbplAutoConfig = async () => {
+    if (!autoConfig || !originalConfig) return;
+
+    // Validate array limits: scopes <= 2, others <= 20
+    if (autoConfig.scopes && autoConfig.scopes.length > 2) {
+      showToast('Phạm vi chọn tối đa 2 phần tử!', 'warning');
+      return;
+    }
+    if (autoConfig.effStatusCodes && autoConfig.effStatusCodes.length > 20) {
+      showToast('Tình trạng hiệu lực chọn tối đa 20 phần tử!', 'warning');
+      return;
+    }
+    if (autoConfig.docTypeCodes && autoConfig.docTypeCodes.length > 20) {
+      showToast('Loại văn bản chọn tối đa 20 phần tử!', 'warning');
+      return;
+    }
+    if (autoConfig.nganhs && autoConfig.nganhs.length > 20) {
+      showToast('Ngành quản lý chọn tối đa 20 phần tử!', 'warning');
+      return;
+    }
+    if (autoConfig.linhVucs && autoConfig.linhVucs.length > 20) {
+      showToast('Lĩnh vực chọn tối đa 20 phần tử!', 'warning');
+      return;
+    }
+
+    setSavingAutoConfig(true);
+    try {
+      const payload: Partial<VbplAiAutoConfig> = {};
+      
+      // Compute diff
+      if (autoConfig.enabled !== originalConfig.enabled) {
+        payload.enabled = autoConfig.enabled;
+      }
+      
+      const arraysEqual = (a: any[], b: any[]) => {
+        if (!a && !b) return true;
+        if (!a || !b) return false;
+        if (a.length !== b.length) return false;
+        return a.every((val, index) => val === b[index]);
+      };
+      
+      if (!arraysEqual(autoConfig.scopes || [], originalConfig.scopes || [])) {
+        payload.scopes = autoConfig.scopes;
+      }
+      if (!arraysEqual(autoConfig.effStatusCodes || [], originalConfig.effStatusCodes || [])) {
+        payload.effStatusCodes = autoConfig.effStatusCodes;
+      }
+      if (!arraysEqual(autoConfig.docTypeCodes || [], originalConfig.docTypeCodes || [])) {
+        payload.docTypeCodes = autoConfig.docTypeCodes;
+      }
+      if (!arraysEqual(autoConfig.nganhs || [], originalConfig.nganhs || [])) {
+        payload.nganhs = autoConfig.nganhs;
+      }
+      if (!arraysEqual(autoConfig.linhVucs || [], originalConfig.linhVucs || [])) {
+        payload.linhVucs = autoConfig.linhVucs;
+      }
+
+      if (Object.keys(payload).length === 0) {
+        showToast('Không có thay đổi nào để lưu!', 'warning');
+        setSavingAutoConfig(false);
+        return;
+      }
+
+      const res = await scraperService.updateVbplAiAutoConfig(payload);
+      showToast(res.message || 'Cập nhật cấu hình tự động đẩy thông tin VBPL lên Sheet thành công!', 'success');
+      setAutoConfig(res.data);
+      setOriginalConfig(res.data);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      const resMsg = (err as { response?: { data?: { message?: string } } }).response?.data?.message;
+      showToast(resMsg || errMsg || 'Lỗi khi lưu cấu hình tự động đẩy thông tin VBPL lên Sheet', 'danger');
+    } finally {
+      setSavingAutoConfig(false);
+    }
+  };
+
+  const handleRunVbplAutoNow = async () => {
+    if (!autoConfig) return;
+
+    // Validate array limits: scopes <= 2, others <= 20
+    if (autoConfig.scopes && autoConfig.scopes.length > 2) {
+      showToast('Phạm vi chọn tối đa 2 phần tử!', 'warning');
+      return;
+    }
+    if (autoConfig.effStatusCodes && autoConfig.effStatusCodes.length > 20) {
+      showToast('Tình trạng hiệu lực chọn tối đa 20 phần tử!', 'warning');
+      return;
+    }
+    if (autoConfig.docTypeCodes && autoConfig.docTypeCodes.length > 20) {
+      showToast('Loại văn bản chọn tối đa 20 phần tử!', 'warning');
+      return;
+    }
+    if (autoConfig.nganhs && autoConfig.nganhs.length > 20) {
+      showToast('Ngành quản lý chọn tối đa 20 phần tử!', 'warning');
+      return;
+    }
+    if (autoConfig.linhVucs && autoConfig.linhVucs.length > 20) {
+      showToast('Lĩnh vực chọn tối đa 20 phần tử!', 'warning');
+      return;
+    }
+
+    setRunningAutoNow(true);
+    try {
+      const payload = {
+        scopes: autoConfig.scopes,
+        effStatusCodes: autoConfig.effStatusCodes,
+        docTypeCodes: autoConfig.docTypeCodes,
+        nganhs: autoConfig.nganhs,
+        linhVucs: autoConfig.linhVucs
+      };
+      const res = await scraperService.runVbplAiAutoNow(payload);
+      if (res.data.started) {
+        showToast(res.message || 'Đã bắt đầu kích hoạt chạy thủ công đẩy VBPL lên Sheet! Vui lòng đợi...', 'success');
+        setAutoConfig(prev => prev ? { ...prev, isRunning: true } : null);
+      } else {
+        showToast(res.message || 'Đang có một tiến trình tự động đẩy VBPL lên Sheet khác đang chạy trong nền, vui lòng đợi!', 'warning');
+      }
+      
+      // Reload config immediately to show the isRunning: true status
+      const config = await scraperService.getVbplAiAutoConfig();
+      setAutoConfig(config);
+      setOriginalConfig(config);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      const resMsg = (err as { response?: { data?: { message?: string } } }).response?.data?.message;
+      showToast(resMsg || errMsg || 'Lỗi khi chạy thử tự động đẩy VBPL lên Sheet', 'danger');
+    } finally {
+      setRunningAutoNow(false);
+    }
+  };
+
+  useEffect(() => {
+    let timer: any = null;
+    if (activeSite === 'vbpl' && isAdmin && autoConfig?.isRunning) {
+      timer = setInterval(async () => {
+        try {
+          const config = await scraperService.getVbplAiAutoConfig();
+          setAutoConfig(config);
+          if (!config.isRunning) {
+            setOriginalConfig(config);
+            showToast('Tiến trình tự động đẩy VBPL lên Sheet chạy nền đã hoàn tất!', 'success');
+          }
+        } catch (err) {
+          console.error('Lỗi khi poll cấu hình tự động:', err);
+        }
+      }, 3000); // Poll every 3 seconds
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [activeSite, isAdmin, autoConfig?.isRunning, showToast]);
+
+  const notifications = useAppSelector((state) => state.notifications.items);
+  useEffect(() => {
+    if (activeSite === 'vbpl' && isAdmin) {
+      const hasAutoDisabledNotif = notifications.some(
+        n => n.type === 'VBPL_AUTO_EXPORT_DISABLED' && !n.isRead
+      );
+      if (hasAutoDisabledNotif) {
+        loadVbplAutoConfig();
+      }
+    }
+  }, [notifications, activeSite, isAdmin, loadVbplAutoConfig]);
+
   useEffect(() => {
     Promise.resolve().then(() => {
       setSection('');
@@ -388,6 +605,7 @@ export default function ScraperSection() {
       setLinhVuc('');
       setDocTypeCode('');
       setSheetStatus('all');
+      setFullInfoStatus('all');
       setArticleType('all');
       setShowSectionDetails(false);
       setShowCategoryDetails(false);
@@ -403,7 +621,7 @@ export default function ScraperSection() {
       setPage(0);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSite, section, tag, date, debouncedQ, onlyNew, scope, effStatusCode, nganh, linhVuc, docTypeCode, sheetStatus, articleType]);
+  }, [activeSite, section, tag, date, debouncedQ, onlyNew, scope, effStatusCode, nganh, linhVuc, docTypeCode, sheetStatus, fullInfoStatus, articleType]);
 
   // --- Handlers ---
   const handlePageChange = (newPage: number) => {
@@ -740,6 +958,81 @@ export default function ScraperSection() {
     );
   }, [aiLoadingId, handleAiGenerate]);
 
+  const renderInlineVbplFullInfoStatus = useCallback((item: ScraperArticle) => {
+    const pushed = item.fullInfoPushedAt;
+    const sheetUrl = item.fullInfoSheetUrl;
+
+    if (pushed) {
+      return (
+        <Tooltip title={`Đã đẩy đầy đủ thông tin VBPL lên Google Sheet lúc ${safeFormat(pushed, 'dd/MM/yyyy HH:mm:ss')} · Click để xem trên Sheet`} onClick={(e) => e.stopPropagation()}>
+          <Button
+            size="small"
+            startIcon={<CloudDoneIcon sx={{ fontSize: 13 }} />}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (sheetUrl) {
+                window.open(sheetUrl, '_blank', 'noopener,noreferrer');
+              }
+            }}
+            sx={{
+              py: 0.25,
+              px: 1.25,
+              borderRadius: 10,
+              border: '1px solid rgba(59, 130, 246, 0.5)',
+              bgcolor: 'rgba(59, 130, 246, 0.05)',
+              color: '#3b82f6',
+              fontWeight: 700,
+              fontSize: '0.725rem',
+              minWidth: 0,
+              height: 22,
+              textTransform: 'none',
+              opacity: 0.7,
+              transition: 'all 0.2s ease-in-out',
+              '.MuiTableRow-root:hover &': {
+                opacity: 0.95
+              },
+              '&:hover': {
+                opacity: '1 !important',
+                bgcolor: 'rgba(59, 130, 246, 0.12)',
+                borderColor: '#3b82f6',
+                transform: 'translateY(-1px)',
+                boxShadow: '0 2px 8px rgba(59, 130, 246, 0.25)'
+              }
+            }}
+          >
+            Đã push (Full VBPL)
+          </Button>
+        </Tooltip>
+      );
+    }
+
+    return (
+      <Tooltip title="Chưa đẩy đầy đủ thông tin VBPL lên Google Sheet" onClick={(e) => e.stopPropagation()}>
+        <Box
+          sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 0.5,
+            py: 0.25,
+            px: 1.25,
+            borderRadius: 10,
+            border: '1px solid rgba(156, 163, 175, 0.3)',
+            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+            color: 'text.secondary',
+            fontSize: '0.725rem',
+            fontWeight: 700,
+            height: 22,
+            whiteSpace: 'nowrap',
+            width: 'fit-content'
+          }}
+        >
+          <CloudUploadOutlinedIcon sx={{ fontSize: 13, color: 'text.secondary' }} />
+          Chưa push VBPL
+        </Box>
+      </Tooltip>
+    );
+  }, []);
+
   // --- Columns ---
   const columns = useMemo<TableField[]>(() => {
     const selectionColumn = {
@@ -904,8 +1197,9 @@ export default function ScraperSection() {
                 >
                   {item.title}
                 </Link>
-                <Box sx={{ mt: 0.5, display: 'flex' }}>
+                <Box sx={{ mt: 0.5, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                   {renderInlineAiKeywords(item)}
+                  {renderInlineVbplFullInfoStatus(item)}
                 </Box>
               </Box>
             );
@@ -1188,6 +1482,411 @@ export default function ScraperSection() {
       ];
     }
   }, [activeSite, selectedIds, items, renderInlineAiKeywords]);
+
+  const renderVbplAutoConfigPanel = () => {
+    if (!isAdmin || activeSite !== 'vbpl') return null;
+
+    const DEFAULT_EFF_STATUSES = [
+      { code: 'CHL', name: 'Còn hiệu lực' },
+      { code: 'CCHL', name: 'Chưa có hiệu lực' },
+      { code: 'HHL', name: 'Hết hiệu lực toàn bộ' },
+      { code: 'NHL', name: 'Ngưng hiệu lực' },
+      { code: '5', name: 'Chưa xác định' }
+    ];
+
+    const DEFAULT_DOC_TYPES = [
+      { code: 'TT', name: 'Thông tư' },
+      { code: 'QD', name: 'Quyết định' },
+      { code: 'ND', name: 'Nghị định' },
+      { code: 'CV', name: 'Công văn' },
+      { code: 'NQ', name: 'Nghị quyết' },
+      { code: 'L', name: 'Luật' },
+      { code: 'PL', name: 'Pháp lệnh' },
+      { code: 'CT', name: 'Chỉ thị' }
+    ];
+
+    // Merge scopes
+    const optScopesSet = new Set<string>(['TW', 'DP']);
+    if (autoFilterOptions?.scopes) {
+      autoFilterOptions.scopes.forEach(s => {
+        if (s) optScopesSet.add(s);
+      });
+    }
+    const optScopes = Array.from(optScopesSet);
+
+    // Merge effStatuses (prioritize API values, fallback to default)
+    const effStatusMap = new Map<string, { code: string; name: string }>();
+    DEFAULT_EFF_STATUSES.forEach(item => effStatusMap.set(item.code, item));
+    if (autoFilterOptions?.effStatuses) {
+      autoFilterOptions.effStatuses.forEach(item => {
+        if (item.code) {
+          effStatusMap.set(item.code, {
+            code: item.code,
+            name: item.name || effStatusMap.get(item.code)?.name || item.code
+          });
+        }
+      });
+    }
+    const optEffStatuses = Array.from(effStatusMap.values());
+
+    // Merge docTypes (prioritize API values, fallback to default)
+    const docTypeMap = new Map<string, { code: string; name: string }>();
+    DEFAULT_DOC_TYPES.forEach(item => docTypeMap.set(item.code, item));
+    if (autoFilterOptions?.docTypes) {
+      autoFilterOptions.docTypes.forEach(item => {
+        if (item.code) {
+          docTypeMap.set(item.code, {
+            code: item.code,
+            name: item.name || docTypeMap.get(item.code)?.name || item.code
+          });
+        }
+      });
+    }
+    const optDocTypes = Array.from(docTypeMap.values());
+
+    const optNganhs = autoFilterOptions?.nganhs || [];
+    const optLinhVucs = autoFilterOptions?.linhVucs || [];
+
+    return (
+      <Accordion 
+        sx={{ 
+          mb: 3, 
+          borderRadius: '12px !important', 
+          border: '1px solid',
+          borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
+          boxShadow: 'none',
+          '&:before': { display: 'none' },
+          overflow: 'hidden'
+        }}
+      >
+        <AccordionSummary 
+          expandIcon={<ExpandMoreIcon />}
+          sx={{
+            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.01)',
+            minHeight: 56,
+            '&.Mui-expanded': { minHeight: 56 }
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
+            <CloudUploadOutlinedIcon sx={{ color: '#b45309' }} />
+            <Box sx={{ flexGrow: 1 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary' }}>
+                Tự động đẩy thông tin VBPL lên Sheet (Cấu hình Admin)
+              </Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                Tự động đẩy thông tin đầy đủ và nội dung văn bản pháp luật mới cào lên Google Sheet dựa trên bộ lọc
+              </Typography>
+            </Box>
+            {autoConfig && (
+              <Chip 
+                label={autoConfig.enabled ? 'ĐANG BẬT' : 'ĐANG TẮT'} 
+                color={autoConfig.enabled ? 'success' : 'default'} 
+                size="small" 
+                sx={{ fontWeight: 800, mr: 1, height: 20, fontSize: '0.675rem' }}
+              />
+            )}
+          </Box>
+        </AccordionSummary>
+        <AccordionDetails sx={{ p: 3, borderTop: '1px solid', borderColor: 'divider' }}>
+          {loadingAutoConfig ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress size={30} />
+            </Box>
+          ) : !autoConfig || !autoFilterOptions ? (
+            <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+              Không thể tải cấu hình tự động. Vui lòng kiểm tra kết nối mạng hoặc thử lại.
+            </Typography>
+          ) : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5 }}>
+              
+              {/* Banner Cảnh báo lỗi liên tiếp nghiêm trọng */}
+              {autoConfig.consecutiveFailures >= 3 && !autoConfig.enabled && (
+                <Alert severity="error" sx={{ borderRadius: 2 }}>
+                  <AlertTitle sx={{ fontWeight: 700 }}>Tự động đã bị TẮT do lỗi đẩy Sheet liên tiếp</AlertTitle>
+                  Hệ thống đã tự động vô hiệu hóa luồng xuất dữ liệu sau {autoConfig.consecutiveFailures} lần lỗi liên tiếp. Vui lòng kiểm tra lại cấu hình hoặc liên kết Google Sheet, sau đó bật lại nút kích hoạt dưới đây.
+                </Alert>
+              )}
+
+              {/* Hàng 1: Switch Bật/Tắt & Info Box */}
+              <Grid container spacing={3} alignItems="center">
+                <Grid item xs={12} md={6}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={autoConfig.enabled ?? false}
+                        onChange={(e) => setAutoConfig(prev => prev ? { ...prev, enabled: e.target.checked } : null)}
+                        color="success"
+                      />
+                    }
+                    label={
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>Kích hoạt Tự động đẩy VBPL lên Sheet</Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', lineHeight: 1.3 }}>
+                          Áp dụng cho văn bản mới cào về kể từ lúc kích hoạt (các văn bản cũ hơn sẽ không tự động xử lý).
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Paper variant="outlined" sx={{ p: 1.5, px: 2, borderRadius: 2.5, bgcolor: 'action.hover' }}>
+                    <Grid container spacing={1}>
+                      <Grid item xs={6}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Kích hoạt lần đầu</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                          {autoConfig.activatedAt ? safeFormat(autoConfig.activatedAt, 'dd/MM/yyyy HH:mm') : 'Chưa kích hoạt'}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Lỗi liên tiếp</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: autoConfig.consecutiveFailures > 0 ? 'error.main' : 'text.primary' }}>
+                          {autoConfig.consecutiveFailures > 0 ? `${autoConfig.consecutiveFailures}/3 lần` : '0'}
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                </Grid>
+              </Grid>
+
+              {/* Lỗi gần nhất (nếu có) */}
+              {autoConfig.lastError && (
+                <Alert severity="warning" sx={{ borderRadius: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(239, 141, 68, 0.08)' : 'rgba(239, 141, 68, 0.04)' }}>
+                  <AlertTitle sx={{ fontWeight: 700, fontSize: '0.85rem' }}>
+                    Chi tiết lỗi gần nhất ({autoConfig.lastErrorAt ? safeFormat(autoConfig.lastErrorAt, 'dd/MM/yyyy HH:mm:ss') : '-'})
+                  </AlertTitle>
+                  <Typography variant="caption" sx={{ fontFamily: 'monospace', display: 'block', whiteSpace: 'pre-wrap' }}>
+                    {autoConfig.lastError}
+                  </Typography>
+                </Alert>
+              )}
+
+              {/* Trạng thái Chạy nền & Kết quả gần nhất */}
+              {(autoConfig.isRunning || autoConfig.lastRunAt) && (
+                <Paper variant="outlined" sx={{ p: 2, borderRadius: 2.5, mb: 1, bgcolor: autoConfig.isRunning ? 'rgba(59, 130, 246, 0.05)' : 'background.paper', border: '1px solid', borderColor: autoConfig.isRunning ? 'rgba(59, 130, 246, 0.2)' : 'divider' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: autoConfig.lastRunResult ? 1.5 : 0 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {autoConfig.isRunning ? (
+                        <CircularProgress size={16} sx={{ color: 'primary.main' }} />
+                      ) : (
+                        <CheckCircleOutlinedIcon sx={{ color: 'success.main', fontSize: 18 }} />
+                      )}
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700, color: autoConfig.isRunning ? 'primary.main' : 'text.primary' }}>
+                        {autoConfig.isRunning ? 'Đang tự động đẩy thông tin VBPL lên Sheet trong nền...' : 'Lần chạy tự động gần nhất'}
+                      </Typography>
+                    </Box>
+                    {autoConfig.lastRunAt && (
+                      <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                        {safeFormat(autoConfig.lastRunAt, 'dd/MM/yyyy HH:mm:ss')}
+                      </Typography>
+                    )}
+                  </Box>
+                  {autoConfig.lastRunResult && (
+                    <Grid container spacing={2} sx={{ mt: 0.5 }}>
+                      <Grid item xs={3}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Khớp bộ lọc</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700 }}>{autoConfig.lastRunResult.matched}</Typography>
+                      </Grid>
+                      <Grid item xs={3}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Đã xử lý</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700 }}>{autoConfig.lastRunResult.processed}</Typography>
+                      </Grid>
+                      <Grid item xs={3}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Batch thành công</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: 'success.main' }}>{autoConfig.lastRunResult.succeeded}</Typography>
+                      </Grid>
+                      <Grid item xs={3}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Batch thất bại</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: autoConfig.lastRunResult.failed > 0 ? 'error.main' : 'text.primary' }}>{autoConfig.lastRunResult.failed}</Typography>
+                      </Grid>
+                    </Grid>
+                  )}
+                </Paper>
+              )}
+
+              <Divider />
+
+              {/* Hàng 2: Bộ lọc các Multi-selects */}
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: 'text.primary' }}>
+                  🎯 Chỉ tự động đẩy lên Sheet đối với văn bản khớp với bộ lọc sau:
+                </Typography>
+                <Grid container spacing={2}>
+                  
+                  {/* Phạm vi */}
+                  <Grid item xs={12} sm={6} md={4}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel shrink id="auto-scopes-label">Phạm vi</InputLabel>
+                      <Select
+                        labelId="auto-scopes-label"
+                        multiple
+                        displayEmpty
+                        value={autoConfig.scopes || []}
+                        onChange={(e) => setAutoConfig(prev => prev ? { ...prev, scopes: e.target.value as ('TW' | 'DP')[] } : null)}
+                        input={<OutlinedInput label="Phạm vi" />}
+                        renderValue={(selected) => (selected.length === 0 ? 'Tất cả' : selected.map(s => s === 'TW' ? 'Trung ương' : 'Địa phương').join(', '))}
+                      >
+                        {optScopes.map((scopeVal) => (
+                          <MenuItem key={scopeVal} value={scopeVal}>
+                            <Checkbox checked={(autoConfig.scopes || []).indexOf(scopeVal as any) > -1} size="small" />
+                            <ListItemText primary={scopeVal === 'TW' ? 'Trung ương (TW)' : 'Địa phương (DP)'} />
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      <FormHelperText>Rỗng = Chọn tất cả</FormHelperText>
+                    </FormControl>
+                  </Grid>
+
+                  {/* Tình trạng hiệu lực */}
+                  <Grid item xs={12} sm={6} md={4}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel shrink id="auto-eff-label">Tình trạng hiệu lực</InputLabel>
+                      <Select
+                        labelId="auto-eff-label"
+                        multiple
+                        displayEmpty
+                        value={autoConfig.effStatusCodes || []}
+                        onChange={(e) => setAutoConfig(prev => prev ? { ...prev, effStatusCodes: e.target.value as string[] } : null)}
+                        input={<OutlinedInput label="Tình trạng hiệu lực" />}
+                        renderValue={(selected) => {
+                          if (selected.length === 0) return 'Tất cả';
+                          return selected.map(code => {
+                            const found = optEffStatuses.find(opt => opt.code === code);
+                            return found ? found.name : code;
+                          }).join(', ');
+                        }}
+                      >
+                        {optEffStatuses.map((opt) => (
+                          <MenuItem key={opt.code} value={opt.code}>
+                            <Checkbox checked={(autoConfig.effStatusCodes || []).indexOf(opt.code) > -1} size="small" />
+                            <ListItemText primary={opt.name} />
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      <FormHelperText>Rỗng = Chọn tất cả</FormHelperText>
+                    </FormControl>
+                  </Grid>
+
+                  {/* Loại văn bản */}
+                  <Grid item xs={12} sm={6} md={4}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel shrink id="auto-doc-types-label">Loại văn bản</InputLabel>
+                      <Select
+                        labelId="auto-doc-types-label"
+                        multiple
+                        displayEmpty
+                        value={autoConfig.docTypeCodes || []}
+                        onChange={(e) => setAutoConfig(prev => prev ? { ...prev, docTypeCodes: e.target.value as string[] } : null)}
+                        input={<OutlinedInput label="Loại văn bản" />}
+                        renderValue={(selected) => {
+                          if (selected.length === 0) return 'Tất cả';
+                          return selected.map(code => {
+                            const found = optDocTypes.find(opt => opt.code === code);
+                            return found ? found.name : code;
+                          }).join(', ');
+                        }}
+                      >
+                        {optDocTypes.map((opt) => (
+                          <MenuItem key={opt.code} value={opt.code}>
+                            <Checkbox checked={(autoConfig.docTypeCodes || []).indexOf(opt.code) > -1} size="small" />
+                            <ListItemText primary={opt.name || opt.code} />
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      <FormHelperText>Rỗng = Chọn tất cả</FormHelperText>
+                    </FormControl>
+                  </Grid>
+
+                  {/* Ngành */}
+                  {optNganhs.length > 0 && (
+                    <Grid item xs={12} sm={6} md={6}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel shrink id="auto-nganhs-label">Ngành quản lý</InputLabel>
+                        <Select
+                          labelId="auto-nganhs-label"
+                          multiple
+                          displayEmpty
+                          value={autoConfig.nganhs || []}
+                          onChange={(e) => setAutoConfig(prev => prev ? { ...prev, nganhs: e.target.value as string[] } : null)}
+                          input={<OutlinedInput label="Ngành quản lý" />}
+                          renderValue={(selected) => (selected.length === 0 ? 'Tất cả' : selected.join(', '))}
+                        >
+                          {optNganhs.map((n) => (
+                            <MenuItem key={n} value={n}>
+                              <Checkbox checked={(autoConfig.nganhs || []).indexOf(n) > -1} size="small" />
+                              <ListItemText primary={n} />
+                            </MenuItem>
+                          ))}
+                        </Select>
+                        <FormHelperText>Rỗng = Chọn tất cả</FormHelperText>
+                      </FormControl>
+                    </Grid>
+                  )}
+
+                  {/* Lĩnh vực */}
+                  {optLinhVucs.length > 0 && (
+                    <Grid item xs={12} sm={6} md={6}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel shrink id="auto-linh-vucs-label">Lĩnh vực</InputLabel>
+                        <Select
+                          labelId="auto-linh-vucs-label"
+                          multiple
+                          displayEmpty
+                          value={autoConfig.linhVucs || []}
+                          onChange={(e) => setAutoConfig(prev => prev ? { ...prev, linhVucs: e.target.value as string[] } : null)}
+                          input={<OutlinedInput label="Lĩnh vực" />}
+                          renderValue={(selected) => (selected.length === 0 ? 'Tất cả' : selected.join(', '))}
+                        >
+                          {optLinhVucs.map((l) => (
+                            <MenuItem key={l} value={l}>
+                              <Checkbox checked={(autoConfig.linhVucs || []).indexOf(l) > -1} size="small" />
+                              <ListItemText primary={l} />
+                            </MenuItem>
+                          ))}
+                        </Select>
+                        <FormHelperText>Rỗng = Chọn tất cả</FormHelperText>
+                      </FormControl>
+                    </Grid>
+                  )}
+                </Grid>
+              </Box>
+
+
+
+              {/* Hàng 4: Các nút hành động */}
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 1 }}>
+                <Tooltip title="Đẩy các bài VBPL trong 48h gần nhất khớp bộ lọc hiện tại lên Sheet (bỏ qua bài đã push)">
+                  <span>
+                    <Button
+                      variant="outlined"
+                      color="warning"
+                      disabled={runningAutoNow || savingAutoConfig || autoConfig.isRunning}
+                      onClick={handleRunVbplAutoNow}
+                      startIcon={runningAutoNow ? <CircularProgress size={16} color="inherit" /> : <CloudUploadOutlinedIcon />}
+                      sx={{ textTransform: 'none', fontWeight: 700 }}
+                    >
+                      {runningAutoNow ? 'Đang chạy...' : 'Chạy thủ công'}
+                    </Button>
+                  </span>
+                </Tooltip>
+                
+                <Button
+                  variant="contained"
+                  color="success"
+                  disabled={savingAutoConfig || runningAutoNow}
+                  onClick={handleSaveVbplAutoConfig}
+                  startIcon={savingAutoConfig ? <CircularProgress size={16} color="inherit" /> : <SettingsIcon />}
+                  sx={{ textTransform: 'none', fontWeight: 700 }}
+                >
+                  {savingAutoConfig ? 'Đang lưu...' : 'Lưu cấu hình'}
+                </Button>
+              </Box>
+
+            </Box>
+          )}
+        </AccordionDetails>
+      </Accordion>
+    );
+  };
 
   const displayedItems = useMemo(() => {
     if (activeSite !== 'luatvietnam' || articleType === 'all') return items;
@@ -1713,19 +2412,26 @@ export default function ScraperSection() {
               onChange={(e) => setDate(e.target.value)}
               sx={{ width: 140 }}
             />
-            <Select 
-              size="small" 
-              value={sheetStatus} 
-              onChange={(e) => setSheetStatus(e.target.value)} 
-              displayEmpty 
-              sx={{ minWidth: 150 }}
-            >
-              <MenuItem value="all">Tất cả Trạng thái Sheet</MenuItem>
-              <MenuItem value="pushed">Đã push Sheet</MenuItem>
-              <MenuItem value="notpushed">Chưa push Sheet</MenuItem>
-            </Select>
+            {activeSite !== 'vbpl' && (
+              <Select 
+                size="small" 
+                value={sheetStatus} 
+                onChange={(e) => setSheetStatus(e.target.value)} 
+                displayEmpty 
+                sx={{ minWidth: 150 }}
+              >
+                <MenuItem value="all">Tất cả Trạng thái Sheet</MenuItem>
+                <MenuItem value="pushed">Đã push Sheet</MenuItem>
+                <MenuItem value="notpushed">Chưa push Sheet</MenuItem>
+              </Select>
+            )}
             {activeSite === 'vbpl' && (
               <>
+                <Select size="small" value={fullInfoStatus} onChange={(e) => setFullInfoStatus(e.target.value)} displayEmpty sx={{ minWidth: 185 }}>
+                  <MenuItem value="all">Trạng thái đẩy VBPL (Tất cả)</MenuItem>
+                  <MenuItem value="pushed">Đã đẩy VBPL (Full Info)</MenuItem>
+                  <MenuItem value="notpushed">Chưa đẩy VBPL (Full Info)</MenuItem>
+                </Select>
                 <Select size="small" value={scope} onChange={(e) => setScope(e.target.value)} displayEmpty sx={{ minWidth: 150 }}>
                   <MenuItem value="">Tất cả Phạm vi</MenuItem>
                   <MenuItem value="TW">Trung ương (TW)</MenuItem>
@@ -1734,9 +2440,10 @@ export default function ScraperSection() {
                 <Select size="small" value={effStatusCode} onChange={(e) => setEffStatusCode(e.target.value)} displayEmpty sx={{ minWidth: 160 }}>
                   <MenuItem value="">Tất cả Hiệu lực</MenuItem>
                   <MenuItem value="CHL">Còn hiệu lực</MenuItem>
-                  <MenuItem value="CCHL">Sắp có hiệu lực</MenuItem>
+                  <MenuItem value="CCHL">Chưa có hiệu lực</MenuItem>
                   <MenuItem value="HHL">Hết hiệu lực toàn bộ</MenuItem>
                   <MenuItem value="NHL">Ngưng hiệu lực</MenuItem>
+                  <MenuItem value="5">Chưa xác định</MenuItem>
                 </Select>
                 <Select size="small" value={nganh} onChange={(e) => setNganh(e.target.value)} displayEmpty sx={{ minWidth: 150 }}>
                   <MenuItem value="">Tất cả Ngành</MenuItem>
@@ -1768,12 +2475,14 @@ export default function ScraperSection() {
               }
               sx={{ ml: 1, mr: 0 }}
             />
-            {(section || tag || date || q || onlyNew || scope || effStatusCode || nganh || linhVuc || docTypeCode || sheetStatus !== 'all' || articleType !== 'all') && (
-              <Button size="small" color="error" onClick={() => { setSection(''); setTag(''); setDate(''); setQ(''); setOnlyNew(false); setScope(''); setEffStatusCode(''); setNganh(''); setLinhVuc(''); setDocTypeCode(''); setSheetStatus('all'); setArticleType('all'); }}>
+            {(section || tag || date || q || onlyNew || scope || effStatusCode || nganh || linhVuc || docTypeCode || sheetStatus !== 'all' || fullInfoStatus !== 'all' || articleType !== 'all') && (
+              <Button size="small" color="error" onClick={() => { setSection(''); setTag(''); setDate(''); setQ(''); setOnlyNew(false); setScope(''); setEffStatusCode(''); setNganh(''); setLinhVuc(''); setDocTypeCode(''); setSheetStatus('all'); setFullInfoStatus('all'); setArticleType('all'); }}>
                 Xóa lọc
               </Button>
             )}
           </Box>
+
+          {renderVbplAutoConfigPanel()}
 
           {selectedIds.length > 0 && (
             <Paper
@@ -2476,9 +3185,10 @@ export default function ScraperSection() {
                     >
                       <MenuItem value="">Tất cả hiệu lực</MenuItem>
                       <MenuItem value="CHL">Còn hiệu lực</MenuItem>
-                      <MenuItem value="CCHL">Sắp có hiệu lực</MenuItem>
+                      <MenuItem value="CCHL">Chưa có hiệu lực</MenuItem>
                       <MenuItem value="HHL">Hết hiệu lực toàn bộ</MenuItem>
                       <MenuItem value="NHL">Ngưng hiệu lực</MenuItem>
+                      <MenuItem value="5">Chưa xác định</MenuItem>
                     </Select>
                   </Box>
 

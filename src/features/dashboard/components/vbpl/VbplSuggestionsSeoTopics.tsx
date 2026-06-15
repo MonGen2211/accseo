@@ -965,6 +965,7 @@ export default function VbplSuggestionsSeoTopics({
                                         height={200}
                                         showAxes={true}
                                         color={item.scrape.slope >= 0 ? '#10b981' : '#ef4444'}
+                                        lastDate={ptState.result?.fetchedDate ? formatDateStr(ptState.result.fetchedDate) : undefined}
                                       />
                                     </Box>
                                   ) : (

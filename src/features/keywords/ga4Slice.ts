@@ -31,7 +31,7 @@ const initialState: Ga4State = {
   pagesLoading: false,
   error: null,
   dateRange: 28,
-  activeTab: 'overview',
+  activeTab: 'pages',
   pagesPage: 1,
   pagesLimit: 10,
   pagesTotal: 0,

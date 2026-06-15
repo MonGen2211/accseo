@@ -59,13 +59,13 @@ export default function ActivitySection({ onViewAll }: ActivitySectionProps) {
 	const { items, loading, loadingMore, hasMore } = useAppSelector(state => state.activities);
 	const [page, setPage] = useState(1);
 
-	// Initial fetch & Polling (Every 15s)
+	// Initial fetch & Polling (Every 60s)
 	useEffect(() => {
 		dispatch(fetchActivities({ page: 1, limit: LIMIT, success: true }));
 
 		const interval = setInterval(() => {
 			dispatch(fetchActivities({ page: 1, limit: LIMIT, success: true }));
-		}, 15000);
+		}, 60000);
 
 		return () => clearInterval(interval);
 	}, [dispatch]);

@@ -21,6 +21,7 @@ import {
 	CircularProgress,
 	Collapse,
 } from '@mui/material';
+import type { SxProps, Theme } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
@@ -56,7 +57,7 @@ export interface CustomTableProps {
 	sortOrder?: 'asc' | 'desc';
 	onSort?: (field: string) => void;
 
-	// Bổ sung phần Toolbar Search & Actions
+	// Bổ dung phần Toolbar Search & Actions
 	searchValue?: string;
 	onSearchChange?: (value: string) => void;
 	searchPlaceholder?: string;
@@ -67,6 +68,10 @@ export interface CustomTableProps {
 	onRowClick?: (row: TableRowData) => void;
 	expandedRowId?: string | null;
 	renderExpandedRow?: (row: TableRowData) => React.ReactNode;
+
+	// Custom Paper container props
+	paperSx?: SxProps<Theme>;
+	paperVariant?: 'outlined' | 'elevation';
 }
 
 export function CustomTable({
@@ -96,6 +101,8 @@ export function CustomTable({
 	onRowClick,
 	expandedRowId,
 	renderExpandedRow,
+	paperSx,
+	paperVariant = 'outlined',
 }: CustomTableProps) {
 	const [localPage, setLocalPage] = useState(0);
 	const [localRowsPerPage, setLocalRowsPerPage] = useState(10);
@@ -234,7 +241,16 @@ export function CustomTable({
 	};
 
 	return (
-		<Paper sx={{ mx: 3, mb: 3, minWidth: 0, overflow: 'hidden' }} variant="outlined">
+		<Paper
+			sx={{
+				mx: 3,
+				mb: 3,
+				minWidth: 0,
+				overflow: 'hidden',
+				...paperSx,
+			}}
+			variant={paperVariant}
+		>
 			{(onSearchChange || extraFilters || headerActions) && (
 				<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, borderBottom: '1px solid', borderColor: 'divider', gap: 2, flexWrap: 'wrap' }}>
 					<Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1, flexWrap: 'wrap' }}>

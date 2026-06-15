@@ -249,6 +249,58 @@ export interface AiExpandSnapshotDetailResponse {
   topics: TopicGroup[];
 }
 
+export interface AggregatedTopicGroup {
+  id: string;
+  name: string;
+  slug: string;
+  topicCount: number;
+  createdAt: string;
+}
 
+export interface SeedKeyword {
+  keyword: string;
+  volume: number;
+}
 
+export interface Topic {
+  id: string;
+  name: string;
+  volume: number | null;
+  group: { id: string; name: string } | null;
+  seedKeywords: SeedKeyword[];
+  sourceType: 'manual' | 'ai_generated';
+  status: 'pending' | 'approved';
+  createdAt: string;
+}
 
+export interface GetTopicsResponse {
+  items: Topic[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface ImportSheetResult {
+  id: string;
+  name: string;
+  sheetUrl: string;
+  groupsCreated: number;
+  topicsCreated: number;
+  topicsSkippedExisting: number;
+  seedKeywordsImported: number;
+  rowsSkippedNoGroup: number;
+  createdAt: string;
+}
+
+export interface GenerateTopicsResult {
+  requested: number;
+  generated: number;
+  topics: {
+    id: string;
+    name: string;
+    volume: number | null;
+    status: 'pending' | 'approved';
+    group: { id: string; name: string } | null;
+  }[];
+}

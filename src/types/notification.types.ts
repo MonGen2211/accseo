@@ -1,7 +1,8 @@
 export type NotificationType =
   | 'article' | 'schedule' | 'system' | 'sync' | 'change'
   | 'REQUEST_ASSIGNED' | 'REQUEST_CLAIMED' | 'REQUEST_DONE'
-  | 'REQUEST_REJECTED' | 'REQUEST_CANCELLED' | 'REQUEST_REMINDER' | 'REQUEST_REASSIGNED';
+  | 'REQUEST_REJECTED' | 'REQUEST_CANCELLED' | 'REQUEST_REMINDER' | 'REQUEST_REASSIGNED'
+  | 'VBPL_AUTO_EXPORT_DISABLED';
 
 export interface AppNotification {
   _id: string;

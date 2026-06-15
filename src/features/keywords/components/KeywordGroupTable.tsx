@@ -292,20 +292,32 @@ export function KeywordGroupTable({
 
 					{/* ── Lý do đề xuất / từ chối ── */}
 					{group.reason && (
-						<Box>
-							<Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+						<Box sx={{
+							borderLeft: '4px solid',
+							borderColor: 'primary.main',
+							bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.08)' : 'rgba(0, 184, 148, 0.04)',
+							borderRadius: '0 8px 8px 0',
+							p: 1.5,
+						}}>
+							<Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.5 }}>
 								Lý do đề xuất
 							</Typography>
-							<Typography variant="body2" sx={{ mt: 0.5 }}>{group.reason}</Typography>
+							<Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 500 }}>{group.reason}</Typography>
 						</Box>
 					)}
 
 					{(group as { status?: string }).status === 'rejected' && (
-						<Box>
-							<Typography variant="caption" sx={{ color: 'error.main', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+						<Box sx={{
+							borderLeft: '4px solid',
+							borderColor: 'error.main',
+							bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(231, 76, 60, 0.08)' : 'rgba(231, 76, 60, 0.04)',
+							borderRadius: '0 8px 8px 0',
+							p: 1.5,
+						}}>
+							<Typography variant="caption" sx={{ color: 'error.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.5 }}>
 								Lý do từ chối
 							</Typography>
-							<Typography variant="body2" sx={{ mt: 0.5, color: 'error.main' }}>
+							<Typography variant="body2" sx={{ color: 'error.main', fontWeight: 500 }}>
 								{group.approvalReason ?? 'Không có lý do cụ thể'}
 							</Typography>
 						</Box>
@@ -427,7 +439,7 @@ export function KeywordGroupTable({
 	const tableData: TableRowData[] = data.map((g) => ({ ...g, id: getId(g) }));
 
 	return (
-		<Box sx={{ px: 2, pb: 2 }}>
+		<Box sx={{ px: 1, pb: 1 }}>
 			<CustomTable
 				fields={fields}
 				data={tableData}
@@ -449,6 +461,8 @@ export function KeywordGroupTable({
 				searchValue={searchValue}
 				onSearchChange={onSearchChange}
 				searchPlaceholder="Tìm theo tên..."
+				paperSx={{ mx: 0, mb: 0, border: 'none' }}
+				paperVariant="elevation"
 			/>
 
 			{/* Approve / Reject dialog */}

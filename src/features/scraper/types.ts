@@ -61,6 +61,8 @@ export interface ScraperArticle {
   sheetUrl?: string | null;
   sheetPushedAt?: string | null;
   sheetLastBatch?: number | null;
+  fullInfoPushedAt?: string | null;
+  fullInfoSheetUrl?: string | null;
 }
 
 export interface AiGenerateResultData {
@@ -79,7 +81,7 @@ export interface AiGenerateResponseData {
 export interface AiResultResponseData {
   sheetUrl: string | null;
   sheetPushedAt: string | null;
-  sheetLastBatch: number | null;
+  sheetLastBatch: string | null;
 }
 
 export interface AiResultTopic {
@@ -110,6 +112,7 @@ export interface GetArticlesParams {
   linhVuc?: string;
   docTypeCode?: string;
   sheetStatus?: string;
+  fullInfoStatus?: string;
   articleType?: string;
 }
 
@@ -142,4 +145,39 @@ export interface ScraperSchedule {
 export interface ScheduleUpdateResponse {
   message: string;
   cron?: string;
+}
+
+export interface VbplAiAutoConfig {
+  enabled: boolean;
+  activatedAt: string | null;
+  scopes: ('TW' | 'DP')[];
+  effStatusCodes: string[];
+  docTypeCodes: string[];
+  nganhs: string[];
+  linhVucs: string[];
+  consecutiveFailures: number;
+  lastError: string | null;
+  lastErrorAt: string | null;
+  updatedBy: string | null;
+  _id: string;
+  createdAt: string;
+  updatedAt: string;
+  isRunning: boolean;
+  lastRunAt: string | null;
+  lastRunResult: VbplAiAutoRunResult | null;
+}
+
+export interface VbplAiAutoFilterOptions {
+  scopes: string[];
+  effStatuses: { code: string; name: string }[];
+  docTypes: { code: string; name: string }[];
+  nganhs: string[];
+  linhVucs: string[];
+}
+
+export interface VbplAiAutoRunResult {
+  matched: number;
+  processed: number;
+  succeeded: number;
+  failed: number;
 }

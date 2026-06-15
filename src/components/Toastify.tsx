@@ -14,7 +14,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 export type ToastStatus = 'danger' | 'warning' | 'success' | 'info';
 
 interface ToastifyContextType {
-	showToast: (message: string, status: ToastStatus) => void;
+	showToast: (message: ReactNode, status: ToastStatus) => void;
 }
 
 const ToastifyContext = createContext<ToastifyContextType | undefined>(undefined);
@@ -70,10 +70,10 @@ const titleMap = {
 // ─── Provider Component ─────────────────────────────────────────────────────
 export function ToastifyProvider({ children }: { children: ReactNode }) {
 	const [open, setOpen] = useState(false);
-	const [message, setMessage] = useState('');
+	const [message, setMessage] = useState<ReactNode>('');
 	const [status, setStatus] = useState<ToastStatus>('warning');
 
-	const showToast = useCallback((msg: string, st: ToastStatus) => {
+	const showToast = useCallback((msg: ReactNode, st: ToastStatus) => {
 		setMessage(msg);
 		setStatus(st);
 		setOpen(true);

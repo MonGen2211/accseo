@@ -2,8 +2,18 @@ import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
+import Drawer from '@mui/material/Drawer';
+import Button from '@mui/material/Button';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import Skeleton from '@mui/material/Skeleton';
+import Divider from '@mui/material/Divider';
+import IconButton from '@mui/material/IconButton';
+import { useTheme } from '@mui/material/styles';
 import ManageSearchIcon from '@mui/icons-material/ManageSearch';
 import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined';
+import CloseIcon from '@mui/icons-material/Close';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../../../app/store';
 import {
@@ -25,6 +35,10 @@ import { KeywordAiResultDialog } from './KeywordAiResultDialog';
 import { keywordGroupService } from '../keywordGroupService';
 import { GscPanel } from './GscPanel';
 import { Ga4Panel } from './Ga4Panel';
+import { fetchGscOverview, setDateRange as setGscDateRange } from '../gscSlice';
+import { fetchGa4Overview, setGa4DateRange } from '../ga4Slice';
+import type { GscDateRange } from '../gscTypes';
+import type { Ga4DateRange } from '../ga4Types';
 import { useToastify } from '../../../components/Toastify';
 import type { TableRowData } from '../../../types/tableRows.types';
 import { useParams, useSearchParams } from 'react-router-dom';
@@ -33,10 +47,18 @@ import { useParams, useSearchParams } from 'react-router-dom';
 let groupsAbortCtrl: AbortController | null = null;
 let scrapeAbortCtrl: AbortController | null = null;
 
+function fmtNum(num: number): string {
+	if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+	if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
+	return num.toLocaleString();
+}
+
 export default function KeywordPage() {
 	const { domainId } = useParams<{ domainId: string }>();
 	const [searchParams] = useSearchParams();
 	const dispatch = useAppDispatch();
+	const theme = useTheme();
+	const isDark = theme.palette.mode === 'dark';
 	const {
 		items, loading, total, page, limit, deleteLoadingId, statusLoadingId,
 		sortField, sortOrder, statusFilter, searchFilter, summary,
@@ -67,7 +89,32 @@ export default function KeywordPage() {
 	const [lastScrapeKeywordHot, setLastScrapeKeywordHot] = useState<boolean>(true);
 
 	const [activeAnalytic, setActiveAnalytic] = useState<'gsc' | 'ga4'>('gsc');
+	const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
 	const debouncedSearch = useDebounce(searchFilter, 400);
+
+	// GSC/GA4 overview data for compact analytics bar
+	const { overview: gscOverview, overviewLoading: gscOverviewLoading, dateRange: gscDateRange } = useAppSelector((state) => state.gsc);
+	const { overview: ga4Overview, overviewLoading: ga4OverviewLoading, dateRange: ga4DateRange } = useAppSelector((state) => state.ga4);
+	const currentDateRange = activeAnalytic === 'gsc' ? gscDateRange : ga4DateRange;
+
+	useEffect(() => {
+		if (!domainId) return;
+		dispatch(fetchGscOverview({ domainId, days: gscDateRange }));
+	}, [domainId, gscDateRange, dispatch]);
+
+	useEffect(() => {
+		if (!domainId) return;
+		dispatch(fetchGa4Overview({ domainId, days: ga4DateRange }));
+	}, [domainId, ga4DateRange, dispatch]);
+
+	const handleDateRangeChange = (_: React.MouseEvent<HTMLElement>, newRange: number | null) => {
+		if (newRange === null) return;
+		if (activeAnalytic === 'gsc') {
+			dispatch(setGscDateRange(newRange as GscDateRange));
+		} else {
+			dispatch(setGa4DateRange(newRange as Ga4DateRange));
+		}
+	};
 
 	const loadData = (p: number, l: number) => {
 		if (domainId) {
@@ -325,70 +372,119 @@ export default function KeywordPage() {
 	};
 
 	return (
-		<Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '45fr 55fr' }, gap: 3, alignItems: 'stretch', pb: 10, zoom: 0.85 }}>
+		<Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pb: 10 }}>
 
-			{/* LEFT: 2 card chuyển đổi + panel detail */}
-			<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, overflow: 'hidden' }}>
+			{/* ── Compact Analytics Overview Bar ── */}
+			<Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
+				<Box sx={{ display: 'flex', alignItems: 'center', px: 3, py: 2, gap: 2.5, flexWrap: 'wrap' }}>
+					{/* GSC/GA4 Toggle */}
+					<Box sx={{ display: 'flex', gap: 1 }}>
+						{[
+							{ key: 'gsc' as const, label: 'Search Console', icon: <ManageSearchIcon sx={{ fontSize: 16 }} />, color: '#4285F4' },
+							{ key: 'ga4' as const, label: 'Analytics 4', icon: <BarChartOutlinedIcon sx={{ fontSize: 16 }} />, color: '#E37400' },
+						].map(({ key, label, icon, color }) => (
+							<Chip
+								key={key}
+								icon={icon}
+								label={label}
+								onClick={() => setActiveAnalytic(key)}
+								sx={{
+									fontWeight: 600, fontSize: 12, height: 32, cursor: 'pointer',
+									...(activeAnalytic === key
+										? {
+											bgcolor: (theme) => theme.palette.mode === 'dark' ? `${color}18` : `${color}10`,
+											color,
+											border: `1.5px solid ${color}`,
+											'& .MuiChip-icon': { color },
+										}
+										: {
+											border: '1px solid', borderColor: 'divider',
+											'& .MuiChip-icon': { color: 'text.secondary' },
+										}),
+								}}
+							/>
+						))}
+					</Box>
 
-				{/* 2 card GSC / GA4 */}
-				<Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-					{/* GSC card */}
-					<Paper
-						elevation={0}
-						onClick={() => setActiveAnalytic('gsc')}
+					<Divider orientation="vertical" flexItem />
+
+					{/* Inline Metrics */}
+					<Box sx={{ display: 'flex', gap: 3, flex: 1, alignItems: 'center', minWidth: 0 }}>
+						{activeAnalytic === 'gsc' ? (
+							gscOverviewLoading ? (
+								<>{[1, 2, 3, 4].map((i) => <Skeleton key={i} width={70} height={28} />)}</>
+							) : gscOverview?.summary ? (
+								<>
+									{[
+										{ label: 'Clicks', value: fmtNum(gscOverview.summary.clicks), color: isDark ? '#64b5f6' : '#1565c0' },
+										{ label: 'Impr.', value: fmtNum(gscOverview.summary.impressions), color: isDark ? '#ce93d8' : '#7b1fa2' },
+										{ label: 'CTR', value: `${(gscOverview.summary.ctr * 100).toFixed(2)}%`, color: isDark ? '#69f0ae' : '#00895e' },
+										{ label: 'Position', value: gscOverview.summary.position.toFixed(1), color: isDark ? '#ffb74d' : '#e65100' },
+									].map((m) => (
+										<Box key={m.label} sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+											<Typography sx={{ fontSize: 11, color: 'text.secondary', fontWeight: 500, whiteSpace: 'nowrap' }}>{m.label}</Typography>
+											<Typography sx={{ fontSize: 15, fontWeight: 800, color: m.color, whiteSpace: 'nowrap' }}>{m.value}</Typography>
+										</Box>
+									))}
+								</>
+							) : null
+						) : (
+							ga4OverviewLoading ? (
+								<>{[1, 2, 3, 4].map((i) => <Skeleton key={i} width={70} height={28} />)}</>
+							) : ga4Overview?.summary ? (
+								<>
+									{[
+										{ label: 'Sessions', value: fmtNum(ga4Overview.summary.sessions), color: isDark ? '#64b5f6' : '#1565c0' },
+										{ label: 'Users', value: fmtNum(ga4Overview.summary.activeUsers), color: isDark ? '#81c784' : '#2e7d32' },
+										{ label: 'Views', value: fmtNum(ga4Overview.summary.screenPageViews), color: isDark ? '#ce93d8' : '#7b1fa2' },
+										{ label: 'Pages', value: fmtNum(ga4Overview.summary.totalPages), color: isDark ? '#ffb74d' : '#e65100' },
+									].map((m) => (
+										<Box key={m.label} sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+											<Typography sx={{ fontSize: 11, color: 'text.secondary', fontWeight: 500, whiteSpace: 'nowrap' }}>{m.label}</Typography>
+											<Typography sx={{ fontSize: 15, fontWeight: 800, color: m.color, whiteSpace: 'nowrap' }}>{m.value}</Typography>
+										</Box>
+									))}
+								</>
+							) : null
+						)}
+					</Box>
+
+					{/* Date Range Toggle */}
+					<ToggleButtonGroup
+						value={currentDateRange}
+						exclusive
+						onChange={handleDateRangeChange}
+						size="small"
 						sx={{
-							p: 2.5, borderRadius: 3, cursor: 'pointer',
-							border: '2px solid',
-							borderColor: activeAnalytic === 'gsc' ? '#4285F4' : 'divider',
-							boxShadow: activeAnalytic === 'gsc' ? '0 4px 20px rgba(66,133,244,0.2)' : '0 2px 8px rgba(0,0,0,0.04)',
-							transition: 'all 0.2s',
-							'&:hover': { boxShadow: '0 6px 20px rgba(66,133,244,0.15)' },
-							display: 'flex', alignItems: 'center', gap: 1.5,
+							'& .MuiToggleButton-root': {
+								textTransform: 'none', fontSize: 12, fontWeight: 600, px: 1.5, py: 0.5,
+								borderRadius: '8px !important', border: '1px solid', borderColor: 'divider',
+								'&.Mui-selected': {
+									backgroundColor: 'primary.main', color: 'primary.contrastText',
+									'&:hover': { backgroundColor: 'primary.dark' },
+								},
+							},
 						}}
 					>
-						<Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(66, 133, 244, 0.15)' : '#EBF1FB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-							<ManageSearchIcon sx={{ color: '#4285F4', fontSize: 22 }} />
-						</Box>
-						<Box sx={{ minWidth: 0 }}>
-							<Typography sx={{ fontWeight: 700, fontSize: '0.82rem', color: 'text.primary', lineHeight: 1.2 }}>Search Console</Typography>
-							<Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', mt: 0.3 }}>Clicks · Impressions</Typography>
-						</Box>
-						{activeAnalytic === 'gsc' && <Chip label="Đang xem" size="small" sx={{ ml: 'auto', fontSize: 10, height: 18, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(66, 133, 244, 0.15)' : '#EBF1FB', color: '#4285F4', flexShrink: 0 }} />}
-					</Paper>
+						{[{ label: '7 ngày', value: 7 }, { label: '28 ngày', value: 28 }, { label: '90 ngày', value: 90 }].map((opt) => (
+							<ToggleButton key={opt.value} value={opt.value}>{opt.label}</ToggleButton>
+						))}
+					</ToggleButtonGroup>
 
-					{/* GA4 card */}
-					<Paper
-						elevation={0}
-						onClick={() => setActiveAnalytic('ga4')}
-						sx={{
-							p: 2.5, borderRadius: 3, cursor: 'pointer',
-							border: '2px solid',
-							borderColor: activeAnalytic === 'ga4' ? '#E37400' : 'divider',
-							boxShadow: activeAnalytic === 'ga4' ? '0 4px 20px rgba(227,116,0,0.2)' : '0 2px 8px rgba(0,0,0,0.04)',
-							transition: 'all 0.2s',
-							'&:hover': { boxShadow: '0 6px 20px rgba(227,116,0,0.15)' },
-							display: 'flex', alignItems: 'center', gap: 1.5,
-						}}
+					{/* Detail Button */}
+					<Button
+						size="small"
+						variant="outlined"
+						onClick={() => setDetailDrawerOpen(true)}
+						endIcon={<ArrowForwardIcon sx={{ fontSize: 14 }} />}
+						sx={{ borderRadius: '100px', height: 36, px: 2, textTransform: 'none', fontWeight: 600, fontSize: 12, borderColor: 'divider', color: 'text.secondary' }}
 					>
-						<Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(227, 116, 0, 0.15)' : '#FEF3E2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-							<BarChartOutlinedIcon sx={{ color: '#E37400', fontSize: 22 }} />
-						</Box>
-						<Box sx={{ minWidth: 0 }}>
-							<Typography sx={{ fontWeight: 700, fontSize: '0.82rem', color: 'text.primary', lineHeight: 1.2 }}>Analytics 4</Typography>
-							<Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', mt: 0.3 }}>Views · Sessions</Typography>
-						</Box>
-						{activeAnalytic === 'ga4' && <Chip label="Đang xem" size="small" sx={{ ml: 'auto', fontSize: 10, height: 18, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(227, 116, 0, 0.15)' : '#FEF3E2', color: '#E37400', flexShrink: 0 }} />}
-					</Paper>
+						Chi tiết
+					</Button>
 				</Box>
+			</Paper>
 
-				{/* Panel detail — flex: 1 để kéo dài bằng cột phải */}
-				<Box sx={{ flex: 1, minHeight: 0 }}>
-					{domainId && activeAnalytic === 'gsc' && <GscPanel domainId={domainId} />}
-					{domainId && activeAnalytic === 'ga4' && <Ga4Panel domainId={domainId} />}
-				</Box>
-			</Box>
-
-			{/* RIGHT: Bộ Keywords */}
+			{/* ── Bộ Keywords (full-width) ── */}
 			<Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden', minWidth: 0 }}>
 				<Box sx={{ px: 3, pt: 2.5, pb: 1.5 }}>
 					<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
@@ -401,18 +497,25 @@ export default function KeywordPage() {
 					{summary && (
 						<Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
 							{[
-								{ label: 'Tổng', value: summary.total, color: 'text.secondary' },
-								{ label: 'Chờ duyệt', value: summary.pending_approval, color: '#D97706' },
-								{ label: 'Chưa triển khai', value: summary.not_started, color: 'text.secondary' },
-								{ label: 'Đang triển khai', value: summary.in_progress, color: '#2563EB' },
-								{ label: 'Đã triển khai', value: summary.deployed, color: '#059669' },
-								{ label: 'Từ chối', value: summary.rejected, color: '#DC2626' },
+								{ label: 'Tổng', value: summary.total, color: '#64748b' },
+								{ label: 'Chờ duyệt', value: summary.pending_approval, color: '#d97706' },
+								{ label: 'Chưa triển khai', value: summary.not_started, color: '#94a3b8' },
+								{ label: 'Đang triển khai', value: summary.in_progress, color: '#2563eb' },
+								{ label: 'Đã triển khai', value: summary.deployed, color: '#00b894' },
+								{ label: 'Từ chối', value: summary.rejected, color: '#e74c3c' },
 							].map(({ label, value, color }) => (
 								<Chip
 									key={label}
 									label={`${label}: ${value}`}
 									size="small"
-									sx={{ bgcolor: `${color}12`, color, fontWeight: 600, fontSize: 11, border: `1px solid ${color}30`, height: 22 }}
+									sx={{
+										bgcolor: (theme) => theme.palette.mode === 'dark' ? `${color}18` : `${color}0c`,
+										color,
+										fontWeight: 600,
+										fontSize: 11,
+										border: `1px solid ${color}30`,
+										height: 22
+									}}
 								/>
 							))}
 						</Box>
@@ -452,6 +555,28 @@ export default function KeywordPage() {
 					onSearchChange={(v) => dispatch(setKeywordSearchFilter(v))}
 				/>
 			</Paper>
+
+			{/* ── Detail Drawer (GSC/GA4 full panel) ── */}
+			<Drawer
+				anchor="right"
+				open={detailDrawerOpen}
+				onClose={() => setDetailDrawerOpen(false)}
+				PaperProps={{ sx: { width: { xs: '100%', sm: 520 }, bgcolor: 'background.default' } }}
+			>
+				<Box sx={{ position: 'absolute', right: 8, top: 8, zIndex: 1 }}>
+					<IconButton
+						onClick={() => setDetailDrawerOpen(false)}
+						size="small"
+						sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}
+					>
+						<CloseIcon fontSize="small" />
+					</IconButton>
+				</Box>
+				<Box sx={{ p: 2, height: '100%' }}>
+					{domainId && activeAnalytic === 'gsc' && <GscPanel domainId={domainId} />}
+					{domainId && activeAnalytic === 'ga4' && <Ga4Panel domainId={domainId} />}
+				</Box>
+			</Drawer>
 
 			{/* Dialogs (không bị ảnh hưởng bởi layout) */}
 			{domainId && (

@@ -16,6 +16,7 @@ import {
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import PsychologyIcon from '@mui/icons-material/Psychology';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import LayersIcon from '@mui/icons-material/Layers';
 
 import { domainService } from '../../../domains/domainService';
 import { keywordGroupService } from '../../../keywords/keywordGroupService';
@@ -25,6 +26,7 @@ import { useToastify } from '../../../../components/Toastify';
 import VbplSuggestionsSeoTopics from './VbplSuggestionsSeoTopics';
 import VbplSuggestionsGgTrends from './VbplSuggestionsGgTrends';
 import VbplSuggestionsVolume from './VbplSuggestionsVolume';
+import VbplSuggestionsAggregatedTopics from './VbplSuggestionsAggregatedTopics';
 
 export default function VbplSuggestionsSection() {
   const { showToast } = useToastify();
@@ -214,6 +216,12 @@ export default function VbplSuggestionsSection() {
               label="AI Gợi ý Từ khóa (Volume)" 
               id="suggestions-tab-2"
             />
+            <Tab 
+              icon={<LayersIcon sx={{ fontSize: '1.25rem' }} />} 
+              iconPosition="start" 
+              label="Chủ đề tổng hợp" 
+              id="suggestions-tab-3"
+            />
           </Tabs>
         </Box>
 
@@ -235,7 +243,7 @@ export default function VbplSuggestionsSection() {
             handleToggleCart={handleToggleCart}
             onLoadingChange={setTab1Loading}
           />
-        ) : (
+        ) : activeTab === 2 ? (
           <VbplSuggestionsVolume
             cartItems={cartItems}
             setCartItems={setCartItems}
@@ -243,6 +251,14 @@ export default function VbplSuggestionsSection() {
             setCartMinimized={setCartMinimized}
             handleToggleCart={handleToggleCart}
             onLoadingChange={setTab2Loading}
+          />
+        ) : (
+          <VbplSuggestionsAggregatedTopics
+            cartItems={cartItems}
+            setCartItems={setCartItems}
+            cartMinimized={cartMinimized}
+            setCartMinimized={setCartMinimized}
+            handleToggleCart={handleToggleCart}
           />
         )}
       </Paper>

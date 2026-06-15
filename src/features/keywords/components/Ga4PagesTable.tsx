@@ -56,6 +56,8 @@ export function Ga4PagesTable({
 			onPageChange={onPageChange}
 			onRowsPerPageChange={onRowsPerPageChange}
 			onSort={onSort}
+			paperSx={{ mx: 0, mb: 0, border: 'none' }}
+			paperVariant="elevation"
 		/>
 	);
 }

@@ -1953,7 +1953,9 @@ export default function DashboardPage() {
           </Suspense>
 
           {/* Bottom section: Activity Logs */}
-          <ActivitySection onViewAll={() => setActivitiesDialogOpen(true)} />
+          {activeTab === 'overview' && (
+            <ActivitySection onViewAll={() => setActivitiesDialogOpen(true)} />
+          )}
         </Stack>
       </Box>
 

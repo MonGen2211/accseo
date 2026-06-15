@@ -1565,6 +1565,7 @@ export default function VbplSuggestionsGgTrends({
                                           height={200}
                                           showAxes={true}
                                           color={item.scrape.slope >= 0 ? '#10b981' : '#ef4444'}
+                                          lastDate={ctSnapshotDetail?.fetchedAt ? formatDateStr(ctSnapshotDetail.fetchedAt) : undefined}
                                         />
                                       </Box>
                                     ) : (

@@ -17,6 +17,7 @@ import SyncOutlinedIcon from '@mui/icons-material/SyncOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
+import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../app/store';
@@ -65,6 +66,7 @@ function NotifIcon({ type, title }: { type: NotificationType; title?: string }) 
     system:   { icon: <CheckCircleOutlinedIcon sx={{ fontSize: 20 }} />, color: 'text.secondary' },
     sync:     { icon: <SyncOutlinedIcon sx={{ fontSize: 20 }} />, color: 'warning.main' },
     change:   { icon: <EditOutlinedIcon sx={{ fontSize: 20 }} />, color: 'error.main' },
+    VBPL_AUTO_EXPORT_DISABLED: { icon: <WarningAmberOutlinedIcon sx={{ fontSize: 20 }} />, color: 'error.main' },
   };
   const { icon, color } = map[type] ?? map.system!;
   return (

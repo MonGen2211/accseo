@@ -52,6 +52,8 @@ export function GscKeywordsTable({ items, loading, page, limit, total, sortBy, s
 			onPageChange={onPageChange}
 			onRowsPerPageChange={onRowsPerPageChange}
 			onSort={onSort}
+			paperSx={{ mx: 0, mb: 0, border: 'none' }}
+			paperVariant="elevation"
 		/>
 	);
 }
@@ -115,6 +117,8 @@ export function GscPagesTable({ items, loading, page, limit, total, sortBy, sort
 			onPageChange={onPageChange}
 			onRowsPerPageChange={onRowsPerPageChange}
 			onSort={onSort}
+			paperSx={{ mx: 0, mb: 0, border: 'none' }}
+			paperVariant="elevation"
 		/>
 	);
 }
