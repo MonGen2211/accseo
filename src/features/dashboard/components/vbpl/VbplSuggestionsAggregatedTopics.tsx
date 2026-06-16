@@ -715,7 +715,16 @@ export default function VbplSuggestionsAggregatedTopics({
           </Paper>
 
           {/* Table Container */}
-          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: '12px', borderColor: 'divider', overflow: 'hidden' }}>
+          <TableContainer 
+            component={Paper} 
+            variant="outlined" 
+            sx={{ 
+              borderRadius: '12px', 
+              borderColor: 'divider', 
+              overflow: 'hidden',
+              minHeight: 400
+            }}
+          >
             <Table size="small">
               <TableHead sx={{ bgcolor: 'action.hover' }}>
                 <TableRow>
@@ -740,14 +749,14 @@ export default function VbplSuggestionsAggregatedTopics({
               <TableBody>
                 {loadingTopics ? (
                   <TableRow>
-                    <TableCell colSpan={subTab === 'pending' ? 8 : 7} align="center" sx={{ py: 6 }}>
+                    <TableCell colSpan={subTab === 'pending' ? 8 : 7} align="center" sx={{ py: 12 }}>
                       <CircularProgress size={30} sx={{ mb: 1 }} />
                       <Typography variant="body2" color="text.secondary">Đang tải danh sách chủ đề...</Typography>
                     </TableCell>
                   </TableRow>
                 ) : topics.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={subTab === 'pending' ? 8 : 7} align="center" sx={{ py: 6 }}>
+                    <TableCell colSpan={subTab === 'pending' ? 8 : 7} align="center" sx={{ py: 12 }}>
                       <Typography variant="body2" color="text.secondary">Không tìm thấy chủ đề nào khớp bộ lọc.</Typography>
                     </TableCell>
                   </TableRow>
@@ -760,7 +769,11 @@ export default function VbplSuggestionsAggregatedTopics({
                         <TableRow 
                           hover 
                           selected={isExpanded || isItemSelected}
-                          onClick={() => handleToggleRow(t.id)}
+                          onClick={(e) => {
+                            if (subTab === 'pending') {
+                              handleSelectRow(e, t.id);
+                            }
+                          }}
                           sx={{ cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}
                         >
                           {subTab === 'pending' && (
