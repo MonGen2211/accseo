@@ -380,10 +380,13 @@ export default function VbplSuggestionsAggregatedTopics({
 
     setGenerating(true);
     setGenerateResult(null);
+    setOpenGenerateModal(false);
+    showToast('Đang tiến hành tạo chủ đề bằng AI ở chế độ nền...', 'info');
+
     try {
       const result = await topicsService.generateTopics(items);
       setGenerateResult(result);
-      showToast(result.message || `Đã tạo thêm ${result.generated}/${result.requested} chủ đề mới!`, 'success');
+      showToast(result.message || `Đã tạo thêm ${result.generated}/${result.requested} chủ đề mới thành công!`, 'success');
       
       // Auto switch to pending sub-tab
       setSubTab('pending');
@@ -449,7 +452,8 @@ export default function VbplSuggestionsAggregatedTopics({
             <Button
               variant="contained"
               color="primary"
-              startIcon={<AutoAwesomeIcon />}
+              disabled={generating}
+              startIcon={generating ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeIcon />}
               onClick={() => {
                 setSelectedGenGroupIds([]);
                 setGenCounts({});
@@ -458,7 +462,7 @@ export default function VbplSuggestionsAggregatedTopics({
               }}
               sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
             >
-              Tạo thêm chủ đề bằng AI
+              {generating ? 'AI đang tạo...' : 'Tạo thêm chủ đề bằng AI'}
             </Button>
           </Stack>
         )}
