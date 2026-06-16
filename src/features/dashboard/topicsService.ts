@@ -31,6 +31,8 @@ export const topicsService = {
     sourceType?: 'manual' | 'ai_generated';
     search?: string;
     status?: 'pending' | 'approved';
+    minVolume?: number;
+    sortVolume?: 'desc' | 'asc';
     page?: number;
     limit?: number;
   }): Promise<GetTopicsResponse> {
@@ -39,6 +41,8 @@ export const topicsService = {
     if (params?.sourceType) query.append('sourceType', params.sourceType);
     if (params?.search) query.append('search', params.search);
     if (params?.status) query.append('status', params.status);
+    if (params?.minVolume !== undefined) query.append('minVolume', String(params.minVolume));
+    if (params?.sortVolume) query.append('sortVolume', params.sortVolume);
     if (params?.page) query.append('page', String(params.page));
     if (params?.limit) query.append('limit', String(params.limit));
 

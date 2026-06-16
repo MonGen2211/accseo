@@ -89,6 +89,8 @@ export default function VbplSuggestionsAggregatedTopics({
   // Filters
   const [search, setSearch] = useState<string>('');
   const [sourceType, setSourceType] = useState<string>('all'); // all, manual, ai_generated
+  const [minVolumeFilter, setMinVolumeFilter] = useState<boolean>(false);
+  const [sortVolume, setSortVolume] = useState<'desc' | 'asc' | 'none'>('none');
 
   // Sub-tabs & Selection & Actions
   const [subTab, setSubTab] = useState<'approved' | 'pending'>('approved');
@@ -157,6 +159,8 @@ export default function VbplSuggestionsAggregatedTopics({
         sourceType: subTab === 'pending' ? undefined : (sourceType === 'all' ? undefined : (sourceType as 'manual' | 'ai_generated')),
         search: search.trim() || undefined,
         status: subTab,
+        minVolume: minVolumeFilter ? 100 : undefined,
+        sortVolume: sortVolume !== 'none' ? sortVolume : undefined,
         page: targetPage,
         limit
       });
@@ -205,7 +209,7 @@ export default function VbplSuggestionsAggregatedTopics({
     setSelectedTopicIds([]);
     loadTopics(1);
     setExpandedTopicId(null);
-  }, [selectedGroupId, sourceType, subTab]);
+  }, [selectedGroupId, sourceType, subTab, minVolumeFilter, sortVolume]);
 
   // Debounced search trigger for topics
   useEffect(() => {
@@ -640,7 +644,7 @@ export default function VbplSuggestionsAggregatedTopics({
                   </Grid>
                   <Grid item xs={12} sm={4}>
                     <FormControl fullWidth size="small">
-              <Select
+                      <Select
                         value={sourceType}
                         onChange={(e) => setSourceType(e.target.value)}
                         displayEmpty
@@ -653,6 +657,46 @@ export default function VbplSuggestionsAggregatedTopics({
                   </Grid>
                 </>
               )}
+
+              {/* Row 2: minVolume & sortVolume */}
+              <Grid item xs={12} sx={{ pt: '8px !important' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Checkbox
+                      id="min-volume-filter"
+                      checked={minVolumeFilter}
+                      onChange={(e) => setMinVolumeFilter(e.target.checked)}
+                      size="small"
+                      sx={{ p: 0.5 }}
+                    />
+                    <Typography 
+                      component="label" 
+                      htmlFor="min-volume-filter" 
+                      variant="body2" 
+                      sx={{ fontWeight: 600, cursor: 'pointer', userSelect: 'none', color: 'text.secondary' }}
+                    >
+                      Chỉ hiện Volume ≥ 100
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+                      Sắp xếp:
+                    </Typography>
+                    <FormControl size="small" sx={{ minWidth: 180 }}>
+                      <Select
+                        value={sortVolume}
+                        onChange={(e) => setSortVolume(e.target.value as any)}
+                        sx={{ height: 32, fontSize: '0.875rem' }}
+                      >
+                        <MenuItem value="none">Mặc định (Mới nhất)</MenuItem>
+                        <MenuItem value="desc">Volume giảm dần</MenuItem>
+                        <MenuItem value="asc">Volume tăng dần</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Box>
+                </Box>
+              </Grid>
             </Grid>
           </Paper>
 
