@@ -471,7 +471,7 @@ export default function VbplSuggestionsAggregatedTopics({
       {/* 2. Content Layout */}
       <Grid container spacing={3}>
         {/* Sidebar Mảng (API 1) */}
-        <Grid item xs={12} md={3}>
+        <Grid item xs={12} sm={4} md={3}>
           <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5, color: 'text.primary' }}>
             📁 Danh sách Mảng
           </Typography>
@@ -537,7 +537,7 @@ export default function VbplSuggestionsAggregatedTopics({
         </Grid>
 
         {/* Bảng Chủ đề (API 2) */}
-        <Grid item xs={12} md={9} sx={{ minWidth: 0 }}>
+        <Grid item xs={12} sm={8} md={9} sx={{ minWidth: 0 }}>
           {/* Sub-tabs */}
           <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
             <Tabs 
@@ -730,7 +730,7 @@ export default function VbplSuggestionsAggregatedTopics({
               <TableHead sx={{ bgcolor: 'action.hover' }}>
                 <TableRow>
                   {subTab === 'pending' && (
-                    <TableCell padding="checkbox">
+                    <TableCell padding="checkbox" width="50">
                       <Checkbox
                         indeterminate={selectedTopicIds.length > 0 && selectedTopicIds.length < topics.length}
                         checked={topics.length > 0 && selectedTopicIds.length === topics.length}
@@ -739,12 +739,12 @@ export default function VbplSuggestionsAggregatedTopics({
                     </TableCell>
                   )}
                   <TableCell width="40"></TableCell>
-                  <TableCell sx={{ fontWeight: 800 }}>Tên chủ đề</TableCell>
-                  <TableCell sx={{ fontWeight: 800 }}>Volume</TableCell>
-                  <TableCell sx={{ fontWeight: 800 }}>Mảng</TableCell>
-                  <TableCell sx={{ fontWeight: 800 }}>Nguồn</TableCell>
-                  <TableCell sx={{ fontWeight: 800 }}>Từ khóa gốc</TableCell>
-                  <TableCell sx={{ fontWeight: 800 }}>Ngày tạo</TableCell>
+                  <TableCell sx={{ fontWeight: 800 }} width="30%">Tên chủ đề</TableCell>
+                  <TableCell sx={{ fontWeight: 800 }} width="12%">Volume</TableCell>
+                  <TableCell sx={{ fontWeight: 800 }} width="18%">Mảng</TableCell>
+                  <TableCell sx={{ fontWeight: 800 }} width="12%">Nguồn</TableCell>
+                  <TableCell sx={{ fontWeight: 800 }} width="13%">Từ khóa gốc</TableCell>
+                  <TableCell sx={{ fontWeight: 800 }} width="15%">Ngày tạo</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -790,9 +790,9 @@ export default function VbplSuggestionsAggregatedTopics({
                               {isExpanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
                             </IconButton>
                           </TableCell>
-                          <TableCell sx={{ fontWeight: 700 }}>{t.name}</TableCell>
+                          <TableCell sx={{ fontWeight: 700, overflowWrap: 'break-word', wordBreak: 'break-word' }}>{t.name}</TableCell>
                           <TableCell>{t.volume !== null ? t.volume.toLocaleString() : '-'}</TableCell>
-                          <TableCell>{t.group ? t.group.name : <Typography variant="caption" color="text.secondary">Chưa phân mảng</Typography>}</TableCell>
+                          <TableCell sx={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}>{t.group ? t.group.name : <Typography variant="caption" color="text.secondary">Chưa phân mảng</Typography>}</TableCell>
                           <TableCell>
                             <Chip
                               label={t.sourceType === 'manual' ? 'Thủ công' : 'AI tạo'}
