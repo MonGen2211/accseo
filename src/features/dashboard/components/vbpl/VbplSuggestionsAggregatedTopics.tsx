@@ -537,7 +537,7 @@ export default function VbplSuggestionsAggregatedTopics({
         </Grid>
 
         {/* Bảng Chủ đề (API 2) */}
-        <Grid item xs={12} md={9}>
+        <Grid item xs={12} md={9} sx={{ minWidth: 0 }}>
           {/* Sub-tabs */}
           <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
             <Tabs 
@@ -721,7 +721,8 @@ export default function VbplSuggestionsAggregatedTopics({
             sx={{ 
               borderRadius: '12px', 
               borderColor: 'divider', 
-              overflow: 'hidden',
+              overflowX: 'auto',
+              width: '100%',
               minHeight: 400
             }}
           >
