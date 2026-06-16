@@ -537,7 +537,7 @@ export default function VbplSuggestionsAggregatedTopics({
         </Grid>
 
         {/* Bảng Chủ đề (API 2) */}
-        <Grid item xs={12} sm={8} md={9} sx={{ minWidth: 0 }}>
+        <Grid item xs={12} sm={8} md={9} sx={{ minWidth: 0, flexShrink: 1 }}>
           {/* Sub-tabs */}
           <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
             <Tabs 
@@ -726,7 +726,7 @@ export default function VbplSuggestionsAggregatedTopics({
               minHeight: 400
             }}
           >
-            <Table size="small">
+            <Table size="small" sx={{ tableLayout: 'fixed', width: '100%', minWidth: 800 }}>
               <TableHead sx={{ bgcolor: 'action.hover' }}>
                 <TableRow>
                   {subTab === 'pending' && (
