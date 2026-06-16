@@ -89,7 +89,7 @@ export default function VbplSuggestionsAggregatedTopics({
   // Filters
   const [search, setSearch] = useState<string>('');
   const [sourceType, setSourceType] = useState<string>('all'); // all, manual, ai_generated
-  const [minVolumeFilter, setMinVolumeFilter] = useState<boolean>(false);
+  const [minVolumeVal, setMinVolumeVal] = useState<string>('');
   const [sortVolume, setSortVolume] = useState<'desc' | 'asc' | 'none'>('none');
 
   // Sub-tabs & Selection & Actions
@@ -159,7 +159,7 @@ export default function VbplSuggestionsAggregatedTopics({
         sourceType: subTab === 'pending' ? undefined : (sourceType === 'all' ? undefined : (sourceType as 'manual' | 'ai_generated')),
         search: search.trim() || undefined,
         status: subTab,
-        minVolume: minVolumeFilter ? 100 : undefined,
+        minVolume: minVolumeVal ? parseInt(minVolumeVal) || undefined : undefined,
         sortVolume: sortVolume !== 'none' ? sortVolume : undefined,
         page: targetPage,
         limit
@@ -209,7 +209,7 @@ export default function VbplSuggestionsAggregatedTopics({
     setSelectedTopicIds([]);
     loadTopics(1);
     setExpandedTopicId(null);
-  }, [selectedGroupId, sourceType, subTab, minVolumeFilter, sortVolume]);
+  }, [selectedGroupId, sourceType, subTab, sortVolume]);
 
   // Debounced search trigger for topics
   useEffect(() => {
@@ -218,7 +218,7 @@ export default function VbplSuggestionsAggregatedTopics({
       loadTopics(1);
     }, 450);
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [search, minVolumeVal]);
 
   // Debounced search trigger for import history
   useEffect(() => {
@@ -661,22 +661,32 @@ export default function VbplSuggestionsAggregatedTopics({
               {/* Row 2: minVolume & sortVolume */}
               <Grid item xs={12} sx={{ pt: '8px !important' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 3 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Checkbox
-                      id="min-volume-filter"
-                      checked={minVolumeFilter}
-                      onChange={(e) => setMinVolumeFilter(e.target.checked)}
-                      size="small"
-                      sx={{ p: 0.5 }}
-                    />
-                    <Typography 
-                      component="label" 
-                      htmlFor="min-volume-filter" 
-                      variant="body2" 
-                      sx={{ fontWeight: 600, cursor: 'pointer', userSelect: 'none', color: 'text.secondary' }}
-                    >
-                      Chỉ hiện Volume ≥ 100
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+                      Volume tối thiểu:
                     </Typography>
+                    <TextField
+                      type="number"
+                      size="small"
+                      value={minVolumeVal}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '' || parseInt(val) >= 0) {
+                          setMinVolumeVal(val);
+                        }
+                      }}
+                      placeholder="Nhập volume..."
+                      inputProps={{ min: 0 }}
+                      sx={{ 
+                        width: 130,
+                        '& .MuiInputBase-input': { 
+                          height: '32px',
+                          padding: '0 10px',
+                          boxSizing: 'border-box',
+                          fontSize: '0.875rem'
+                        }
+                      }}
+                    />
                   </Box>
 
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
