@@ -73,9 +73,22 @@ export const topicsService = {
     };
   },
 
-  async exportTopicsToSheet(): Promise<{ exported: number; url: string | null; sheetUrl: string | null; message?: string }> {
+  async exportTopicsToSheet(): Promise<{
+    exportedTopics: number;
+    exportedKeywords: number;
+    groups: number;
+    url: string | null;
+    sheetUrl: string | null;
+    message?: string;
+  }> {
     const response = await api.post<ApiResponse<any>>('/topics/export-to-sheet');
-    const data = unwrapResponseData<{ exported: number; url: string | null; sheetUrl: string | null }>(response.data.data);
+    const data = unwrapResponseData<{
+      exportedTopics: number;
+      exportedKeywords: number;
+      groups: number;
+      url: string | null;
+      sheetUrl: string | null;
+    }>(response.data.data);
     return {
       ...data,
       message: response.data.message

@@ -687,13 +687,13 @@ export default function VbplSuggestionsAggregatedTopics({
     setExporting(true);
     try {
       const result = await topicsService.exportTopicsToSheet();
-      if (result.exported === 0) {
-        showToast(result.message || 'Không có chủ đề mới nào cần xuất (đã xuất hết từ trước)', 'info');
+      if (result.exportedTopics === 0 && result.exportedKeywords === 0) {
+        showToast(result.message || 'Không có dữ liệu mới nào cần xuất', 'info');
       } else {
         const viewLink = result.url || result.sheetUrl;
         const msg = (
           <span>
-            {result.message || `Đã xuất ${result.exported} chủ đề mới lên Sheet thành công!`}
+            {result.message || `Đã xuất ${result.exportedTopics} chủ đề và ${result.exportedKeywords} từ khoá mới lên Sheet thành công!`}
             {viewLink && (
               <a
                 href={viewLink}
