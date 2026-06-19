@@ -46,6 +46,10 @@ import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
 import RemoveShoppingCartIcon from '@mui/icons-material/RemoveShoppingCart';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import DescriptionIcon from '@mui/icons-material/Description';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import SyncIcon from '@mui/icons-material/Sync';
+import AddIcon from '@mui/icons-material/Add';
 
 import { topicsService } from '../../topicsService';
 import type { 
@@ -73,6 +77,7 @@ export default function VbplSuggestionsAggregatedTopics({
   const { showToast } = useToastify();
   const { user } = useAppSelector((state) => state.auth);
   const isAdmin = user?.roles?.includes('ADMIN') || user?.role === 'ADMIN';
+  const colSpanCount = 7 + (isAdmin ? 2 : 0);
 
   // State
   const [groups, setGroups] = useState<AggregatedTopicGroup[]>([]);
@@ -125,6 +130,360 @@ export default function VbplSuggestionsAggregatedTopics({
   const [importSourcesLimit] = useState<number>(10);
   const [importSourcesTotalPages, setImportSourcesTotalPages] = useState<number>(1);
   const [searchImport, setSearchImport] = useState<string>('');
+
+  // --- Group Actions State ---
+  const [openGroupDialog, setOpenGroupDialog] = useState<boolean>(false);
+  const [groupDialogMode, setGroupDialogMode] = useState<'add' | 'edit'>('add');
+  const [groupNameInput, setGroupNameInput] = useState<string>('');
+  const [selectedGroupForEdit, setSelectedGroupForEdit] = useState<AggregatedTopicGroup | null>(null);
+  const [openDeleteGroupDialog, setOpenDeleteGroupDialog] = useState<boolean>(false);
+  const [groupIdToDelete, setGroupIdToDelete] = useState<string>('');
+  const [loadingGroupAction, setLoadingGroupAction] = useState<boolean>(false);
+
+  // --- Topic Actions State ---
+  const [openTopicDialog, setOpenTopicDialog] = useState<boolean>(false);
+  const [topicDialogMode, setTopicDialogMode] = useState<'add' | 'edit'>('add');
+  const [topicNameInput, setTopicNameInput] = useState<string>('');
+  const [topicGroupIdInput, setTopicGroupIdInput] = useState<string>('');
+  const [topicVolumeInput, setTopicVolumeInput] = useState<string>('');
+  const [topicKeywordsInput, setTopicKeywordsInput] = useState<string>(''); // For comma-separated add
+  const [selectedTopicForEdit, setSelectedTopicForEdit] = useState<Topic | null>(null);
+  const [openDeleteTopicDialog, setOpenDeleteTopicDialog] = useState<boolean>(false);
+  const [topicIdToDelete, setTopicIdToDelete] = useState<string>('');
+  const [loadingTopicAction, setLoadingTopicAction] = useState<boolean>(false);
+  const [updatingVolume, setUpdatingVolume] = useState<boolean>(false);
+
+  // --- Keyword Actions State ---
+  const [openKeywordDialog, setOpenKeywordDialog] = useState<boolean>(false);
+  const [keywordDialogMode, setKeywordDialogMode] = useState<'add' | 'edit'>('add');
+  const [keywordTextInput, setKeywordTextInput] = useState<string>('');
+  const [keywordVolumeInput, setKeywordVolumeInput] = useState<string>('');
+  const [activeTopicForKeyword, setActiveTopicForKeyword] = useState<Topic | null>(null);
+  const [selectedKeywordForEdit, setSelectedKeywordForEdit] = useState<any | null>(null);
+  const [loadingKeywordAction, setLoadingKeywordAction] = useState<boolean>(false);
+
+  // Group Handlers
+  const handleOpenAddGroup = () => {
+    setGroupDialogMode('add');
+    setGroupNameInput('');
+    setSelectedGroupForEdit(null);
+    setOpenGroupDialog(true);
+  };
+
+  const handleOpenEditGroup = (group: AggregatedTopicGroup) => {
+    setGroupDialogMode('edit');
+    setGroupNameInput(group.name);
+    setSelectedGroupForEdit(group);
+    setOpenGroupDialog(true);
+  };
+
+  const handleSaveGroup = async () => {
+    if (!groupNameInput.trim()) {
+      showToast('Vui lòng nhập tên mảng', 'warning');
+      return;
+    }
+    setLoadingGroupAction(true);
+    try {
+      if (groupDialogMode === 'add') {
+        await topicsService.createGroup(groupNameInput.trim());
+        showToast('Thêm mảng mới thành công!', 'success');
+      } else if (groupDialogMode === 'edit' && selectedGroupForEdit) {
+        const updated = await topicsService.updateGroup(selectedGroupForEdit.id, groupNameInput.trim());
+        setGroups(prev => prev.map(g => g.id === selectedGroupForEdit.id ? { ...g, name: updated.name } : g));
+        setTopics(prev => prev.map(t => t.group?.id === selectedGroupForEdit.id ? { ...t, group: { ...t.group, name: updated.name } } : t));
+        showToast('Cập nhật mảng thành công!', 'success');
+      }
+      setOpenGroupDialog(false);
+      loadGroups();
+    } catch (err: any) {
+      console.error('Lỗi lưu mảng:', err);
+      showToast(err.response?.data?.message || 'Không thể thực hiện thao tác trên mảng', 'danger');
+    } finally {
+      setLoadingGroupAction(false);
+    }
+  };
+
+  const handleOpenDeleteGroup = (id: string) => {
+    setGroupIdToDelete(id);
+    setOpenDeleteGroupDialog(true);
+  };
+
+  const handleConfirmDeleteGroup = async () => {
+    if (!groupIdToDelete) return;
+    setLoadingGroupAction(true);
+    try {
+      await topicsService.deleteGroup(groupIdToDelete);
+      showToast('Xoá mảng thành công!', 'success');
+      setGroups(prev => prev.filter(g => g.id !== groupIdToDelete));
+      if (selectedGroupId === groupIdToDelete) {
+        setSelectedGroupId('');
+      }
+      setOpenDeleteGroupDialog(false);
+    } catch (err: any) {
+      console.error('Lỗi xoá mảng:', err);
+      showToast(err.response?.data?.message || 'Không thể xoá mảng này', 'danger');
+    } finally {
+      setLoadingGroupAction(false);
+    }
+  };
+
+  const handleRefreshGroupVolume = async (id: string) => {
+    try {
+      showToast('Đang cập nhật volume mảng...', 'info');
+      const res = await topicsService.refreshGroupVolume(id);
+      setGroups(prev => prev.map(g => g.id === id ? { ...g, volume: res.volume } : g));
+      showToast(`Cập nhật volume thành công: ${res.volume.toLocaleString()}`, 'success');
+    } catch (err: any) {
+      console.error('Lỗi cập nhật volume mảng:', err);
+      showToast(err.response?.data?.message || 'Lỗi cập nhật volume mảng', 'danger');
+    }
+  };
+
+  const handleRefreshAllGroupsVolume = async () => {
+    const adminGroups = groups.filter(g => g.id !== '');
+    if (adminGroups.length === 0) return;
+    try {
+      showToast('Đang cập nhật volume cho tất cả mảng...', 'info');
+      const res = await topicsService.refreshGroupsVolume(adminGroups.map(g => g.id));
+      showToast(`Đã cập nhật volume cho ${res.updated} mảng thành công!`, 'success');
+      loadGroups();
+    } catch (err: any) {
+      console.error('Lỗi cập nhật volume các mảng:', err);
+      showToast(err.response?.data?.message || 'Lỗi cập nhật volume các mảng', 'danger');
+    }
+  };
+
+  // Topic Handlers
+  const handleOpenAddTopic = () => {
+    setTopicDialogMode('add');
+    setTopicNameInput('');
+    setTopicGroupIdInput(selectedGroupId || '');
+    setTopicVolumeInput('');
+    setTopicKeywordsInput('');
+    setSelectedTopicForEdit(null);
+    setOpenTopicDialog(true);
+  };
+
+  const handleOpenEditTopic = (topic: Topic) => {
+    setTopicDialogMode('edit');
+    setTopicNameInput(topic.name);
+    setTopicGroupIdInput(topic.group?.id || '');
+    setTopicVolumeInput(topic.volume !== null ? String(topic.volume) : '');
+    setTopicKeywordsInput('');
+    setSelectedTopicForEdit(topic);
+    setOpenTopicDialog(true);
+  };
+
+  const handleSaveTopic = async () => {
+    if (!topicNameInput.trim()) {
+      showToast('Vui lòng nhập tên chủ đề', 'warning');
+      return;
+    }
+    if (!topicGroupIdInput) {
+      showToast('Vui lòng chọn mảng', 'warning');
+      return;
+    }
+    setLoadingTopicAction(true);
+    try {
+      const vol = topicVolumeInput.trim() ? parseInt(topicVolumeInput) : undefined;
+      if (topicDialogMode === 'add') {
+        const keywordsArray = topicKeywordsInput
+          .split(',')
+          .map(k => k.trim())
+          .filter(Boolean)
+          .map(k => ({ keyword: k }));
+          
+        await topicsService.createTopic(topicNameInput.trim(), topicGroupIdInput, vol, keywordsArray);
+        showToast('Thêm chủ đề mới thành công!', 'success');
+        loadGroups();
+        loadTopics(1);
+      } else if (topicDialogMode === 'edit' && selectedTopicForEdit) {
+        const updated = await topicsService.updateTopic(selectedTopicForEdit.id, {
+          name: topicNameInput.trim(),
+          groupId: topicGroupIdInput,
+          volume: vol
+        });
+        setTopics(prev => prev.map(t => t.id === selectedTopicForEdit.id ? updated : t));
+        showToast('Cập nhật chủ đề thành công!', 'success');
+        loadGroups();
+      }
+      setOpenTopicDialog(false);
+    } catch (err: any) {
+      console.error('Lỗi lưu chủ đề:', err);
+      showToast(err.response?.data?.message || 'Không thể lưu chủ đề', 'danger');
+    } finally {
+      setLoadingTopicAction(false);
+    }
+  };
+
+  const handleOpenDeleteTopic = (id: string) => {
+    setTopicIdToDelete(id);
+    setOpenDeleteTopicDialog(true);
+  };
+
+  const handleConfirmDeleteTopic = async () => {
+    if (!topicIdToDelete) return;
+    setLoadingTopicAction(true);
+    try {
+      await topicsService.deleteTopic(topicIdToDelete);
+      showToast('Xoá chủ đề thành công!', 'success');
+      setTopics(prev => prev.filter(t => t.id !== topicIdToDelete));
+      loadGroups();
+      setOpenDeleteTopicDialog(false);
+    } catch (err: any) {
+      console.error('Lỗi xoá chủ đề:', err);
+      showToast(err.response?.data?.message || 'Không thể xoá chủ đề', 'danger');
+    } finally {
+      setLoadingTopicAction(false);
+    }
+  };
+
+  const handleRefreshTopicVolume = async (id: string) => {
+    try {
+      showToast('Đang cập nhật volume chủ đề...', 'info');
+      const res = await topicsService.refreshTopicVolume(id);
+      setTopics(prev => prev.map(t => t.id === id ? { ...t, volume: res.volume } : t));
+      showToast(`Cập nhật volume thành công: ${res.volume.toLocaleString()}`, 'success');
+    } catch (err: any) {
+      console.error('Lỗi cập nhật volume chủ đề:', err);
+      showToast(err.response?.data?.message || 'Lỗi cập nhật volume chủ đề', 'danger');
+    }
+  };
+
+  const handleRefreshSelectedTopicsVolume = async () => {
+    if (selectedTopicIds.length === 0) return;
+    setUpdatingVolume(true);
+    try {
+      showToast('Đang cập nhật volume các chủ đề đã chọn...', 'info');
+      const res = await topicsService.refreshTopicsVolume(selectedTopicIds);
+      showToast(`Đã cập nhật volume cho ${res.updated} chủ đề thành công!`, 'success');
+      loadTopics(page);
+      setSelectedTopicIds([]);
+    } catch (err: any) {
+      console.error('Lỗi cập nhật volume hàng loạt:', err);
+      showToast(err.response?.data?.message || 'Lỗi cập nhật volume', 'danger');
+    } finally {
+      setUpdatingVolume(false);
+    }
+  };
+
+  const handleDeleteSelectedTopics = async () => {
+    if (selectedTopicIds.length === 0) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn xoá ${selectedTopicIds.length} chủ đề đã chọn?`)) return;
+    setUpdatingVolume(true);
+    try {
+      let deletedCount = 0;
+      for (const id of selectedTopicIds) {
+        await topicsService.deleteTopic(id);
+        deletedCount++;
+      }
+      showToast(`Đã xoá thành công ${deletedCount} chủ đề!`, 'success');
+      setSelectedTopicIds([]);
+      loadGroups();
+      loadTopics(1);
+    } catch (err: any) {
+      console.error('Lỗi xoá chủ đề hàng loạt:', err);
+      showToast(err.response?.data?.message || 'Lỗi xoá chủ đề', 'danger');
+    } finally {
+      setUpdatingVolume(false);
+    }
+  };
+
+  // Keyword Handlers
+  const handleOpenAddKeyword = (topic: Topic) => {
+    setActiveTopicForKeyword(topic);
+    setKeywordDialogMode('add');
+    setKeywordTextInput('');
+    setKeywordVolumeInput('');
+    setSelectedKeywordForEdit(null);
+    setOpenKeywordDialog(true);
+  };
+
+  const handleOpenEditKeyword = (topic: Topic, keyword: any) => {
+    setActiveTopicForKeyword(topic);
+    setKeywordDialogMode('edit');
+    setKeywordTextInput(keyword.keyword);
+    setKeywordVolumeInput(keyword.volume !== null && keyword.volume !== undefined ? String(keyword.volume) : '');
+    setSelectedKeywordForEdit(keyword);
+    setOpenKeywordDialog(true);
+  };
+
+  const handleSaveKeyword = async () => {
+    if (!keywordTextInput.trim()) {
+      showToast('Vui lòng nhập từ khoá', 'warning');
+      return;
+    }
+    if (!activeTopicForKeyword) return;
+    setLoadingKeywordAction(true);
+    try {
+      const vol = keywordVolumeInput.trim() ? parseInt(keywordVolumeInput) : undefined;
+      if (keywordDialogMode === 'add') {
+        const updatedTopic = await topicsService.addKeyword(activeTopicForKeyword.id, keywordTextInput.trim(), vol);
+        setTopics(prev => prev.map(t => t.id === activeTopicForKeyword.id ? updatedTopic : t));
+        showToast('Thêm từ khoá con thành công!', 'success');
+      } else if (keywordDialogMode === 'edit' && selectedKeywordForEdit) {
+        const updatedTopic = await topicsService.updateKeyword(
+          activeTopicForKeyword.id,
+          selectedKeywordForEdit.id,
+          { keyword: keywordTextInput.trim(), volume: vol }
+        );
+        setTopics(prev => prev.map(t => t.id === activeTopicForKeyword.id ? updatedTopic : t));
+        showToast('Cập nhật từ khoá thành công!', 'success');
+      }
+      setOpenKeywordDialog(false);
+    } catch (err: any) {
+      console.error('Lỗi lưu từ khoá:', err);
+      showToast(err.response?.data?.message || 'Không thể lưu từ khoá', 'danger');
+    } finally {
+      setLoadingKeywordAction(false);
+    }
+  };
+
+  const handleOpenDeleteKeyword = async (topic: Topic, keyword: any) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn xoá từ khoá "${keyword.keyword}"?`)) return;
+    try {
+      const updatedTopic = await topicsService.deleteKeyword(topic.id, keyword.id);
+      setTopics(prev => prev.map(t => t.id === topic.id ? updatedTopic : t));
+      showToast('Xoá từ khoá con thành công!', 'success');
+    } catch (err: any) {
+      console.error('Lỗi xoá từ khoá:', err);
+      showToast(err.response?.data?.message || 'Không thể xoá từ khoá', 'danger');
+    }
+  };
+
+  const handleRefreshSingleKeywordVolume = async () => {
+    if (!activeTopicForKeyword || !selectedKeywordForEdit) return;
+    setLoadingKeywordAction(true);
+    try {
+      const res = await topicsService.refreshKeywordVolume(activeTopicForKeyword.id, selectedKeywordForEdit.id);
+      setKeywordVolumeInput(String(res.volume));
+      setTopics(prev => prev.map(t => {
+        if (t.id !== activeTopicForKeyword.id) return t;
+        return {
+          ...t,
+          seedKeywords: t.seedKeywords.map(kw => kw.id === selectedKeywordForEdit.id ? { ...kw, volume: res.volume } : kw)
+        };
+      }));
+      showToast(`Cập nhật volume thành công: ${res.volume.toLocaleString()}`, 'success');
+    } catch (err: any) {
+      console.error('Lỗi cập nhật volume từ khoá đơn lẻ:', err);
+      showToast(err.response?.data?.message || 'Không thể cập nhật volume từ khoá', 'danger');
+    } finally {
+      setLoadingKeywordAction(false);
+    }
+  };
+
+  const handleRefreshAllKeywordsVolume = async (topicId: string) => {
+    try {
+      showToast('Đang cập nhật volume cho tất cả từ khoá...', 'info');
+      const updatedTopic = await topicsService.refreshAllKeywordsVolume(topicId);
+      setTopics(prev => prev.map(t => t.id === topicId ? updatedTopic : t));
+      showToast('Đã cập nhật volume cho tất cả từ khoá thành công!', 'success');
+    } catch (err: any) {
+      console.error('Lỗi cập nhật volume tất cả từ khoá:', err);
+      showToast(err.response?.data?.message || 'Lỗi cập nhật volume', 'danger');
+    }
+  };
 
   // Load Groups
   const loadGroups = async () => {
@@ -428,6 +787,15 @@ export default function VbplSuggestionsAggregatedTopics({
             <Button
               variant="outlined"
               color="primary"
+              startIcon={<AddIcon />}
+              onClick={handleOpenAddTopic}
+              sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
+            >
+              Thêm chủ đề
+            </Button>
+            <Button
+              variant="outlined"
+              color="primary"
               startIcon={<CloudUploadIcon />}
               onClick={() => {
                 setImportName('');
@@ -472,9 +840,25 @@ export default function VbplSuggestionsAggregatedTopics({
       <Grid container spacing={3}>
         {/* Sidebar Mảng (API 1) */}
         <Grid item xs={12} sm={4} md={3}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5, color: 'text.primary' }}>
-            📁 Danh sách Mảng
-          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              📁 Danh sách Mảng
+            </Typography>
+            {isAdmin && (
+              <Stack direction="row" spacing={0.5}>
+                <Tooltip title="Thêm mảng mới">
+                  <IconButton size="small" onClick={handleOpenAddGroup} sx={{ color: 'primary.main', p: 0.5 }}>
+                    <AddIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Cập nhật Volume tất cả mảng">
+                  <IconButton size="small" onClick={handleRefreshAllGroupsVolume} sx={{ color: 'success.main', p: 0.5 }}>
+                    <SyncIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
+            )}
+          </Box>
           <Paper 
             variant="outlined" 
             sx={{ 
@@ -511,24 +895,59 @@ export default function VbplSuggestionsAggregatedTopics({
                     key={g.id}
                     selected={selectedGroupId === g.id}
                     onClick={() => setSelectedGroupId(g.id)}
-                    sx={{ py: 1.25, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                    sx={{ 
+                      py: 1, 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      '& .group-actions': { display: 'none' },
+                      '&:hover .group-actions': { display: 'flex' },
+                      '&:hover .group-badge': { display: 'none' }
+                    }}
                   >
                     <ListItemText
                       primary={g.name}
+                      secondary={g.volume !== null ? `Vol: ${g.volume.toLocaleString()}` : 'Vol: -'}
                       primaryTypographyProps={{ 
                         variant: 'body2', 
                         fontWeight: selectedGroupId === g.id ? 800 : 500,
                         noWrap: true,
                         title: g.name
                       }}
-                      sx={{ mr: 1, flexGrow: 1 }}
+                      secondaryTypographyProps={{ variant: 'caption', color: 'text.secondary' }}
+                      sx={{ mr: 1, flexGrow: 1, minWidth: 0 }}
                     />
-                    <Chip 
-                      label={g.topicCount} 
-                      size="small" 
-                      color={selectedGroupId === g.id ? 'primary' : 'default'}
-                      sx={{ height: 20, fontSize: '0.675rem', fontWeight: 700 }}
-                    />
+                    <Box className="group-badge" sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Chip 
+                        label={g.topicCount} 
+                        size="small" 
+                        color={selectedGroupId === g.id ? 'primary' : 'default'}
+                        sx={{ height: 20, fontSize: '0.675rem', fontWeight: 700 }}
+                      />
+                    </Box>
+                    {isAdmin && (
+                      <Box 
+                        className="group-actions" 
+                        onClick={(e) => e.stopPropagation()}
+                        sx={{ alignItems: 'center', gap: 0.25 }}
+                      >
+                        <Tooltip title="Cập nhật Volume">
+                          <IconButton size="small" onClick={() => handleRefreshGroupVolume(g.id)} sx={{ p: 0.5, color: 'success.main' }}>
+                            <SyncIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Sửa tên mảng">
+                          <IconButton size="small" onClick={() => handleOpenEditGroup(g)} sx={{ p: 0.5, color: 'primary.main' }}>
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Xoá mảng">
+                          <IconButton size="small" onClick={() => handleOpenDeleteGroup(g.id)} sx={{ p: 0.5, color: 'error.main' }}>
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    )}
                   </ListItemButton>
                 ))
               )}
@@ -583,7 +1002,7 @@ export default function VbplSuggestionsAggregatedTopics({
             <Grid container spacing={2} alignItems="center">
               {subTab === 'pending' ? (
                 <>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={isAdmin ? 6 : 12}>
                     <TextField
                       fullWidth
                       size="small"
@@ -599,34 +1018,36 @@ export default function VbplSuggestionsAggregatedTopics({
                       }}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6} sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      disabled={topics.length === 0}
-                      onClick={() => {
-                        if (selectedTopicIds.length === topics.length && topics.length > 0) {
-                          setSelectedTopicIds([]);
-                        } else {
-                          setSelectedTopicIds(topics.map(t => t.id));
-                        }
-                      }}
-                      sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
-                    >
-                      {selectedTopicIds.length === topics.length && topics.length > 0 ? 'Bỏ chọn' : 'Chọn tất cả'}
-                    </Button>
-                    <Button
-                      variant="contained"
-                      color="success"
-                      size="small"
-                      disabled={selectedTopicIds.length === 0 || approving}
-                      onClick={handleApproveSelected}
-                      startIcon={approving ? <CircularProgress size={16} color="inherit" /> : null}
-                      sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
-                    >
-                      Duyệt đã chọn ({selectedTopicIds.length})
-                    </Button>
-                  </Grid>
+                  {isAdmin && (
+                    <Grid item xs={12} sm={6} sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        disabled={topics.length === 0}
+                        onClick={() => {
+                          if (selectedTopicIds.length === topics.length && topics.length > 0) {
+                            setSelectedTopicIds([]);
+                          } else {
+                            setSelectedTopicIds(topics.map(t => t.id));
+                          }
+                        }}
+                        sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
+                      >
+                        {selectedTopicIds.length === topics.length && topics.length > 0 ? 'Bỏ chọn' : 'Chọn tất cả'}
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="success"
+                        size="small"
+                        disabled={selectedTopicIds.length === 0 || approving}
+                        onClick={handleApproveSelected}
+                        startIcon={approving ? <CircularProgress size={16} color="inherit" /> : null}
+                        sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
+                      >
+                        Duyệt đã chọn ({selectedTopicIds.length})
+                      </Button>
+                    </Grid>
+                  )}
                 </>
               ) : (
                 <>
@@ -661,7 +1082,7 @@ export default function VbplSuggestionsAggregatedTopics({
                   </Grid>
                 </>
               )}
-
+ 
               {/* Row 2: minVolume & sortVolume */}
               <Grid item xs={12} sx={{ pt: '8px !important' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 3 }}>
@@ -692,7 +1113,7 @@ export default function VbplSuggestionsAggregatedTopics({
                       }}
                     />
                   </Box>
-
+ 
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
                       Sắp xếp:
@@ -713,7 +1134,73 @@ export default function VbplSuggestionsAggregatedTopics({
               </Grid>
             </Grid>
           </Paper>
-
+ 
+          {/* Table Container Batch Actions */}
+          {isAdmin && selectedTopicIds.length > 0 && (
+            <Paper 
+              variant="outlined" 
+              sx={{ 
+                p: 1.5, 
+                mb: 2, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between', 
+                bgcolor: 'action.selected', 
+                borderRadius: '8px',
+                borderColor: 'divider'
+              }}
+            >
+              <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                Đã chọn {selectedTopicIds.length} chủ đề
+              </Typography>
+              <Stack direction="row" spacing={1}>
+                <Button
+                  variant="contained"
+                  color="success"
+                  size="small"
+                  startIcon={<SyncIcon />}
+                  disabled={updatingVolume}
+                  onClick={handleRefreshSelectedTopicsVolume}
+                  sx={{ textTransform: 'none', fontWeight: 700 }}
+                >
+                  Cập nhật Volume
+                </Button>
+                {subTab === 'pending' && (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    size="small"
+                    disabled={approving}
+                    onClick={handleApproveSelected}
+                    sx={{ textTransform: 'none', fontWeight: 700 }}
+                  >
+                    Duyệt chủ đề
+                  </Button>
+                )}
+                <Button
+                  variant="contained"
+                  color="error"
+                  size="small"
+                  startIcon={<DeleteIcon />}
+                  disabled={updatingVolume}
+                  onClick={handleDeleteSelectedTopics}
+                  sx={{ textTransform: 'none', fontWeight: 700 }}
+                >
+                  Xoá
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="inherit"
+                  size="small"
+                  onClick={() => setSelectedTopicIds([])}
+                  sx={{ textTransform: 'none', fontWeight: 700 }}
+                >
+                  Huỷ
+                </Button>
+              </Stack>
+            </Paper>
+          )}
+ 
           {/* Table Container */}
           <TableContainer 
             component={Paper} 
@@ -729,7 +1216,7 @@ export default function VbplSuggestionsAggregatedTopics({
             <Table size="small" sx={{ tableLayout: 'fixed', width: '100%', minWidth: 800 }}>
               <TableHead sx={{ bgcolor: 'action.hover' }}>
                 <TableRow>
-                  {subTab === 'pending' && (
+                  {isAdmin && (
                     <TableCell padding="checkbox" width="50">
                       <Checkbox
                         indeterminate={selectedTopicIds.length > 0 && selectedTopicIds.length < topics.length}
@@ -745,19 +1232,22 @@ export default function VbplSuggestionsAggregatedTopics({
                   <TableCell sx={{ fontWeight: 800 }} width="12%">Nguồn</TableCell>
                   <TableCell sx={{ fontWeight: 800 }} width="13%">Từ khóa gốc</TableCell>
                   <TableCell sx={{ fontWeight: 800 }} width="15%">Ngày tạo</TableCell>
+                  {isAdmin && (
+                    <TableCell sx={{ fontWeight: 800 }} width="15%">Thao tác</TableCell>
+                  )}
                 </TableRow>
               </TableHead>
               <TableBody>
                 {loadingTopics ? (
                   <TableRow>
-                    <TableCell colSpan={subTab === 'pending' ? 8 : 7} align="center" sx={{ py: 12 }}>
+                    <TableCell colSpan={colSpanCount} align="center" sx={{ py: 12 }}>
                       <CircularProgress size={30} sx={{ mb: 1 }} />
                       <Typography variant="body2" color="text.secondary">Đang tải danh sách chủ đề...</Typography>
                     </TableCell>
                   </TableRow>
                 ) : topics.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={subTab === 'pending' ? 8 : 7} align="center" sx={{ py: 12 }}>
+                    <TableCell colSpan={colSpanCount} align="center" sx={{ py: 12 }}>
                       <Typography variant="body2" color="text.secondary">Không tìm thấy chủ đề nào khớp bộ lọc.</Typography>
                     </TableCell>
                   </TableRow>
@@ -771,13 +1261,13 @@ export default function VbplSuggestionsAggregatedTopics({
                           hover 
                           selected={isExpanded || isItemSelected}
                           onClick={(e) => {
-                            if (subTab === 'pending') {
+                            if (isAdmin) {
                               handleSelectRow(e, t.id);
                             }
                           }}
                           sx={{ cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}
                         >
-                          {subTab === 'pending' && (
+                          {isAdmin && (
                             <TableCell padding="checkbox" onClick={(e) => e.stopPropagation()}>
                               <Checkbox
                                 checked={isItemSelected}
@@ -804,17 +1294,64 @@ export default function VbplSuggestionsAggregatedTopics({
                           </TableCell>
                           <TableCell>{t.seedKeywords ? t.seedKeywords.length : 0}</TableCell>
                           <TableCell>{safeFormatDate(t.createdAt)}</TableCell>
+                          {isAdmin && (
+                            <TableCell onClick={(e) => e.stopPropagation()}>
+                              <Stack direction="row" spacing={0.5}>
+                                <Tooltip title="Cập nhật Volume">
+                                  <IconButton size="small" onClick={() => handleRefreshTopicVolume(t.id)} sx={{ color: 'success.main', p: 0.5 }}>
+                                    <SyncIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Sửa chủ đề">
+                                  <IconButton size="small" onClick={() => handleOpenEditTopic(t)} sx={{ color: 'primary.main', p: 0.5 }}>
+                                    <EditIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Xoá chủ đề">
+                                  <IconButton size="small" onClick={() => handleOpenDeleteTopic(t.id)} sx={{ color: 'error.main', p: 0.5 }}>
+                                    <DeleteIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              </Stack>
+                            </TableCell>
+                          )}
                         </TableRow>
-
+ 
                         {/* Expandable row detail */}
                         <TableRow>
-                          <TableCell colSpan={subTab === 'pending' ? 8 : 7} style={{ paddingBottom: 0, paddingTop: 0, borderBottom: isExpanded ? '1px solid rgba(224, 224, 224, 1)' : 'none' }}>
+                          <TableCell colSpan={colSpanCount} style={{ paddingBottom: 0, paddingTop: 0, borderBottom: isExpanded ? '1px solid rgba(224, 224, 224, 1)' : 'none' }}>
                             <Collapse in={isExpanded} timeout="auto" unmountOnExit>
                               <Box sx={{ margin: 2 }}>
-                                <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                  <PlaylistAddIcon sx={{ color: 'primary.main', fontSize: 18 }} />
-                                  Danh sách Từ khóa gốc (Seed Keywords)
-                                </Typography>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 1.5 }}>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <PlaylistAddIcon sx={{ color: 'primary.main', fontSize: 18 }} />
+                                    Danh sách Từ khóa gốc (Seed Keywords)
+                                  </Typography>
+                                  {isAdmin && (
+                                    <Stack direction="row" spacing={1}>
+                                      <Button
+                                        variant="outlined"
+                                        color="primary"
+                                        size="small"
+                                        startIcon={<AddIcon />}
+                                        onClick={() => handleOpenAddKeyword(t)}
+                                        sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '6px', py: 0.25, fontSize: '0.75rem' }}
+                                      >
+                                        Thêm từ khoá
+                                      </Button>
+                                      <Button
+                                        variant="outlined"
+                                        color="success"
+                                        size="small"
+                                        startIcon={<SyncIcon />}
+                                        onClick={() => handleRefreshAllKeywordsVolume(t.id)}
+                                        sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '6px', py: 0.25, fontSize: '0.75rem' }}
+                                      >
+                                        Cập nhật Volume tất cả
+                                      </Button>
+                                    </Stack>
+                                  )}
+                                </Box>
                                 {!t.seedKeywords || t.seedKeywords.length === 0 ? (
                                   <Typography variant="body2" color="text.secondary" sx={{ py: 1, pl: 3.5, fontStyle: 'italic' }}>
                                     Chưa có từ khóa gốc
@@ -823,24 +1360,34 @@ export default function VbplSuggestionsAggregatedTopics({
                                   <Box sx={{ pl: 3.5, display: 'flex', flexWrap: 'wrap', gap: 1.5, py: 1 }}>
                                     {t.seedKeywords.map((kw, idx) => {
                                       const isInCart = cartItems.some(item => item.name === kw.keyword);
+                                      const isKeywordAdmin = isAdmin;
+                                      const chipLabel = `${kw.keyword} (${kw.volume !== null && kw.volume !== undefined ? kw.volume.toLocaleString() : '-'})`;
                                       return (
-                                        <Chip
-                                          key={idx}
-                                          label={`${kw.keyword} (${kw.volume})`}
-                                          onClick={() => handleToggleCart({ name: kw.keyword, avg: kw.volume })}
-                                          icon={isInCart ? <RemoveShoppingCartIcon sx={{ fontSize: '14px !important' }} /> : <AddShoppingCartIcon sx={{ fontSize: '14px !important' }} />}
-                                          color={isInCart ? 'primary' : 'default'}
-                                          variant={isInCart ? 'filled' : 'outlined'}
-                                          sx={{ 
-                                            fontWeight: 600, 
-                                            borderRadius: '6px',
-                                            cursor: 'pointer',
-                                            '&:hover': {
-                                              borderColor: 'primary.main',
-                                              color: 'primary.main'
-                                            }
-                                          }}
-                                        />
+                                        <Tooltip key={kw.id || idx} title={isKeywordAdmin ? "Click để chỉnh sửa hoặc cập nhật volume" : (isInCart ? "Xoá khỏi giỏ hàng" : "Thêm vào giỏ hàng")}>
+                                          <Chip
+                                            label={chipLabel}
+                                            onClick={() => {
+                                              if (isKeywordAdmin) {
+                                                handleOpenEditKeyword(t, kw);
+                                              } else {
+                                                handleToggleCart({ name: kw.keyword, avg: kw.volume });
+                                              }
+                                            }}
+                                            onDelete={isKeywordAdmin ? () => handleOpenDeleteKeyword(t, kw) : undefined}
+                                            icon={!isKeywordAdmin ? (isInCart ? <RemoveShoppingCartIcon sx={{ fontSize: '14px !important' }} /> : <AddShoppingCartIcon sx={{ fontSize: '14px !important' }} />) : undefined}
+                                            color={isInCart ? 'primary' : 'default'}
+                                            variant={isInCart ? 'filled' : 'outlined'}
+                                            sx={{ 
+                                              fontWeight: 600, 
+                                              borderRadius: '6px',
+                                              cursor: 'pointer',
+                                              '&:hover': {
+                                                borderColor: 'primary.main',
+                                                color: 'primary.main'
+                                              }
+                                            }}
+                                          />
+                                        </Tooltip>
                                       );
                                     })}
                                   </Box>
@@ -856,7 +1403,7 @@ export default function VbplSuggestionsAggregatedTopics({
               </TableBody>
             </Table>
           </TableContainer>
-
+ 
           {/* Pagination */}
           {totalPages > 1 && (
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
@@ -1290,6 +1837,307 @@ export default function VbplSuggestionsAggregatedTopics({
               Bắt đầu tạo
             </Button>
           )}
+        </DialogActions>
+      </Dialog>
+
+      {/* 5. Modal Thêm/Sửa Mảng */}
+      <Dialog 
+        open={openGroupDialog} 
+        onClose={() => !loadingGroupAction && setOpenGroupDialog(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: '12px' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800 }}>
+          {groupDialogMode === 'add' ? 'Thêm mảng mới' : 'Chỉnh sửa tên mảng'}
+        </DialogTitle>
+        <DialogContent dividers sx={{ py: 2 }}>
+          <TextField
+            fullWidth
+            label="Tên mảng"
+            variant="outlined"
+            value={groupNameInput}
+            onChange={(e) => setGroupNameInput(e.target.value)}
+            placeholder="Nhập tên mảng... Ví dụ: Luật doanh nghiệp"
+            size="small"
+            required
+            disabled={loadingGroupAction}
+            error={!groupNameInput.trim()}
+            helperText={!groupNameInput.trim() ? "Tên mảng không được để trống" : ""}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button 
+            onClick={() => setOpenGroupDialog(false)} 
+            disabled={loadingGroupAction}
+            sx={{ textTransform: 'none', fontWeight: 700 }}
+            color="inherit"
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleSaveGroup}
+            variant="contained"
+            color="primary"
+            disabled={loadingGroupAction || !groupNameInput.trim()}
+            startIcon={loadingGroupAction ? <CircularProgress size={16} color="inherit" /> : null}
+            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
+          >
+            Lưu
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 6. Modal Xác nhận Xoá Mảng */}
+      <Dialog
+        open={openDeleteGroupDialog}
+        onClose={() => !loadingGroupAction && setOpenDeleteGroupDialog(false)}
+        PaperProps={{ sx: { borderRadius: '12px' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800 }}>
+          Xác nhận xoá mảng
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">
+            Bạn có chắc chắn muốn xoá mảng này? Thao tác này có thể ảnh hưởng đến các chủ đề thuộc mảng này (họ sẽ ở trạng thái "Chưa phân mảng").
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button 
+            onClick={() => setOpenDeleteGroupDialog(false)} 
+            disabled={loadingGroupAction}
+            sx={{ textTransform: 'none', fontWeight: 700 }}
+            color="inherit"
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleConfirmDeleteGroup}
+            variant="contained"
+            color="error"
+            disabled={loadingGroupAction}
+            startIcon={loadingGroupAction ? <CircularProgress size={16} color="inherit" /> : null}
+            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
+          >
+            Xác nhận xoá
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 7. Modal Thêm/Sửa Chủ đề */}
+      <Dialog 
+        open={openTopicDialog} 
+        onClose={() => !loadingTopicAction && setOpenTopicDialog(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: '12px' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800 }}>
+          {topicDialogMode === 'add' ? 'Thêm chủ đề mới' : 'Chỉnh sửa chủ đề'}
+        </DialogTitle>
+        <DialogContent dividers sx={{ py: 2, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          <TextField
+            fullWidth
+            label="Tên chủ đề"
+            variant="outlined"
+            value={topicNameInput}
+            onChange={(e) => setTopicNameInput(e.target.value)}
+            placeholder="Nhập tên chủ đề... Ví dụ: Thủ tục thành lập công ty"
+            size="small"
+            required
+            disabled={loadingTopicAction}
+            error={!topicNameInput.trim()}
+            helperText={!topicNameInput.trim() ? "Tên chủ đề không được để trống" : ""}
+          />
+          <FormControl fullWidth size="small" required error={!topicGroupIdInput}>
+            <Typography variant="body2" sx={{ fontWeight: 700, mb: 1, color: 'text.secondary' }}>
+              Mảng liên quan
+            </Typography>
+            <Select
+              value={topicGroupIdInput}
+              onChange={(e) => setTopicGroupIdInput(e.target.value)}
+              displayEmpty
+              disabled={loadingTopicAction}
+            >
+              <MenuItem value="" disabled>Chọn mảng...</MenuItem>
+              {groups.filter(g => g.id !== '').map((g) => (
+                <MenuItem key={g.id} value={g.id}>{g.name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          
+          <TextField
+            fullWidth
+            label="Volume (Lượt tìm kiếm)"
+            variant="outlined"
+            type="number"
+            value={topicVolumeInput}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === '' || parseInt(val) >= 0) {
+                setTopicVolumeInput(val);
+              }
+            }}
+            placeholder="Nhập volume ban đầu (nếu có)"
+            size="small"
+            disabled={loadingTopicAction}
+          />
+          
+          {topicDialogMode === 'add' && (
+            <TextField
+              fullWidth
+              label="Từ khóa gốc (seed keywords)"
+              variant="outlined"
+              multiline
+              rows={2}
+              value={topicKeywordsInput}
+              onChange={(e) => setTopicKeywordsInput(e.target.value)}
+              placeholder="Nhập danh sách từ khóa gốc phân cách bằng dấu phẩy (,), ví dụ: thành lập doanh nghiệp, hồ sơ công ty..."
+              size="small"
+              disabled={loadingTopicAction}
+              helperText="Các từ khóa con này sẽ được tạo cùng chủ đề."
+            />
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button 
+            onClick={() => setOpenTopicDialog(false)} 
+            disabled={loadingTopicAction}
+            sx={{ textTransform: 'none', fontWeight: 700 }}
+            color="inherit"
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleSaveTopic}
+            variant="contained"
+            color="primary"
+            disabled={loadingTopicAction || !topicNameInput.trim() || !topicGroupIdInput}
+            startIcon={loadingTopicAction ? <CircularProgress size={16} color="inherit" /> : null}
+            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
+          >
+            Lưu
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 8. Modal Xác nhận Xoá Chủ đề */}
+      <Dialog
+        open={openDeleteTopicDialog}
+        onClose={() => !loadingTopicAction && setOpenDeleteTopicDialog(false)}
+        PaperProps={{ sx: { borderRadius: '12px' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800 }}>
+          Xác nhận xoá chủ đề
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">
+            Bạn có chắc chắn muốn xoá chủ đề này? Thao tác này sẽ xoá hoàn toàn chủ đề và các từ khoá con thuộc về nó.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button 
+            onClick={() => setOpenDeleteTopicDialog(false)} 
+            disabled={loadingTopicAction}
+            sx={{ textTransform: 'none', fontWeight: 700 }}
+            color="inherit"
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleConfirmDeleteTopic}
+            variant="contained"
+            color="error"
+            disabled={loadingTopicAction}
+            startIcon={loadingTopicAction ? <CircularProgress size={16} color="inherit" /> : null}
+            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
+          >
+            Xác nhận xoá
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 9. Modal Thêm/Sửa Từ khóa gốc */}
+      <Dialog 
+        open={openKeywordDialog} 
+        onClose={() => !loadingKeywordAction && setOpenKeywordDialog(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: '12px' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800 }}>
+          {keywordDialogMode === 'add' ? 'Thêm từ khoá mới' : 'Chỉnh sửa từ khoá'}
+        </DialogTitle>
+        <DialogContent dividers sx={{ py: 2, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          <TextField
+            fullWidth
+            label="Từ khóa con"
+            variant="outlined"
+            value={keywordTextInput}
+            onChange={(e) => setKeywordTextInput(e.target.value)}
+            placeholder="Nhập từ khoá..."
+            size="small"
+            required
+            disabled={loadingKeywordAction}
+            error={!keywordTextInput.trim()}
+            helperText={!keywordTextInput.trim() ? "Từ khoá không được để trống" : ""}
+          />
+          
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <TextField
+              fullWidth
+              label="Volume (Lượt tìm kiếm)"
+              variant="outlined"
+              type="number"
+              value={keywordVolumeInput}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === '' || parseInt(val) >= 0) {
+                  setKeywordVolumeInput(val);
+                }
+              }}
+              placeholder="Chưa cập nhật"
+              size="small"
+              disabled={loadingKeywordAction}
+            />
+            {keywordDialogMode === 'edit' && (
+              <Tooltip title="Cập nhật volume từ Google Ads">
+                <IconButton 
+                  color="success" 
+                  onClick={handleRefreshSingleKeywordVolume}
+                  disabled={loadingKeywordAction}
+                  sx={{ 
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: '8px',
+                    p: 1
+                  }}
+                >
+                  <SyncIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button 
+            onClick={() => setOpenKeywordDialog(false)} 
+            disabled={loadingKeywordAction}
+            sx={{ textTransform: 'none', fontWeight: 700 }}
+            color="inherit"
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleSaveKeyword}
+            variant="contained"
+            color="primary"
+            disabled={loadingKeywordAction || !keywordTextInput.trim()}
+            startIcon={loadingKeywordAction ? <CircularProgress size={16} color="inherit" /> : null}
+            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
+          >
+            Lưu
+          </Button>
         </DialogActions>
       </Dialog>
 

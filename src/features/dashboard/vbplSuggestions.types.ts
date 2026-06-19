@@ -254,12 +254,14 @@ export interface AggregatedTopicGroup {
   name: string;
   slug: string;
   topicCount: number;
+  volume: number | null;
   createdAt: string;
 }
 
 export interface SeedKeyword {
+  id: string;
   keyword: string;
-  volume: number;
+  volume: number | null;
 }
 
 export interface Topic {
