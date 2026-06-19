@@ -76,7 +76,7 @@ export const topicsService = {
   async exportTopicsToSheet(): Promise<{
     exportedTopics: number;
     exportedKeywords: number;
-    groups: number;
+    exportedGroups: number;
     url: string | null;
     sheetUrl: string | null;
     message?: string;
@@ -85,7 +85,7 @@ export const topicsService = {
     const data = unwrapResponseData<{
       exportedTopics: number;
       exportedKeywords: number;
-      groups: number;
+      exportedGroups: number;
       url: string | null;
       sheetUrl: string | null;
     }>(response.data.data);
