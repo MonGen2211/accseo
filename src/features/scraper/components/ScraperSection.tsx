@@ -2461,17 +2461,16 @@ export default function ScraperSection() {
                 }
               }}
             />
-            <Select 
-              size="small" 
-              value={section} 
-              onChange={(e) => setSection(e.target.value)} 
-              displayEmpty 
+            <Select
+              native
+              size="small"
+              value={section}
+              onChange={(e) => setSection(e.target.value)}
               sx={{ minWidth: 150 }}
-              MenuProps={filterMenuProps}
             >
-              <MenuItem value="">Tất cả Mục</MenuItem>
+              <option value="">Tất cả Mục</option>
               {Object.keys(summary?.bySection || {}).map(sec => (
-                <MenuItem key={sec} value={sec}>{sec}</MenuItem>
+                <option key={sec} value={sec}>{sec}</option>
               ))}
             </Select>
             <Select 
