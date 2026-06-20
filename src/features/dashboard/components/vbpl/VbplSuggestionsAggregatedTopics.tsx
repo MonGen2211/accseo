@@ -839,7 +839,7 @@ export default function VbplSuggestionsAggregatedTopics({
       {/* 2. Content Layout */}
       <Grid container spacing={3}>
         {/* Sidebar Mảng (API 1) */}
-        <Grid item xs={3} sm={3} md={3}>
+        <Grid size={{ xs: 3, sm: 3, md: 3 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
               📁 Danh sách Mảng
@@ -956,7 +956,7 @@ export default function VbplSuggestionsAggregatedTopics({
         </Grid>
 
         {/* Bảng Chủ đề (API 2) */}
-        <Grid item xs={9} sm={9} md={9} sx={{ minWidth: 0, flexShrink: 1 }}>
+        <Grid size={{ xs: 9, sm: 9, md: 9 }} sx={{ minWidth: 0, flexShrink: 1 }}>
           {/* Sub-tabs */}
           <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
             <Tabs 
@@ -1002,7 +1002,7 @@ export default function VbplSuggestionsAggregatedTopics({
             <Grid container spacing={2} alignItems="center">
               {subTab === 'pending' ? (
                 <>
-                  <Grid item xs={12} sm={isAdmin ? 6 : 12}>
+                  <Grid size={{ xs: 12, sm: isAdmin ? 6 : 12 }}>
                     <TextField
                       fullWidth
                       size="small"
@@ -1019,7 +1019,7 @@ export default function VbplSuggestionsAggregatedTopics({
                     />
                   </Grid>
                   {isAdmin && (
-                    <Grid item xs={12} sm={6} sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                    <Grid size={{ xs: 12, sm: 6 }} sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
                       <Button
                         variant="outlined"
                         size="small"
@@ -1051,7 +1051,7 @@ export default function VbplSuggestionsAggregatedTopics({
                 </>
               ) : (
                 <>
-                  <Grid item xs={12} sm={8}>
+                  <Grid size={{ xs: 12, sm: 8 }}>
                     <TextField
                       fullWidth
                       size="small"
@@ -1067,7 +1067,7 @@ export default function VbplSuggestionsAggregatedTopics({
                       }}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={4}>
+                  <Grid size={{ xs: 12, sm: 4 }}>
                     <FormControl fullWidth size="small">
                       <Select
                         value={sourceType}
@@ -1084,7 +1084,7 @@ export default function VbplSuggestionsAggregatedTopics({
               )}
  
               {/* Row 2: minVolume & sortVolume */}
-              <Grid item xs={12} sx={{ pt: '8px !important' }}>
+              <Grid size={{ xs: 12 }} sx={{ pt: '8px !important' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 3 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
@@ -1571,38 +1571,38 @@ export default function VbplSuggestionsAggregatedTopics({
               </Typography>
               <Paper variant="outlined" sx={{ p: 2, bgcolor: 'action.hover', borderRadius: '8px' }}>
                 <Grid container spacing={1.5}>
-                  <Grid item xs={8}>
+                  <Grid size={{ xs: 8 }}>
                     <Typography variant="body2" color="text.secondary">Số mảng mới được tạo:</Typography>
                   </Grid>
-                  <Grid item xs={4} align="right">
+                  <Grid size={{ xs: 4 }} sx={{ textAlign: 'right' }}>
                     <Typography variant="body2" sx={{ fontWeight: 700 }}>{importResult.groupsCreated}</Typography>
                   </Grid>
                   
-                  <Grid item xs={8}>
+                  <Grid size={{ xs: 8 }}>
                     <Typography variant="body2" color="text.secondary">Số chủ đề mới được thêm:</Typography>
                   </Grid>
-                  <Grid item xs={4} align="right">
+                  <Grid size={{ xs: 4 }} sx={{ textAlign: 'right' }}>
                     <Typography variant="body2" sx={{ fontWeight: 700 }}>{importResult.topicsCreated}</Typography>
                   </Grid>
 
-                  <Grid item xs={8}>
+                  <Grid size={{ xs: 8 }}>
                     <Typography variant="body2" color="text.secondary">Số chủ đề bị trùng (bỏ qua):</Typography>
                   </Grid>
-                  <Grid item xs={4} align="right">
+                  <Grid size={{ xs: 4 }} sx={{ textAlign: 'right' }}>
                     <Typography variant="body2" sx={{ fontWeight: 700 }}>{importResult.topicsSkippedExisting}</Typography>
                   </Grid>
 
-                  <Grid item xs={8}>
+                  <Grid size={{ xs: 8 }}>
                     <Typography variant="body2" color="text.secondary">Tổng số từ khóa gốc đã import:</Typography>
                   </Grid>
-                  <Grid item xs={4} align="right">
+                  <Grid size={{ xs: 4 }} sx={{ textAlign: 'right' }}>
                     <Typography variant="body2" sx={{ fontWeight: 700 }}>{importResult.seedKeywordsImported}</Typography>
                   </Grid>
 
-                  <Grid item xs={8}>
+                  <Grid size={{ xs: 8 }}>
                     <Typography variant="body2" color="text.secondary">Số dòng bị bỏ qua do thiếu Mảng:</Typography>
                   </Grid>
-                  <Grid item xs={4} align="right">
+                  <Grid size={{ xs: 4 }} sx={{ textAlign: 'right' }}>
                     <Typography variant="body2" sx={{ fontWeight: 700 }}>{importResult.rowsSkippedNoGroup}</Typography>
                   </Grid>
                 </Grid>
@@ -1789,7 +1789,7 @@ export default function VbplSuggestionsAggregatedTopics({
                     {selectedGenGroupIds.map((groupId) => {
                       const groupName = groups.find(g => g.id === groupId)?.name || groupId;
                       return (
-                        <Grid item xs={12} sm={6} key={groupId}>
+                        <Grid size={{ xs: 12, sm: 6 }} key={groupId}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Typography variant="caption" sx={{ flexGrow: 1, fontWeight: 600, noWrap: true, textOverflow: 'ellipsis', overflow: 'hidden' }} title={groupName}>
                               {groupName}
