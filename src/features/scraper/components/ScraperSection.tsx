@@ -654,21 +654,27 @@ export default function ScraperSection() {
     loadArticles(0, newLimit);
   };
 
-  const handleTriggerScrape = async () => {
-    setIsTriggering(true);
-    showToast(`Đang cào bài từ ${SITE_SOURCES.find(s => s.id === activeSite)?.name}, vui lòng đợi 1-3 phút...`, 'info');
-    try {
-      const res = await scraperService.triggerManualScrape(activeSite);
-      showToast(res.message || 'Cào bài hoàn thành!', 'success');
-      loadSummary();
-      loadArticles(0, limit);
-      loadTagsAndCategories();
-    } catch (err: unknown) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      showToast((err as { response?: { data?: { message?: string } } }).response?.data?.message || errMsg || 'Lỗi khi cào bài', 'danger');
-    } finally {
-      setIsTriggering(false);
-    }
+  const handleTriggerScrape = () => {
+    const siteName = SITE_SOURCES.find(s => s.id === activeSite)?.name || 'nguồn này';
+    showToast(`Đã chạy cào ngầm dữ liệu từ ${siteName}. Tiến trình cào có thể chạy đến 20 phút.`, 'success');
+    
+    const startTime = Date.now();
+    scraperService.triggerManualScrape(activeSite)
+      .then((res) => {
+        showToast(res.message || `Cào bài từ ${siteName} hoàn thành!`, 'success');
+        loadSummary();
+        loadArticles(0, limit);
+        loadTagsAndCategories();
+      })
+      .catch((err: unknown) => {
+        console.error(`Lỗi cào ngầm từ ${siteName}:`, err);
+        const duration = Date.now() - startTime;
+        // Chỉ hiện thông báo lỗi nếu lỗi xảy ra nhanh (dưới 10 giây) để tránh thông báo timeout muộn gây bối rối
+        if (duration < 10000) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          showToast((err as { response?: { data?: { message?: string } } }).response?.data?.message || errMsg || 'Lỗi khi cào bài', 'danger');
+        }
+      });
   };
 
   const handleUpdateSchedule = async () => {
