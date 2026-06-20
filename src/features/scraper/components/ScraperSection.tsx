@@ -118,6 +118,21 @@ const DOC_TYPES = [
   { code: 'CT', label: 'Chỉ thị (CT)' }
 ];
 
+const filterMenuProps = {
+  variant: 'menu' as const,
+  disableScrollLock: true,
+  disableAutoFocusItem: true,
+  disablePortal: true,
+  anchorOrigin: {
+    vertical: 'bottom' as const,
+    horizontal: 'left' as const,
+  },
+  transformOrigin: {
+    vertical: 'top' as const,
+    horizontal: 'left' as const,
+  },
+};
+
 export default function ScraperSection() {
   const { showToast } = useToastify();
   const user = useAppSelector((state) => state.auth.user);
@@ -2446,7 +2461,14 @@ export default function ScraperSection() {
                 }
               }}
             />
-            <Select size="small" value={section} onChange={(e) => setSection(e.target.value)} displayEmpty sx={{ minWidth: 150 }}>
+            <Select 
+              size="small" 
+              value={section} 
+              onChange={(e) => setSection(e.target.value)} 
+              displayEmpty 
+              sx={{ minWidth: 150 }}
+              MenuProps={filterMenuProps}
+            >
               <MenuItem value="">Tất cả Mục</MenuItem>
               {Object.keys(summary?.bySection || {}).map(sec => (
                 <MenuItem key={sec} value={sec}>{sec}</MenuItem>
@@ -2458,6 +2480,7 @@ export default function ScraperSection() {
               onChange={(e) => setTag(e.target.value)} 
               displayEmpty 
               sx={{ minWidth: 200, maxWidth: 300 }}
+              MenuProps={filterMenuProps}
             >
               <MenuItem value="">Tất cả Chủ đề / Từ khóa</MenuItem>
               {loadingTags ? (
@@ -2487,6 +2510,7 @@ export default function ScraperSection() {
                 onChange={(e) => setSheetStatus(e.target.value)} 
                 displayEmpty 
                 sx={{ minWidth: 150 }}
+                MenuProps={filterMenuProps}
               >
                 <MenuItem value="all">Tất cả Trạng thái Sheet</MenuItem>
                 <MenuItem value="pushed">Đã push Sheet</MenuItem>
@@ -2495,17 +2519,38 @@ export default function ScraperSection() {
             )}
             {activeSite === 'vbpl' && (
               <>
-                <Select size="small" value={fullInfoStatus} onChange={(e) => setFullInfoStatus(e.target.value)} displayEmpty sx={{ minWidth: 185 }}>
+                <Select 
+                  size="small" 
+                  value={fullInfoStatus} 
+                  onChange={(e) => setFullInfoStatus(e.target.value)} 
+                  displayEmpty 
+                  sx={{ minWidth: 185 }}
+                  MenuProps={filterMenuProps}
+                >
                   <MenuItem value="all">Trạng thái đẩy VBPL (Tất cả)</MenuItem>
                   <MenuItem value="pushed">Đã đẩy VBPL (Full Info)</MenuItem>
                   <MenuItem value="notpushed">Chưa đẩy VBPL (Full Info)</MenuItem>
                 </Select>
-                <Select size="small" value={scope} onChange={(e) => setScope(e.target.value)} displayEmpty sx={{ minWidth: 150 }}>
+                <Select 
+                  size="small" 
+                  value={scope} 
+                  onChange={(e) => setScope(e.target.value)} 
+                  displayEmpty 
+                  sx={{ minWidth: 150 }}
+                  MenuProps={filterMenuProps}
+                >
                   <MenuItem value="">Tất cả Phạm vi</MenuItem>
                   <MenuItem value="TW">Trung ương (TW)</MenuItem>
                   <MenuItem value="DP">Địa phương (DP)</MenuItem>
                 </Select>
-                <Select size="small" value={effStatusCode} onChange={(e) => setEffStatusCode(e.target.value)} displayEmpty sx={{ minWidth: 160 }}>
+                <Select 
+                  size="small" 
+                  value={effStatusCode} 
+                  onChange={(e) => setEffStatusCode(e.target.value)} 
+                  displayEmpty 
+                  sx={{ minWidth: 160 }}
+                  MenuProps={filterMenuProps}
+                >
                   <MenuItem value="">Tất cả Hiệu lực</MenuItem>
                   <MenuItem value="CHL">Còn hiệu lực</MenuItem>
                   <MenuItem value="CCHL">Chưa có hiệu lực</MenuItem>
@@ -2513,15 +2558,36 @@ export default function ScraperSection() {
                   <MenuItem value="NHL">Ngưng hiệu lực</MenuItem>
                   <MenuItem value="5">Chưa xác định</MenuItem>
                 </Select>
-                <Select size="small" value={nganh} onChange={(e) => setNganh(e.target.value)} displayEmpty sx={{ minWidth: 150 }}>
+                <Select 
+                  size="small" 
+                  value={nganh} 
+                  onChange={(e) => setNganh(e.target.value)} 
+                  displayEmpty 
+                  sx={{ minWidth: 150 }}
+                  MenuProps={filterMenuProps}
+                >
                   <MenuItem value="">Tất cả Ngành</MenuItem>
                   {LEGAL_SECTORS.map(n => <MenuItem key={n} value={n}>{n}</MenuItem>)}
                 </Select>
-                <Select size="small" value={linhVuc} onChange={(e) => setLinhVuc(e.target.value)} displayEmpty sx={{ minWidth: 150 }}>
+                <Select 
+                  size="small" 
+                  value={linhVuc} 
+                  onChange={(e) => setLinhVuc(e.target.value)} 
+                  displayEmpty 
+                  sx={{ minWidth: 150 }}
+                  MenuProps={filterMenuProps}
+                >
                   <MenuItem value="">Tất cả Lĩnh vực</MenuItem>
                   {LEGAL_DOMAINS.map(l => <MenuItem key={l} value={l}>{l}</MenuItem>)}
                 </Select>
-                <Select size="small" value={docTypeCode} onChange={(e) => setDocTypeCode(e.target.value)} displayEmpty sx={{ minWidth: 150 }}>
+                <Select 
+                  size="small" 
+                  value={docTypeCode} 
+                  onChange={(e) => setDocTypeCode(e.target.value)} 
+                  displayEmpty 
+                  sx={{ minWidth: 150 }}
+                  MenuProps={filterMenuProps}
+                >
                   <MenuItem value="">Tất cả Loại VB</MenuItem>
                   {DOC_TYPES.map(t => <MenuItem key={t.code} value={t.code}>{t.label}</MenuItem>)}
                 </Select>
