@@ -122,7 +122,6 @@ const filterMenuProps = {
   variant: 'menu' as const,
   disableScrollLock: true,
   disableAutoFocusItem: true,
-  disablePortal: true,
   anchorOrigin: {
     vertical: 'bottom' as const,
     horizontal: 'left' as const,
