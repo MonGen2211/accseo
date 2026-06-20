@@ -839,7 +839,7 @@ export default function VbplSuggestionsAggregatedTopics({
       {/* 2. Content Layout */}
       <Grid container spacing={3}>
         {/* Sidebar Mảng (API 1) */}
-        <Grid item xs={12} sm={4} md={3}>
+        <Grid item xs={3.5} sm={3.5} md={3}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
               📁 Danh sách Mảng
@@ -956,7 +956,7 @@ export default function VbplSuggestionsAggregatedTopics({
         </Grid>
 
         {/* Bảng Chủ đề (API 2) */}
-        <Grid item xs={12} sm={8} md={9} sx={{ minWidth: 0, flexShrink: 1 }}>
+        <Grid item xs={8.5} sm={8.5} md={9} sx={{ minWidth: 0, flexShrink: 1 }}>
           {/* Sub-tabs */}
           <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
             <Tabs 
