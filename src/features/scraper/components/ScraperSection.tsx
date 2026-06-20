@@ -133,6 +133,9 @@ export default function ScraperSection() {
   // --- Filters State ---
   const [section, setSection] = useState('');
   const [tag, setTag] = useState('');
+  const [categoriesList, setCategoriesList] = useState<string[]>([]);
+  const [tagsList, setTagsList] = useState<string[]>([]);
+  const [loadingTags, setLoadingTags] = useState(false);
   const [date, setDate] = useState('');
   const [q, setQ] = useState('');
   const [onlyNew, setOnlyNew] = useState(false);
@@ -352,6 +355,19 @@ export default function ScraperSection() {
       showToast((err as { response?: { data?: { message?: string } } }).response?.data?.message || errMsg || 'Lỗi tải thống kê', 'danger');
     } finally {
       setLoadingSummary(false);
+    }
+  };
+
+  const loadTagsAndCategories = async () => {
+    setLoadingTags(true);
+    try {
+      const data = await scraperService.getTags({ source: activeSite });
+      setCategoriesList(data.categories || []);
+      setTagsList(data.tags || []);
+    } catch (err) {
+      console.error('Lỗi khi tải danh sách chủ đề/tags:', err);
+    } finally {
+      setLoadingTags(false);
     }
   };
 
@@ -610,7 +626,10 @@ export default function ScraperSection() {
       setShowSectionDetails(false);
       setShowCategoryDetails(false);
       setShowTagDetails(false);
+      setCategoriesList([]);
+      setTagsList([]);
       loadSchedule();
+      loadTagsAndCategories();
     });
   }, [activeSite]);
 
@@ -643,7 +662,7 @@ export default function ScraperSection() {
       showToast(res.message || 'Cào bài hoàn thành!', 'success');
       loadSummary();
       loadArticles(0, limit);
-      // loadTags(); // Tạm tắt để giảm lag
+      loadTagsAndCategories();
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
       showToast((err as { response?: { data?: { message?: string } } }).response?.data?.message || errMsg || 'Lỗi khi cào bài', 'danger');
@@ -2399,12 +2418,27 @@ export default function ScraperSection() {
                 <MenuItem key={sec} value={sec}>{sec}</MenuItem>
               ))}
             </Select>
-            {/* <Select size="small" value={tag} onChange={(e) => setTag(e.target.value)} displayEmpty sx={{ minWidth: 150 }}>
+            <Select 
+              size="small" 
+              value={tag} 
+              onChange={(e) => setTag(e.target.value)} 
+              displayEmpty 
+              sx={{ minWidth: 200, maxWidth: 300 }}
+            >
               <MenuItem value="">Tất cả Chủ đề / Từ khóa</MenuItem>
-              {[...new Set([...categoriesList, ...tagsList])].map((t, idx) => (
-                <MenuItem key={idx} value={t}>{t}</MenuItem>
-              ))}
-            </Select> */}
+              {loadingTags ? (
+                <MenuItem disabled>
+                  <CircularProgress size={16} sx={{ mr: 1 }} /> Đang tải...
+                </MenuItem>
+              ) : (
+                [...new Set([...categoriesList, ...tagsList])]
+                  .filter(Boolean)
+                  .sort((a, b) => a.localeCompare(b, 'vi'))
+                  .map((t, idx) => (
+                    <MenuItem key={idx} value={t}>{t}</MenuItem>
+                  ))
+              )}
+            </Select>
             <TextField
               size="small"
               type="date"
@@ -3138,7 +3172,7 @@ export default function ScraperSection() {
                 </Select>
               </Box>
 
-              {/* <Box>
+              <Box>
                 <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.5 }}>Chủ đề / Từ khóa</Typography>
                 <Select
                   fullWidth
@@ -3146,14 +3180,23 @@ export default function ScraperSection() {
                   value={downloadTag}
                   onChange={(e) => setDownloadTag(e.target.value)}
                   displayEmpty
-                  disabled={isDownloading}
+                  disabled={isDownloading || loadingTags}
                 >
                   <MenuItem value="">Tất cả chủ đề</MenuItem>
-                  {[...new Set([...categoriesList, ...tagsList])].map((t, idx) => (
-                    <MenuItem key={idx} value={t}>{t}</MenuItem>
-                  ))}
+                  {loadingTags ? (
+                    <MenuItem disabled>
+                      <CircularProgress size={16} sx={{ mr: 1 }} /> Đang tải...
+                    </MenuItem>
+                  ) : (
+                    [...new Set([...categoriesList, ...tagsList])]
+                      .filter(Boolean)
+                      .sort((a, b) => a.localeCompare(b, 'vi'))
+                      .map((t, idx) => (
+                        <MenuItem key={idx} value={t}>{t}</MenuItem>
+                      ))
+                  )}
                 </Select>
-              </Box> */}
+              </Box>
 
               {activeSite === 'vbpl' && (
                 <>
