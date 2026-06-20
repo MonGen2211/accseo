@@ -131,6 +131,11 @@ const filterMenuProps = {
     vertical: 'top' as const,
     horizontal: 'left' as const,
   },
+  PaperProps: {
+    style: {
+      marginTop: 8,
+    },
+  },
 };
 
 export default function ScraperSection() {
@@ -2462,15 +2467,16 @@ export default function ScraperSection() {
               }}
             />
             <Select
-              native
               size="small"
               value={section}
               onChange={(e) => setSection(e.target.value)}
+              displayEmpty
               sx={{ minWidth: 150 }}
+              MenuProps={filterMenuProps}
             >
-              <option value="">Tất cả Mục</option>
+              <MenuItem value="">Tất cả Mục</MenuItem>
               {Object.keys(summary?.bySection || {}).map(sec => (
-                <option key={sec} value={sec}>{sec}</option>
+                <MenuItem key={sec} value={sec}>{sec}</MenuItem>
               ))}
             </Select>
             <Select 
@@ -3263,6 +3269,7 @@ export default function ScraperSection() {
                   onChange={(e) => setDownloadSection(e.target.value)}
                   displayEmpty
                   disabled={isDownloading}
+                  MenuProps={filterMenuProps}
                 >
                   <MenuItem value="">Tất cả mục</MenuItem>
                   {Object.keys(summary?.bySection || {}).map(sec => (
@@ -3280,6 +3287,7 @@ export default function ScraperSection() {
                   onChange={(e) => setDownloadTag(e.target.value)}
                   displayEmpty
                   disabled={isDownloading || loadingTags}
+                  MenuProps={filterMenuProps}
                 >
                   <MenuItem value="">Tất cả chủ đề</MenuItem>
                   {loadingTags ? (
@@ -3308,6 +3316,7 @@ export default function ScraperSection() {
                       onChange={(e) => setDownloadScope(e.target.value)}
                       displayEmpty
                       disabled={isDownloading}
+                      MenuProps={filterMenuProps}
                     >
                       <MenuItem value="">Tất cả phạm vi</MenuItem>
                       <MenuItem value="TW">Trung ương (TW)</MenuItem>
@@ -3324,6 +3333,7 @@ export default function ScraperSection() {
                       onChange={(e) => setDownloadEffStatusCode(e.target.value)}
                       displayEmpty
                       disabled={isDownloading}
+                      MenuProps={filterMenuProps}
                     >
                       <MenuItem value="">Tất cả hiệu lực</MenuItem>
                       <MenuItem value="CHL">Còn hiệu lực</MenuItem>
@@ -3343,6 +3353,7 @@ export default function ScraperSection() {
                       onChange={(e) => setDownloadNganh(e.target.value)}
                       displayEmpty
                       disabled={isDownloading}
+                      MenuProps={filterMenuProps}
                     >
                       <MenuItem value="">Tất cả ngành</MenuItem>
                       {LEGAL_SECTORS.map(n => <MenuItem key={n} value={n}>{n}</MenuItem>)}
@@ -3358,6 +3369,7 @@ export default function ScraperSection() {
                       onChange={(e) => setDownloadLinhVuc(e.target.value)}
                       displayEmpty
                       disabled={isDownloading}
+                      MenuProps={filterMenuProps}
                     >
                       <MenuItem value="">Tất cả lĩnh vực</MenuItem>
                       {LEGAL_DOMAINS.map(l => <MenuItem key={l} value={l}>{l}</MenuItem>)}
@@ -3373,6 +3385,7 @@ export default function ScraperSection() {
                       onChange={(e) => setDownloadDocTypeCode(e.target.value)}
                       displayEmpty
                       disabled={isDownloading}
+                      MenuProps={filterMenuProps}
                     >
                       <MenuItem value="">Tất cả loại văn bản</MenuItem>
                       {DOC_TYPES.map(t => <MenuItem key={t.code} value={t.code}>{t.label}</MenuItem>)}

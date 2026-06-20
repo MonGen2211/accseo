@@ -26,17 +26,4 @@ body {
   background: #9ca3af;
 }
 
-/* Fix MUI Select / Menu / Popover immediate auto-select bug on click */
-@keyframes enablePointerEvents {
-  from {
-    pointer-events: none;
-  }
-  to {
-    pointer-events: auto;
-  }
-}
 
-.MuiPopover-root, .MuiMenu-root,
-.MuiPopover-root *, .MuiMenu-root * {
-  animation: enablePointerEvents 0.18s steps(1, end) forwards;
-}

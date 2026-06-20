@@ -167,6 +167,11 @@ export const getDesignTokens = (mode: PaletteMode) => ({
             vertical: 'top',
             horizontal: 'left',
           },
+          PaperProps: {
+            style: {
+              marginTop: '8px',
+            },
+          },
         },
       },
     },
