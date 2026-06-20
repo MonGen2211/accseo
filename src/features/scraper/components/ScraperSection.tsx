@@ -21,6 +21,7 @@ import LanguageIcon from '@mui/icons-material/Language';
 import Collapse from '@mui/material/Collapse';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import SettingsIcon from '@mui/icons-material/Settings';
+import TuneIcon from '@mui/icons-material/Tune';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -210,6 +211,21 @@ export default function ScraperSection() {
   const [showCategoryDetails, setShowCategoryDetails] = useState(false);
   const [showTagDetails, setShowTagDetails] = useState(false);
   const [articleType, setArticleType] = useState<'all' | 'news' | 'document'>('all');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const activeAdvancedCount = useMemo(() => {
+    let count = 0;
+    if (activeSite !== 'vbpl') {
+      if (sheetStatus !== 'all') count++;
+    } else {
+      if (fullInfoStatus !== 'all') count++;
+      if (scope !== '') count++;
+      if (effStatusCode !== '') count++;
+      if (nganh !== '') count++;
+      if (linhVuc !== '') count++;
+      if (docTypeCode !== '') count++;
+    }
+    return count;
+  }, [activeSite, sheetStatus, fullInfoStatus, scope, effStatusCode, nganh, linhVuc, docTypeCode]);
   const debouncedQ = useDebounce(q, 500);
 
   // --- Table State ---
@@ -2548,96 +2564,27 @@ export default function ScraperSection() {
               onChange={(e) => setDate(e.target.value)}
               sx={{ width: 140 }}
             />
-            {activeSite !== 'vbpl' && (
-              <Select 
-                size="small" 
-                value={sheetStatus} 
-                onChange={(e) => setSheetStatus(e.target.value)} 
-                displayEmpty 
-                sx={{ minWidth: 150 }}
-                MenuProps={filterMenuProps}
-              >
-                <MenuItem value="all">Tất cả Trạng thái Sheet</MenuItem>
-                <MenuItem value="pushed">Đã push Sheet</MenuItem>
-                <MenuItem value="notpushed">Chưa push Sheet</MenuItem>
-              </Select>
-            )}
-            {activeSite === 'vbpl' && (
-              <>
-                <Select 
-                  size="small" 
-                  value={fullInfoStatus} 
-                  onChange={(e) => setFullInfoStatus(e.target.value)} 
-                  displayEmpty 
-                  sx={{ minWidth: 185 }}
-                  MenuProps={filterMenuProps}
-                >
-                  <MenuItem value="all">Trạng thái đẩy VBPL (Tất cả)</MenuItem>
-                  <MenuItem value="pushed">Đã đẩy VBPL (Full Info)</MenuItem>
-                  <MenuItem value="notpushed">Chưa đẩy VBPL (Full Info)</MenuItem>
-                </Select>
-                <Select 
-                  size="small" 
-                  value={scope} 
-                  onChange={(e) => setScope(e.target.value)} 
-                  displayEmpty 
-                  sx={{ minWidth: 150 }}
-                  MenuProps={filterMenuProps}
-                >
-                  <MenuItem value="">Tất cả Phạm vi</MenuItem>
-                  <MenuItem value="TW">Trung ương (TW)</MenuItem>
-                  <MenuItem value="DP">Địa phương (DP)</MenuItem>
-                </Select>
-                <Select 
-                  size="small" 
-                  value={effStatusCode} 
-                  onChange={(e) => setEffStatusCode(e.target.value)} 
-                  displayEmpty 
-                  sx={{ minWidth: 160 }}
-                  MenuProps={filterMenuProps}
-                >
-                  <MenuItem value="">Tất cả Hiệu lực</MenuItem>
-                  <MenuItem value="CHL">Còn hiệu lực</MenuItem>
-                  <MenuItem value="CCHL">Chưa có hiệu lực</MenuItem>
-                  <MenuItem value="HHL">Hết hiệu lực toàn bộ</MenuItem>
-                  <MenuItem value="NHL">Ngưng hiệu lực</MenuItem>
-                  <MenuItem value="5">Chưa xác định</MenuItem>
-                </Select>
-                <Select 
-                  size="small" 
-                  value={nganh} 
-                  onChange={(e) => setNganh(e.target.value)} 
-                  displayEmpty 
-                  sx={{ minWidth: 150 }}
-                  MenuProps={filterMenuProps}
-                >
-                  <MenuItem value="">Tất cả Ngành</MenuItem>
-                  {LEGAL_SECTORS.map(n => <MenuItem key={n} value={n}>{n}</MenuItem>)}
-                </Select>
-                <Select 
-                  size="small" 
-                  value={linhVuc} 
-                  onChange={(e) => setLinhVuc(e.target.value)} 
-                  displayEmpty 
-                  sx={{ minWidth: 150 }}
-                  MenuProps={filterMenuProps}
-                >
-                  <MenuItem value="">Tất cả Lĩnh vực</MenuItem>
-                  {LEGAL_DOMAINS.map(l => <MenuItem key={l} value={l}>{l}</MenuItem>)}
-                </Select>
-                <Select 
-                  size="small" 
-                  value={docTypeCode} 
-                  onChange={(e) => setDocTypeCode(e.target.value)} 
-                  displayEmpty 
-                  sx={{ minWidth: 150 }}
-                  MenuProps={filterMenuProps}
-                >
-                  <MenuItem value="">Tất cả Loại VB</MenuItem>
-                  {DOC_TYPES.map(t => <MenuItem key={t.code} value={t.code}>{t.label}</MenuItem>)}
-                </Select>
-              </>
-            )}
+            
+            <Button
+              size="small"
+              variant={showAdvancedFilters || activeAdvancedCount > 0 ? "contained" : "outlined"}
+              color={activeAdvancedCount > 0 ? "warning" : "inherit"}
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              startIcon={<TuneIcon />}
+              endIcon={<ExpandMoreIcon sx={{ transform: showAdvancedFilters ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />}
+              sx={{ 
+                textTransform: 'none', 
+                fontWeight: 700,
+                borderColor: 'divider',
+                color: (theme) => (showAdvancedFilters || activeAdvancedCount > 0) ? 'primary.contrastText' : 'text.secondary',
+                '&:hover': {
+                  borderColor: 'text.secondary',
+                }
+              }}
+            >
+              Bộ lọc nâng cao {activeAdvancedCount > 0 ? `(${activeAdvancedCount})` : ''}
+            </Button>
+
             <FormControlLabel
               control={
                 <Switch
@@ -2654,12 +2601,246 @@ export default function ScraperSection() {
               }
               sx={{ ml: 1, mr: 0 }}
             />
-            {(section || tag || date || q || onlyNew || scope || effStatusCode || nganh || linhVuc || docTypeCode || sheetStatus !== 'all' || fullInfoStatus !== 'all' || articleType !== 'all') && (
-              <Button size="small" color="error" onClick={() => { setSection(''); setTag(''); setDate(''); setQ(''); setOnlyNew(false); setScope(''); setEffStatusCode(''); setNganh(''); setLinhVuc(''); setDocTypeCode(''); setSheetStatus('all'); setFullInfoStatus('all'); setArticleType('all'); }}>
+            
+            {(section || tag || date || q || onlyNew || activeAdvancedCount > 0 || articleType !== 'all') && (
+              <Button 
+                size="small" 
+                color="error" 
+                variant="text"
+                onClick={() => { 
+                  setSection(''); 
+                  setTag(''); 
+                  setDate(''); 
+                  setQ(''); 
+                  setOnlyNew(false); 
+                  setScope(''); 
+                  setEffStatusCode(''); 
+                  setNganh(''); 
+                  setLinhVuc(''); 
+                  setDocTypeCode(''); 
+                  setSheetStatus('all'); 
+                  setFullInfoStatus('all'); 
+                  setArticleType('all'); 
+                }}
+                sx={{ fontWeight: 700, textTransform: 'none' }}
+              >
                 Xóa lọc
               </Button>
             )}
           </Box>
+
+          {/* Active Advanced Filter Chips */}
+          {activeAdvancedCount > 0 && (
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2, alignItems: 'center' }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.disabled', textTransform: 'uppercase', mr: 0.5 }}>Bộ lọc đang bật:</Typography>
+              
+              {activeSite !== 'vbpl' ? (
+                <>
+                  {sheetStatus !== 'all' && (
+                    <Chip
+                      size="small"
+                      label={`Sheet: ${sheetStatus === 'pushed' ? 'Đã push' : 'Chưa push'}`}
+                      onDelete={() => setSheetStatus('all')}
+                      color="primary"
+                      variant="outlined"
+                    />
+                  )}
+                </>
+              ) : (
+                <>
+                  {fullInfoStatus !== 'all' && (
+                    <Chip
+                      size="small"
+                      label={`Đẩy VBPL: ${fullInfoStatus === 'pushed' ? 'Đã đẩy' : 'Chưa đẩy'}`}
+                      onDelete={() => setFullInfoStatus('all')}
+                      color="primary"
+                      variant="outlined"
+                    />
+                  )}
+                  {scope !== '' && (
+                    <Chip
+                      size="small"
+                      label={`Phạm vi: ${scope === 'TW' ? 'Trung ương' : 'Địa phương'}`}
+                      onDelete={() => setScope('')}
+                      color="primary"
+                      variant="outlined"
+                    />
+                  )}
+                  {effStatusCode !== '' && (
+                    <Chip
+                      size="small"
+                      label={`Hiệu lực: ${
+                        effStatusCode === 'CHL' ? 'Còn hiệu lực' :
+                        effStatusCode === 'CCHL' ? 'Chưa có hiệu lực' :
+                        effStatusCode === 'HHL' ? 'Hết hiệu lực toàn bộ' :
+                        effStatusCode === 'NHL' ? 'Ngưng hiệu lực' : 'Chưa xác định'
+                      }`}
+                      onDelete={() => setEffStatusCode('')}
+                      color="primary"
+                      variant="outlined"
+                    />
+                  )}
+                  {nganh !== '' && (
+                    <Chip
+                      size="small"
+                      label={`Ngành: ${nganh}`}
+                      onDelete={() => setNganh('')}
+                      color="primary"
+                      variant="outlined"
+                    />
+                  )}
+                  {linhVuc !== '' && (
+                    <Chip
+                      size="small"
+                      label={`Lĩnh vực: ${linhVuc}`}
+                      onDelete={() => setLinhVuc('')}
+                      color="primary"
+                      variant="outlined"
+                    />
+                  )}
+                  {docTypeCode !== '' && (
+                    <Chip
+                      size="small"
+                      label={`Loại VB: ${DOC_TYPES.find(t => t.code === docTypeCode)?.label || docTypeCode}`}
+                      onDelete={() => setDocTypeCode('')}
+                      color="primary"
+                      variant="outlined"
+                    />
+                  )}
+                </>
+              )}
+            </Box>
+          )}
+
+          {/* Advanced Filters Panel */}
+          <Collapse in={showAdvancedFilters}>
+            <Box sx={{ 
+              p: 2.5, 
+              mb: 2.5, 
+              borderRadius: 3, 
+              bgcolor: 'background.default', 
+              border: '1px solid', 
+              borderColor: 'divider',
+              boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
+            }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 1 }}>
+                <TuneIcon sx={{ fontSize: 18 }} /> Bộ lọc nâng cao
+              </Typography>
+              
+              <Grid container spacing={2}>
+                {activeSite !== 'vbpl' ? (
+                  <Grid item xs={12} sm={6} md={4}>
+                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.5 }}>Trạng thái Sheet</Typography>
+                    <Select 
+                      fullWidth
+                      size="small" 
+                      value={sheetStatus} 
+                      onChange={(e) => setSheetStatus(e.target.value)} 
+                      displayEmpty 
+                      MenuProps={filterMenuProps}
+                    >
+                      <MenuItem value="all">Tất cả Trạng thái Sheet</MenuItem>
+                      <MenuItem value="pushed">Đã push Sheet</MenuItem>
+                      <MenuItem value="notpushed">Chưa push Sheet</MenuItem>
+                    </Select>
+                  </Grid>
+                ) : (
+                  <>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.5 }}>Trạng thái đẩy VBPL</Typography>
+                      <Select 
+                        fullWidth
+                        size="small" 
+                        value={fullInfoStatus} 
+                        onChange={(e) => setFullInfoStatus(e.target.value)} 
+                        displayEmpty 
+                        MenuProps={filterMenuProps}
+                      >
+                        <MenuItem value="all">Trạng thái đẩy VBPL (Tất cả)</MenuItem>
+                        <MenuItem value="pushed">Đã đẩy VBPL (Full Info)</MenuItem>
+                        <MenuItem value="notpushed">Chưa đẩy VBPL (Full Info)</MenuItem>
+                      </Select>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.5 }}>Phạm vi văn bản</Typography>
+                      <Select 
+                        fullWidth
+                        size="small" 
+                        value={scope} 
+                        onChange={(e) => setScope(e.target.value)} 
+                        displayEmpty 
+                        MenuProps={filterMenuProps}
+                      >
+                        <MenuItem value="">Tất cả Phạm vi</MenuItem>
+                        <MenuItem value="TW">Trung ương (TW)</MenuItem>
+                        <MenuItem value="DP">Địa phương (DP)</MenuItem>
+                      </Select>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.5 }}>Tình trạng hiệu lực</Typography>
+                      <Select 
+                        fullWidth
+                        size="small" 
+                        value={effStatusCode} 
+                        onChange={(e) => setEffStatusCode(e.target.value)} 
+                        displayEmpty 
+                        MenuProps={filterMenuProps}
+                      >
+                        <MenuItem value="">Tất cả Hiệu lực</MenuItem>
+                        <MenuItem value="CHL">Còn hiệu lực</MenuItem>
+                        <MenuItem value="CCHL">Chưa có hiệu lực</MenuItem>
+                        <MenuItem value="HHL">Hết hiệu lực toàn bộ</MenuItem>
+                        <MenuItem value="NHL">Ngưng hiệu lực</MenuItem>
+                        <MenuItem value="5">Chưa xác định</MenuItem>
+                      </Select>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.5 }}>Ngành quản lý</Typography>
+                      <Select 
+                        fullWidth
+                        size="small" 
+                        value={nganh} 
+                        onChange={(e) => setNganh(e.target.value)} 
+                        displayEmpty 
+                        MenuProps={filterMenuProps}
+                      >
+                        <MenuItem value="">Tất cả Ngành</MenuItem>
+                        {LEGAL_SECTORS.map(n => <MenuItem key={n} value={n}>{n}</MenuItem>)}
+                      </Select>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.5 }}>Lĩnh vực</Typography>
+                      <Select 
+                        fullWidth
+                        size="small" 
+                        value={linhVuc} 
+                        onChange={(e) => setLinhVuc(e.target.value)} 
+                        displayEmpty 
+                        MenuProps={filterMenuProps}
+                      >
+                        <MenuItem value="">Tất cả Lĩnh vực</MenuItem>
+                        {LEGAL_DOMAINS.map(l => <MenuItem key={l} value={l}>{l}</MenuItem>)}
+                      </Select>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.5 }}>Loại văn bản</Typography>
+                      <Select 
+                        fullWidth
+                        size="small" 
+                        value={docTypeCode} 
+                        onChange={(e) => setDocTypeCode(e.target.value)} 
+                        displayEmpty 
+                        MenuProps={filterMenuProps}
+                      >
+                        <MenuItem value="">Tất cả Loại VB</MenuItem>
+                        {DOC_TYPES.map(t => <MenuItem key={t.code} value={t.code}>{t.label}</MenuItem>)}
+                      </Select>
+                    </Grid>
+                  </>
+                )}
+              </Grid>
+            </Box>
+          </Collapse>
 
           {renderVbplAutoConfigPanel()}
 
