@@ -156,6 +156,7 @@ export const getDesignTokens = (mode: PaletteMode) => ({
     MuiSelect: {
       defaultProps: {
         MenuProps: {
+          variant: 'menu',
           disableScrollLock: true,
           disableAutoFocusItem: true,
           anchorOrigin: {
