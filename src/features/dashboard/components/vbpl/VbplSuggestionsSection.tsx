@@ -8,11 +8,11 @@ import {
   CircularProgress,
   Badge,
   FormControl,
-  Select,
   MenuItem,
   Button,
   Stack
 } from '@mui/material';
+import Select from '../../../../components/SafeSelect';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import PsychologyIcon from '@mui/icons-material/Psychology';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';

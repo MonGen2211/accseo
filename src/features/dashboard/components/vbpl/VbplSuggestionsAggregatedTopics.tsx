@@ -10,7 +10,6 @@ import {
   Chip, 
   TextField, 
   FormControl, 
-  Select, 
   MenuItem, 
   InputAdornment, 
   Button, 
@@ -36,6 +35,7 @@ import {
   Checkbox,
   Tooltip
 } from '@mui/material';
+import Select from '../../../../components/SafeSelect';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import SearchIcon from '@mui/icons-material/Search';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';

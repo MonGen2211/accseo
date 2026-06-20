@@ -3,7 +3,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
-import MuiSelect from '@mui/material/Select';
+import Select from '../../../components/SafeSelect';
 import MenuItem from '@mui/material/MenuItem';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
@@ -138,46 +138,6 @@ const filterMenuProps = {
   },
 };
 
-function SafeSelect({ MenuProps, onChange, value, ...props }: React.ComponentProps<typeof MuiSelect>) {
-  const [open, setOpen] = useState(false);
-  const [openTime, setOpenTime] = useState(0);
-
-  const handleOpen = (e: any) => {
-    setOpenTime(Date.now());
-    setOpen(true);
-    if (props.onOpen) props.onOpen(e);
-  };
-
-  const handleClose = (e: any, reason?: string) => {
-    if (Date.now() - openTime < 300) {
-      return;
-    }
-    setOpen(false);
-    if (props.onClose) props.onClose(e);
-  };
-
-  const handleChange = (e: any, child: any) => {
-    if (Date.now() - openTime < 300) {
-      return;
-    }
-    setOpen(false); // Close the select on valid selection
-    if (onChange) onChange(e, child);
-  };
-
-  return (
-    <MuiSelect
-      {...props}
-      value={value}
-      open={open}
-      onOpen={handleOpen}
-      onClose={handleClose}
-      onChange={handleChange}
-      MenuProps={MenuProps}
-    />
-  );
-}
-
-const Select = SafeSelect;
 
 export default function ScraperSection() {
   const { showToast } = useToastify();

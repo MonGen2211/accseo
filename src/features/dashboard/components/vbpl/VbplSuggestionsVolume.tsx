@@ -11,7 +11,6 @@ import {
   FormControl,
   FormControlLabel,
   InputLabel,
-  Select,
   MenuItem,
   Checkbox,
   OutlinedInput,
@@ -32,6 +31,7 @@ import {
   Stack,
   CircularProgress
 } from '@mui/material';
+import Select from '../../../../components/SafeSelect';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import InfoIcon from '@mui/icons-material/Info';
 import RefreshIcon from '@mui/icons-material/Refresh';

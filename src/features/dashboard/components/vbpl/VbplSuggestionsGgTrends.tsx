@@ -10,7 +10,6 @@ import {
   InputAdornment,
   FormControl,
   InputLabel,
-  Select,
   MenuItem,
   Checkbox,
   ListItemText,
@@ -39,6 +38,7 @@ import {
   TableRow,
   Stack
 } from '@mui/material';
+import Select from '../../../../components/SafeSelect';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import SearchIcon from '@mui/icons-material/Search';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
