@@ -1446,9 +1446,23 @@ export default function ScraperSection() {
                   </Box>
                   {item.category && item.category.length > 0 && (
                     <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.25 }}>
-                      {item.category.map((cat, idx) => (
-                        <Chip key={idx} label={cat} size="small" variant="outlined" sx={{ height: 16, fontSize: '0.65rem', color: 'text.secondary', borderColor: 'divider' }} />
-                      ))}
+                      {item.category.map((cat, idx) => {
+                        const isSelected = tag === cat;
+                        return (
+                          <Chip 
+                            key={idx} 
+                            label={cat} 
+                            size="small" 
+                            variant={isSelected ? 'filled' : 'outlined'} 
+                            color={isSelected ? 'primary' : 'default'}
+                            sx={{ height: 16, fontSize: '0.65rem', cursor: 'pointer' }} 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTag(isSelected ? '' : cat);
+                            }}
+                          />
+                        );
+                      })}
                     </Box>
                   )}
                 </Box>
@@ -1475,9 +1489,23 @@ export default function ScraperSection() {
             const item = row as unknown as ScraperArticle;
             return (
               <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                {item.category?.map((t, idx) => (
-                  <Chip key={`f-${idx}`} label={t} size="small" variant="outlined" color="primary" sx={{ fontSize: 11 }} />
-                ))}
+                {item.category?.map((t, idx) => {
+                  const isSelected = tag === t;
+                  return (
+                    <Chip 
+                      key={`f-${idx}`} 
+                      label={t} 
+                      size="small" 
+                      variant={isSelected ? 'filled' : 'outlined'} 
+                      color="primary" 
+                      sx={{ fontSize: 11, cursor: 'pointer' }} 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTag(isSelected ? '' : t);
+                      }}
+                    />
+                  );
+                })}
                 {!item.category?.length && <Typography variant="caption" color="text.secondary">-</Typography>}
               </Box>
             );
