@@ -153,6 +153,22 @@ export const getDesignTokens = (mode: PaletteMode) => ({
     },
     MuiPopover: { defaultProps: { disableScrollLock: true } },
     MuiMenu: { defaultProps: { disableScrollLock: true } },
+    MuiSelect: {
+      defaultProps: {
+        MenuProps: {
+          disableScrollLock: true,
+          disableAutoFocusItem: true,
+          anchorOrigin: {
+            vertical: 'bottom',
+            horizontal: 'left',
+          },
+          transformOrigin: {
+            vertical: 'top',
+            horizontal: 'left',
+          },
+        },
+      },
+    },
     MuiChip: { styleOverrides: { root: { fontWeight: 600, fontSize: '0.78rem' } } },
     MuiDrawer: { styleOverrides: { paper: { border: 'none' } } },
   },
