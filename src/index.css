@@ -27,3 +27,21 @@ body {
 }
 
 
+/* Fix MUI Select / Menu / Popover immediate auto-select bug on click */
+@keyframes enablePointerEvents {
+  from {
+    pointer-events: none;
+  }
+  to {
+    pointer-events: auto;
+  }
+}
+
+/* Apply pointer-events: none only to the list of items inside the Popover Paper,
+   allowing the Paper container itself (which has pointer-events: auto) to intercept and absorb
+   early click releases without letting them bubble to the Backdrop or trigger menu item clicks. */
+.MuiPopover-paper .MuiMenu-list,
+.MuiPopover-paper .MuiList-root,
+.MuiAutocomplete-paper .MuiAutocomplete-listbox {
+  animation: enablePointerEvents 0.18s steps(1, end) forwards;
+}
