@@ -1802,7 +1802,7 @@ export default function VbplSuggestionsGgTrends({
             </Box>
 
             <Grid container spacing={2}>
-              <Grid xs={6}>
+              <Grid size={{ xs: 6 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>
                   SỐ ĐỀ XUẤT CẦN SINH (COUNT)
                 </Typography>
@@ -1819,7 +1819,7 @@ export default function VbplSuggestionsGgTrends({
                 </FormControl>
               </Grid>
 
-              <Grid xs={6}>
+              <Grid size={{ xs: 6 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>
                   KHOẢNG THỜI GIAN TRENDS
                 </Typography>
@@ -1910,7 +1910,7 @@ export default function VbplSuggestionsGgTrends({
             </Typography>
 
             <Grid container spacing={2}>
-              <Grid xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>
                   SỐ ĐỀ XUẤT CẦN SINH (COUNT)
                 </Typography>
@@ -1927,7 +1927,7 @@ export default function VbplSuggestionsGgTrends({
                 </FormControl>
               </Grid>
 
-              <Grid xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>
                   KHOẢNG THỜI GIAN TRENDS
                 </Typography>

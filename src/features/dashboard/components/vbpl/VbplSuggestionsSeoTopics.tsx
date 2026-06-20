@@ -652,7 +652,7 @@ export default function VbplSuggestionsSeoTopics({
                     { label: 'Cơ chế đo lường', val: 'Quét tuần tự Puppeteer tránh quá tải máy chủ' },
                     { label: 'Thời gian hoàn thành', val: 'Khoảng 2 - 4 phút (SSE Stream)' }
                   ].map((spec, i) => (
-                    <Grid xs={12} sm={6} key={i}>
+                    <Grid size={{ xs: 12, sm: 6 }} key={i}>
                       <Box sx={{ display: 'flex', gap: 1 }}>
                         <Typography variant="body2" sx={{ color: '#f59e0b', fontWeight: 800 }}>✓</Typography>
                         <Box>

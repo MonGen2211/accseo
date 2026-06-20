@@ -1056,7 +1056,7 @@ export default function VbplSuggestionsVolume({
             }}
           >
             <Grid container spacing={3}>
-              <Grid xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                   <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                     <AutoAwesomeIcon sx={{ color: '#10b981', fontSize: '1.25rem' }} />
@@ -1168,7 +1168,7 @@ export default function VbplSuggestionsVolume({
                 </Typography>
               </Grid>
 
-              <Grid xs={12} md={4}>
+              <Grid size={{ xs: 12, md: 4 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>
                   LĨNH VỰC ƯU TIÊN (CONTEXT - TỐI ĐA 300 KÝ TỰ)
                 </Typography>
@@ -1189,7 +1189,7 @@ export default function VbplSuggestionsVolume({
                 />
               </Grid>
 
-              <Grid xs={6} md={4}>
+              <Grid size={{ xs: 6, md: 4 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>
                   SỐ TOPIC AI SINH (OUTPUTCOUNT)
                 </Typography>
@@ -1207,7 +1207,7 @@ export default function VbplSuggestionsVolume({
                 </FormControl>
               </Grid>
 
-              <Grid xs={6} md={4}>
+              <Grid size={{ xs: 6, md: 4 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>
                   MỞ RỘNG MỖI SEED (PERSEED)
                 </Typography>
@@ -1226,7 +1226,7 @@ export default function VbplSuggestionsVolume({
               </Grid>
 
               {/* Advanced search parameters (Accordion) */}
-              <Grid xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <Accordion 
                   elevation={0}
                   sx={{ 
@@ -1244,7 +1244,7 @@ export default function VbplSuggestionsVolume({
                   </AccordionSummary>
                   <AccordionDetails sx={{ borderTop: '1px solid', borderColor: 'divider', p: 3 }}>
                     <Grid container spacing={3}>
-                      <Grid xs={12} sm={6} md={3}>
+                      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                         <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>
                           QUỐC GIA NHẮM MỤC TIÊU
                         </Typography>
@@ -1262,7 +1262,7 @@ export default function VbplSuggestionsVolume({
                         </FormControl>
                       </Grid>
 
-                      <Grid xs={12} sm={6} md={3}>
+                      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                         <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>
                           NGÔN NGỮ NHẮM MỤC TIÊU
                         </Typography>
@@ -1280,7 +1280,7 @@ export default function VbplSuggestionsVolume({
                         </FormControl>
                       </Grid>
 
-                      <Grid xs={12} sm={6} md={3}>
+                      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                         <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>
                           VOLUME TÌM KIẾM TỐI THIỂU
                         </Typography>
@@ -1297,7 +1297,7 @@ export default function VbplSuggestionsVolume({
                         />
                       </Grid>
 
-                      <Grid xs={12} sm={6} md={3}>
+                      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                         <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>
                           VOLUME TÌM KIẾM TỐI ĐA
                         </Typography>
@@ -1314,7 +1314,7 @@ export default function VbplSuggestionsVolume({
                         />
                       </Grid>
 
-                      <Grid xs={12} sm={6}>
+                      <Grid size={{ xs: 12, sm: 6 }}>
                         <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>
                           ĐỘ CẠNH TRANH QUẢNG CÁO (CHỌN NHIỀU)
                         </Typography>
@@ -1334,7 +1334,7 @@ export default function VbplSuggestionsVolume({
                         </FormControl>
                       </Grid>
 
-                      <Grid xs={12} sm={6} sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Grid size={{ xs: 12, sm: 6 }} sx={{ display: 'flex', alignItems: 'center' }}>
                         <FormControlLabel
                           control={
                             <Checkbox 
@@ -1353,14 +1353,14 @@ export default function VbplSuggestionsVolume({
               </Grid>
 
               {validationError && (
-                <Grid xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <Typography variant="body2" color="error" sx={{ fontWeight: 700 }}>
                     ⚠️ {validationError}
                   </Typography>
                 </Grid>
               )}
 
-              <Grid xs={12} sx={{ display: 'flex', gap: 2, justifyContent: 'flex-start', alignItems: 'center', mt: 1 }}>
+              <Grid size={{ xs: 12 }} sx={{ display: 'flex', gap: 2, justifyContent: 'flex-start', alignItems: 'center', mt: 1 }}>
                 <Button 
                   variant="contained" 
                   onClick={() => handleExpandKeywords(1, false)} 
