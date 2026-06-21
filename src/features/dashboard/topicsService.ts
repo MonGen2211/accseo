@@ -3,7 +3,10 @@ import type {
   AggregatedTopicGroup, 
   GetTopicsResponse, 
   ImportSheetResult, 
-  GenerateTopicsResult 
+  GenerateTopicsResult,
+  Topic,
+  TopicPrompt,
+  GetPromptsResponse
 } from './vbplSuggestions.types';
 
 interface ApiResponse<T> {
@@ -55,8 +58,16 @@ export const topicsService = {
     return unwrapResponseData<ImportSheetResult>(response.data.data);
   },
 
-  async generateTopics(items: { groupId: string; count: number }[]): Promise<GenerateTopicsResult & { message?: string }> {
-    const response = await api.post<ApiResponse<any>>('/topics/generate', { items });
+  async generateTopics(
+    items: { groupId: string; count: number }[],
+    options?: { promptId?: string; customPrompt?: string }
+  ): Promise<GenerateTopicsResult & { message?: string }> {
+    const payload = {
+      items,
+      ...(options?.promptId ? { promptId: options.promptId } : {}),
+      ...(options?.customPrompt ? { customPrompt: options.customPrompt } : {}),
+    };
+    const response = await api.post<ApiResponse<any>>('/topics/generate', payload);
     const data = unwrapResponseData<GenerateTopicsResult>(response.data.data);
     return {
       ...data,
@@ -191,5 +202,36 @@ export const topicsService = {
   async refreshAllKeywordsVolume(topicId: string): Promise<Topic> {
     const response = await api.post<ApiResponse<any>>(`/topics/${topicId}/keywords/refresh-volume`);
     return unwrapResponseData<Topic>(response.data.data);
+  },
+
+  // ================= PROMPTS =================
+  async getPrompts(): Promise<GetPromptsResponse> {
+    const response = await api.get<ApiResponse<any>>('/topics/prompts');
+    return unwrapResponseData<GetPromptsResponse>(response.data.data);
+  },
+
+  async getDefaultPrompt(): Promise<{ content: string }> {
+    const response = await api.get<ApiResponse<any>>('/topics/prompts/default');
+    return unwrapResponseData<{ content: string }>(response.data.data);
+  },
+
+  async getPrompt(id: string): Promise<TopicPrompt> {
+    const response = await api.get<ApiResponse<any>>(`/topics/prompts/${id}`);
+    return unwrapResponseData<TopicPrompt>(response.data.data);
+  },
+
+  async createPrompt(name: string, content: string): Promise<TopicPrompt> {
+    const response = await api.post<ApiResponse<any>>('/topics/prompts', { name, content });
+    return unwrapResponseData<TopicPrompt>(response.data.data);
+  },
+
+  async updatePrompt(id: string, data: { name?: string; content?: string }): Promise<TopicPrompt> {
+    const response = await api.patch<ApiResponse<any>>(`/topics/prompts/${id}`, data);
+    return unwrapResponseData<TopicPrompt>(response.data.data);
+  },
+
+  async deletePrompt(id: string): Promise<{ id: string }> {
+    const response = await api.delete<ApiResponse<any>>(`/topics/prompts/${id}`);
+    return unwrapResponseData<{ id: string }>(response.data.data);
   }
 };

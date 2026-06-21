@@ -306,3 +306,15 @@ export interface GenerateTopicsResult {
     group: { id: string; name: string } | null;
   }[];
 }
+export interface TopicPrompt {
+  id: string;
+  name: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GetPromptsResponse {
+  default: { content: string };
+  prompts: TopicPrompt[];
+}

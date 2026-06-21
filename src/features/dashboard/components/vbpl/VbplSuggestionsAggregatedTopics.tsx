@@ -33,7 +33,10 @@ import {
   Tab,
   Badge,
   Checkbox,
-  Tooltip
+  Tooltip,
+  RadioGroup,
+  FormControlLabel,
+  Radio
 } from '@mui/material';
 import Select from '../../../../components/SafeSelect';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
@@ -50,13 +53,15 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SyncIcon from '@mui/icons-material/Sync';
 import AddIcon from '@mui/icons-material/Add';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 import { topicsService } from '../../topicsService';
 import type { 
   AggregatedTopicGroup, 
   Topic, 
   ImportSheetResult, 
-  GenerateTopicsResult 
+  GenerateTopicsResult,
+  TopicPrompt
 } from '../../vbplSuggestions.types';
 import { useToastify } from '../../../../components/Toastify';
 import { useAppSelector } from '../../../../app/store';
@@ -121,6 +126,28 @@ export default function VbplSuggestionsAggregatedTopics({
   const [openGenerateModal, setOpenGenerateModal] = useState<boolean>(false);
   const [generating, setGenerating] = useState<boolean>(false);
   const [generateResult, setGenerateResult] = useState<GenerateTopicsResult | null>(null);
+
+  // --- Prompts States ---
+  const [promptsList, setPromptsList] = useState<TopicPrompt[]>([]);
+  const [defaultPrompt, setDefaultPrompt] = useState<string>('');
+  const [selectedPromptMode, setSelectedPromptMode] = useState<'default' | 'saved' | 'custom'>('default');
+  const [selectedPromptId, setSelectedPromptId] = useState<string>('');
+  const [customPrompt, setCustomPrompt] = useState<string>('');
+  const [loadingPrompts, setLoadingPrompts] = useState<boolean>(false);
+
+  // Prompts Manager CRUD Modal
+  const [openPromptsManager, setOpenPromptsManager] = useState<boolean>(false);
+  const [promptFormOpen, setPromptFormOpen] = useState<boolean>(false);
+  const [promptFormMode, setPromptFormMode] = useState<'add' | 'edit'>('add');
+  const [editingPromptId, setEditingPromptId] = useState<string>('');
+  const [promptFormName, setPromptFormName] = useState<string>('');
+  const [promptFormContent, setPromptFormContent] = useState<string>('');
+  const [savingPrompt, setSavingPrompt] = useState<boolean>(false);
+
+  // Fast Save Custom Prompt Dialog
+  const [fastSaveOpen, setFastSaveOpen] = useState<boolean>(false);
+  const [fastSaveName, setFastSaveName] = useState<string>('');
+  const [savingFastPrompt, setSavingFastPrompt] = useState<boolean>(false);
 
   // Import sources history states
   const [importSources, setImportSources] = useState<ImportSheetResult[]>([]);
@@ -722,6 +749,7 @@ export default function VbplSuggestionsAggregatedTopics({
   };
 
   // Action Generate
+  // Action Generate
   const handleGenerate = async () => {
     if (selectedGenGroupIds.length === 0) {
       showToast('Vui lòng chọn ít nhất 1 mảng', 'warning');
@@ -730,6 +758,27 @@ export default function VbplSuggestionsAggregatedTopics({
     if (selectedGenGroupIds.length > 20) {
       showToast('Tối đa chỉ được chọn 20 mảng', 'warning');
       return;
+    }
+
+    // Prompt payload options setup & validation
+    let options: { promptId?: string; customPrompt?: string } = {};
+
+    if (selectedPromptMode === 'saved') {
+      if (!selectedPromptId) {
+        showToast('Vui lòng chọn một Prompt đã lưu', 'warning');
+        return;
+      }
+      options.promptId = selectedPromptId;
+    } else if (selectedPromptMode === 'custom') {
+      if (!customPrompt.trim()) {
+        showToast('Vui lòng nhập nội dung prompt tùy chỉnh', 'warning');
+        return;
+      }
+      if (customPrompt.length > 5000) {
+        showToast('Nội dung prompt tùy chỉnh không được vượt quá 5000 ký tự', 'warning');
+        return;
+      }
+      options.customPrompt = customPrompt.trim();
     }
 
     const items = selectedGenGroupIds.map(groupId => ({
@@ -743,7 +792,7 @@ export default function VbplSuggestionsAggregatedTopics({
     showToast('Đang tiến hành tạo chủ đề bằng AI ở chế độ nền...', 'info');
 
     try {
-      const result = await topicsService.generateTopics(items);
+      const result = await topicsService.generateTopics(items, options);
       setGenerateResult(result);
       showToast(result.message || `Đã tạo thêm ${result.generated}/${result.requested} chủ đề mới thành công!`, 'success');
       
@@ -759,6 +808,175 @@ export default function VbplSuggestionsAggregatedTopics({
     } finally {
       setGenerating(false);
     }
+  };
+
+  // --- Prompts Handlers ---
+  const loadPromptsData = async () => {
+    setLoadingPrompts(true);
+    try {
+      const data = await topicsService.getPrompts();
+      setPromptsList(data.prompts || []);
+      if (data.default && data.default.content) {
+        setDefaultPrompt(data.default.content);
+      } else {
+        const def = await topicsService.getDefaultPrompt();
+        setDefaultPrompt(def.content);
+      }
+    } catch (err: any) {
+      console.error('Lỗi khi tải prompts:', err);
+      showToast('Không thể tải danh sách prompt', 'danger');
+    } finally {
+      setLoadingPrompts(false);
+    }
+  };
+
+  const handleLoadDefaultAsBase = () => {
+    if (defaultPrompt) {
+      setCustomPrompt(defaultPrompt);
+      showToast('Đã nạp mẫu mặc định làm nền', 'success');
+    }
+  };
+
+  const handleFastSavePrompt = async () => {
+    if (!fastSaveName.trim()) {
+      showToast('Tên prompt không được để trống', 'warning');
+      return;
+    }
+    if (fastSaveName.length > 200) {
+      showToast('Tên prompt không được quá 200 ký tự', 'warning');
+      return;
+    }
+    setSavingFastPrompt(true);
+    try {
+      const newPrompt = await topicsService.createPrompt(fastSaveName.trim(), customPrompt.trim());
+      showToast('Lưu prompt làm mẫu thành công!', 'success');
+      
+      const updatedList = [newPrompt, ...promptsList];
+      setPromptsList(updatedList);
+      
+      setSelectedPromptMode('saved');
+      setSelectedPromptId(newPrompt.id);
+      
+      setFastSaveOpen(false);
+    } catch (err: any) {
+      console.error('Lỗi lưu prompt nhanh:', err);
+      const msg = err.response?.data?.message || '';
+      if (msg.includes('DUPLICATE_TOPIC_PROMPT')) {
+        showToast('Tên prompt đã tồn tại, vui lòng chọn tên khác', 'danger');
+      } else {
+        showToast(msg || 'Lỗi khi lưu prompt mẫu', 'danger');
+      }
+    } finally {
+      setSavingFastPrompt(false);
+    }
+  };
+
+  const handleOpenAddPromptForm = () => {
+    setPromptFormMode('add');
+    setEditingPromptId('');
+    setPromptFormName('');
+    setPromptFormContent('');
+    setPromptFormOpen(true);
+  };
+
+  const handleOpenEditPromptForm = (prompt: TopicPrompt) => {
+    setPromptFormMode('edit');
+    setEditingPromptId(prompt.id);
+    setPromptFormName(prompt.name);
+    setPromptFormContent(prompt.content);
+    setPromptFormOpen(true);
+  };
+
+  const handleSavePromptForm = async () => {
+    if (!promptFormName.trim()) {
+      showToast('Tên prompt không được để trống', 'warning');
+      return;
+    }
+    if (promptFormName.length > 200) {
+      showToast('Tên prompt không được quá 200 ký tự', 'warning');
+      return;
+    }
+    if (!promptFormContent.trim()) {
+      showToast('Nội dung prompt không được để trống', 'warning');
+      return;
+    }
+    if (promptFormContent.length > 5000) {
+      showToast('Nội dung prompt không được quá 5000 ký tự', 'warning');
+      return;
+    }
+
+    setSavingPrompt(true);
+    try {
+      if (promptFormMode === 'add') {
+        const newPrompt = await topicsService.createPrompt(promptFormName.trim(), promptFormContent.trim());
+        setPromptsList(prev => [newPrompt, ...prev]);
+        showToast('Tạo prompt mới thành công!', 'success');
+        
+        if (!selectedPromptId) {
+          setSelectedPromptId(newPrompt.id);
+        }
+      } else {
+        const updated = await topicsService.updatePrompt(editingPromptId, {
+          name: promptFormName.trim(),
+          content: promptFormContent.trim()
+        });
+        setPromptsList(prev => prev.map(p => p.id === editingPromptId ? updated : p));
+        showToast('Cập nhật prompt thành công!', 'success');
+      }
+      setPromptFormOpen(false);
+    } catch (err: any) {
+      console.error('Lỗi lưu form prompt:', err);
+      const msg = err.response?.data?.message || '';
+      if (msg.includes('DUPLICATE_TOPIC_PROMPT')) {
+        showToast('Tên prompt đã tồn tại, vui lòng chọn tên khác', 'danger');
+      } else if (msg.includes('TOPIC_PROMPT_NOT_FOUND')) {
+        showToast('Prompt không tồn tại hoặc đã bị xóa', 'danger');
+      } else if (msg.includes('EMPTY_UPDATE')) {
+        showToast('Không có thay đổi nào để cập nhật', 'warning');
+      } else {
+        showToast(msg || 'Lỗi khi lưu prompt', 'danger');
+      }
+    } finally {
+      setSavingPrompt(false);
+    }
+  };
+
+  const handleDeletePrompt = async (id: string) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa prompt này? Thao tác này không thể hoàn tác.')) {
+      return;
+    }
+
+    setSavingPrompt(true);
+    try {
+      await topicsService.deletePrompt(id);
+      setPromptsList(prev => prev.filter(p => p.id !== id));
+      showToast('Đã xóa prompt thành công!', 'success');
+      
+      if (selectedPromptId === id) {
+        setSelectedPromptId('');
+      }
+    } catch (err: any) {
+      console.error('Lỗi xóa prompt:', err);
+      const msg = err.response?.data?.message || '';
+      if (msg.includes('TOPIC_PROMPT_NOT_FOUND')) {
+        showToast('Prompt không tồn tại hoặc đã bị xóa từ trước', 'danger');
+      } else {
+        showToast(msg || 'Lỗi khi xóa prompt', 'danger');
+      }
+    } finally {
+      setSavingPrompt(false);
+    }
+  };
+
+  const handleOpenGenerateModal = () => {
+    setSelectedGenGroupIds([]);
+    setGenCounts({});
+    setGenerateResult(null);
+    setSelectedPromptMode('default');
+    setSelectedPromptId('');
+    setCustomPrompt('');
+    setOpenGenerateModal(true);
+    loadPromptsData();
   };
 
   const safeFormatDate = (dateStr: string) => {
@@ -822,12 +1040,7 @@ export default function VbplSuggestionsAggregatedTopics({
               color="primary"
               disabled={generating}
               startIcon={generating ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeIcon />}
-              onClick={() => {
-                setSelectedGenGroupIds([]);
-                setGenCounts({});
-                setGenerateResult(null);
-                setOpenGenerateModal(true);
-              }}
+              onClick={handleOpenGenerateModal}
               sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
             >
               {generating ? 'AI đang tạo...' : 'Tạo thêm chủ đề bằng AI'}
@@ -1812,6 +2025,233 @@ export default function VbplSuggestionsAggregatedTopics({
                   </Grid>
                 </Box>
               )}
+
+              <Divider sx={{ my: 1 }} />
+
+              <Box>
+                <Typography variant="body2" sx={{ fontWeight: 700, mb: 1.5, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <SettingsIcon fontSize="small" color="primary" />
+                  Cấu hình Prompt gợi ý chủ đề:
+                </Typography>
+
+                <RadioGroup
+                  row
+                  value={selectedPromptMode}
+                  onChange={(e) => {
+                    const mode = e.target.value as 'default' | 'saved' | 'custom';
+                    setSelectedPromptMode(mode);
+                    if (mode === 'saved' && promptsList.length > 0 && !selectedPromptId) {
+                      setSelectedPromptId(promptsList[0].id);
+                    }
+                  }}
+                  sx={{ mb: 2, gap: 2 }}
+                >
+                  <FormControlLabel
+                    value="default"
+                    control={<Radio size="small" />}
+                    label={
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        Mẫu mặc định
+                      </Typography>
+                    }
+                  />
+                  <FormControlLabel
+                    value="saved"
+                    control={<Radio size="small" />}
+                    label={
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        Chọn từ prompt đã lưu
+                      </Typography>
+                    }
+                  />
+                  <FormControlLabel
+                    value="custom"
+                    control={<Radio size="small" />}
+                    label={
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        Tự soạn prompt mới
+                      </Typography>
+                    }
+                  />
+                </RadioGroup>
+
+                {/* --- 1. Mode Default --- */}
+                {selectedPromptMode === 'default' && (
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      p: 1.5,
+                      bgcolor: 'action.hover',
+                      borderRadius: '8px',
+                      borderStyle: 'dashed'
+                    }}
+                  >
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, fontWeight: 600 }}>
+                      Xem trước Prompt mặc định:
+                    </Typography>
+                    {loadingPrompts ? (
+                      <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                        <CircularProgress size={20} />
+                      </Box>
+                    ) : (
+                      <Box
+                        component="pre"
+                        sx={{
+                          m: 0,
+                          p: 1,
+                          fontSize: '11px',
+                          fontFamily: 'monospace',
+                          maxHeight: '120px',
+                          overflowY: 'auto',
+                          bgcolor: 'background.paper',
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          borderRadius: '4px',
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-all'
+                        }}
+                      >
+                        {defaultPrompt || 'Chưa tải được prompt mặc định.'}
+                      </Box>
+                    )}
+                  </Paper>
+                )}
+
+                {/* --- 2. Mode Saved --- */}
+                {selectedPromptMode === 'saved' && (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                      <FormControl fullWidth size="small">
+                        <Select
+                          value={selectedPromptId}
+                          onChange={(e) => setSelectedPromptId(e.target.value as string)}
+                          displayEmpty
+                        >
+                          {promptsList.length === 0 ? (
+                            <MenuItem value="" disabled>
+                              Không có prompt nào được lưu
+                            </MenuItem>
+                          ) : (
+                            promptsList.map((p) => (
+                              <MenuItem key={p.id} value={p.id}>
+                                {p.name}
+                              </MenuItem>
+                            ))
+                          )}
+                        </Select>
+                      </FormControl>
+                      
+                      {isAdmin && (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          color="primary"
+                          onClick={() => setOpenPromptsManager(true)}
+                          sx={{ textTransform: 'none', height: '40px', px: 2, whiteSpace: 'nowrap', borderRadius: '8px', fontWeight: 600 }}
+                        >
+                          Quản lý
+                        </Button>
+                      )}
+                    </Box>
+
+                    {selectedPromptId && (
+                      <Paper
+                        variant="outlined"
+                        sx={{
+                          p: 1.5,
+                          bgcolor: 'action.hover',
+                          borderRadius: '8px'
+                        }}
+                      >
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, fontWeight: 600 }}>
+                          Xem trước prompt đã chọn:
+                        </Typography>
+                        <Box
+                          component="pre"
+                          sx={{
+                            m: 0,
+                            p: 1,
+                            fontSize: '11px',
+                            fontFamily: 'monospace',
+                            maxHeight: '120px',
+                            overflowY: 'auto',
+                            bgcolor: 'background.paper',
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            borderRadius: '4px',
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-all'
+                          }}
+                        >
+                          {promptsList.find(p => p.id === selectedPromptId)?.content || 'Nội dung trống.'}
+                        </Box>
+                      </Paper>
+                    )}
+                  </Box>
+                )}
+
+                {/* --- 3. Mode Custom --- */}
+                {selectedPromptMode === 'custom' && (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={handleLoadDefaultAsBase}
+                        disabled={loadingPrompts || !defaultPrompt}
+                        sx={{ textTransform: 'none', borderRadius: '6px', fontSize: '12px' }}
+                      >
+                        Dùng mẫu mặc định làm nền
+                      </Button>
+
+                      {isAdmin && (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          color="success"
+                          onClick={() => {
+                            if (!customPrompt.trim()) {
+                              showToast('Vui lòng nhập nội dung prompt trước khi lưu', 'warning');
+                              return;
+                            }
+                            if (customPrompt.length > 5000) {
+                              showToast('Nội dung prompt vượt quá 5000 ký tự', 'warning');
+                              return;
+                            }
+                            setFastSaveName('');
+                            setFastSaveOpen(true);
+                          }}
+                          sx={{ textTransform: 'none', borderRadius: '6px', fontSize: '12px' }}
+                        >
+                          Lưu prompt này làm mẫu
+                        </Button>
+                      )}
+                    </Box>
+
+                    <TextField
+                      multiline
+                      rows={5}
+                      fullWidth
+                      variant="outlined"
+                      placeholder="Nhập nội dung prompt tùy chỉnh để hướng dẫn AI sinh chủ đề..."
+                      value={customPrompt}
+                      onChange={(e) => setCustomPrompt(e.target.value.slice(0, 5000))}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          fontFamily: 'monospace',
+                          fontSize: '12px',
+                          borderRadius: '8px'
+                        }
+                      }}
+                    />
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <Typography variant="caption" color={customPrompt.length >= 5000 ? 'error' : 'text.secondary'}>
+                        {customPrompt.length}/5000 ký tự
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
+              </Box>
             </Box>
           )}
         </DialogContent>
@@ -2137,6 +2577,224 @@ export default function VbplSuggestionsAggregatedTopics({
             sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
           >
             Lưu
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 11. Modal Lưu nhanh Prompt tùy chỉnh */}
+      <Dialog
+        open={fastSaveOpen}
+        onClose={() => !savingFastPrompt && setFastSaveOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: '12px' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800 }}>Lưu prompt làm mẫu</DialogTitle>
+        <DialogContent dividers sx={{ py: 2 }}>
+          <TextField
+            fullWidth
+            label="Tên prompt mẫu"
+            variant="outlined"
+            value={fastSaveName}
+            onChange={(e) => setFastSaveName(e.target.value)}
+            placeholder="Ví dụ: Prompt chuẩn SEO, Prompt Luật hình sự..."
+            size="small"
+            required
+            disabled={savingFastPrompt}
+            error={!fastSaveName.trim() || fastSaveName.length > 200}
+            helperText={
+              !fastSaveName.trim()
+                ? "Tên prompt không được để trống"
+                : fastSaveName.length > 200
+                ? "Tên prompt không được quá 200 ký tự"
+                : ""
+            }
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            onClick={() => setFastSaveOpen(false)}
+            disabled={savingFastPrompt}
+            sx={{ textTransform: 'none', fontWeight: 700 }}
+            color="inherit"
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleFastSavePrompt}
+            variant="contained"
+            color="primary"
+            disabled={savingFastPrompt || !fastSaveName.trim() || fastSaveName.length > 200}
+            startIcon={savingFastPrompt ? <CircularProgress size={16} color="inherit" /> : null}
+            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
+          >
+            Lưu
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 12. Modal Quản lý Prompts (Chỉ Admin) */}
+      <Dialog
+        open={openPromptsManager}
+        onClose={() => !savingPrompt && setOpenPromptsManager(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: '16px' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>Quản lý danh sách Prompt gợi ý</span>
+          {!promptFormOpen && (
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<AddIcon />}
+              onClick={handleOpenAddPromptForm}
+              sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
+            >
+              Thêm Prompt mới
+            </Button>
+          )}
+        </DialogTitle>
+        <DialogContent dividers sx={{ p: promptFormOpen ? 2.5 : 0 }}>
+          {promptFormOpen ? (
+            // Form Thêm/Sửa Prompt
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                {promptFormMode === 'add' ? 'Thêm prompt mới' : 'Chỉnh sửa prompt'}
+              </Typography>
+              <TextField
+                fullWidth
+                label="Tên prompt"
+                variant="outlined"
+                value={promptFormName}
+                onChange={(e) => setPromptFormName(e.target.value)}
+                placeholder="Nhập tên dễ nhớ (ví dụ: SEO Ngách Bất Động Sản)..."
+                size="small"
+                required
+                disabled={savingPrompt}
+                error={!promptFormName.trim() || promptFormName.length > 200}
+                helperText={
+                  !promptFormName.trim()
+                    ? "Tên prompt không được để trống"
+                    : promptFormName.length > 200
+                    ? "Tên prompt không được quá 200 ký tự"
+                    : ""
+                }
+              />
+              <Box>
+                <TextField
+                  fullWidth
+                  label="Nội dung prompt"
+                  variant="outlined"
+                  multiline
+                  rows={8}
+                  value={promptFormContent}
+                  onChange={(e) => setPromptFormContent(e.target.value.slice(0, 5000))}
+                  placeholder="Nhập nội dung prompt chi tiết để AI làm việc..."
+                  required
+                  disabled={savingPrompt}
+                  error={!promptFormContent.trim()}
+                  helperText={!promptFormContent.trim() ? "Nội dung prompt không được để trống" : ""}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      fontFamily: 'monospace',
+                      fontSize: '12px'
+                    }
+                  }}
+                />
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 0.5 }}>
+                  <Typography variant="caption" color={promptFormContent.length >= 5000 ? 'error' : 'text.secondary'}>
+                    {promptFormContent.length}/5000 ký tự
+                  </Typography>
+                </Box>
+              </Box>
+
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mt: 1 }}>
+                <Button
+                  onClick={() => setPromptFormOpen(false)}
+                  disabled={savingPrompt}
+                  sx={{ textTransform: 'none', fontWeight: 700 }}
+                  variant="text"
+                  color="inherit"
+                >
+                  Hủy quay lại
+                </Button>
+                <Button
+                  onClick={handleSavePromptForm}
+                  variant="contained"
+                  color="primary"
+                  disabled={savingPrompt || !promptFormName.trim() || promptFormName.length > 200 || !promptFormContent.trim()}
+                  startIcon={savingPrompt ? <CircularProgress size={16} color="inherit" /> : null}
+                  sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
+                >
+                  Lưu thay đổi
+                </Button>
+              </Box>
+            </Box>
+          ) : (
+            // Danh sách Prompt
+            <TableContainer sx={{ maxHeight: 400 }}>
+              <Table stickyHeader size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 800 }}>Tên Prompt</TableCell>
+                    <TableCell sx={{ fontWeight: 800 }}>Nội dung rút gọn</TableCell>
+                    <TableCell sx={{ fontWeight: 800 }} align="center" width={120}>Thao tác</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {promptsList.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={3} align="center" sx={{ py: 3, color: 'text.secondary' }}>
+                        Chưa có prompt lưu trữ nào. Hãy thêm mới!
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    promptsList.map((p) => (
+                      <TableRow key={p.id} hover>
+                        <TableCell sx={{ fontWeight: 700 }}>{p.name}</TableCell>
+                        <TableCell sx={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'text.secondary', fontFamily: 'monospace', fontSize: '11px' }}>
+                          {p.content}
+                        </TableCell>
+                        <TableCell align="center">
+                          <Stack direction="row" spacing={0.5} justifyContent="center">
+                            <Tooltip title="Chỉnh sửa">
+                              <IconButton
+                                size="small"
+                                color="primary"
+                                onClick={() => handleOpenEditPromptForm(p)}
+                              >
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Xóa">
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => handleDeletePrompt(p.id)}
+                              >
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Stack>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            onClick={() => setOpenPromptsManager(false)}
+            disabled={savingPrompt}
+            sx={{ textTransform: 'none', fontWeight: 700 }}
+            variant="outlined"
+            color="inherit"
+          >
+            Đóng quản lý
           </Button>
         </DialogActions>
       </Dialog>
