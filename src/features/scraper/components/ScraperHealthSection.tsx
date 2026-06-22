@@ -122,9 +122,7 @@ export default function ScraperHealthSection() {
     try {
       const data = await scraperService.getHealth();
       setHealthData(data);
-      if (showNotification) {
-        showToast('Cập nhật tình trạng scraper thành công!', 'success');
-      }
+
     } catch (err: any) {
       console.error('Lỗi tải scraper health:', err);
       showToast(err.response?.data?.message || 'Không thể tải tình trạng scraper', 'danger');
@@ -440,7 +438,7 @@ export default function ScraperHealthSection() {
                                         width: 8,
                                         height: 8,
                                         borderRadius: '50%',
-                                        bgcolor: isLow ? 'error.main' : 'success.main',
+                                        bgcolor: item.status === 'gathering' ? '#95a5a6' : (isLow ? 'error.main' : 'success.main'),
                                         cursor: 'help',
                                         border: '1px solid transparent',
                                         '&:hover': { transform: 'scale(1.2)' },
@@ -647,8 +645,8 @@ export default function ScraperHealthSection() {
                             return (
                               <Grid size={{ xs: 6 }} key={field}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                  <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: isLow ? 'error.main' : 'success.main', flexShrink: 0 }} />
-                                  <Typography variant="caption" sx={{ textTransform: 'capitalize', fontWeight: 600, color: isLow ? 'error.main' : 'text.secondary', fontSize: '0.68rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: item.status === 'gathering' ? '#95a5a6' : (isLow ? 'error.main' : 'success.main'), flexShrink: 0 }} />
+                                  <Typography variant="caption" sx={{ textTransform: 'capitalize', fontWeight: 600, color: item.status === 'gathering' ? 'text.secondary' : (isLow ? 'error.main' : 'text.secondary'), fontSize: '0.68rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                     {field}: <strong>{percentage}%</strong>
                                   </Typography>
                                 </Box>
