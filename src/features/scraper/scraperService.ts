@@ -167,5 +167,14 @@ export const scraperService = {
       `/scraper/health/${source}/runs?${query.toString()}`
     );
     return response.data.data;
+  },
+
+  deleteHealth: async (source?: string): Promise<{ deletedRuns: number; clearedKeys: boolean }> => {
+    const query = new URLSearchParams();
+    if (source) query.append('source', source);
+    const response = await api.delete<ApiResponse<{ deletedRuns: number; clearedKeys: boolean }>>(
+      `/scraper/health?${query.toString()}`
+    );
+    return response.data.data;
   }
 };

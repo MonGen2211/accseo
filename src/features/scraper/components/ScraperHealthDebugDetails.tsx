@@ -241,22 +241,46 @@ export default function ScraperHealthDebugDetails({ data }: ScraperHealthDebugDe
                   border: '1px solid rgba(237, 108, 2, 0.2)'
                 }}
               >
-                <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5 }}>
-                  Chuyên mục: <Box component="span" sx={{ color: 'warning.main' }}>{sec.section}</Box> ({sec.count} bài)
+                <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.8 }}>
+                  Chuyên mục: <Box component="span" sx={{ color: 'warning.main', fontWeight: 800 }}>{sec.section}</Box> ({sec.count} bài)
                 </Typography>
-                {sec.sampleUrl && (
-                  <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                
+                {/* New backend shape: samples list */}
+                {sec.samples && sec.samples.length > 0 && (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {sec.samples.map((sample, sIdx) => (
+                      <Button
+                        key={sIdx}
+                        variant="outlined"
+                        size="small"
+                        color="warning"
+                        href={sample.url}
+                        target="_blank"
+                        rel="noopener"
+                        title={sample.title || undefined}
+                        startIcon={<LaunchIcon sx={{ fontSize: 12 }} />}
+                        sx={{ textTransform: 'none', fontSize: '0.7rem', py: 0.2, px: 1 }}
+                      >
+                        Xem bài mẫu {sec.samples.length > 1 ? `#${sIdx + 1}` : ''}
+                      </Button>
+                    ))}
+                  </Box>
+                )}
+
+                {/* Fallback to old shape if present */}
+                {!(sec.samples && sec.samples.length > 0) && (sec as any).sampleUrl && (
+                  <Box sx={{ display: 'flex', gap: 1 }}>
                     <Button
                       variant="outlined"
                       size="small"
                       color="warning"
-                      href={sec.sampleUrl}
+                      href={(sec as any).sampleUrl}
                       target="_blank"
                       rel="noopener"
                       startIcon={<LaunchIcon sx={{ fontSize: 12 }} />}
                       sx={{ textTransform: 'none', fontSize: '0.7rem', py: 0.2, px: 1 }}
                     >
-                      Xem bài mẫu: {sec.sampleTitle || 'Chi tiết'}
+                      Xem bài mẫu: {(sec as any).sampleTitle || 'Chi tiết'}
                     </Button>
                   </Box>
                 )}

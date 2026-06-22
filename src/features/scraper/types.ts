@@ -213,9 +213,8 @@ export interface ScraperHealthSource {
   }[] | null;
   newSectionDetails: {
     section: string;
-    sampleUrl: string;
-    sampleTitle: string;
     count: number;
+    samples: { url: string; title: string | null }[];
   }[] | null;
   anomalies: string[];
   errorMessage: string | null;
@@ -260,9 +259,8 @@ export interface ScraperRun {
   }[];
   newSectionDetails: {
     section: string;
-    sampleUrl: string;
-    sampleTitle: string;
     count: number;
+    samples: { url: string; title: string | null }[];
   }[];
   errorMessage: string | null;
   errorStack: string | null;

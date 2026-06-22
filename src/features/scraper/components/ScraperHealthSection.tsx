@@ -23,7 +23,10 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   IconButton,
-  Tooltip
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -37,6 +40,7 @@ import HistoryIcon from '@mui/icons-material/History';
 import TableRowsIcon from '@mui/icons-material/TableRows';
 import GridViewIcon from '@mui/icons-material/GridView';
 import TroubleshootIcon from '@mui/icons-material/Troubleshoot';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
 
 import { scraperService } from '../scraperService';
 import type { ScraperHealthResponse, ScraperHealthSource } from '../types';
@@ -82,6 +86,31 @@ export default function ScraperHealthSection() {
   const handleOpenHistory = (source: string) => {
     setHistorySource(source);
     setHistoryOpen(true);
+  };
+
+  const [debugDialogSource, setDebugDialogSource] = useState<ScraperHealthSource | null>(null);
+
+  const handleResetBaseline = async (source?: string) => {
+    const confirmMessage = source 
+      ? `Bạn có chắc chắn muốn reset baseline và lịch sử của nguồn cào "${source}"? Hành động này sẽ xóa các lượt chạy cũ và thu thập lại baseline mới.`
+      : 'Bạn có chắc chắn muốn reset baseline và lịch sử của TẤT CẢ các nguồn cào?';
+    
+    if (!window.confirm(confirmMessage)) return;
+
+    setLoading(true);
+    try {
+      const res = await scraperService.deleteHealth(source);
+      showToast(
+        `Đã reset thành công! Đã xóa ${res.deletedRuns} lượt chạy và xóa toàn bộ baseline.`,
+        'success'
+      );
+      loadHealth();
+    } catch (err: any) {
+      console.error('Lỗi khi reset baseline:', err);
+      showToast(err.response?.data?.message || 'Không thể reset baseline', 'danger');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Highlight state
@@ -242,6 +271,17 @@ export default function ScraperHealthSection() {
             sx={{ textTransform: 'none', borderRadius: '8px', fontWeight: 700 }}
           >
             Làm mới
+          </Button>
+
+          <Button
+            variant="outlined"
+            color="warning"
+            onClick={() => handleResetBaseline()}
+            disabled={loading}
+            startIcon={<RestartAltIcon />}
+            sx={{ textTransform: 'none', borderRadius: '8px', fontWeight: 700 }}
+          >
+            Reset tất cả baseline
           </Button>
 
           <ToggleButtonGroup
@@ -434,15 +474,24 @@ export default function ScraperHealthSection() {
                             })}
                           </Box>
                         </TableCell>
-                        <TableCell sx={{ textAlign: 'right' }}>
+                        <TableCell sx={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                           <IconButton
                             size="small"
                             onClick={() => handleOpenHistory(item.source)}
                             title="Xem lịch sử chạy"
                             color="primary"
-                            sx={{ p: 0.5 }}
+                            sx={{ p: 0.5, mr: 0.5 }}
                           >
                             <HistoryIcon sx={{ fontSize: 18 }} />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleResetBaseline(item.source)}
+                            title="Reset baseline"
+                            color="warning"
+                            sx={{ p: 0.5 }}
+                          >
+                            <RestartAltIcon sx={{ fontSize: 18 }} />
                           </IconButton>
                         </TableCell>
                       </TableRow>
@@ -643,23 +692,28 @@ export default function ScraperHealthSection() {
                        <Box sx={{ mt: 1 }}>
                           <Button
                             size="small"
-                            onClick={() => toggleExpand(item.source)}
-                            startIcon={expandedCard[item.source] ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                            onClick={() => setDebugDialogSource(item)}
+                            startIcon={<TroubleshootIcon sx={{ fontSize: 13 }} />}
                             sx={{ textTransform: 'none', p: 0, fontSize: '0.7rem', minWidth: 0, fontWeight: 700 }}
                             color="error"
                           >
-                            {expandedCard[item.source] ? 'Ẩn chi tiết gỡ lỗi' : 'Xem chi tiết gỡ lỗi (Debug)'}
+                            Xem chi tiết gỡ lỗi (Debug)
                           </Button>
-                          <Collapse in={expandedCard[item.source]}>
-                            <Box sx={{ mt: 0.5 }}>
-                              <ScraperHealthDebugDetails data={item} />
-                            </Box>
-                          </Collapse>
                        </Box>
                     )}
 
                     <Divider sx={{ my: 1 }} />
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Button
+                        size="small"
+                        variant="text"
+                        color="warning"
+                        startIcon={<RestartAltIcon sx={{ fontSize: 14 }} />}
+                        onClick={() => handleResetBaseline(item.source)}
+                        sx={{ textTransform: 'none', fontSize: '0.7rem', fontWeight: 700 }}
+                      >
+                        Reset baseline
+                      </Button>
                       <Button
                         size="small"
                         variant="text"
@@ -677,6 +731,25 @@ export default function ScraperHealthSection() {
           })})()}
         </Grid>
       )}
+
+      {/* Debug Details Dialog for Grid View */}
+      <Dialog 
+        open={!!debugDialogSource} 
+        onClose={() => setDebugDialogSource(null)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: '16px', p: 1 }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, pb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          Chi tiết gỡ lỗi (Debug): {debugDialogSource?.source.toUpperCase()}
+          <Button onClick={() => setDebugDialogSource(null)} size="small" sx={{ minWidth: 0, fontWeight: 700 }}>Đóng</Button>
+        </DialogTitle>
+        <DialogContent sx={{ pt: '10px !important' }}>
+          {debugDialogSource && <ScraperHealthDebugDetails data={debugDialogSource} />}
+        </DialogContent>
+      </Dialog>
 
       {/* History Runs Drawer */}
       <ScraperHealthHistoryDrawer
