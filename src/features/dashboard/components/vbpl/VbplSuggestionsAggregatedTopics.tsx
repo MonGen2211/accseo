@@ -1941,55 +1941,71 @@ export default function VbplSuggestionsAggregatedTopics({
                 <Typography variant="body2" sx={{ fontWeight: 700, mb: 1 }}>
                   Chọn mảng cần tạo chủ đề (Tối đa 20 mảng):
                 </Typography>
+
+                {selectedGenGroupIds.length > 0 && (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1.5 }}>
+                    {selectedGenGroupIds.map((groupId) => {
+                      const groupName = groups.find(g => g.id === groupId)?.name || groupId;
+                      return (
+                        <Chip 
+                          key={groupId} 
+                          label={groupName} 
+                          size="small" 
+                          color="primary"
+                          onDelete={() => {
+                            setSelectedGenGroupIds(prev => prev.filter(id => id !== groupId));
+                          }}
+                          sx={{ 
+                            borderRadius: '6px',
+                            fontWeight: 600,
+                            bgcolor: 'rgba(25, 118, 210, 0.08)',
+                            color: 'primary.main',
+                            border: '1px solid rgba(25, 118, 210, 0.2)',
+                            '&:hover': {
+                              bgcolor: 'rgba(25, 118, 210, 0.12)'
+                            }
+                          }}
+                        />
+                      );
+                    })}
+                  </Box>
+                )}
+
                 <Select
-                  multiple
-                  value={selectedGenGroupIds}
+                  value=""
                   onChange={(e) => {
-                    const value = e.target.value as string[];
-                    if (value.length > 20) {
+                    const val = e.target.value as string;
+                    if (!val) return;
+                    if (selectedGenGroupIds.length >= 20) {
                       showToast('Tối đa chỉ chọn được 20 mảng', 'warning');
                       return;
                     }
-                    setSelectedGenGroupIds(value);
-                    const newCounts = { ...genCounts };
-                    value.forEach(id => {
-                      if (newCounts[id] === undefined) {
-                        newCounts[id] = 10;
-                      }
-                    });
-                    setGenCounts(newCounts);
+                    if (!selectedGenGroupIds.includes(val)) {
+                      setSelectedGenGroupIds(prev => [...prev, val]);
+                      setGenCounts(prev => ({
+                        ...prev,
+                        [val]: prev[val] || 10
+                      }));
+                    }
                   }}
                   displayEmpty
-                  renderValue={(selected) => {
-                    if (selected.length === 0) {
-                      return <em style={{ color: '#aaa' }}>Chọn một hoặc nhiều mảng...</em>;
-                    }
-                    return (
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {selected.map((value) => {
-                          const groupName = groups.find(g => g.id === value)?.name || value;
-                          return (
-                            <Chip 
-                              key={value} 
-                              label={groupName} 
-                              size="small" 
-                              onDelete={(ev) => {
-                                ev.stopPropagation();
-                                setSelectedGenGroupIds(prev => prev.filter(id => id !== value));
-                              }}
-                            />
-                          );
-                        })}
-                      </Box>
-                    );
-                  }}
+                  renderValue={() => (
+                    <em style={{ color: '#aaa', fontStyle: 'normal' }}>
+                      {selectedGenGroupIds.length === 0 ? 'Chọn mảng...' : 'Chọn thêm mảng...'}
+                    </em>
+                  )}
                   MenuProps={{ PaperProps: { style: { maxHeight: 300 } } }}
                 >
-                  {groups.map((g) => (
-                    <MenuItem key={g.id} value={g.id}>
-                      {g.name}
-                    </MenuItem>
-                  ))}
+                  <MenuItem value="" disabled>
+                    <em>{selectedGenGroupIds.length === 0 ? 'Chọn mảng...' : 'Chọn thêm mảng...'}</em>
+                  </MenuItem>
+                  {groups
+                    .filter(g => g.id && !selectedGenGroupIds.includes(g.id))
+                    .map((g) => (
+                      <MenuItem key={g.id} value={g.id}>
+                        {g.name}
+                      </MenuItem>
+                    ))}
                 </Select>
               </FormControl>
 
