@@ -48,7 +48,9 @@ export default function ScraperHealthSection() {
 
   const [healthData, setHealthData] = useState<ScraperHealthResponse | null>(null);
   const [loading, setLoading] = useState(false);
-  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(() => {
+    return localStorage.getItem('scraper_health_auto_refresh') === 'true';
+  });
   const [expandedCard, setExpandedCard] = useState<Record<string, boolean>>({});
 
   // Highlight state
@@ -186,7 +188,11 @@ export default function ScraperHealthSection() {
             control={
               <Switch
                 checked={autoRefresh}
-                onChange={(e) => setAutoRefresh(e.target.checked)}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setAutoRefresh(checked);
+                  localStorage.setItem('scraper_health_auto_refresh', String(checked));
+                }}
                 color="primary"
               />
             }
