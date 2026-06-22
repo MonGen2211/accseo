@@ -4,7 +4,6 @@ import {
   Box,
   Typography,
   Paper,
-  Grid,
   Chip,
   Button,
   CircularProgress,
@@ -16,6 +15,7 @@ import {
   LinearProgress,
   Collapse
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
@@ -258,10 +258,7 @@ export default function ScraperHealthSection() {
 
             return (
               <Grid 
-                item 
-                xs={12} 
-                md={6} 
-                lg={4} 
+                size={{ xs: 12, sm: 6, md: 6, lg: 4 }}
                 key={item.source}
                 ref={(el) => { sourceRefs.current[item.source] = el; }}
               >
@@ -283,7 +280,7 @@ export default function ScraperHealthSection() {
                   {/* Status Bar Indicator */}
                   <Box sx={{ height: '6px', bgcolor: colors.main, borderRadius: '16px 16px 0 0' }} />
 
-                  <CardContent sx={{ p: 2.5 }}>
+                  <CardContent sx={{ p: 2, pb: '16px !important' }}>
                     {/* Header: Source and Status Badge */}
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                       <Typography variant="subtitle1" sx={{ fontWeight: 800, textTransform: 'uppercase', color: 'text.primary' }}>
@@ -306,92 +303,81 @@ export default function ScraperHealthSection() {
                     </Box>
 
                     {/* Stats Section */}
-                    <Grid container spacing={1.5} sx={{ mb: 2 }}>
-                      <Grid item xs={6}>
-                        <Paper variant="outlined" sx={{ p: 1, textAlign: 'center', borderRadius: '8px', bgcolor: 'action.hover' }}>
-                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                            Sản lượng / Baseline
-                          </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                            {item.total} {item.baselineTotal !== null ? `/ ~${item.baselineTotal}` : ''}
-                          </Typography>
-                        </Paper>
-                      </Grid>
-                      <Grid item xs={6}>
-                        <Paper variant="outlined" sx={{ p: 1, textAlign: 'center', borderRadius: '8px', bgcolor: 'action.hover' }}>
-                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                            Số bài mới
-                          </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 700, color: item.inserted > 0 ? 'success.main' : 'text.primary' }}>
-                            +{item.inserted} bài
-                          </Typography>
-                        </Paper>
-                      </Grid>
-                    </Grid>
+                    <Box sx={{ display: 'flex', gap: 1.5, mb: 1.5, justifyContent: 'space-between', bgcolor: 'action.hover', p: 1, borderRadius: '8px', border: '1px solid', borderColor: 'divider' }}>
+                      <Box sx={{ flex: 1, textAlign: 'center' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.65rem', fontWeight: 700 }}>
+                          SẢN LƯỢNG / BASELINE
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 800, mt: 0.1, fontSize: '0.85rem' }}>
+                          {item.total} {item.baselineTotal !== null ? `/ ~${item.baselineTotal}` : ''}
+                        </Typography>
+                      </Box>
+                      <Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed' }} />
+                      <Box sx={{ flex: 1, textAlign: 'center' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.65rem', fontWeight: 700 }}>
+                          SỐ BÀI MỚI
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 800, color: item.inserted > 0 ? 'success.main' : 'text.primary', mt: 0.1, fontSize: '0.85rem' }}>
+                          +{item.inserted} bài
+                        </Typography>
+                      </Box>
+                    </Box>
 
                     {/* Run Stats Info */}
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2.5 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6, mb: 1.5 }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.72rem' }}>
                           Lượt chạy cuối:
                         </Typography>
-                        <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.72rem' }}>
                           {safeFormatDistance(item.lastRunAt)}
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.72rem' }}>
                           Trạng thái kết quả:
                         </Typography>
-                        <Typography variant="caption" sx={{ fontWeight: 700, color: item.lastRunOk ? 'success.main' : 'error.main' }}>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: item.lastRunOk ? 'success.main' : 'error.main', fontSize: '0.72rem' }}>
                           {item.lastRunOk ? 'Thành công' : 'Lỗi kết nối / parse'}
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.72rem' }}>
                           Thời gian chạy:
                         </Typography>
-                        <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.72rem' }}>
                           {(item.durationMs / 1000).toFixed(2)} giây
                         </Typography>
                       </Box>
                     </Box>
 
-                    <Divider sx={{ mb: 2 }} />
+                    <Divider sx={{ mb: 1.5 }} />
 
                     {/* Fill Rates */}
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', mb: 1.5 }}>
-                        Tỷ lệ đầy đủ trường dữ liệu (Fill Rates):
+                    <Box sx={{ mb: 1.5 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', mb: 1, fontSize: '0.72rem' }}>
+                        Độ đầy dữ liệu (Fill Rates):
                       </Typography>
                       {item.fillRates ? (
-                        <Grid container spacing={1.5}>
+                        <Grid container spacing={1}>
                           {Object.entries(item.fillRates).map(([field, val]) => {
                             if (val === undefined || val === null) return null;
                             const percentage = Math.round(val * 100);
                             const isLow = percentage < 50;
                             return (
-                              <Grid item xs={6} key={field}>
-                                <Box sx={{ mb: 0.5, display: 'flex', justifyContent: 'space-between' }}>
-                                  <Typography variant="caption" sx={{ textTransform: 'capitalize', fontWeight: 600, color: isLow ? 'error.main' : 'text.secondary' }}>
-                                    {field}
-                                  </Typography>
-                                  <Typography variant="caption" sx={{ fontWeight: 700, color: isLow ? 'error.main' : 'text.primary' }}>
-                                    {percentage}%
+                              <Grid size={{ xs: 6 }} key={field}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                  <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: isLow ? 'error.main' : 'success.main', flexShrink: 0 }} />
+                                  <Typography variant="caption" sx={{ textTransform: 'capitalize', fontWeight: 600, color: isLow ? 'error.main' : 'text.secondary', fontSize: '0.7rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {field}: <strong>{percentage}%</strong>
                                   </Typography>
                                 </Box>
-                                <LinearProgress 
-                                  variant="determinate" 
-                                  value={percentage} 
-                                  color={isLow ? 'error' : 'primary'}
-                                  sx={{ height: 4, borderRadius: 2 }}
-                                />
                               </Grid>
                             );
                           })}
                         </Grid>
                       ) : (
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontStyle: 'italic' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontStyle: 'italic', fontSize: '0.7rem' }}>
                           Không có dữ liệu tỷ lệ.
                         </Typography>
                       )}
