@@ -181,3 +181,29 @@ export interface VbplAiAutoRunResult {
   succeeded: number;
   failed: number;
 }
+
+export interface ScraperHealthSource {
+  source: string;
+  status: 'healthy' | 'warn' | 'critical' | 'gathering';
+  lastRunAt: string | null;
+  lastRunOk: boolean;
+  total: number;
+  baselineTotal: number | null;
+  inserted: number;
+  durationMs: number;
+  fillRates: {
+    title?: number;
+    publishedAt?: number;
+    tags?: number;
+    metadata?: number;
+    [key: string]: number | undefined;
+  } | null;
+  anomalies: string[];
+  errorMessage: string | null;
+  isDown: boolean;
+}
+
+export interface ScraperHealthResponse {
+  generatedAt: string;
+  sources: ScraperHealthSource[];
+}

@@ -2,7 +2,7 @@ export type NotificationType =
   | 'article' | 'schedule' | 'system' | 'sync' | 'change'
   | 'REQUEST_ASSIGNED' | 'REQUEST_CLAIMED' | 'REQUEST_DONE'
   | 'REQUEST_REJECTED' | 'REQUEST_CANCELLED' | 'REQUEST_REMINDER' | 'REQUEST_REASSIGNED'
-  | 'VBPL_AUTO_EXPORT_DISABLED';
+  | 'VBPL_AUTO_EXPORT_DISABLED' | 'SCRAPER_HEALTH_ALERT';
 
 export interface AppNotification {
   _id: string;

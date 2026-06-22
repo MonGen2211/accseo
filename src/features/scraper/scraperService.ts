@@ -1,5 +1,5 @@
 import api from '../../utils/api';
-import type { GetArticlesParams, GetArticlesResponse, ScraperSummary, TriggerScrapeResponse, ScraperSchedule, ScheduleUpdateResponse, AiGenerateResponseData, AiResultResponseData, VbplAiAutoConfig, VbplAiAutoFilterOptions, VbplAiAutoRunResult } from './types';
+import type { GetArticlesParams, GetArticlesResponse, ScraperSummary, TriggerScrapeResponse, ScraperSchedule, ScheduleUpdateResponse, AiGenerateResponseData, AiResultResponseData, VbplAiAutoConfig, VbplAiAutoFilterOptions, VbplAiAutoRunResult, ScraperHealthResponse } from './types';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -148,5 +148,10 @@ export const scraperService = {
       message: response.data.message || 'Kích hoạt tự động đẩy VBPL lên Sheet thành công!',
       data: responseData
     };
+  },
+
+  getHealth: async (): Promise<ScraperHealthResponse> => {
+    const response = await api.get<ApiResponse<ScraperHealthResponse>>('/scraper/health');
+    return response.data.data;
   }
 };

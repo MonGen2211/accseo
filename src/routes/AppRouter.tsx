@@ -53,6 +53,7 @@ export default function AppRouter() {
 					<Route path="profile" element={<ProfilePage />} />
 					<Route path="settings" element={<PageRoute pageKey="settings"><SettingsPage /></PageRoute>} />
 					<Route path="users" element={<PageRoute pageKey="users"><DashboardPage /></PageRoute>} />
+					<Route path="scraper/health" element={<PageRoute pageKey="scraper_health"><DashboardPage /></PageRoute>} />
 					<Route path="domains" element={<PageRoute pageKey="domains"><DashboardPage /></PageRoute>} />
 					<Route path="domains/:domainId/keywords" element={<PageRoute pageKey="keywords"><KeywordPage /></PageRoute>} />
 					<Route path="requests" element={<PageRoute pageKey="requests"><DashboardPage /></PageRoute>} />

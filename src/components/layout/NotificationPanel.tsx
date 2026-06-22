@@ -18,6 +18,8 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import ErrorOutlinedIcon from '@mui/icons-material/ErrorOutlined';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../app/store';
@@ -41,7 +43,43 @@ function filterByTab(items: AppNotification[], filter: TabFilter): AppNotificati
   return items.filter((n) => n.type === filter);
 }
 
-function NotifIcon({ type, title }: { type: NotificationType; title?: string }) {
+function NotifIcon({ type, title, data }: { type: NotificationType; title?: string; data?: Record<string, string> }) {
+  if (type === 'SCRAPER_HEALTH_ALERT') {
+    let parsedData = data;
+    if (typeof parsedData === 'string') {
+      try {
+        parsedData = JSON.parse(parsedData);
+      } catch (e) {}
+    }
+    if (parsedData && typeof parsedData === 'object') {
+      if (typeof parsedData.recovered === 'string') {
+        parsedData.recovered = parsedData.recovered === 'true';
+      }
+    }
+    const isRecovered = parsedData?.recovered === true;
+    if (isRecovered) {
+      return (
+        <Box sx={{ width: 40, height: 40, borderRadius: '50%', bgcolor: 'rgba(46, 125, 50, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'success.main', flexShrink: 0 }}>
+          <CheckCircleOutlinedIcon sx={{ fontSize: 20 }} />
+        </Box>
+      );
+    }
+    const severity = parsedData?.severity || 'WARN';
+    if (severity === 'CRITICAL') {
+      return (
+        <Box sx={{ width: 40, height: 40, borderRadius: '50%', bgcolor: 'rgba(211, 47, 47, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'error.main', flexShrink: 0 }}>
+          <ErrorOutlinedIcon sx={{ fontSize: 20 }} />
+        </Box>
+      );
+    } else {
+      return (
+        <Box sx={{ width: 40, height: 40, borderRadius: '50%', bgcolor: 'rgba(237, 108, 2, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'warning.main', flexShrink: 0 }}>
+          <WarningAmberIcon sx={{ fontSize: 20 }} />
+        </Box>
+      );
+    }
+  }
+
   if (REQUEST_TYPES.includes(type)) {
     const colorMap: Partial<Record<NotificationType, string>> = {
       REQUEST_ASSIGNED:   '#00b894',
@@ -96,9 +134,23 @@ export default function NotificationPanel() {
   const handleNotifClick = (notif: AppNotification) => {
     if (!notif.isRead) dispatch(markAsRead(notif._id));
 
-    if (notif.data?.requestId) {
-      navigate(`/requests/${notif.data.requestId}`);
-    } else if (notif.data?.entityType === 'keyword_group') {
+    let data = notif.data;
+    if (typeof data === 'string') {
+      try {
+        data = JSON.parse(data);
+      } catch (e) {}
+    }
+    if (data && typeof data === 'object') {
+      if (typeof data.recovered === 'string') {
+        data.recovered = data.recovered === 'true';
+      }
+    }
+
+    if (notif.type === 'SCRAPER_HEALTH_ALERT') {
+      navigate('/scraper/health', { state: { highlightSource: data?.source } });
+    } else if (data?.requestId) {
+      navigate(`/requests/${data.requestId}`);
+    } else if (data?.entityType === 'keyword_group') {
       navigate('/domains');
     }
 
@@ -207,7 +259,7 @@ export default function NotificationPanel() {
                   transition: 'background 0.15s',
                 }}
               >
-                <NotifIcon type={notif.type} title={notif.title} />
+                <NotifIcon type={notif.type} title={notif.title} data={notif.data} />
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
                     <Typography sx={{ fontSize: '0.82rem', fontWeight: notif.isRead ? 500 : 700, color: 'text.primary' }}>
@@ -217,7 +269,7 @@ export default function NotificationPanel() {
                       <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: 'primary.main', flexShrink: 0 }} />
                     )}
                   </Box>
-                  <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary', mt: 0.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary', mt: 0.3, whiteSpace: 'pre-line', lineHeight: 1.4 }}>
                     {notif.body}
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>

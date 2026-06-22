@@ -1,6 +1,7 @@
 import ActivitySection from './ActivitySection';
 import AndroidIcon from '@mui/icons-material/Android';
 import LinkIcon from '@mui/icons-material/Link';
+import DnsIcon from '@mui/icons-material/Dns';
 import PlaceIcon from '@mui/icons-material/Place';
 import PsychologyIcon from '@mui/icons-material/Psychology';
 import Box from '@mui/material/Box';
@@ -18,6 +19,9 @@ import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNone
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import LanguageOutlinedIcon from '@mui/icons-material/LanguageOutlined';
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import ErrorOutlinedIcon from '@mui/icons-material/ErrorOutlined';
+import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CallSplitOutlinedIcon from '@mui/icons-material/CallSplitOutlined';
@@ -51,6 +55,7 @@ const KeywordPlannerSection = lazy(() => import('./KeywordPlannerSection'));
 const QuickSerpChecker = lazy(() => import('./QuickSerpChecker'));
 const GoogleIndexChecker = lazy(() => import('./GoogleIndexChecker'));
 const ScraperSection = lazy(() => import('../scraper/components/ScraperSection'));
+const ScraperHealthSection = lazy(() => import('../scraper/components/ScraperHealthSection'));
 const UrlScraperSection = lazy(() => import('../url-scraper/components/UrlScraperSection'));
 const ContentAnalysisSection = lazy(() => import('../content-analysis/components/ContentAnalysisSection'));
 const ForceIndexUnifiedSection = lazy(() => import('../force-index/components/ForceIndexUnifiedSection'));
@@ -1267,6 +1272,44 @@ function Ga4Panel({ domains, selectedDomainId, onDomainChange, selectedDays, onD
   );
 }
 
+const getNotificationStyle = (n: any) => {
+  if (n.type === 'SCRAPER_HEALTH_ALERT') {
+    let data = n.data;
+    if (typeof data === 'string') {
+      try {
+        data = JSON.parse(data);
+      } catch (e) {}
+    }
+    const isRecovered = data?.recovered === true || data?.recovered === 'true';
+    if (isRecovered) {
+      return {
+        icon: <CheckCircleOutlinedIcon sx={{ fontSize: 18, color: 'success.main', flexShrink: 0 }} />,
+        bgcolor: (theme: any) => theme.palette.mode === 'dark' ? 'rgba(46, 125, 50, 0.09)' : 'rgba(46, 125, 50, 0.04)',
+        hoverBorder: '#2e7d32'
+      };
+    }
+    const severity = data?.severity || 'WARN';
+    if (severity === 'CRITICAL') {
+      return {
+        icon: <ErrorOutlinedIcon sx={{ fontSize: 18, color: 'error.main', flexShrink: 0 }} />,
+        bgcolor: (theme: any) => theme.palette.mode === 'dark' ? 'rgba(211, 47, 47, 0.09)' : 'rgba(211, 47, 47, 0.04)',
+        hoverBorder: '#d32f2f'
+      };
+    } else {
+      return {
+        icon: <WarningAmberIcon sx={{ fontSize: 18, color: 'warning.main', flexShrink: 0 }} />,
+        bgcolor: (theme: any) => theme.palette.mode === 'dark' ? 'rgba(237, 108, 2, 0.09)' : 'rgba(237, 108, 2, 0.04)',
+        hoverBorder: '#ed6c02'
+      };
+    }
+  }
+  return {
+    icon: <NotificationsNoneOutlinedIcon sx={{ fontSize: 18, color: 'primary.main', flexShrink: 0 }} />,
+    bgcolor: (theme: any) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.05)' : 'rgba(0, 184, 148, 0.02)',
+    hoverBorder: 'primary.main'
+  };
+};
+
 // ─── Main Dashboard ────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { showToast } = useToastify();
@@ -1306,9 +1349,25 @@ export default function DashboardPage() {
     if (!notif.isRead) {
       dispatch(markAsRead(notif._id));
     }
-    if (notif.data?.requestId) {
-      navigate(`/requests/${notif.data.requestId}`);
-    } else if (notif.data?.entityType === 'keyword_group') {
+
+    // Normalize notifications data from FCM if it is in string format
+    let data = notif.data;
+    if (typeof data === 'string') {
+      try {
+        data = JSON.parse(data);
+      } catch (e) {}
+    }
+    if (data && typeof data === 'object') {
+      if (typeof data.recovered === 'string') {
+        data.recovered = data.recovered === 'true';
+      }
+    }
+
+    if (notif.type === 'SCRAPER_HEALTH_ALERT') {
+      navigate('/scraper/health', { state: { highlightSource: data?.source } });
+    } else if (data?.requestId) {
+      navigate(`/requests/${data.requestId}`);
+    } else if (data?.entityType === 'keyword_group') {
       navigate('/domains');
     }
   };
@@ -1400,6 +1459,7 @@ export default function DashboardPage() {
     if (path === '/domains') return 'domains';
     if (path === '/requests') return 'requests';
     if (path === '/users') return 'users';
+    if (path === '/scraper/health') return 'scraper-health';
     return sessionStorage.getItem('dashboard_active_tab') || 'overview';
   });
 
@@ -1411,9 +1471,11 @@ export default function DashboardPage() {
       setActiveTab('requests');
     } else if (path === '/users') {
       setActiveTab('users');
+    } else if (path === '/scraper/health') {
+      setActiveTab('scraper-health');
     } else if (path === '/') {
       const currentSavedTab = sessionStorage.getItem('dashboard_active_tab') || 'overview';
-      if (['domains', 'requests', 'users'].includes(currentSavedTab)) {
+      if (['domains', 'requests', 'users', 'scraper-health'].includes(currentSavedTab)) {
         setActiveTab('overview');
         sessionStorage.setItem('dashboard_active_tab', 'overview');
       } else {
@@ -1454,6 +1516,10 @@ export default function DashboardPage() {
       navigate('/users');
       setActiveTab('users');
       sessionStorage.setItem('dashboard_active_tab', 'users');
+    } else if (tabId === 'scraper-health') {
+      navigate('/scraper/health');
+      setActiveTab('scraper-health');
+      sessionStorage.setItem('dashboard_active_tab', 'scraper-health');
     } else {
       if (window.location.pathname !== '/') {
         navigate('/');
@@ -1488,6 +1554,7 @@ export default function DashboardPage() {
       items: [
         { id: 'index-checker', label: 'Kiểm tra lập chỉ mục', icon: <CloudDoneOutlinedIcon sx={{ fontSize: 20 }} /> },
         { id: 'scraper', label: 'Thu thập báo chí', icon: <ArticleOutlinedIcon sx={{ fontSize: 20 }} /> },
+        { id: 'scraper-health', label: 'Tình trạng Scraper', icon: <DnsIcon sx={{ fontSize: 20 }} />, pageKey: 'scraper_health' },
         { id: 'scraper-url', label: 'Cào dữ liệu từ URL', icon: <LinkIcon sx={{ fontSize: 20 }} /> },
         { id: 'indexed', label: 'Ép chỉ mục Google', icon: <AndroidIcon sx={{ fontSize: 20 }} /> },
       ]
@@ -1796,41 +1863,49 @@ export default function DashboardPage() {
 
               {unreadNotifs.length > 0 ? (
                 <Stack spacing={1} sx={{ width: '100%', maxWidth: 650 }}>
-                  {unreadNotifs.map(n => (
-                    <Stack 
-                      key={n._id} 
-                      direction="row" 
-                      spacing={1.5}
-                      onClick={() => handleNotifClick(n)}
-                      sx={{ 
-                        alignItems: 'center',
-                        cursor: 'pointer',
-                        p: 1.2,
-                        borderRadius: 2,
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 184, 148, 0.05)' : 'rgba(0, 184, 148, 0.02)',
-                        transition: 'all 0.2s',
-                        '&:hover': { 
-                          bgcolor: 'action.hover',
-                          transform: 'translateX(4px)',
-                          borderColor: 'primary.main'
-                        },
-                        width: '100%'
-                      }}
-                    >
-                      <NotificationsNoneOutlinedIcon sx={{ fontSize: 18, color: 'primary.main', flexShrink: 0 }} />
-                      <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary', flexGrow: 1 }} noWrap>
-                        {n.title}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: 'text.disabled', flexShrink: 0, mr: 1 }}>
-                        {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: vi })}
-                      </Typography>
-                      {!n.isRead && (
-                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'primary.main', flexShrink: 0 }} />
-                      )}
-                    </Stack>
-                  ))}
+                  {unreadNotifs.map(n => {
+                    const style = getNotificationStyle(n);
+                    return (
+                      <Stack 
+                        key={n._id} 
+                        direction="row" 
+                        spacing={1.5}
+                        onClick={() => handleNotifClick(n)}
+                        sx={{ 
+                          alignItems: 'flex-start',
+                          cursor: 'pointer',
+                          p: 1.2,
+                          borderRadius: 2,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          bgcolor: style.bgcolor,
+                          transition: 'all 0.2s',
+                          '&:hover': { 
+                            bgcolor: 'action.hover',
+                            transform: 'translateX(4px)',
+                            borderColor: style.hoverBorder
+                          },
+                          width: '100%'
+                        }}
+                      >
+                        {style.icon}
+                        <Box sx={{ flexGrow: 1, minWidth: 0, mt: -0.2 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
+                            {n.title}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', whiteSpace: 'pre-line', lineHeight: 1.4 }}>
+                            {n.body}
+                          </Typography>
+                        </Box>
+                        <Typography variant="caption" sx={{ color: 'text.disabled', flexShrink: 0, mr: 1, alignSelf: 'flex-start' }}>
+                          {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: vi })}
+                        </Typography>
+                        {!n.isRead && (
+                          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'primary.main', flexShrink: 0, alignSelf: 'center' }} />
+                        )}
+                      </Stack>
+                    );
+                  })}
                 </Stack>
               ) : (
                 <Typography variant="body1" sx={{ color: 'text.secondary', fontWeight: 500 }}>
@@ -2003,6 +2078,14 @@ export default function DashboardPage() {
         <Box sx={{ mt: 1 }}>
           <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>}>
             <ScraperSection />
+          </Suspense>
+        </Box>
+      )}
+
+      {activeTab === 'scraper-health' && (
+        <Box sx={{ mt: 1 }}>
+          <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>}>
+            <ScraperHealthSection />
           </Suspense>
         </Box>
       )}
