@@ -1,5 +1,5 @@
 import api from '../../utils/api';
-import type { GetArticlesParams, GetArticlesResponse, ScraperSummary, TriggerScrapeResponse, ScraperSchedule, ScheduleUpdateResponse, AiGenerateResponseData, AiResultResponseData, VbplAiAutoConfig, VbplAiAutoFilterOptions, VbplAiAutoRunResult, ScraperHealthResponse } from './types';
+import type { GetArticlesParams, GetArticlesResponse, ScraperSummary, TriggerScrapeResponse, ScraperSchedule, ScheduleUpdateResponse, AiGenerateResponseData, AiResultResponseData, VbplAiAutoConfig, VbplAiAutoFilterOptions, VbplAiAutoRunResult, ScraperHealthResponse, ScraperHistoryResponse } from './types';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -152,6 +152,20 @@ export const scraperService = {
 
   getHealth: async (): Promise<ScraperHealthResponse> => {
     const response = await api.get<ApiResponse<ScraperHealthResponse>>('/scraper/health');
+    return response.data.data;
+  },
+
+  getHealthRuns: async (
+    source: string,
+    params: { limit?: number; anomaliesOnly?: boolean }
+  ): Promise<ScraperHistoryResponse> => {
+    const query = new URLSearchParams();
+    if (params.limit !== undefined) query.append('limit', params.limit.toString());
+    if (params.anomaliesOnly !== undefined) query.append('anomaliesOnly', String(params.anomaliesOnly));
+
+    const response = await api.get<ApiResponse<ScraperHistoryResponse>>(
+      `/scraper/health/${source}/runs?${query.toString()}`
+    );
     return response.data.data;
   }
 };

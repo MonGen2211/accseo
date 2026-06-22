@@ -190,6 +190,7 @@ export interface ScraperHealthSource {
   total: number;
   baselineTotal: number | null;
   inserted: number;
+  baselineInserted: number | null;
   durationMs: number;
   fillRates: {
     title?: number;
@@ -198,12 +199,81 @@ export interface ScraperHealthSource {
     metadata?: number;
     [key: string]: number | undefined;
   } | null;
+  baselineFillRates: {
+    title?: number;
+    publishedAt?: number;
+    tags?: number;
+    metadata?: number;
+    [key: string]: number | undefined;
+  } | null;
+  sectionCounts: Record<string, number> | null;
+  driftSamples: {
+    field: string;
+    samples: { url: string; title: string }[];
+  }[] | null;
+  newSectionDetails: {
+    section: string;
+    sampleUrl: string;
+    sampleTitle: string;
+    count: number;
+  }[] | null;
   anomalies: string[];
   errorMessage: string | null;
+  errorStack: string | null;
   isDown: boolean;
 }
 
 export interface ScraperHealthResponse {
   generatedAt: string;
   sources: ScraperHealthSource[];
+}
+
+export interface ScraperRun {
+  _id: string;
+  source: string;
+  trigger: 'cron' | 'manual';
+  ok: boolean;
+  total: number;
+  inserted: number;
+  durationMs: number;
+  fillRates: {
+    title?: number;
+    publishedAt?: number;
+    tags?: number;
+    metadata?: number;
+    [key: string]: number | undefined;
+  } | null;
+  baselineFillRates: {
+    title?: number;
+    publishedAt?: number;
+    tags?: number;
+    metadata?: number;
+    [key: string]: number | undefined;
+  } | null;
+  baselineTotal: number | null;
+  baselineInserted: number | null;
+  sectionCounts: Record<string, number> | null;
+  anomalies: string[];
+  driftSamples: {
+    field: string;
+    samples: { url: string; title: string }[];
+  }[];
+  newSectionDetails: {
+    section: string;
+    sampleUrl: string;
+    sampleTitle: string;
+    count: number;
+  }[];
+  errorMessage: string | null;
+  errorStack: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ScraperHistoryResponse {
+  source: string;
+  total: number;
+  limit: number;
+  anomaliesOnly: boolean;
+  runs: ScraperRun[];
 }

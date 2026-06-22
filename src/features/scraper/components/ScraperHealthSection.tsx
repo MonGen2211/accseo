@@ -23,12 +23,15 @@ import ErrorIcon from '@mui/icons-material/Error';
 import HelpCenterIcon from '@mui/icons-material/HelpCenter';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import HistoryIcon from '@mui/icons-material/History';
 
 import { scraperService } from '../scraperService';
 import type { ScraperHealthResponse, ScraperHealthSource } from '../types';
 import { useToastify } from '../../../components/Toastify';
 import { formatDistanceToNow, isValid } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import ScraperHealthDebugDetails from './ScraperHealthDebugDetails';
+import ScraperHealthHistoryDrawer from './ScraperHealthHistoryDrawer';
 
 const ANOMALY_MAP: Record<string, { label: string; color: 'error' | 'warning' }> = {
   BREAKAGE: { label: 'Scraper ném lỗi (gãy)', color: 'error' },
@@ -52,6 +55,13 @@ export default function ScraperHealthSection() {
     return localStorage.getItem('scraper_health_auto_refresh') === 'true';
   });
   const [expandedCard, setExpandedCard] = useState<Record<string, boolean>>({});
+  const [historySource, setHistorySource] = useState<string | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+
+  const handleOpenHistory = (source: string) => {
+    setHistorySource(source);
+    setHistoryOpen(true);
+  };
 
   // Highlight state
   const [highlightedSource, setHighlightedSource] = useState<string | null>(null);
@@ -228,7 +238,21 @@ export default function ScraperHealthSection() {
         </Paper>
       ) : (
         <Grid container spacing={3}>
-          {healthData?.sources.map((item) => {
+          {(() => {
+            const sortedSources = healthData?.sources ? [...healthData.sources].sort((a, b) => {
+              const getScore = (status: string) => {
+                if (status === 'critical') return 3;
+                if (status === 'warn') return 2;
+                return 1;
+              };
+              const scoreA = getScore(a.status);
+              const scoreB = getScore(b.status);
+              if (scoreA !== scoreB) {
+                return scoreB - scoreA;
+              }
+              return a.source.localeCompare(b.source);
+            }) : [];
+            return sortedSources.map((item) => {
             const colors = getStatusColor(item.status);
             const isHighlighted = highlightedSource === item.source;
 
@@ -397,49 +421,50 @@ export default function ScraperHealthSection() {
                       </Box>
                     )}
 
-                    {/* Expandable Error Message */}
-                    {item.errorMessage && (
-                      <Box sx={{ mt: 2 }}>
-                        <Button
-                          size="small"
-                          onClick={() => toggleExpand(item.source)}
-                          startIcon={expandedCard[item.source] ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                          sx={{ textTransform: 'none', p: 0, fontSize: '0.72rem', minWidth: 0, fontWeight: 700 }}
-                          color="error"
-                        >
-                          {expandedCard[item.source] ? 'Ẩn chi tiết lỗi' : 'Xem chi tiết lỗi'}
-                        </Button>
-                        <Collapse in={expandedCard[item.source]}>
-                          <Box 
-                            component="pre" 
-                            sx={{ 
-                              mt: 1, 
-                              p: 1.2, 
-                              borderRadius: '8px', 
-                              bgcolor: 'rgba(214, 48, 49, 0.05)',
-                              border: '1px solid rgba(214, 48, 49, 0.15)',
-                              fontSize: '11px',
-                              fontFamily: 'monospace',
-                              color: 'error.main',
-                              overflowX: 'auto',
-                              whiteSpace: 'pre-wrap',
-                              wordBreak: 'break-all',
-                              maxHeight: '150px',
-                              overflowY: 'auto'
-                            }}
-                          >
-                            {item.errorMessage}
-                          </Box>
-                        </Collapse>
-                      </Box>
+                    {/* Expandable Debug / Error Details */}
+                    {(item.anomalies.length > 0 || item.errorMessage) && (
+                       <Box sx={{ mt: 2 }}>
+                         <Button
+                           size="small"
+                           onClick={() => toggleExpand(item.source)}
+                           startIcon={expandedCard[item.source] ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                           sx={{ textTransform: 'none', p: 0, fontSize: '0.75rem', minWidth: 0, fontWeight: 700 }}
+                           color="error"
+                         >
+                           {expandedCard[item.source] ? 'Ẩn chi tiết gỡ lỗi' : 'Xem chi tiết gỡ lỗi (Debug)'}
+                         </Button>
+                         <Collapse in={expandedCard[item.source]}>
+                           <ScraperHealthDebugDetails data={item} />
+                         </Collapse>
+                       </Box>
                     )}
+
+                    <Divider sx={{ my: 1.5 }} />
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <Button
+                        size="small"
+                        variant="text"
+                        startIcon={<HistoryIcon sx={{ fontSize: 16 }} />}
+                        onClick={() => handleOpenHistory(item.source)}
+                        sx={{ textTransform: 'none', fontSize: '0.72rem', fontWeight: 700 }}
+                      >
+                        Xem lịch sử chạy
+                      </Button>
+                    </Box>
                   </CardContent>
                 </Card>
               </Grid>
             );
-          })}
+          })})()}
         </Grid>
       )}
+
+      {/* History Runs Drawer */}
+      <ScraperHealthHistoryDrawer
+        source={historySource}
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+      />
     </Box>
   );
 }
