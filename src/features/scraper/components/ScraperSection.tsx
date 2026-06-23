@@ -1327,20 +1327,22 @@ export default function ScraperSection() {
             );
           }
         },
-        {
-          id: 'linhVuc',
-          name: 'linhVuc',
-          label: 'Lĩnh vực',
-          width: 160,
-          renderCell: (row: TableRowData) => {
-            const item = row as unknown as ScraperArticle;
-            return (
-              <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary' }}>
-                {item.metadata?.linhVuc || '-'}
-              </Typography>
-            );
+        ...(activeSite === 'vbpl' ? [
+          {
+            id: 'linhVuc',
+            name: 'linhVuc',
+            label: 'Lĩnh vực',
+            width: 160,
+            renderCell: (row: TableRowData) => {
+              const item = row as unknown as ScraperArticle;
+              return (
+                <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary' }}>
+                  {item.metadata?.linhVuc || '-'}
+                </Typography>
+              );
+            }
           }
-        },
+        ] : []),
         {
           id: 'effStatus',
           name: 'effStatus',
