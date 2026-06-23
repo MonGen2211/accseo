@@ -329,7 +329,7 @@ export default function ScraperHealthSection() {
           }}
         >
           <Tab value="health" label="Sức khỏe hệ thống" />
-          <Tab value="roots" label="Phát hiện gốc mới" />
+          <Tab value="roots" label="Gốc site / Map coverage" />
         </Tabs>
       </Box>
 

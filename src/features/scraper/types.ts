@@ -294,3 +294,19 @@ export interface GetKnownRootsResponse {
   limit: number;
   totalPages: number;
 }
+
+export interface GetKnownRootSourcesResponse {
+  sources: string[];
+}
+
+export interface DiscoverKnownRootsResponse {
+  message: string;
+  data: {
+    results: Array<{
+      source: string;
+      scanned: number;
+      created: number;
+      skipped: boolean;
+    }>;
+  };
+}

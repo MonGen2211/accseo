@@ -1,5 +1,5 @@
 import api from '../../utils/api';
-import type { GetArticlesParams, GetArticlesResponse, ScraperSummary, TriggerScrapeResponse, ScraperSchedule, ScheduleUpdateResponse, AiGenerateResponseData, AiResultResponseData, VbplAiAutoConfig, VbplAiAutoFilterOptions, VbplAiAutoRunResult, ScraperHealthResponse, ScraperHistoryResponse, KnownRoot, GetKnownRootsResponse } from './types';
+import type { GetArticlesParams, GetArticlesResponse, ScraperSummary, TriggerScrapeResponse, ScraperSchedule, ScheduleUpdateResponse, AiGenerateResponseData, AiResultResponseData, VbplAiAutoConfig, VbplAiAutoFilterOptions, VbplAiAutoRunResult, ScraperHealthResponse, ScraperHistoryResponse, KnownRoot, GetKnownRootsResponse, GetKnownRootSourcesResponse, DiscoverKnownRootsResponse } from './types';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -199,6 +199,16 @@ export const scraperService = {
     payload: { status?: 'new' | 'acknowledged' | 'ignored'; note?: string }
   ): Promise<{ message: string; data: KnownRoot }> => {
     const response = await api.patch<ApiResponse<{ message: string; data: KnownRoot }>>(`/scraper/known-roots/${id}`, payload);
+    return response.data.data;
+  },
+
+  getKnownRootSources: async (): Promise<GetKnownRootSourcesResponse> => {
+    const response = await api.get<ApiResponse<GetKnownRootSourcesResponse>>('/scraper/known-roots/sources');
+    return response.data.data;
+  },
+
+  discoverKnownRoots: async (source?: string): Promise<DiscoverKnownRootsResponse> => {
+    const response = await api.post<ApiResponse<DiscoverKnownRootsResponse>>('/scraper/known-roots/discover', { source });
     return response.data.data;
   }
 };
