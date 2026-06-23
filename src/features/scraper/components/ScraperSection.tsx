@@ -93,7 +93,6 @@ const SITE_SOURCES = [
   { id: 'ketoananpha', name: 'ketoananpha.vn', desc: 'Kế toán - Thuế', color: '#be185d', bg: '#fce7f3' },
   { id: 'vbpl', name: 'vbpl.vn', desc: 'Văn bản pháp luật Bộ Tư pháp', color: '#b45309', bg: '#fef3c7' },
   { id: 'congbao', name: 'Công báo Chính phủ', desc: 'congbao.chinhphu.vn', color: '#4f46e5', bg: '#e0e7ff' },
-  { id: 'rss', name: 'Báo chí (đã ngừng)', desc: 'Ngưng cập nhật - Xem lịch sử', color: '#64748b', bg: '#f1f5f9' },
 ];
 
 const LEGAL_SECTORS = [
@@ -2182,7 +2181,6 @@ export default function ScraperSection() {
                 variant="outlined"
                 color="info"
                 onClick={() => setOpenScheduleDialog(true)}
-                disabled={activeSite === 'rss'}
                 startIcon={<SettingsIcon />}
                 sx={{ borderRadius: 2, fontWeight: 600, textTransform: 'none' }}
               >
@@ -2210,7 +2208,7 @@ export default function ScraperSection() {
               <Button
                 variant="contained"
                 onClick={handleTriggerScrape}
-                disabled={isTriggering || activeSite === 'rss'}
+                disabled={isTriggering}
                 startIcon={isTriggering ? <CircularProgress size={16} color="inherit" /> : <CloudDownloadOutlinedIcon />}
                 sx={{ borderRadius: 2, px: 3, fontWeight: 600, textTransform: 'none', boxShadow: 'none' }}
               >
@@ -2220,7 +2218,6 @@ export default function ScraperSection() {
                 <Button
                   variant="outlined"
                   color="error"
-                  disabled={activeSite === 'rss'}
                   onClick={() => handleResetSourceAiState(activeSite)}
                   sx={{ 
                     borderRadius: 2, 
