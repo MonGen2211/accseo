@@ -275,3 +275,22 @@ export interface ScraperHistoryResponse {
   anomaliesOnly: boolean;
   runs: ScraperRun[];
 }
+
+export interface KnownRoot {
+  id: string;
+  source: string;
+  segment: string;
+  sampleUrl: string;
+  status: 'new' | 'acknowledged' | 'ignored';
+  note: string | null;
+  firstSeenAt: string;
+  updatedAt: string;
+}
+
+export interface GetKnownRootsResponse {
+  items: KnownRoot[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}

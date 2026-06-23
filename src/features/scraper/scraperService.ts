@@ -1,5 +1,5 @@
 import api from '../../utils/api';
-import type { GetArticlesParams, GetArticlesResponse, ScraperSummary, TriggerScrapeResponse, ScraperSchedule, ScheduleUpdateResponse, AiGenerateResponseData, AiResultResponseData, VbplAiAutoConfig, VbplAiAutoFilterOptions, VbplAiAutoRunResult, ScraperHealthResponse, ScraperHistoryResponse } from './types';
+import type { GetArticlesParams, GetArticlesResponse, ScraperSummary, TriggerScrapeResponse, ScraperSchedule, ScheduleUpdateResponse, AiGenerateResponseData, AiResultResponseData, VbplAiAutoConfig, VbplAiAutoFilterOptions, VbplAiAutoRunResult, ScraperHealthResponse, ScraperHistoryResponse, KnownRoot, GetKnownRootsResponse } from './types';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -175,6 +175,30 @@ export const scraperService = {
     const response = await api.delete<ApiResponse<{ deletedRuns: number; clearedKeys: boolean }>>(
       `/scraper/health?${query.toString()}`
     );
+    return response.data.data;
+  },
+
+  getKnownRoots: async (params?: {
+    status?: 'new' | 'acknowledged' | 'ignored' | '';
+    source?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<GetKnownRootsResponse> => {
+    const query = new URLSearchParams();
+    if (params?.status) query.append('status', params.status);
+    if (params?.source) query.append('source', params.source);
+    if (params?.page !== undefined) query.append('page', params.page.toString());
+    if (params?.limit !== undefined) query.append('limit', params.limit.toString());
+
+    const response = await api.get<ApiResponse<GetKnownRootsResponse>>(`/scraper/known-roots?${query.toString()}`);
+    return response.data.data;
+  },
+
+  updateKnownRoot: async (
+    id: string,
+    payload: { status?: 'new' | 'acknowledged' | 'ignored'; note?: string }
+  ): Promise<{ message: string; data: KnownRoot }> => {
+    const response = await api.patch<ApiResponse<{ message: string; data: KnownRoot }>>(`/scraper/known-roots/${id}`, payload);
     return response.data.data;
   }
 };
