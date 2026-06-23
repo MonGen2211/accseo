@@ -349,7 +349,9 @@ export default function ScraperSection() {
           SITE_SOURCES.find(s => s.id === item.source)?.name || item.source || '',
           item.section || '',
           item.category?.join(', ') || '',
-          item.dateStr || (item.publishedAt ? safeFormat(item.publishedAt, 'dd/MM/yyyy HH:mm') : ''),
+          activeSite === 'thuvienphapluat'
+            ? safeFormat(item.publishedAt || item.createdAt, 'dd/MM/yyyy HH:mm')
+            : (item.dateStr || (item.publishedAt ? safeFormat(item.publishedAt, 'dd/MM/yyyy HH:mm') : '')),
           item.thumbnailUrl || '',
           item.description || item.excerpt || '',
         ];
@@ -1645,9 +1647,12 @@ export default function ScraperSection() {
           renderCell: (row: TableRowData) => {
             const item = row as unknown as ScraperArticle;
             const d = item.publishedAt || item.createdAt;
+            const displayDate = activeSite === 'thuvienphapluat'
+              ? safeFormat(item.publishedAt || item.createdAt, 'dd/MM/yyyy HH:mm')
+              : (item.dateStr || safeFormat(d, 'dd/MM/yyyy HH:mm'));
             return (
               <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 500 }}>
-                {item.dateStr || safeFormat(d, 'dd/MM/yyyy HH:mm')}
+                {displayDate}
               </Typography>
             );
           }
