@@ -1368,6 +1368,7 @@ export default function ScraperSection() {
           name: 'title',
           label: 'Tiêu đề',
           width: 550,
+          wrapText: true,
           renderCell: (row: TableRowData) => {
             const item = row as unknown as ScraperArticle;
             return (
@@ -1491,18 +1492,24 @@ export default function ScraperSection() {
                       {item.category.map((cat, idx) => {
                         const isSelected = tag === cat;
                         return (
-                          <Chip 
-                            key={idx} 
-                            label={cat} 
-                            size="small" 
-                            variant={isSelected ? 'filled' : 'outlined'} 
-                            color={isSelected ? 'primary' : 'default'}
-                            sx={{ height: 16, fontSize: '0.65rem', cursor: 'pointer' }} 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setTag(isSelected ? '' : cat);
-                            }}
-                          />
+                          <Tooltip title={cat} key={idx}>
+                            <Chip 
+                              label={cat} 
+                              size="small" 
+                              variant={isSelected ? 'filled' : 'outlined'} 
+                              color={isSelected ? 'primary' : 'default'}
+                              sx={{ 
+                                height: 16, 
+                                fontSize: '0.65rem', 
+                                cursor: 'pointer',
+                                ...(isSelected && { color: '#ffffff !important' })
+                              }} 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setTag(isSelected ? '' : cat);
+                              }}
+                            />
+                          </Tooltip>
                         );
                       })}
                     </Box>
@@ -1519,7 +1526,29 @@ export default function ScraperSection() {
           width: 150,
           renderCell: (row: TableRowData) => {
             const item = row as unknown as ScraperArticle;
-            return <Typography variant="body2">{item.section || '-'}</Typography>;
+            if (!item.section) return <Typography variant="caption" color="text.secondary">-</Typography>;
+            
+            const isSelected = section === item.section;
+            return (
+              <Tooltip title={item.section}>
+                <Chip 
+                  label={item.section} 
+                  size="small" 
+                  variant={isSelected ? 'filled' : 'outlined'} 
+                  color="primary" 
+                  sx={{ 
+                    fontSize: 11, 
+                    cursor: 'pointer',
+                    maxWidth: '100%',
+                    ...(isSelected && { color: '#ffffff !important' })
+                  }} 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSection(isSelected ? '' : item.section);
+                  }}
+                />
+              </Tooltip>
+            );
           }
         },
         {
@@ -1534,18 +1563,24 @@ export default function ScraperSection() {
                 {item.category?.map((t, idx) => {
                   const isSelected = tag === t;
                   return (
-                    <Chip 
-                      key={`f-${idx}`} 
-                      label={t} 
-                      size="small" 
-                      variant={isSelected ? 'filled' : 'outlined'} 
-                      color="primary" 
-                      sx={{ fontSize: 11, cursor: 'pointer' }} 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setTag(isSelected ? '' : t);
-                      }}
-                    />
+                    <Tooltip title={t} key={`f-${idx}`}>
+                      <Chip 
+                        label={t} 
+                        size="small" 
+                        variant={isSelected ? 'filled' : 'outlined'} 
+                        color="primary" 
+                        sx={{ 
+                          fontSize: 11, 
+                          cursor: 'pointer',
+                          maxWidth: '100%',
+                          ...(isSelected && { color: '#ffffff !important' })
+                        }} 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setTag(isSelected ? '' : t);
+                        }}
+                      />
+                    </Tooltip>
                   );
                 })}
                 {!item.category?.length && <Typography variant="caption" color="text.secondary">-</Typography>}
