@@ -116,6 +116,7 @@ export interface GetArticlesParams {
   sheetStatus?: string;
   fullInfoStatus?: string;
   articleType?: string;
+  issuingAgency?: string;
 }
 
 export interface GetArticlesResponse {

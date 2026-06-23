@@ -39,6 +39,7 @@ export const scraperService = {
     if (params.sheetStatus) query.append('sheetStatus', params.sheetStatus);
     if (params.fullInfoStatus) query.append('fullInfoStatus', params.fullInfoStatus);
     if (params.articleType) query.append('articleType', params.articleType);
+    if (params.issuingAgency) query.append('issuingAgency', params.issuingAgency);
     if (params.page) query.append('page', params.page.toString());
     if (params.limit) query.append('limit', params.limit.toString());
 
