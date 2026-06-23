@@ -93,7 +93,7 @@ export default function VbplSuggestionsAggregatedTopics({
   const [loadingTopics, setLoadingTopics] = useState<boolean>(false);
   const [totalTopics, setTotalTopics] = useState<number>(0);
   const [page, setPage] = useState<number>(1);
-  const [limit] = useState<number>(20);
+  const [limit, setLimit] = useState<number>(20);
   const [totalPages, setTotalPages] = useState<number>(1);
 
   // Filters
@@ -595,7 +595,7 @@ export default function VbplSuggestionsAggregatedTopics({
     setSelectedTopicIds([]);
     loadTopics(1);
     setExpandedTopicId(null);
-  }, [selectedGroupId, sourceType, subTab, sortVolume]);
+  }, [selectedGroupId, sourceType, subTab, sortVolume, limit]);
 
   // Debounced search trigger for topics
   useEffect(() => {
@@ -1617,16 +1617,49 @@ export default function VbplSuggestionsAggregatedTopics({
             </Table>
           </TableContainer>
  
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
-              <Pagination
-                count={totalPages}
-                page={page}
-                onChange={handlePageChange}
-                color="primary"
-                shape="rounded"
-              />
+          {/* Pagination & Limit Selector */}
+          {totalTopics > 0 && (
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              mt: 3, 
+              flexWrap: 'wrap', 
+              gap: 2 
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+                  Số bản ghi mỗi trang:
+                </Typography>
+                <Select
+                  size="small"
+                  value={limit}
+                  onChange={(e) => setLimit(Number(e.target.value))}
+                  sx={{ 
+                    height: 32, 
+                    minWidth: 80,
+                    '& .MuiSelect-select': { py: 0.5 }
+                  }}
+                >
+                  <MenuItem value={10}>10</MenuItem>
+                  <MenuItem value={20}>20</MenuItem>
+                  <MenuItem value={50}>50</MenuItem>
+                  <MenuItem value={100}>100</MenuItem>
+                </Select>
+                <Typography variant="body2" sx={{ color: 'text.secondary', ml: 1 }}>
+                  (Tổng số: {totalTopics})
+                </Typography>
+              </Box>
+
+              {totalPages > 1 && (
+                <Pagination
+                  count={totalPages}
+                  page={page}
+                  onChange={handlePageChange}
+                  color="primary"
+                  shape="rounded"
+                />
+              )}
             </Box>
           )}
         </Grid>
