@@ -65,6 +65,21 @@ const ANOMALY_MAP: Record<string, { label: string; color: 'error' | 'warning' }>
   COVERAGE_GAP: { label: 'Có chuyên mục mới chưa có parser', color: 'warning' }
 };
 
+const getSourceLabel = (sourceId: string) => {
+  const cleanId = String(sourceId).toLowerCase().trim();
+  switch (cleanId) {
+    case 'thuvienphapluat': return 'Thư viện pháp luật';
+    case 'luatminhkhue': return 'Luật Minh Khuê';
+    case 'luatduonggia': return 'Luật Dương Gia';
+    case 'luatvietnam': return 'LuatVietnam';
+    case 'ketoananpha': return 'Kế toán An Pha';
+    case 'vbpl': return 'VBPL (CSDL quốc gia)';
+    case 'congbao': return 'Công báo Chính phủ';
+    case 'rss': return 'Báo chí (đã ngừng)';
+    default: return sourceId;
+  }
+};
+
 export default function ScraperHealthSection() {
   const { showToast } = useToastify();
   const location = useLocation();
@@ -414,8 +429,8 @@ export default function ScraperHealthSection() {
                                 </IconButton>
                               )}
                             </TableCell>
-                            <TableCell sx={{ fontWeight: 800, textTransform: 'uppercase', color: 'text.primary', fontSize: '0.85rem' }}>
-                              {item.source}
+                            <TableCell sx={{ fontWeight: 800, color: 'text.primary', fontSize: '0.85rem' }}>
+                              {getSourceLabel(item.source)}
                             </TableCell>
                             <TableCell>
                               <Chip
@@ -594,8 +609,8 @@ export default function ScraperHealthSection() {
                       <CardContent sx={{ p: 1.5, pb: '12px !important' }}>
                         {/* Header: Source and Status Badge */}
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 800, textTransform: 'uppercase', color: 'text.primary' }}>
-                            {item.source}
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary' }}>
+                            {getSourceLabel(item.source)}
                           </Typography>
                           <Chip
                             icon={getStatusIcon(item.status) || undefined}

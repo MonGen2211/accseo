@@ -50,6 +50,8 @@ export interface ScraperArticle {
     hasContent?: boolean;
     hasOriginalPdf?: boolean | null;
     hasAIProcessed?: boolean;
+    fullText?: string | null;
+    fullTextFetchedAt?: string;
   } | null;
   relatedUrls?: string[] | null;
   firstSeenAt?: string | null;

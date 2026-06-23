@@ -92,7 +92,8 @@ const SITE_SOURCES = [
   { id: 'luatvietnam', name: 'luatvietnam.vn', desc: 'Tin văn bản mới', color: '#0e7490', bg: '#cffafe' },
   { id: 'ketoananpha', name: 'ketoananpha.vn', desc: 'Kế toán - Thuế', color: '#be185d', bg: '#fce7f3' },
   { id: 'vbpl', name: 'vbpl.vn', desc: 'Văn bản pháp luật Bộ Tư pháp', color: '#b45309', bg: '#fef3c7' },
-  { id: 'rss', name: 'Báo các loại', desc: 'Tin tức báo chí', color: '#4f46e5', bg: '#e0e7ff' },
+  { id: 'congbao', name: 'Công báo Chính phủ', desc: 'congbao.chinhphu.vn', color: '#4f46e5', bg: '#e0e7ff' },
+  { id: 'rss', name: 'Báo chí (đã ngừng)', desc: 'Ngưng cập nhật - Xem lịch sử', color: '#64748b', bg: '#f1f5f9' },
 ];
 
 const LEGAL_SECTORS = [
@@ -294,7 +295,7 @@ export default function ScraperSection() {
         'Mô tả/Tóm tắt',
       ];
 
-      if (activeSite === 'vbpl') {
+      if (activeSite === 'vbpl' || activeSite === 'congbao') {
         headers.push(
           'Số hiệu',
           'Cơ quan ban hành',
@@ -327,7 +328,7 @@ export default function ScraperSection() {
           item.description || item.excerpt || '',
         ];
 
-        if (activeSite === 'vbpl') {
+        if (activeSite === 'vbpl' || activeSite === 'congbao') {
           row.push(
             item.metadata?.docNumber || '',
             item.metadata?.issuingAgency || '',
@@ -1158,7 +1159,7 @@ export default function ScraperSection() {
       }
     };
 
-    if (activeSite === 'vbpl') {
+    if (activeSite === 'vbpl' || activeSite === 'congbao') {
       return [
         selectionColumn,
         {
@@ -1190,6 +1191,22 @@ export default function ScraperSection() {
                           '0%': { transform: 'scale(1)', boxShadow: '0 0 4px rgba(239, 68, 68, 0.4)' },
                           '100%': { transform: 'scale(1.05)', boxShadow: '0 0 12px rgba(239, 68, 68, 0.8)' }
                         }
+                      }}
+                    />
+                  )}
+
+                  {item.articleType === 'document' && (
+                    <Chip
+                      label="Văn bản"
+                      size="small"
+                      sx={{
+                        height: 18,
+                        fontSize: '0.675rem',
+                        fontWeight: 700,
+                        borderRadius: 1,
+                        bgcolor: 'rgba(79, 70, 229, 0.15)',
+                        color: '#4f46e5',
+                        border: '1px solid rgba(79, 70, 229, 0.3)',
                       }}
                     />
                   )}
@@ -1260,7 +1277,7 @@ export default function ScraperSection() {
                 </Link>
                 <Box sx={{ mt: 0.5, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                   {renderInlineAiKeywords(item)}
-                  {renderInlineVbplFullInfoStatus(item)}
+                  {activeSite === 'vbpl' && renderInlineVbplFullInfoStatus(item)}
                 </Box>
               </Box>
             );
@@ -2036,7 +2053,8 @@ export default function ScraperSection() {
                 case 'luatvietnam': return '#22d3ee';
                 case 'ketoananpha': return '#f472b6';
                 case 'vbpl': return '#fbbf24';
-                default: return '#818cf8';
+                case 'congbao': return '#818cf8';
+                default: return '#94a3b8';
               }
             };
 
@@ -2127,6 +2145,7 @@ export default function ScraperSection() {
                 variant="outlined"
                 color="info"
                 onClick={() => setOpenScheduleDialog(true)}
+                disabled={activeSite === 'rss'}
                 startIcon={<SettingsIcon />}
                 sx={{ borderRadius: 2, fontWeight: 600, textTransform: 'none' }}
               >
@@ -2154,7 +2173,7 @@ export default function ScraperSection() {
               <Button
                 variant="contained"
                 onClick={handleTriggerScrape}
-                disabled={isTriggering}
+                disabled={isTriggering || activeSite === 'rss'}
                 startIcon={isTriggering ? <CircularProgress size={16} color="inherit" /> : <CloudDownloadOutlinedIcon />}
                 sx={{ borderRadius: 2, px: 3, fontWeight: 600, textTransform: 'none', boxShadow: 'none' }}
               >
@@ -2164,6 +2183,7 @@ export default function ScraperSection() {
                 <Button
                   variant="outlined"
                   color="error"
+                  disabled={activeSite === 'rss'}
                   onClick={() => handleResetSourceAiState(activeSite)}
                   sx={{ 
                     borderRadius: 2, 
@@ -2219,12 +2239,36 @@ export default function ScraperSection() {
 
                   <Collapse in={showSectionDetails}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1, maxHeight: 200, overflowY: 'auto', pr: 0.5 }}>
-                      {Object.entries(summary.bySection || {}).map(([sec, count]) => (
-                        <Box key={sec} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 0.5, px: 1, borderRadius: 1.5, '&:hover': { bgcolor: 'action.hover' } }}>
-                          <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.825rem' }}>{sec}</Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.825rem', color: 'text.secondary' }}>{count}</Typography>
-                        </Box>
-                      ))}
+                      {Object.entries(summary.bySection || {}).map(([sec, count]) => {
+                        const isSelected = section === sec;
+                        return (
+                          <Box 
+                            key={sec} 
+                            onClick={() => setSection(isSelected ? '' : sec)}
+                            sx={{ 
+                              display: 'flex', 
+                              justifyContent: 'space-between', 
+                              alignItems: 'center', 
+                              py: 0.75, 
+                              px: 1.25, 
+                              borderRadius: 2, 
+                              cursor: 'pointer',
+                              bgcolor: isSelected ? 'primary.main' : 'background.paper',
+                              color: isSelected ? 'primary.contrastText' : 'text.primary',
+                              border: '1px solid',
+                              borderColor: isSelected ? 'primary.main' : 'divider',
+                              transition: 'all 0.15s',
+                              '&:hover': { 
+                                bgcolor: isSelected ? 'primary.dark' : 'action.hover',
+                                transform: 'translateX(2px)'
+                              }
+                            }}
+                          >
+                            <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>{sec}</Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.825rem', opacity: isSelected ? 0.9 : 0.7 }}>{count}</Typography>
+                          </Box>
+                        );
+                      })}
                     </Box>
                   </Collapse>
                 </Box>
@@ -2922,7 +2966,7 @@ export default function ScraperSection() {
               renderExpandedRow={(row) => {
                 const item = row as unknown as ScraperArticle;
 
-                if (activeSite === 'vbpl') {
+                if (activeSite === 'vbpl' || activeSite === 'congbao') {
                   const meta = item.metadata || {};
                   
                   // Helper function to render a detail row if value exists
@@ -2942,6 +2986,14 @@ export default function ScraperSection() {
 
                   return (
                     <Box sx={{ p: 3, pl: { xs: 2, md: 5 }, bgcolor: 'background.default', borderBottom: '1px solid', borderColor: 'divider' }}>
+                      {(item.description || item.excerpt) && (
+                        <Box sx={{ mb: 3 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', display: 'block', mb: 1, textTransform: 'uppercase', letterSpacing: 0.5 }}>Trích yếu</Typography>
+                          <Typography variant="body2" sx={{ color: 'text.primary', lineHeight: 1.6, bgcolor: 'background.paper', p: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', fontStyle: 'italic' }}>
+                            {item.description || item.excerpt}
+                          </Typography>
+                        </Box>
+                      )}
                       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: '1fr 1fr 1fr' }, gap: 3 }}>
                         
                         {/* Block 1: Phân loại & Tổ chức */}
@@ -3012,6 +3064,8 @@ export default function ScraperSection() {
                             </Typography>
                           </Box>
                           <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                            {renderDetailItem('Ngày ban hành', meta.issuedDate ? (meta.issuedDate.includes('T') ? safeFormat(meta.issuedDate, 'dd/MM/yyyy') : meta.issuedDate) : null)}
+                            {renderDetailItem('Ngày hiệu lực', meta.effectiveDate ? (meta.effectiveDate.includes('T') ? safeFormat(meta.effectiveDate, 'dd/MM/yyyy') : meta.effectiveDate) : null)}
                             {renderDetailItem('Ngày công khai', meta.publicDate ? (meta.publicDate.includes('T') ? safeFormat(meta.publicDate, 'dd/MM/yyyy') : meta.publicDate) : null)}
                             {renderDetailItem('Ngày hết hiệu lực', meta.expiredDate ? (meta.expiredDate.includes('T') ? safeFormat(meta.expiredDate, 'dd/MM/yyyy') : meta.expiredDate) : null)}
                             {renderDetailItem('Cập nhật trên nguồn', meta.updatedDate ? (meta.updatedDate.includes('T') ? safeFormat(meta.updatedDate, 'dd/MM/yyyy HH:mm') : meta.updatedDate) : null)}
@@ -3119,6 +3173,32 @@ export default function ScraperSection() {
                         </Box>
 
                       </Box>
+                      {meta.fullText && (
+                        <Paper sx={{ mt: 3, p: 2.5, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', boxShadow: 'none' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1, borderBottom: '1px solid', borderColor: 'divider', mb: 2 }}>
+                            <GavelIcon sx={{ color: 'primary.main', fontSize: 20 }} />
+                            <Typography variant="body2" sx={{ fontWeight: 800, color: 'text.primary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                              Nội dung toàn văn Công báo
+                            </Typography>
+                          </Box>
+                          <Box sx={{ 
+                            maxHeight: 450, 
+                            overflowY: 'auto', 
+                            whiteSpace: 'pre-wrap', 
+                            fontFamily: 'monospace', 
+                            fontSize: '0.85rem', 
+                            color: 'text.primary',
+                            bgcolor: 'background.default',
+                            p: 2.5,
+                            borderRadius: 2,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            lineHeight: 1.6
+                          }}>
+                            {meta.fullText}
+                          </Box>
+                        </Paper>
+                      )}
                     </Box>
                   );
                 }
@@ -3145,7 +3225,7 @@ export default function ScraperSection() {
                         )}
 
                         {/* Description & Excerpt */}
-                        {activeSite !== 'vbpl' && (item.description || item.excerpt) && (
+                        {activeSite !== 'vbpl' && activeSite !== 'congbao' && (item.description || item.excerpt) && (
                           <Box>
                             {item.description && (
                               <Typography variant="body2" sx={{ mb: item.excerpt ? 1 : 0, color: 'text.primary', fontWeight: 500, fontStyle: 'italic' }}>
