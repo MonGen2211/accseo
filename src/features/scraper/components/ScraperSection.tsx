@@ -140,6 +140,32 @@ const filterMenuProps = {
 };
 
 
+const getEffectiveStatus = (item: ScraperArticle) => {
+  if (item.metadata?.effStatus) {
+    return {
+      status: item.metadata.effStatus,
+      code: item.metadata.effStatusCode || '5'
+    };
+  }
+  
+  if (item.metadata?.effectiveDate) {
+    const effDate = new Date(item.metadata.effectiveDate);
+    const now = new Date();
+    if (!isNaN(effDate.getTime())) {
+      effDate.setHours(0, 0, 0, 0);
+      now.setHours(0, 0, 0, 0);
+      if (effDate > now) {
+        return { status: 'Chưa có hiệu lực', code: 'CCHL' };
+      } else {
+        return { status: 'Còn hiệu lực', code: 'CHL' };
+      }
+    }
+  }
+  
+  return { status: '-', code: '5' };
+};
+
+
 export default function ScraperSection() {
   const { showToast } = useToastify();
   const user = useAppSelector((state) => state.auth.user);
@@ -1230,34 +1256,38 @@ export default function ScraperSection() {
                   )}
 
                   {/* Status Badge */}
-                  {item.metadata?.effStatus && (
-                    <Chip
-                      label={item.metadata.effStatus}
-                      size="small"
-                      sx={{
-                        height: 18,
-                        fontSize: '0.675rem',
-                        fontWeight: 700,
-                        borderRadius: 1,
-                        bgcolor: 
-                          item.metadata.effStatusCode === 'CCHL' ? 'rgba(245, 158, 11, 0.15)' : 
-                          item.metadata.effStatusCode === 'CHL' ? 'rgba(16, 185, 129, 0.15)' : 
-                          item.metadata.effStatusCode === 'HHL' ? 'rgba(107, 114, 128, 0.15)' : 
-                          'rgba(107, 114, 128, 0.12)',
-                        color: 
-                          item.metadata.effStatusCode === 'CCHL' ? '#f59e0b' : 
-                          item.metadata.effStatusCode === 'CHL' ? '#10b981' : 
-                          item.metadata.effStatusCode === 'HHL' ? '#6b7280' : 
-                          '#6b7280',
-                        border: '1px solid',
-                        borderColor: 
-                          item.metadata.effStatusCode === 'CCHL' ? 'rgba(245, 158, 11, 0.3)' : 
-                          item.metadata.effStatusCode === 'CHL' ? 'rgba(16, 185, 129, 0.3)' : 
-                          item.metadata.effStatusCode === 'HHL' ? 'rgba(107, 114, 128, 0.3)' : 
-                          'rgba(107, 114, 128, 0.2)',
-                      }}
-                    />
-                  )}
+                  {(() => {
+                    const statusInfo = getEffectiveStatus(item);
+                    if (statusInfo.status === '-') return null;
+                    return (
+                      <Chip
+                        label={statusInfo.status}
+                        size="small"
+                        sx={{
+                          height: 18,
+                          fontSize: '0.675rem',
+                          fontWeight: 700,
+                          borderRadius: 1,
+                          bgcolor: 
+                            statusInfo.code === 'CCHL' ? 'rgba(245, 158, 11, 0.15)' : 
+                            statusInfo.code === 'CHL' ? 'rgba(16, 185, 129, 0.15)' : 
+                            statusInfo.code === 'HHL' ? 'rgba(107, 114, 128, 0.15)' : 
+                            'rgba(107, 114, 128, 0.12)',
+                          color: 
+                            statusInfo.code === 'CCHL' ? '#f59e0b' : 
+                            statusInfo.code === 'CHL' ? '#10b981' : 
+                            statusInfo.code === 'HHL' ? '#6b7280' : 
+                            '#6b7280',
+                          border: '1px solid',
+                          borderColor: 
+                            statusInfo.code === 'CCHL' ? 'rgba(245, 158, 11, 0.3)' : 
+                            statusInfo.code === 'CHL' ? 'rgba(16, 185, 129, 0.3)' : 
+                            statusInfo.code === 'HHL' ? 'rgba(107, 114, 128, 0.3)' : 
+                            'rgba(107, 114, 128, 0.2)',
+                        }}
+                      />
+                    );
+                  })()}
                 </Box>
 
                 <Link 
@@ -1318,10 +1348,10 @@ export default function ScraperSection() {
           width: 150,
           renderCell: (row: TableRowData) => {
             const item = row as unknown as ScraperArticle;
-            const code = item.metadata?.effStatusCode;
+            const statusInfo = getEffectiveStatus(item);
             return (
               <Chip
-                label={item.metadata?.effStatus || '-'}
+                label={statusInfo.status}
                 size="small"
                 sx={{
                   height: 22,
@@ -1329,20 +1359,20 @@ export default function ScraperSection() {
                   fontWeight: 600,
                   borderRadius: 1.5,
                   bgcolor: 
-                    code === 'CHL' ? 'rgba(16, 185, 129, 0.12)' : 
-                    code === 'CCHL' ? 'rgba(245, 158, 11, 0.12)' : 
-                    code === 'HHL' ? 'rgba(107, 114, 128, 0.12)' : 
+                    statusInfo.code === 'CHL' ? 'rgba(16, 185, 129, 0.12)' : 
+                    statusInfo.code === 'CCHL' ? 'rgba(245, 158, 11, 0.12)' : 
+                    statusInfo.code === 'HHL' ? 'rgba(107, 114, 128, 0.12)' : 
                     'rgba(107, 114, 128, 0.08)',
                   color: 
-                    code === 'CHL' ? '#10b981' : 
-                    code === 'CCHL' ? '#f59e0b' : 
-                    code === 'HHL' ? '#6b7280' : 
+                    statusInfo.code === 'CHL' ? '#10b981' : 
+                    statusInfo.code === 'CCHL' ? '#f59e0b' : 
+                    statusInfo.code === 'HHL' ? '#6b7280' : 
                     '#6b7280',
                   border: '1px solid',
                   borderColor: 
-                    code === 'CHL' ? 'rgba(16, 185, 129, 0.2)' : 
-                    code === 'CCHL' ? 'rgba(245, 158, 11, 0.2)' : 
-                    code === 'HHL' ? 'rgba(107, 114, 128, 0.2)' : 
+                    statusInfo.code === 'CHL' ? 'rgba(16, 185, 129, 0.2)' : 
+                    statusInfo.code === 'CCHL' ? 'rgba(245, 158, 11, 0.2)' : 
+                    statusInfo.code === 'HHL' ? 'rgba(107, 114, 128, 0.2)' : 
                     'rgba(107, 114, 128, 0.15)',
                 }}
               />
@@ -2968,6 +2998,7 @@ export default function ScraperSection() {
 
                 if (activeSite === 'vbpl' || activeSite === 'congbao') {
                   const meta = item.metadata || {};
+                  const statusInfo = getEffectiveStatus(item);
                   
                   // Helper function to render a detail row if value exists
                   const renderDetailItem = (label: string, value: React.ReactNode) => {
@@ -3008,11 +3039,12 @@ export default function ScraperSection() {
                             {renderDetailItem('Số hiệu', meta.docNumber)}
                             {renderDetailItem('Ngành', meta.nganh)}
                             {meta.nganhs && meta.nganhs.length > 1 && renderDetailItem('Các ngành khác', meta.nganhs.slice(1).join(', '))}
-                            {renderDetailItem('Loại văn bản', meta.docType ? `${meta.docType} (${meta.docTypeCode || ''})` : null)}
+                            {renderDetailItem('Loại văn bản', meta.docType ? (meta.docTypeCode ? `${meta.docType} (${meta.docTypeCode})` : meta.docType) : null)}
                             {renderDetailItem('Tổ chức', meta.organizationName)}
                             {renderDetailItem('Cấp tổ chức', meta.organizationType === '0' ? 'Trung ương' : meta.organizationType === '1' ? 'Địa phương' : meta.organizationType)}
                             {renderDetailItem('Ngôn ngữ', meta.language === 'VN' ? 'Tiếng Việt' : meta.language)}
                             {renderDetailItem('Mục hệ thống', item.section)}
+                            {renderDetailItem('Lĩnh vực', meta.linhVuc)}
                             {item.category && item.category.length > 0 && renderDetailItem('Chủ đề', (
                               <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', justifyContent: 'flex-end', mt: 0.5 }}>
                                 {item.category.map((c, idx) => (
@@ -3068,6 +3100,7 @@ export default function ScraperSection() {
                             {renderDetailItem('Ngày hiệu lực', meta.effectiveDate ? (meta.effectiveDate.includes('T') ? safeFormat(meta.effectiveDate, 'dd/MM/yyyy') : meta.effectiveDate) : null)}
                             {renderDetailItem('Ngày công khai', meta.publicDate ? (meta.publicDate.includes('T') ? safeFormat(meta.publicDate, 'dd/MM/yyyy') : meta.publicDate) : null)}
                             {renderDetailItem('Ngày hết hiệu lực', meta.expiredDate ? (meta.expiredDate.includes('T') ? safeFormat(meta.expiredDate, 'dd/MM/yyyy') : meta.expiredDate) : null)}
+                            {renderDetailItem('Tình trạng hiệu lực', statusInfo.status !== '-' ? statusInfo.status : null)}
                             {renderDetailItem('Cập nhật trên nguồn', meta.updatedDate ? (meta.updatedDate.includes('T') ? safeFormat(meta.updatedDate, 'dd/MM/yyyy HH:mm') : meta.updatedDate) : null)}
                             {renderDetailItem('Thời gian cào bài', safeFormat(item.createdAt, 'dd/MM/yyyy HH:mm'))}
                             {renderDetailItem('Trạng thái VBPL', meta.publishStatus)}
