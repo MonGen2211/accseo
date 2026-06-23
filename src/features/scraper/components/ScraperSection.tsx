@@ -2257,26 +2257,6 @@ export default function ScraperSection() {
               >
                 {isTriggering ? 'Đang chạy...' : 'Cào bài ngay'}
               </Button>
-              {isAdmin && (
-                <Button
-                  variant="outlined"
-                  color="error"
-                  onClick={() => handleResetSourceAiState(activeSite)}
-                  sx={{ 
-                    borderRadius: 2, 
-                    fontWeight: 600, 
-                    textTransform: 'none',
-                    borderColor: 'rgba(239, 68, 68, 0.4)',
-                    color: '#ef4444',
-                    '&:hover': {
-                      borderColor: '#ef4444',
-                      bgcolor: 'rgba(239, 68, 68, 0.04)',
-                    }
-                  }}
-                >
-                  Reset AI Nguồn
-                </Button>
-              )}
             </Box>
           </Box>
 
