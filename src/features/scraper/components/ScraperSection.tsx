@@ -191,7 +191,6 @@ export default function ScraperSection() {
   const [nganh, setNganh] = useState('');
   const [linhVuc, setLinhVuc] = useState('');
   const [docTypeCode, setDocTypeCode] = useState('');
-  const [issuingAgency, setIssuingAgency] = useState('');
   const [sheetStatus, setSheetStatus] = useState('all');
   const [fullInfoStatus, setFullInfoStatus] = useState('all');
   const [showSectionDetails, setShowSectionDetails] = useState(false);
@@ -208,16 +207,14 @@ export default function ScraperSection() {
       if (nganh !== '') count++;
       if (linhVuc !== '') count++;
       if (docTypeCode !== '') count++;
-      if (issuingAgency !== '') count++;
     } else if (activeSite === 'congbao') {
       if (sheetStatus !== 'all') count++;
-      if (issuingAgency !== '') count++;
       if (effStatusCode !== '') count++;
     } else {
       if (sheetStatus !== 'all') count++;
     }
     return count;
-  }, [activeSite, sheetStatus, fullInfoStatus, scope, effStatusCode, nganh, linhVuc, docTypeCode, issuingAgency]);
+  }, [activeSite, sheetStatus, fullInfoStatus, scope, effStatusCode, nganh, linhVuc, docTypeCode]);
   const debouncedQ = useDebounce(q, 500);
 
   // --- Table State ---
@@ -264,7 +261,6 @@ export default function ScraperSection() {
   const [downloadNganh, setDownloadNganh] = useState('');
   const [downloadLinhVuc, setDownloadLinhVuc] = useState('');
   const [downloadDocTypeCode, setDownloadDocTypeCode] = useState('');
-  const [downloadIssuingAgency, setDownloadIssuingAgency] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
 
   const handleOpenDownloadDialog = () => {
@@ -279,7 +275,6 @@ export default function ScraperSection() {
     setDownloadNganh(nganh);
     setDownloadLinhVuc(linhVuc);
     setDownloadDocTypeCode(docTypeCode);
-    setDownloadIssuingAgency(issuingAgency);
     setOpenDownloadDialog(true);
   };
 
@@ -300,7 +295,6 @@ export default function ScraperSection() {
         nganh: activeSite === 'vbpl' && downloadNganh ? downloadNganh : undefined,
         linhVuc: activeSite === 'vbpl' && downloadLinhVuc ? downloadLinhVuc : undefined,
         docTypeCode: activeSite === 'vbpl' && downloadDocTypeCode ? downloadDocTypeCode : undefined,
-        issuingAgency: (activeSite === 'vbpl' || activeSite === 'congbao') && downloadIssuingAgency ? downloadIssuingAgency : undefined,
         page: 1,
         limit: 10000
       });
@@ -474,7 +468,6 @@ export default function ScraperSection() {
         nganh: activeSite === 'vbpl' && nganh ? nganh : undefined,
         linhVuc: activeSite === 'vbpl' && linhVuc ? linhVuc : undefined,
         docTypeCode: activeSite === 'vbpl' && docTypeCode ? docTypeCode : undefined,
-        issuingAgency: (activeSite === 'vbpl' || activeSite === 'congbao') && issuingAgency ? issuingAgency : undefined,
         sheetStatus: activeSite === 'vbpl' ? undefined : (sheetStatus || undefined),
         fullInfoStatus: activeSite === 'vbpl' && fullInfoStatus ? fullInfoStatus : undefined,
         articleType: activeSite === 'luatvietnam' && articleType !== 'all' ? articleType : undefined,
@@ -694,7 +687,6 @@ export default function ScraperSection() {
       setNganh('');
       setLinhVuc('');
       setDocTypeCode('');
-      setIssuingAgency('');
       setSheetStatus('all');
       setFullInfoStatus('all');
       setArticleType('all');
@@ -715,7 +707,7 @@ export default function ScraperSection() {
       setPage(0);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSite, section, tag, date, debouncedQ, onlyNew, scope, effStatusCode, nganh, linhVuc, docTypeCode, sheetStatus, fullInfoStatus, articleType, issuingAgency]);
+  }, [activeSite, section, tag, date, debouncedQ, onlyNew, scope, effStatusCode, nganh, linhVuc, docTypeCode, sheetStatus, fullInfoStatus, articleType]);
 
   // --- Handlers ---
   const handlePageChange = (newPage: number) => {
@@ -1332,30 +1324,10 @@ export default function ScraperSection() {
           width: 180,
           renderCell: (row: TableRowData) => {
             const item = row as unknown as ScraperArticle;
-            const value = item.metadata?.issuingAgency || '-';
-            if (value === '-') return <Typography variant="caption" color="text.secondary">-</Typography>;
-            
-            const isSelected = issuingAgency === value;
             return (
-              <Tooltip title={value}>
-                <Chip 
-                  label={value} 
-                  size="small" 
-                  variant={isSelected ? 'filled' : 'outlined'} 
-                  color="primary" 
-                  sx={{ 
-                    fontSize: 11, 
-                    cursor: 'pointer',
-                    maxWidth: '100%',
-                    '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis' },
-                    ...(isSelected && { color: '#ffffff !important' })
-                  }} 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIssuingAgency(isSelected ? '' : value);
-                  }}
-                />
-              </Tooltip>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                {item.metadata?.issuingAgency || '-'}
+              </Typography>
             );
           }
         },
@@ -2746,7 +2718,7 @@ export default function ScraperSection() {
               sx={{ ml: 1, mr: 0 }}
             />
             
-            {(section || tag || date || q || onlyNew || activeAdvancedCount > 0 || articleType !== 'all' || issuingAgency) && (
+            {(section || tag || date || q || onlyNew || activeAdvancedCount > 0 || articleType !== 'all') && (
               <Button 
                 size="small" 
                 color="error" 
@@ -2762,7 +2734,6 @@ export default function ScraperSection() {
                   setNganh(''); 
                   setLinhVuc(''); 
                   setDocTypeCode(''); 
-                  setIssuingAgency('');
                   setSheetStatus('all'); 
                   setFullInfoStatus('all'); 
                   setArticleType('all'); 
