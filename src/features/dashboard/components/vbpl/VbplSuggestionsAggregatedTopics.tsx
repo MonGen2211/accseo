@@ -181,6 +181,18 @@ export default function VbplSuggestionsAggregatedTopics({
   const [loadingTopicAction, setLoadingTopicAction] = useState<boolean>(false);
   const [updatingVolume, setUpdatingVolume] = useState<boolean>(false);
 
+  // --- Bulk Add Topic State ---
+  const [openBulkAddDialog, setOpenBulkAddDialog] = useState<boolean>(false);
+  const [bulkAddGroupId, setBulkAddGroupId] = useState<string>('');
+  const [bulkAddNamesInput, setBulkAddNamesInput] = useState<string>('');
+  const [loadingBulkAdd, setLoadingBulkAdd] = useState<boolean>(false);
+  const [bulkAddResult, setBulkAddResult] = useState<{
+    requested: number;
+    inserted: number;
+    skipped: number;
+    skippedNames: string[];
+  } | null>(null);
+
   // --- Keyword Actions State ---
   const [openKeywordDialog, setOpenKeywordDialog] = useState<boolean>(false);
   const [keywordDialogMode, setKeywordDialogMode] = useState<'add' | 'edit'>('add');
@@ -371,6 +383,50 @@ export default function VbplSuggestionsAggregatedTopics({
       showToast(err.response?.data?.message || 'Không thể xoá chủ đề', 'danger');
     } finally {
       setLoadingTopicAction(false);
+    }
+  };
+
+  const handleOpenBulkAddTopic = () => {
+    setBulkAddGroupId(selectedGroupId || '');
+    setBulkAddNamesInput('');
+    setBulkAddResult(null);
+    setOpenBulkAddDialog(true);
+  };
+
+  const handleSaveBulkTopics = async () => {
+    if (!bulkAddGroupId) {
+      showToast('Vui lòng chọn mảng', 'warning');
+      return;
+    }
+    const names = bulkAddNamesInput
+      .split('\n')
+      .map(n => n.trim())
+      .filter(Boolean);
+
+    if (names.length === 0) {
+      showToast('Vui lòng nhập ít nhất một tên chủ đề', 'warning');
+      return;
+    }
+
+    if (names.length > 500) {
+      showToast('Không được nhập quá 500 chủ đề một lần', 'warning');
+      return;
+    }
+
+    setLoadingBulkAdd(true);
+    setBulkAddResult(null);
+    try {
+      const res = await topicsService.createTopicsBulk(bulkAddGroupId, names);
+      setBulkAddResult(res);
+      showToast(`Đã xử lý xong: thêm mới ${res.inserted} chủ đề`, 'success');
+      await loadGroups();
+      await loadPendingCount();
+      loadTopics(1);
+    } catch (err: any) {
+      console.error('Lỗi thêm chủ đề hàng loạt:', err);
+      showToast(err.response?.data?.message || 'Lỗi khi thêm chủ đề hàng loạt', 'danger');
+    } finally {
+      setLoadingBulkAdd(false);
     }
   };
 
@@ -744,13 +800,13 @@ export default function VbplSuggestionsAggregatedTopics({
     setExporting(true);
     try {
       const result = await topicsService.exportTopicsToSheet();
-      if (result.exportedTopics === 0 && result.exportedKeywords === 0) {
+      if (result.exportedTopics === 0) {
         showToast(result.message || 'Không có dữ liệu mới nào cần xuất', 'info');
       } else {
         const viewLink = result.url || result.sheetUrl;
         const msg = (
           <span>
-            {result.message || `Đã xuất ${result.exportedTopics} chủ đề và ${result.exportedKeywords} từ khoá mới lên Sheet thành công!`}
+            {result.message || `Đã xuất ${result.exportedTopics} chủ đề mới lên Sheet thành công!`}
             {viewLink && (
               <a
                 href={viewLink}
@@ -1040,6 +1096,15 @@ export default function VbplSuggestionsAggregatedTopics({
               sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
             >
               Thêm chủ đề
+            </Button>
+            <Button
+              variant="outlined"
+              color="primary"
+              startIcon={<PlaylistAddIcon />}
+              onClick={handleOpenBulkAddTopic}
+              sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
+            >
+              Thêm hàng loạt
             </Button>
             <Button
               variant="outlined"
@@ -2543,6 +2608,119 @@ export default function VbplSuggestionsAggregatedTopics({
             sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
           >
             Lưu
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal Thêm chủ đề hàng loạt */}
+      <Dialog
+        open={openBulkAddDialog}
+        onClose={() => !loadingBulkAdd && setOpenBulkAddDialog(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: '12px' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800 }}>
+          Thêm chủ đề hàng loạt
+        </DialogTitle>
+        <DialogContent dividers sx={{ py: 2, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          <FormControl fullWidth size="small" required error={!bulkAddGroupId}>
+            <Typography variant="body2" sx={{ fontWeight: 700, mb: 1, color: 'text.secondary' }}>
+              Mảng liên quan
+            </Typography>
+            <Select
+              value={bulkAddGroupId}
+              onChange={(e) => setBulkAddGroupId(e.target.value)}
+              displayEmpty
+              disabled={loadingBulkAdd}
+            >
+              <MenuItem value="" disabled>Chọn mảng...</MenuItem>
+              {groups.filter(g => g.id !== '').map((g) => (
+                <MenuItem key={g.id} value={g.id}>{g.name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <TextField
+            fullWidth
+            label="Danh sách chủ đề (Mỗi dòng 1 chủ đề)"
+            variant="outlined"
+            multiline
+            rows={8}
+            value={bulkAddNamesInput}
+            onChange={(e) => setBulkAddNamesInput(e.target.value)}
+            placeholder={"Nhập danh sách chủ đề...\nVí dụ:\nDịch vụ thành lập công ty\nDịch vụ kế toán trọn gói\nTư vấn thuế doanh nghiệp"}
+            size="small"
+            required
+            disabled={loadingBulkAdd}
+            helperText="Hệ thống tự động tìm kiếm volume từ Google Ads, tự trim khoảng trắng và loại bỏ các dòng trùng lặp."
+          />
+
+          {bulkAddResult && (
+            <Box sx={{ mt: 1, p: 2, bgcolor: 'action.hover', borderRadius: '8px', border: '1px solid', borderColor: 'divider' }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>
+                Kết quả thêm hàng loạt:
+              </Typography>
+              <Grid container spacing={2} sx={{ mb: 1.5 }}>
+                <Grid item xs={4}>
+                  <Typography variant="caption" color="text.secondary">Tổng số gửi:</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>{bulkAddResult.requested}</Typography>
+                </Grid>
+                <Grid item xs={4}>
+                  <Typography variant="caption" color="success.main">Thêm thành công:</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: 'success.main' }}>{bulkAddResult.inserted}</Typography>
+                </Grid>
+                <Grid item xs={4}>
+                  <Typography variant="caption" color="warning.main">Bị trùng bỏ qua:</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: 'warning.main' }}>{bulkAddResult.skipped}</Typography>
+                </Grid>
+              </Grid>
+
+              {bulkAddResult.skippedNames && bulkAddResult.skippedNames.length > 0 && (
+                <Box sx={{ mt: 1 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', mb: 0.5, color: 'text.secondary' }}>
+                    Danh sách chủ đề đã tồn tại (bỏ qua):
+                  </Typography>
+                  <Box
+                    sx={{
+                      maxHeight: '120px',
+                      overflowY: 'auto',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: '4px',
+                      p: 1,
+                      bgcolor: 'background.paper',
+                      fontSize: '0.8rem',
+                      fontFamily: 'monospace'
+                    }}
+                  >
+                    {bulkAddResult.skippedNames.map((name, i) => (
+                      <div key={i}>• {name}</div>
+                    ))}
+                  </Box>
+                </Box>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            onClick={() => setOpenBulkAddDialog(false)}
+            disabled={loadingBulkAdd}
+            sx={{ textTransform: 'none', fontWeight: 700 }}
+            color="inherit"
+          >
+            {bulkAddResult ? 'Đóng' : 'Hủy'}
+          </Button>
+          <Button
+            onClick={handleSaveBulkTopics}
+            variant="contained"
+            color="primary"
+            disabled={loadingBulkAdd || !bulkAddGroupId || !bulkAddNamesInput.trim()}
+            startIcon={loadingBulkAdd ? <CircularProgress size={16} color="inherit" /> : null}
+            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
+          >
+            Thêm hàng loạt
           </Button>
         </DialogActions>
       </Dialog>
