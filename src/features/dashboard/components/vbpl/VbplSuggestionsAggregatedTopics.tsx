@@ -1155,15 +1155,6 @@ export default function VbplSuggestionsAggregatedTopics({
             <Button
               variant="outlined"
               color="primary"
-              startIcon={<AddIcon />}
-              onClick={handleOpenAddTopic}
-              sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
-            >
-              Thêm chủ đề
-            </Button>
-            <Button
-              variant="outlined"
-              color="primary"
               startIcon={<PlaylistAddIcon />}
               onClick={handleOpenBulkAddTopic}
               sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}
