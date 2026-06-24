@@ -40,8 +40,10 @@ import {
   Switch,
   Grid,
   Link,
+  Checkbox,
 } from '@mui/material';
 import CancelIcon from '@mui/icons-material/Cancel';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import SendIcon from '@mui/icons-material/Send';
 import HistoryIcon from '@mui/icons-material/History';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
@@ -54,6 +56,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import LoadingButton from '@mui/lab/LoadingButton';
 
 import { contentAnalysisService } from '../contentAnalysisService';
+import type { ExportDocOptions } from '../contentAnalysisService';
 import type { SessionDetail, SessionListItem, PerArticleStructural } from '../types';
 import { useToastify } from '@/components/Toastify';
 import { formatDistanceToNow } from 'date-fns';
@@ -195,6 +198,30 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
   const [location, setLocation] = useState('vn');
   const [language, setLanguage] = useState('vi');
   const [topN, setTopN] = useState(10);
+  const [h2Count, setH2Count] = useState<string>('');
+  const [h3Count, setH3Count] = useState<string>('');
+  const [description, setDescription] = useState('');
+
+  // Export options dialog states
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+  const [exportForce, setExportForce] = useState(false);
+  const [exportOptions, setExportOptions] = useState<ExportDocOptions>({
+    title: false,
+    metaInfo: false,
+    metaDescription: false,
+    differentiationStrategy: false,
+    headingNotes: false,
+    h4: false,
+    faqs: false,
+    sources: false,
+  });
+
+  // Regenerate options dialog states
+  const [isRegenerateDialogOpen, setIsRegenerateDialogOpen] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [regenH2Count, setRegenH2Count] = useState<string>('');
+  const [regenH3Count, setRegenH3Count] = useState<string>('');
+  const [regenDescription, setRegenDescription] = useState('');
 
   // Data states
   const [historyList, setHistoryList] = useState<SessionListItem[]>([]);
@@ -301,19 +328,45 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
       return;
     }
 
+    const cleanH2 = h2Count !== '' ? parseInt(h2Count, 10) : NaN;
+    if (!isNaN(cleanH2) && (cleanH2 < 2 || cleanH2 > 20)) {
+      showToast('Số H2 mong muốn phải từ 2 đến 20', 'warning');
+      return;
+    }
+
+    const cleanH3 = h3Count !== '' ? parseInt(h3Count, 10) : NaN;
+    if (!isNaN(cleanH3) && (cleanH3 < 0 || cleanH3 > 60)) {
+      showToast('Tổng số H3 mong muốn phải từ 0 đến 60', 'warning');
+      return;
+    }
+
+    const cleanDesc = description.trim();
+    if (cleanDesc.length > 1000) {
+      showToast('Mô tả bổ sung không được vượt quá 1000 ký tự', 'warning');
+      return;
+    }
+
     setIsSubmitting(true);
     showToast('Đang khởi tạo phiên phân tích...', 'info');
 
     try {
-      const res = await contentAnalysisService.startSession({
+      const params: any = {
         keyword: cleanKeyword,
         location,
         language,
         topN,
-      });
+      };
+      if (!isNaN(cleanH2)) params.h2Count = cleanH2;
+      if (!isNaN(cleanH3)) params.h3Count = cleanH3;
+      if (cleanDesc !== '') params.description = cleanDesc;
+
+      const res = await contentAnalysisService.startSession(params);
 
       // Clear input on success
       setKeyword('');
+      setH2Count('');
+      setH3Count('');
+      setDescription('');
       
       // Auto-load session and refresh history
       setSearchParams({ session: res.sessionId });
@@ -382,6 +435,9 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
         location: activeSessionDetail.location,
         language: activeSessionDetail.language,
         topN: activeSessionDetail.topN,
+        h2Count: activeSessionDetail.h2Count ?? undefined,
+        h3Count: activeSessionDetail.h3Count ?? undefined,
+        description: activeSessionDetail.description ?? undefined,
       });
       setSearchParams({ session: res.sessionId });
       await fetchHistoryList(true);
@@ -395,38 +451,133 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
     }
   };
 
-  // Helper to export/open Google Doc
-  const handleExportGoogleDoc = async (force = false) => {
+  // Open dialog to configure regenerate options
+  const openRegenerateDialog = () => {
+    if (!activeSessionDetail) return;
+    setRegenH2Count(activeSessionDetail.h2Count?.toString() ?? '');
+    setRegenH3Count(activeSessionDetail.h3Count?.toString() ?? '');
+    setRegenDescription(activeSessionDetail.description ?? '');
+    setIsRegenerateDialogOpen(true);
+  };
+
+  // Helper to regenerate outline without scraping SERP
+  const handleRegenerate = async () => {
     if (!activeSessionDetail) return;
 
+    const cleanH2 = regenH2Count !== '' ? parseInt(regenH2Count, 10) : NaN;
+    if (!isNaN(cleanH2) && (cleanH2 < 2 || cleanH2 > 20)) {
+      showToast('Số H2 mong muốn phải từ 2 đến 20', 'warning');
+      return;
+    }
+
+    const cleanH3 = regenH3Count !== '' ? parseInt(regenH3Count, 10) : NaN;
+    if (!isNaN(cleanH3) && (cleanH3 < 0 || cleanH3 > 60)) {
+      showToast('Tổng số H3 mong muốn phải từ 0 đến 60', 'warning');
+      return;
+    }
+
+    const cleanDesc = regenDescription.trim();
+    if (cleanDesc.length > 1000) {
+      showToast('Mô tả bổ sung không được vượt quá 1000 ký tự', 'warning');
+      return;
+    }
+
+    setIsRegenerating(true);
+    showToast('Đang gọi AI tạo lại outline mới (quá trình này mất 10–30s)...', 'info');
+
+    try {
+      const params: any = {};
+      if (!isNaN(cleanH2)) params.h2Count = cleanH2;
+      if (!isNaN(cleanH3)) params.h3Count = cleanH3;
+      params.description = cleanDesc;
+
+      const updatedSession = await contentAnalysisService.regenerate(activeSessionDetail._id, params);
+
+      // Update active session detail
+      setActiveSessionDetail(updatedSession);
+
+      // Update history list in place if found
+      setHistoryList(prev => prev.map(item => 
+        item._id === updatedSession._id ? {
+          ...item,
+          h2Count: updatedSession.h2Count,
+          h3Count: updatedSession.h3Count,
+          description: updatedSession.description,
+          docUrl: null
+        } : item
+      ));
+
+      showToast('Tạo lại outline thành công!', 'success');
+      setIsRegenerateDialogOpen(false);
+    } catch (err) {
+      console.error('Regenerate outline error:', err);
+      const axiosError = err as { response?: { data?: { code?: string; message?: string } }; code?: string; message?: string };
+      const code = axiosError.response?.data?.code || axiosError.code;
+      const msg = axiosError.response?.data?.message || axiosError.message || 'Lỗi khi tạo lại outline';
+
+      if (code === 'CONTENT_ANALYSIS_NO_SCRAPE_DATA') {
+        showToast('Phiên bản cũ chưa có dữ liệu cào quét để phân tích lại. Vui lòng tạo phiên mới.', 'danger');
+      } else if (code === 'CONTENT_ANALYSIS_BUSY') {
+        showToast('Hệ thống đang bận xử lý phiên này. Vui lòng đợi!', 'warning');
+      } else {
+        showToast(msg, 'danger');
+      }
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
+  // Open dialog to configure export options
+  const openExportDialog = (force = false) => {
     if (force) {
       const confirmRestart = window.confirm("Bạn có chắc chắn muốn tạo lại Google Doc mới? File cũ sẽ bị ghi đè/tạo file mới.");
       if (!confirmRestart) return;
     }
+    setExportForce(force);
+    setExportOptions({
+      title: false,
+      metaInfo: false,
+      metaDescription: false,
+      differentiationStrategy: false,
+      headingNotes: false,
+      h4: false,
+      faqs: false,
+      sources: false,
+    });
+    setIsExportDialogOpen(true);
+  };
 
+  // Helper to export/open Google Doc
+  const handleExportGoogleDoc = async (options: ExportDocOptions, force = false) => {
+    if (!activeSessionDetail) return;
+
+    setIsExportDialogOpen(false);
     setIsExportingDoc(true);
     showToast(force ? 'Đang tạo lại Google Doc mới...' : 'Đang xuất Google Doc (quá trình này mất 2–6 giây)...', 'info');
 
     try {
-      const res = await contentAnalysisService.exportDoc(activeSessionDetail._id, force);
+      const res = await contentAnalysisService.exportDoc(activeSessionDetail._id, options, force);
 
-      // Update local state with docUrl and docId
+      // Update local state with docUrl, docId, editUrl, and previewUrl
       setActiveSessionDetail(prev => prev ? {
         ...prev,
         docUrl: res.docUrl,
-        docId: res.docId
+        docId: res.docId,
+        editUrl: res.editUrl,
+        previewUrl: res.previewUrl
       } : null);
 
       // Update history list in place if found
       setHistoryList(prev => prev.map(item => 
-        item._id === activeSessionDetail._id ? { ...item, docUrl: res.docUrl } : item
+        item._id === activeSessionDetail._id ? { ...item, docUrl: res.docUrl, editUrl: res.editUrl, previewUrl: res.previewUrl } : item
       ));
 
       showToast(force ? 'Đã tạo lại Google Doc mới!' : 'Xuất Google Doc thành công!', 'success');
 
-      // Open the document in a new tab
-      if (res.docUrl) {
-        window.open(res.docUrl, '_blank');
+      // Open the document in a new tab using editUrl or fallback to docUrl
+      const openUrl = res.editUrl || res.docUrl;
+      if (openUrl) {
+        window.open(openUrl, '_blank');
       }
     } catch (err) {
       console.error('Export Google Doc error:', err);
@@ -543,6 +694,54 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
                 />
               </Box>
 
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <TextField
+                    label="Số H2 mong muốn"
+                    type="number"
+                    value={h2Count}
+                    onChange={(e) => setH2Count(e.target.value)}
+                    disabled={isSubmitting}
+                    placeholder="Tự chọn"
+                    slotProps={{
+                      htmlInput: { min: 2, max: 20 }
+                    }}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                    helperText="2 - 20. Bỏ trống = AI tự quyết"
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    label="Tổng số H3 mong muốn"
+                    type="number"
+                    value={h3Count}
+                    onChange={(e) => setH3Count(e.target.value)}
+                    disabled={isSubmitting}
+                    placeholder="Tự chọn"
+                    slotProps={{
+                      htmlInput: { min: 0, max: 60 }
+                    }}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                    helperText="Tổng H3 toàn bài (0 - 60). Bỏ trống = AI tự quyết"
+                  />
+                </Grid>
+              </Grid>
+
+              <TextField
+                label="Mô tả bổ sung (tùy chọn)"
+                multiline
+                rows={3}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                disabled={isSubmitting}
+                placeholder="VD: Dịch vụ làm thẻ APEC của ACC Đà Nẵng tại phường Hải Châu, đối tượng doanh nhân..."
+                slotProps={{
+                  htmlInput: { maxLength: 1000 }
+                }}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                helperText="Nhập tên công ty/thương hiệu, khu vực, đối tượng, điểm khác biệt... để AI cá nhân hoá outline. Bỏ trống = outline trung lập."
+              />
+
               <LoadingButton
                 type="submit"
                 variant="contained"
@@ -610,6 +809,7 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
                         bgcolor: isActive ? 'action.selected' : 'transparent',
                         transition: 'all 0.2s',
                         overflow: 'hidden',
+                        flexShrink: 0,
                         '&:hover': {
                           bgcolor: 'action.hover',
                         }
@@ -875,7 +1075,11 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
                           variant="contained"
                           color="primary"
                           startIcon={<DescriptionIcon />}
-                          onClick={() => window.open(activeSessionDetail.docUrl!, '_blank')}
+                          onClick={() => {
+                            const openUrl = activeSessionDetail.editUrl || 
+                              (activeSessionDetail.docId ? `https://docs.google.com/document/d/${activeSessionDetail.docId}/edit` : activeSessionDetail.docUrl!);
+                            window.open(openUrl, '_blank');
+                          }}
                           sx={{
                             borderRadius: '100px',
                             textTransform: 'none',
@@ -896,7 +1100,7 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
                           size="small"
                           variant="outlined"
                           color="primary"
-                          onClick={() => handleExportGoogleDoc(true)}
+                          onClick={() => openExportDialog(true)}
                           loading={isExportingDoc}
                           loadingPosition="start"
                           startIcon={<DescriptionIcon />}
@@ -922,7 +1126,7 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
                         loading={isExportingDoc}
                         loadingPosition="start"
                         startIcon={<DescriptionIcon />}
-                        onClick={() => handleExportGoogleDoc(false)}
+                        onClick={() => openExportDialog(false)}
                         sx={{
                           borderRadius: '100px',
                           textTransform: 'none',
@@ -939,6 +1143,30 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
                         Xuất Google Doc
                       </LoadingButton>
                     )}
+                    <LoadingButton
+                      size="small"
+                      variant="contained"
+                      color="primary"
+                      loading={isRegenerating}
+                      loadingPosition="start"
+                      startIcon={<AutoAwesomeIcon />}
+                      onClick={openRegenerateDialog}
+                      disabled={isSubmitting}
+                      sx={{
+                        borderRadius: '100px',
+                        textTransform: 'none',
+                        fontWeight: 700,
+                        py: 0.8,
+                        boxShadow: 'none',
+                        transition: 'all 0.2s',
+                        '&:hover': {
+                          transform: 'scale(1.02)',
+                          boxShadow: 'none'
+                        }
+                      }}
+                    >
+                      Tạo lại outline
+                    </LoadingButton>
                     <LoadingButton
                       size="small"
                       variant="outlined"
@@ -1710,6 +1938,260 @@ export default function ContentAnalysisSection({ isActive = true }: ContentAnaly
             </DialogActions>
           </>
         )}
+      </Dialog>
+
+      {/* Export Google Doc Options Dialog */}
+      <Dialog
+        open={isExportDialogOpen}
+        onClose={() => setIsExportDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 4, p: 1 }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, pb: 1 }}>
+          Cấu hình xuất Google Doc
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Chọn các phần nội dung bạn muốn đưa vào Google Doc. Dàn bài H2 + H3 luôn được xuất mặc định.
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <FormControlLabel
+              control={<Checkbox checked disabled />}
+              label={
+                <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+                  Dàn bài H2 + H3 (Luôn được chọn)
+                </Typography>
+              }
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={exportOptions.title}
+                  onChange={(e) => setExportOptions(prev => ({ ...prev, title: e.target.checked }))}
+                />
+              }
+              label={<Typography variant="body2">Dòng tiêu đề bài (Title)</Typography>}
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={exportOptions.metaInfo}
+                  onChange={(e) => setExportOptions(prev => ({ ...prev, metaInfo: e.target.checked }))}
+                />
+              }
+              label={<Typography variant="body2">Khối thông tin (Từ khóa, vùng/ngôn ngữ, độ dài khuyến nghị)</Typography>}
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={exportOptions.metaDescription}
+                  onChange={(e) => setExportOptions(prev => ({ ...prev, metaDescription: e.target.checked }))}
+                />
+              }
+              label={<Typography variant="body2">Meta description</Typography>}
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={exportOptions.differentiationStrategy}
+                  onChange={(e) => setExportOptions(prev => ({ ...prev, differentiationStrategy: e.target.checked }))}
+                />
+              }
+              label={<Typography variant="body2">Chiến lược khác biệt</Typography>}
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={exportOptions.headingNotes}
+                  onChange={(e) => setExportOptions(prev => ({ ...prev, headingNotes: e.target.checked }))}
+                />
+              }
+              label={<Typography variant="body2">Ghi chú dưới mỗi heading (Core Intent / Unique Value / Keywords)</Typography>}
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={exportOptions.h4}
+                  onChange={(e) => setExportOptions(prev => ({ ...prev, h4: e.target.checked }))}
+                />
+              }
+              label={<Typography variant="body2">Heading cấp 4 (H4)</Typography>}
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={exportOptions.faqs}
+                  onChange={(e) => setExportOptions(prev => ({ ...prev, faqs: e.target.checked }))}
+                />
+              }
+              label={<Typography variant="body2">Phần FAQ</Typography>}
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={exportOptions.sources}
+                  onChange={(e) => setExportOptions(prev => ({ ...prev, sources: e.target.checked }))}
+                />
+              }
+              label={<Typography variant="body2">Nguồn tham khảo (Top SERP)</Typography>}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+          <Button
+            onClick={() => setIsExportDialogOpen(false)}
+            variant="outlined"
+            sx={{
+              borderRadius: '100px',
+              textTransform: 'none',
+              fontWeight: 700,
+              transition: 'all 0.2s',
+              '&:hover': {
+                transform: 'scale(1.02)'
+              }
+            }}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={() => handleExportGoogleDoc(exportOptions, exportForce)}
+            variant="contained"
+            color="primary"
+            sx={{
+              borderRadius: '100px',
+              textTransform: 'none',
+              fontWeight: 700,
+              boxShadow: 'none',
+              transition: 'all 0.2s',
+              '&:hover': {
+                bgcolor: 'primary.dark',
+                transform: 'scale(1.02)',
+                boxShadow: 'none'
+              }
+            }}
+          >
+            Xuất
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Regenerate AI Outline Options Dialog */}
+      <Dialog
+        open={isRegenerateDialogOpen}
+        onClose={() => !isRegenerating && setIsRegenerateDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 4, p: 1 }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, pb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <AutoAwesomeIcon color="primary" />
+          Tạo lại Outline bằng AI
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Tinh chỉnh các cấu hình dưới đây để AI thiết kế lại dàn bài mới. Việc tạo lại outline sẽ sử dụng dữ liệu đối thủ đã cào quét trước đó nên sẽ diễn ra rất nhanh và không tốn lượt cào.
+          </Typography>
+
+          <Grid container spacing={2} sx={{ mb: 2.5 }}>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="Số H2 mong muốn"
+                type="number"
+                value={regenH2Count}
+                onChange={(e) => setRegenH2Count(e.target.value)}
+                disabled={isRegenerating}
+                placeholder="Tự chọn"
+                slotProps={{
+                  htmlInput: { min: 2, max: 20 }
+                }}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                helperText="2 - 20. Bỏ trống = AI tự quyết"
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="Tổng số H3 mong muốn"
+                type="number"
+                value={regenH3Count}
+                onChange={(e) => setRegenH3Count(e.target.value)}
+                disabled={isRegenerating}
+                placeholder="Tự chọn"
+                slotProps={{
+                  htmlInput: { min: 0, max: 60 }
+                }}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                helperText="Tổng H3 toàn bài. Bỏ trống = AI tự quyết"
+              />
+            </Grid>
+          </Grid>
+
+          <TextField
+            fullWidth
+            label="Mô tả bổ sung (tùy chọn)"
+            multiline
+            rows={3}
+            value={regenDescription}
+            onChange={(e) => setRegenDescription(e.target.value)}
+            disabled={isRegenerating}
+            placeholder="VD: Dịch vụ làm thẻ APEC của ACC Đà Nẵng tại phường Hải Châu, đối tượng doanh nhân..."
+            slotProps={{
+              htmlInput: { maxLength: 1000 }
+            }}
+            sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 }, mb: 2 }}
+            helperText="Nhập tên thương hiệu, khu vực, đối tượng... Bỏ trống = outline trung lập."
+          />
+
+          <Alert severity="warning" sx={{ borderRadius: 3 }}>
+            Lưu ý: Outline mới sẽ ghi đè hoàn toàn outline cũ và liên kết Google Doc đã xuất trước đó sẽ bị xóa. Bạn sẽ cần xuất lại Google Doc sau khi hoàn thành.
+          </Alert>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+          <Button
+            onClick={() => setIsRegenerateDialogOpen(false)}
+            variant="outlined"
+            disabled={isRegenerating}
+            sx={{
+              borderRadius: '100px',
+              textTransform: 'none',
+              fontWeight: 700,
+              transition: 'all 0.2s',
+              '&:hover': {
+                transform: 'scale(1.02)'
+              }
+            }}
+          >
+            Hủy
+          </Button>
+          <LoadingButton
+            onClick={handleRegenerate}
+            variant="contained"
+            color="primary"
+            loading={isRegenerating}
+            loadingPosition="start"
+            startIcon={<AutoAwesomeIcon />}
+            sx={{
+              borderRadius: '100px',
+              textTransform: 'none',
+              fontWeight: 700,
+              boxShadow: 'none',
+              transition: 'all 0.2s',
+              '&:hover': {
+                bgcolor: 'primary.dark',
+                transform: 'scale(1.02)',
+                boxShadow: 'none'
+              }
+            }}
+          >
+            Tạo lại
+          </LoadingButton>
+        </DialogActions>
       </Dialog>
     </Box>
   );

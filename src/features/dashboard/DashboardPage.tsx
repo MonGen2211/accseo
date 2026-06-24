@@ -45,6 +45,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import TrendingUpOutlinedIcon from '@mui/icons-material/TrendingUpOutlined';
 import CloudSyncOutlinedIcon from '@mui/icons-material/CloudSyncOutlined';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useState, useEffect, lazy, Suspense } from 'react';
 import type { Theme, SxProps } from '@mui/material';
 import LogoImage from '../../assets/Logo/Logo.png';
@@ -53,6 +54,7 @@ const TrendingKeywordsSection = lazy(() => import('./TrendingKeywordsSection'));
 const VbplSuggestionsSection = lazy(() => import('./components/vbpl/VbplSuggestionsSection'));
 const KeywordPlannerSection = lazy(() => import('./KeywordPlannerSection'));
 const QuickSerpChecker = lazy(() => import('./QuickSerpChecker'));
+const AiOverviewSection = lazy(() => import('../ai-overview/components/AiOverviewSection'));
 const GoogleIndexChecker = lazy(() => import('./GoogleIndexChecker'));
 const ScraperSection = lazy(() => import('../scraper/components/ScraperSection'));
 const ScraperHealthSection = lazy(() => import('../scraper/components/ScraperHealthSection'));
@@ -562,6 +564,53 @@ const TAB_GUIDES: Record<string, { title: string; content: React.ReactNode }> = 
           </li>
           <li>
             <strong>Xuất báo cáo Excel:</strong> Nhấn nút <MiniButton label="Tải Excel" color="success" variant="outlined" /> ở góc trên bảng để tải về báo cáo vị trí từ khóa làm tài liệu theo dõi tiến độ SEO hoặc gửi khách hàng.
+          </li>
+        </Box>
+      </Box>
+    )
+  },
+  'ai-overview': {
+    title: 'Kiểm tra AI Overview',
+    content: (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+        <Typography variant="body1" sx={{ fontWeight: 800, color: 'primary.main' }}>
+          HƯỚNG DẪN KIỂM TRA AI OVERVIEW (AI OVERVIEW CHECKER)
+        </Typography>
+        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+          Công cụ <strong>Kiểm tra AI Overview</strong> giúp bạn theo dõi khối thông tin AI Overview (SGE) của Google, thống kê các nguồn website được trích dẫn và kiểm tra xem tên miền của bạn có xuất hiện trong câu trả lời AI hay không.
+        </Typography>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          1. THIẾT LẬP THAM SỐ
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Từ khoá (Keyword):</strong> Nhập từ khoá muốn kiểm tra (Bắt buộc, tối đa 200 ký tự).
+          </li>
+          <li>
+            <strong>Tên miền mục tiêu (Domain):</strong> Nhập tên miền của bạn (Tùy chọn, tối đa 253 ký tự) để kiểm tra xem có được AI Overview đề xuất ở vị trí nào hay không.
+          </li>
+          <li>
+            <strong>Thị trường / Ngôn ngữ:</strong> Chọn ngôn ngữ và khu vực tìm kiếm: <strong>vi-VN</strong> (Tiếng Việt - Việt Nam) hoặc <strong>en-US</strong> (Tiếng Anh - Mỹ).
+          </li>
+        </Box>
+
+        <Divider />
+
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          2. CÁC TRẠNG THÁI TRẢ VỀ
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1.2, fontSize: '0.82rem' }}>
+          <li>
+            <strong>Có AI Overview (Present):</strong> Google trả về câu trả lời bằng AI. Hệ thống sẽ hiển thị bảng danh sách các website nguồn mà AI Overview trích dẫn kèm theo vị trí trích dẫn của từng website.
+          </li>
+          <li>
+            <strong>Không có AI Overview (Not Present):</strong> Từ khoá này hiện chưa có khối câu trả lời AI của Google (Đây là kết quả hoàn toàn hợp lệ).
+          </li>
+          <li>
+            <strong>Bị chặn (Blocked):</strong> Yêu cầu bị Google chặn (sorry page hoặc captcha). Cần thử lại sau.
           </li>
         </Box>
       </Box>
@@ -1547,6 +1596,7 @@ export default function DashboardPage() {
         { id: 'vbpl', label: 'Gợi ý từ khóa AI', icon: <AutoAwesomeIcon sx={{ fontSize: 20 }} /> },
         { id: 'planner', label: 'Lập kế hoạch từ khóa', icon: <SearchIcon sx={{ fontSize: 20 }} /> },
         { id: 'serp', label: 'Kiểm tra thứ hạng (SERP)', icon: <EmojiEventsIcon sx={{ fontSize: 20 }} /> },
+        { id: 'ai-overview', label: 'Kiểm tra AI Overview', icon: <VisibilityIcon sx={{ fontSize: 20 }} /> },
       ]
     },
     {
@@ -2062,6 +2112,14 @@ export default function DashboardPage() {
         <Box sx={{ mt: 1 }}>
           <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>}>
             <QuickSerpChecker />
+          </Suspense>
+        </Box>
+      )}
+
+      {activeTab === 'ai-overview' && (
+        <Box sx={{ mt: 1 }}>
+          <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>}>
+            <AiOverviewSection isActive={activeTab === 'ai-overview'} />
           </Suspense>
         </Box>
       )}

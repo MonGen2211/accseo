@@ -67,6 +67,9 @@ export interface SessionDetail {
   location: string;
   language: string;
   topN: number;
+  h2Count?: number | null;
+  h3Count?: number | null;
+  description?: string | null;
   submittedBy: string;
   status: OutlineSessionStatus;
   progress: number;
@@ -75,6 +78,8 @@ export interface SessionDetail {
   errorMessage: string | null;
   docUrl?: string | null;
   docId?: string | null;
+  editUrl?: string | null;
+  previewUrl?: string | null;
   docExportedAt?: string | null;
   startedAt: string | null;
   finishedAt: string | null;
@@ -156,6 +161,11 @@ export interface SessionListItem {
   createdAt: string;
   finishedAt: string | null;
   docUrl?: string | null;
+  editUrl?: string | null;
+  previewUrl?: string | null;
+  h2Count?: number | null;
+  h3Count?: number | null;
+  description?: string | null;
 }
 
 export interface HistoryResponse {

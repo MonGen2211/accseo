@@ -65,5 +65,51 @@ export const serpService = {
       timeout: 900000 // 15 minutes timeout specifically for batch index check
     });
     return response.data;
+  },
+
+  checkAiOverview: async (payload: AiOverviewPayload) => {
+    const response = await api.post<ApiResponse<AiOverviewResponseData>>('/serp/ai-overview', payload, {
+      timeout: 300000 // Client timeout 5 minutes (300 seconds) for batch processing
+    });
+    return response.data;
   }
 };
+
+export interface AiOverviewPayload {
+  keywords: string[];
+  domain?: string;
+  geo?: 'vn' | 'us';
+  hl?: 'vi' | 'en';
+}
+
+export interface AiOverviewSource {
+  position: number;
+  url: string;
+  domain: string;
+  title: string;
+}
+
+export interface AiOverviewItemResult {
+  keyword: string;
+  domain: string | null;
+  geo: string;
+  hl: string;
+  present: boolean;
+  blocked: boolean;
+  error: string | null;
+  sources: AiOverviewSource[];
+  targetCited: boolean;
+  targetPosition: number | null;
+  scrapedAt: string;
+}
+
+export interface AiOverviewResponseData {
+  geo: string;
+  hl: string;
+  domain: string | null;
+  total: number;
+  present: number;
+  blocked: number;
+  tookMs: number;
+  results: AiOverviewItemResult[];
+}
