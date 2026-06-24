@@ -158,14 +158,14 @@ export const topicsService = {
     return unwrapResponseData<Topic>(response.data.data);
   },
 
-  async createTopicsBulk(groupId: string, names: string[]): Promise<{
+  async createTopicsBulk(items: { groupName: string; names: string[] }[]): Promise<{
     requested: number;
     inserted: number;
     skipped: number;
     skippedNames: string[];
     topics: Topic[];
   }> {
-    const response = await api.post<ApiResponse<any>>('/topics/bulk', { groupId, names });
+    const response = await api.post<ApiResponse<any>>('/topics/bulk', { items });
     return unwrapResponseData<{
       requested: number;
       inserted: number;
