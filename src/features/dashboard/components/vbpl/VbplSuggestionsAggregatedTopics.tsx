@@ -2721,19 +2721,24 @@ export default function VbplSuggestionsAggregatedTopics({
                   )}
                 </Box>
 
-                <TextField
-                  fullWidth
-                  label="Tên mảng"
-                  variant="outlined"
-                  size="small"
-                  required
-                  value={item.groupName}
-                  onChange={(e) => handleBulkBlockChange(index, 'groupName', e.target.value)}
-                  placeholder="Ví dụ: Bảo hiểm xã hội"
-                  disabled={loadingBulkAdd}
-                  inputProps={{ maxLength: 200 }}
-                  error={!item.groupName.trim()}
-                />
+                <FormControl fullWidth size="small" required error={!item.groupName.trim()}>
+                  <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5, color: 'text.secondary', fontSize: '0.775rem' }}>
+                    Chọn mảng liên quan
+                  </Typography>
+                  <Select
+                    value={item.groupName}
+                    onChange={(e) => handleBulkBlockChange(index, 'groupName', e.target.value)}
+                    displayEmpty
+                    disabled={loadingBulkAdd}
+                  >
+                    <MenuItem value="" disabled>Chọn mảng...</MenuItem>
+                    {groups.filter(g => g.id !== '').map((g) => {
+                      const isSelectedElsewhere = bulkAddItems.some((other, idx) => idx !== index && other.groupName === g.name);
+                      if (isSelectedElsewhere) return null;
+                      return <MenuItem key={g.id} value={g.name}>{g.name}</MenuItem>;
+                    })}
+                  </Select>
+                </FormControl>
 
                 <TextField
                   fullWidth
