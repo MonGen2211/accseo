@@ -54,6 +54,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import SyncIcon from '@mui/icons-material/Sync';
 import AddIcon from '@mui/icons-material/Add';
 import SettingsIcon from '@mui/icons-material/Settings';
+import CheckIcon from '@mui/icons-material/Check';
 
 import { topicsService } from '../../topicsService';
 import type { 
@@ -221,7 +222,9 @@ export default function VbplSuggestionsAggregatedTopics({
         showToast('Cập nhật mảng thành công!', 'success');
       }
       setOpenGroupDialog(false);
-      loadGroups();
+      await loadGroups();
+      await loadPendingCount();
+      loadTopics(page);
     } catch (err: any) {
       console.error('Lỗi lưu mảng:', err);
       showToast(err.response?.data?.message || 'Không thể thực hiện thao tác trên mảng', 'danger');
@@ -242,10 +245,14 @@ export default function VbplSuggestionsAggregatedTopics({
       await topicsService.deleteGroup(groupIdToDelete);
       showToast('Xoá mảng thành công!', 'success');
       setGroups(prev => prev.filter(g => g.id !== groupIdToDelete));
+      setOpenDeleteGroupDialog(false);
+      await loadGroups();
+      await loadPendingCount();
       if (selectedGroupId === groupIdToDelete) {
         setSelectedGroupId('');
+      } else {
+        loadTopics(page);
       }
-      setOpenDeleteGroupDialog(false);
     } catch (err: any) {
       console.error('Lỗi xoá mảng:', err);
       showToast(err.response?.data?.message || 'Không thể xoá mảng này', 'danger');
@@ -322,19 +329,18 @@ export default function VbplSuggestionsAggregatedTopics({
           
         await topicsService.createTopic(topicNameInput.trim(), topicGroupIdInput, vol, keywordsArray);
         showToast('Thêm chủ đề mới thành công!', 'success');
-        loadGroups();
-        loadTopics(1);
       } else if (topicDialogMode === 'edit' && selectedTopicForEdit) {
-        const updated = await topicsService.updateTopic(selectedTopicForEdit.id, {
+        await topicsService.updateTopic(selectedTopicForEdit.id, {
           name: topicNameInput.trim(),
           groupId: topicGroupIdInput,
           volume: vol
         });
-        setTopics(prev => prev.map(t => t.id === selectedTopicForEdit.id ? updated : t));
         showToast('Cập nhật chủ đề thành công!', 'success');
-        loadGroups();
       }
       setOpenTopicDialog(false);
+      await loadGroups();
+      await loadPendingCount();
+      loadTopics(topicDialogMode === 'add' ? 1 : page);
     } catch (err: any) {
       console.error('Lỗi lưu chủ đề:', err);
       showToast(err.response?.data?.message || 'Không thể lưu chủ đề', 'danger');
@@ -354,9 +360,12 @@ export default function VbplSuggestionsAggregatedTopics({
     try {
       await topicsService.deleteTopic(topicIdToDelete);
       showToast('Xoá chủ đề thành công!', 'success');
-      setTopics(prev => prev.filter(t => t.id !== topicIdToDelete));
-      loadGroups();
       setOpenDeleteTopicDialog(false);
+      const remainingOnPage = topics.length - 1;
+      const targetPage = (remainingOnPage <= 0 && page > 1) ? page - 1 : page;
+      await loadGroups();
+      await loadPendingCount();
+      loadTopics(targetPage);
     } catch (err: any) {
       console.error('Lỗi xoá chủ đề:', err);
       showToast(err.response?.data?.message || 'Không thể xoá chủ đề', 'danger');
@@ -406,7 +415,8 @@ export default function VbplSuggestionsAggregatedTopics({
       }
       showToast(`Đã xoá thành công ${deletedCount} chủ đề!`, 'success');
       setSelectedTopicIds([]);
-      loadGroups();
+      await loadGroups();
+      await loadPendingCount();
       loadTopics(1);
     } catch (err: any) {
       console.error('Lỗi xoá chủ đề hàng loạt:', err);
@@ -646,7 +656,8 @@ export default function VbplSuggestionsAggregatedTopics({
       const result = await topicsService.importFromSheet(importName.trim(), sheetUrl.trim());
       setImportResult(result);
       showToast('Import dữ liệu từ Google Sheet thành công!', 'success');
-      loadGroups();
+      await loadGroups();
+      await loadPendingCount();
       loadTopics(1);
       loadImportSources(1);
     } catch (err: any) {
@@ -704,6 +715,25 @@ export default function VbplSuggestionsAggregatedTopics({
     } catch (err: any) {
       console.error('Lỗi duyệt chủ đề:', err);
       showToast(err.response?.data?.message || 'Không thể duyệt các chủ đề đã chọn', 'danger');
+    } finally {
+      setApproving(false);
+    }
+  };
+
+  const handleApproveSingleTopic = async (topicId: string) => {
+    setApproving(true);
+    try {
+      const result = await topicsService.approveTopics([topicId]);
+      showToast(result.message || 'Đã duyệt chủ đề thành công!', 'success');
+      setSelectedTopicIds(prev => prev.filter(id => id !== topicId));
+      await loadPendingCount();
+      await loadGroups();
+      const remainingOnPage = topics.length - 1;
+      const targetPage = (remainingOnPage <= 0 && page > 1) ? page - 1 : page;
+      loadTopics(targetPage);
+    } catch (err: any) {
+      console.error('Lỗi duyệt chủ đề đơn lẻ:', err);
+      showToast(err.response?.data?.message || 'Không thể duyệt chủ đề này', 'danger');
     } finally {
       setApproving(false);
     }
@@ -1510,6 +1540,13 @@ export default function VbplSuggestionsAggregatedTopics({
                           {isAdmin && (
                             <TableCell onClick={(e) => e.stopPropagation()}>
                               <Stack direction="row" spacing={0.5}>
+                                {subTab === 'pending' && (
+                                  <Tooltip title="Duyệt chủ đề">
+                                    <IconButton size="small" onClick={() => handleApproveSingleTopic(t.id)} sx={{ color: 'info.main', p: 0.5 }}>
+                                      <CheckIcon fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                )}
                                 <Tooltip title="Cập nhật Volume">
                                   <IconButton size="small" onClick={() => handleRefreshTopicVolume(t.id)} sx={{ color: 'success.main', p: 0.5 }}>
                                     <SyncIcon fontSize="small" />
